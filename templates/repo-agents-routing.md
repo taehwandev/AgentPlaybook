@@ -32,8 +32,10 @@ application drill first: add pointer vs merge vs pin; audit-only vs refresh
 with update vs first-time setup; apply now vs prepare instructions only.
 Default to preserving current guardrails and running audit only unless the user
 chooses to refresh the managed block.
-For multi-step tasks, run the workflow script first when it exists and use its
-output as the command manifest. Keep its gate execution ledger current; each
+For multi-step tasks, run the workflow script first and use its output as the
+command manifest before selecting task documents, editing, reviewing,
+committing, or reporting completion. If the workflow router cannot run, stop and
+report the blocker before continuing. Keep its gate execution ledger current; each
 required gate must have evidence before completion. Show a short traffic-light
 gate signal after each completed gate or task step. Completion requires every
 required gate to be GREEN. YELLOW means blocked or paused. RED means missed or

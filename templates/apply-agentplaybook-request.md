@@ -93,8 +93,10 @@ files are present, update their AgentPlaybook pointer in the same pass or point
 them back to AGENTS.md. Do not create a separate runtime-specific file only to
 duplicate guidance when the runtime already reads AGENTS.md.
 
-For any multi-step setup or follow-up task, run the workflow route and show a
-gate signal after each completed gate or task step:
+For any multi-step setup or follow-up task, run the workflow route before
+selecting task documents, editing, reviewing, committing, or reporting
+completion. If the workflow router cannot run, stop and report the blocker
+before continuing. Show a gate signal after each completed gate or task step:
 
 Gate signal: GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
 

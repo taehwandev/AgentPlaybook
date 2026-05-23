@@ -16,7 +16,7 @@ PRD -> ARD -> Review -> Code Work -> Review -> Tests -> UI Tests -> Commit Readi
 This is a common workflow. Platform-specific cards decide how to implement and
 verify each phase.
 
-For agent execution, prefer the scripted route when available:
+For agent execution, run the scripted route before PRD, ARD, or implementation:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --platform <platform> --concern <concern>

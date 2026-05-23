@@ -88,17 +88,20 @@ Run it again before finishing. Use `--fix` only for low-risk safety fixes, and
 never print detected secret values. If VibeGuard cannot run, stop and report
 the blocker instead of treating it as optional.
 
-## Workflow Script
+## Required Workflow Script
 
-For repeated multi-step tasks, prefer the shared workflow router when available:
+For every multi-step task, run the shared workflow router before selecting
+documents manually, editing, reviewing, committing, or reporting completion:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> [--platform <platform>] [--concern <concern>]
 ```
 
 Use the script output as a document and gate manifest, then execute the task with
-the target repo's local commands. If the script is unavailable or the route is
-missing a clearly relevant concern, fall back to `index.md` and report the gap.
+the target repo's local commands. If the script is unavailable, cannot run, or
+the route is missing a clearly relevant concern, stop and report the gap before
+continuing. Use `index.md` as a fallback only for simple answer-only work or
+after the user explicitly accepts the fallback.
 Discover valid commands, platforms, and concerns with:
 
 ```text

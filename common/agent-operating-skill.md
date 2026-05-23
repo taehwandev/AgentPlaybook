@@ -16,8 +16,8 @@ mistakes.
 2. Classify request clarity and effort before loading broad context.
 3. Read repo-local instructions before changing files.
 4. Discover the project stack before choosing commands or libraries.
-5. For multi-step tasks, use `scripts/workflow.py` when available to generate
-   the workflow route.
+5. For multi-step tasks, run `scripts/workflow.py route ...` before selecting
+   task documents, editing, reviewing, committing, or reporting completion.
 6. Keep a gate execution ledger for the route and mark each gate with evidence
    when it is executed. Show a short gate signal after each completed gate or
    task step.
@@ -66,7 +66,9 @@ Before finishing:
 - Request clarity, question drill, model/effort routing, or token reduction:
   `common/task-intake-effort-routing.md` and `workflows/request-triage.md`.
 - Scripted workflow route: `workflows/scripted-agent-workflow.md` and
-  `scripts/workflow.py` when the task has multiple steps.
+  `scripts/workflow.py` are mandatory for multi-step tasks when the script is
+  available. If the script cannot run, report the blocker before using
+  `index.md` as a fallback.
 - Stack, package manager, framework, runtime, or command discovery:
   `common/stack-discovery.md`.
 - Failed commands, compiler errors, lint errors, or broken verification:

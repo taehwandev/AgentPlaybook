@@ -160,8 +160,11 @@ For every runtime:
    leave them out only when the runtime reads `AGENTS.md` and no separate file
    exists.
 9. Read AgentPlaybook `AGENTS.md`.
-10. Use `index.md` or `scripts/workflow.py` to select the smallest document set.
-11. When a scripted route is used, keep a gate execution ledger, mark each route
+10. For multi-step tasks, run `scripts/workflow.py route ...` to select the
+    smallest document set and gate manifest. Use `index.md` only for simple
+    answer-only work or an explicitly accepted fallback when the script cannot
+    run.
+11. Keep a gate execution ledger, mark each route
    gate with evidence when it is executed, assign a traffic-light signal, and
    show a short gate signal after each completed gate or task step.
 12. Load only selected cards.
@@ -199,7 +202,7 @@ After connecting a runtime, verify:
 - the VibeGuard gate passed or stopped with a reported blocker
 - VibeGuard evidence was summarized through VibeGuard docs when an evidence
   adapter was configured
-- the route gate ledger was completed when a scripted route was used
+- the route gate ledger was completed for every multi-step task
 - the agent can produce a route, such as:
 
 ```text

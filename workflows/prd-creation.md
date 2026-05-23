@@ -9,7 +9,7 @@ type: human-reviewed-needed
 Use when the deliverable is a PRD or product requirements note before ARD,
 implementation, tests, or release planning.
 
-For agent execution, prefer the scripted route:
+For agent execution, run the scripted route before writing the PRD:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --platform <platform> --concern <concern>

@@ -36,11 +36,12 @@ or task-specific workflow to load next.
    before choosing commands or framework-specific APIs.
 4. Risk scan: mark touched surfaces such as secrets, external state, auth,
    billing, data, release, generated files, dependencies, or local tools.
-5. Route: choose the smallest workflow and cards from `index.md`; do not load
-   the whole library by default.
-6. Gate ledger: when a scripted route is used, create a ledger for every route
-   gate, mark each gate when it is executed, and show a short traffic-light
-   gate signal after each completed gate or task step.
+5. Route: for multi-step tasks, run `scripts/workflow.py route ...` before
+   manually choosing workflow cards. Use `index.md` only for simple answer-only
+   work or an explicitly accepted fallback when the script cannot run.
+6. Gate ledger: create a ledger for every route gate, mark each gate when it is
+   executed, and show a short traffic-light gate signal after each completed
+   gate or task step.
 7. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
 8. Decide: make a reasonable assumption when safe; ask only when ambiguity

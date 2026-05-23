@@ -7,9 +7,10 @@ type: human-reviewed-needed
 # Scripted Agent Workflow
 
 Use when an agent task should be resolved by an executable workflow route instead
-of only by reading prose. The script is the command manifest generator. The
-documents remain the source of truth for judgment, constraints, and verification
-detail.
+of only by reading prose. For multi-step tasks, this route generation is
+mandatory when the script is available. The script is the command manifest
+generator. The documents remain the source of truth for judgment, constraints,
+and verification detail.
 
 ## Purpose
 
@@ -21,7 +22,7 @@ repo.
 
 ## Default Script
 
-Use this shared router when it exists:
+Run this shared router for every multi-step task when it exists:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> [--platform <platform>] [--concern <concern>]
@@ -240,7 +241,8 @@ The current script exposes these stable command profiles:
 For a multi-step task:
 
 1. Identify the target repo and repo-local instructions.
-2. Run the workflow router when available.
+2. Run the workflow router before selecting task documents, editing, reviewing,
+   committing, or reporting completion.
 3. Read the route output as the task command manifest.
 4. Load the listed documents in order.
 5. Follow the listed gates before editing, reviewing, testing, or committing.
@@ -250,6 +252,10 @@ For a multi-step task:
 If the script output conflicts with repo-local instructions, repo-local
 instructions win. If the route is missing a concern that the task clearly touches,
 add the concern manually and report the gap.
+
+If the workflow router is unavailable or cannot run, stop and report the blocker
+before continuing. Use prose-only routing from `index.md` only for simple
+answer-only work or after the user explicitly accepts the fallback.
 
 ## Script Creation Rule
 

@@ -155,10 +155,12 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 ## Loading Rule
 
 For any multi-step agent task, start with `workflows/agent-task-lifecycle.md`.
-When `scripts/workflow.py` is available, use it to generate the command route
-before manually selecting workflow documents. Treat the route's gate ledger as a
-required execution record, not a summary to reconstruct after the work. Show a
-short gate signal after each completed gate or task step.
+Run `scripts/workflow.py route ...` to generate the command route before
+manually selecting workflow documents, editing, reviewing, committing, or
+reporting completion. Treat the route's gate ledger as a required execution
+record, not a summary to reconstruct after the work. If the script cannot run,
+stop and report the blocker or fallback approval before continuing with
+`index.md`. Show a short gate signal after each completed gate or task step.
 
 For any new request, first classify clarity and effort with
 `common/task-intake-effort-routing.md`. Do not use the strongest model, longest
@@ -172,15 +174,14 @@ APIs, use `common/stack-discovery.md`. When a command fails, use
 agent needs to ask a blocker question or approval, use
 `common/agent-interaction.md`.
 
-For PRD-only work, use `workflows/prd-creation.md` and prefer this scripted
-route:
+For PRD-only work, use `workflows/prd-creation.md` and run this scripted route:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --platform <platform> --concern <concern>
 ```
 
 For product or feature work that needs PRD -> ARD -> implementation ->
-verification gates, use `workflows/product-architecture-delivery.md` and prefer
+verification gates, use `workflows/product-architecture-delivery.md` and run
 this scripted route:
 
 ```text

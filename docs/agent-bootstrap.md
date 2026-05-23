@@ -203,7 +203,9 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
    Otherwise use the absolute path or repo-relative submodule path.
 9. Link only `AGENTS.md`, `index.md`, and any direct route cards the repo wants.
 10. Do not paste the full AgentPlaybook library into repo-local files.
-11. For multi-step setup or migration work, keep the workflow route gate ledger
+11. For multi-step setup or migration work, run
+   `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route ...` before editing,
+   keep the workflow route gate ledger,
    and verify every required gate is `GREEN` with evidence before reporting
    success.
 

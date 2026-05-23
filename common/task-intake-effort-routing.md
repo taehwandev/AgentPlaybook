@@ -80,8 +80,9 @@ enough decisions are captured.
 
 - Start with repo-local instructions and this intake card; do not load the full
   library.
-- Prefer `scripts/workflow.py classify "<request>"` when available for a cheap
-  first pass.
+- Use `scripts/workflow.py classify "<request>"` for unclear or multi-step
+  requests when the script is available; skip it only for clear, low-risk,
+  answer-only tasks.
 - Route after classification: load only the command/platform/concern cards that
   match the task.
 - For exact errors, read the error output, referenced files, and nearby code

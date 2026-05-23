@@ -43,11 +43,14 @@ Rules:
    as the rule source. The VibeGuard site is a human reference and does not
    need to be fetched by the agent. If the VibeGuard command cannot run, stop
    and report the blocker.
-5. For multi-step tasks, run:
+5. For multi-step tasks, run this before selecting task documents, editing,
+   reviewing, committing, or reporting completion:
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<USER_REQUEST>"
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <COMMAND> [--platform <PLATFORM>] [--concern <CONCERN>]
    Use the route output as the command manifest.
+   If the workflow router cannot run, stop and report the blocker before
+   continuing.
    Use the lowest capable effort level. Do not use deep reasoning or a
    specialist agent for clear, low-risk requests unless local evidence expands
    the scope.

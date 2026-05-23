@@ -343,8 +343,8 @@ AgentPlaybook provides shared defaults only.
 
 ## Workflow Router
 
-For multi-step work, agents can generate a route manifest before selecting
-documents manually:
+For multi-step work, agents must generate a route manifest before selecting
+documents manually, editing, reviewing, committing, or reporting completion:
 
 ```bash
 python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" list
@@ -377,7 +377,9 @@ cheap: it suggests `clear-exact`, `clear-scoped`, `vague-action`,
 specialist effort. It is a first pass, not a replacement for repo-local
 inspection.
 
-The route output contains `docs`, `gates`, `gate_ledger`, `attempt_limit`,
+If the workflow router cannot run, the agent must stop and report the blocker or
+ask whether to continue with an `index.md` fallback. The route output contains
+`docs`, `gates`, `gate_ledger`, `attempt_limit`,
 `retry_scope`, `notes`, and `missing`. Agents should read the listed docs in
 order, use gates as the task checklist, mark each gate with evidence while
 working, and show a short traffic-light gate signal after each completed gate or
@@ -469,8 +471,8 @@ python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform app
 
 1. Start from the target repo's local instructions.
 2. Open this repository's `AGENTS.md`.
-3. For multi-step work, run `scripts/workflow.py` when available to generate the
-   command route.
+3. For multi-step work, run `scripts/workflow.py route ...` to generate the
+   command route before selecting task documents.
 4. Use `index.md` to choose the smallest relevant document set.
 5. Read the common baseline cards required for the task.
 6. Add exactly the platform, product-pattern, or workflow cards that match the
@@ -485,8 +487,8 @@ This is the core design: small cards, loaded only when relevant.
 - Repo-local instructions always win.
 - `AGENTS.md` is the shared entrypoint for agent runtimes.
 - Use `index.md` to choose only the needed documents.
-- Use `scripts/workflow.py` to turn repeated multi-step workflows into command
-  manifests before selecting documents manually.
+- Run `scripts/workflow.py route ...` for multi-step workflows before selecting
+  documents manually.
 - Classify unclear requests before loading broad context or using deep model
   effort.
 - Discover the repo stack before choosing package managers, framework APIs, or
