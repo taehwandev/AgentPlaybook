@@ -35,11 +35,25 @@
           <p class="eyebrow" data-i18n="hero.eyebrow">AgentPlaybook + VibeGuard</p>
           <h1 id="console-title" data-i18n="hero.title">One prompt for safer AI coding work.</h1>
           <p class="lede" data-i18n="hero.lede">
-            Most teams tell the agent to apply AgentPlaybook once. The agent
-            reuses the right install, runs VibeGuard, chooses the route, and
-            reports evidence. Manual commands are for controlled setup and
-            debugging.
+            Paste one request into your coding agent. It should reuse an
+            existing install, run VibeGuard, add a short routing block, and
+            continue with your task.
           </p>
+          <div class="quick-start">
+            <div class="quick-start-top">
+              <div>
+                <p class="panel-kicker" data-i18n="quick.kicker">Start here</p>
+                <h2 data-i18n="quick.title">Copy this into your agent.</h2>
+              </div>
+              <button type="button" class="copy-button" id="copyQuick" data-i18n="quick.copy">Copy request</button>
+            </div>
+            <pre><code id="quickPrompt" data-i18n="quick.prompt">Apply AgentPlaybook to this project:
+https://github.com/taehwandev/AgentPlaybook
+
+Use this project's current agent instructions first.
+If AgentPlaybook already exists locally, link to that copy.
+Run VibeGuard, add a short routing block, then continue with my task.</code></pre>
+          </div>
           <div class="flow-ribbon" aria-label="Safety flow" data-i18n-attr="aria-label:flow.label">
             <span data-i18n="flow.prompt">Paste request</span>
             <span data-i18n="flow.apply">Agent applies</span>
@@ -235,9 +249,14 @@ vibeguard audit . --rules ${AGENTPLAYBOOK_HOME}</code></pre>
           "language.label": "Language",
           "hero.eyebrow": "AgentPlaybook + VibeGuard",
           "hero.title": "One prompt for safer AI coding work.",
-          "hero.lede": "Most teams tell the agent to apply AgentPlaybook once. The agent reuses the right install, runs VibeGuard, chooses the route, and reports evidence. Manual commands are for controlled setup and debugging.",
+          "hero.lede": "Paste one request into your coding agent. It should reuse an existing install, run VibeGuard, add a short routing block, and continue with your task.",
           "hero.github": "Open GitHub",
           "hero.apply": "Apply to a repo",
+          "quick.kicker": "Start here",
+          "quick.title": "Copy this into your agent.",
+          "quick.copy": "Copy request",
+          "quick.copied": "Copied",
+          "quick.prompt": "Apply AgentPlaybook to this project:\nhttps://github.com/taehwandev/AgentPlaybook\n\nUse this project's current agent instructions first.\nIf AgentPlaybook already exists locally, link to that copy.\nRun VibeGuard, add a short routing block, then continue with my task.",
           "flow.label": "Safety flow",
           "flow.prompt": "Paste request",
           "flow.apply": "Agent applies",
@@ -290,8 +309,8 @@ vibeguard audit . --rules ${AGENTPLAYBOOK_HOME}</code></pre>
           "mode.copied": "Copied",
           "mode.agent.title": "Tell the agent to apply AgentPlaybook.",
           "mode.agent.body": "This is the default path. The agent should read local project instructions, reuse an existing AgentPlaybook root when present, run VibeGuard, and add only a short routing block.",
-          "mode.existing.title": "Reuse the AgentPlaybook root already on this machine.",
-          "mode.existing.body": "Point the target project to the existing path and avoid a second copy. This is the default for personal multi-repo work.",
+          "mode.existing.title": "Manual: reuse an existing local root.",
+          "mode.existing.body": "Use this only when you know the local AgentPlaybook path and want to wire the repo yourself.",
           "mode.first.title": "Clone once to a stable personal location.",
           "mode.first.body": "Use this only when no usable local root exists. The same checkout can then serve future projects.",
           "mode.team.title": "Pin a reviewed copy inside the repository.",
@@ -322,9 +341,14 @@ vibeguard audit . --rules ${AGENTPLAYBOOK_HOME}</code></pre>
           "language.label": "언어",
           "hero.eyebrow": "AgentPlaybook + VibeGuard",
           "hero.title": "더 안전한 AI 코딩 작업을 위한 하나의 요청.",
-          "hero.lede": "대부분은 에이전트에게 AgentPlaybook 적용을 한 번 요청하면 됩니다. 에이전트가 적절한 설치본을 재사용하고, VibeGuard를 실행하고, 라우트를 고른 뒤 근거를 보고합니다. 수동 명령은 통제된 설정과 디버깅용입니다.",
+          "hero.lede": "코딩 에이전트에 요청 하나만 붙여넣으세요. 에이전트가 기존 설치본을 재사용하고, VibeGuard를 실행하고, 짧은 라우팅 블록을 추가한 뒤 작업을 이어가야 합니다.",
           "hero.github": "GitHub 열기",
           "hero.apply": "레포에 적용",
+          "quick.kicker": "여기서 시작",
+          "quick.title": "이 요청을 에이전트에 붙여넣으세요.",
+          "quick.copy": "요청 복사",
+          "quick.copied": "복사됨",
+          "quick.prompt": "이 프로젝트에 AgentPlaybook을 적용해줘:\nhttps://github.com/taehwandev/AgentPlaybook\n\n현재 프로젝트의 에이전트 지침을 먼저 읽어줘.\nAgentPlaybook이 이미 로컬에 있으면 그 복사본에 연결해줘.\nVibeGuard를 실행하고, 짧은 라우팅 블록만 추가한 뒤 내 작업을 이어서 진행해줘.",
           "flow.label": "안전 흐름",
           "flow.prompt": "요청 붙여넣기",
           "flow.apply": "에이전트 적용",
@@ -377,8 +401,8 @@ vibeguard audit . --rules ${AGENTPLAYBOOK_HOME}</code></pre>
           "mode.copied": "복사됨",
           "mode.agent.title": "에이전트에게 AgentPlaybook 적용을 요청합니다.",
           "mode.agent.body": "이것이 기본 경로입니다. 에이전트는 로컬 프로젝트 지침을 읽고, 기존 AgentPlaybook root가 있으면 재사용하고, VibeGuard를 실행한 뒤 짧은 라우팅 블록만 추가해야 합니다.",
-          "mode.existing.title": "이 머신에 이미 있는 AgentPlaybook root를 재사용합니다.",
-          "mode.existing.body": "대상 프로젝트가 기존 경로를 가리키게 하고 두 번째 복사본을 만들지 않습니다. 개인 다중 레포 작업의 기본 방식입니다.",
+          "mode.existing.title": "수동: 기존 로컬 root를 재사용합니다.",
+          "mode.existing.body": "로컬 AgentPlaybook 경로를 알고 있고 직접 레포를 연결하고 싶을 때만 사용합니다.",
           "mode.first.title": "안정적인 개인 위치에 한 번만 클론합니다.",
           "mode.first.body": "사용 가능한 로컬 root가 없을 때만 사용합니다. 이후 같은 체크아웃을 다른 프로젝트에도 재사용할 수 있습니다.",
           "mode.team.title": "레포 내부에 검토된 사본을 고정합니다.",
@@ -711,6 +735,7 @@ vibeguard audit . --rules ${AGENTPLAYBOOK_HOME}</code></pre>
         renderDemo();
         renderMode();
         renderCard();
+        document.getElementById("copyQuick").textContent = dict["quick.copy"];
         saveLanguage(currentLanguage);
       };
 
@@ -746,6 +771,16 @@ vibeguard audit . --rules ${AGENTPLAYBOOK_HOME}</code></pre>
           document.getElementById("copyMode").textContent = dictionary()["mode.copied"];
         } catch {
           document.getElementById("copyMode").textContent = dictionary()["mode.copy"];
+        }
+      });
+
+      document.getElementById("copyQuick").addEventListener("click", async () => {
+        const prompt = document.getElementById("quickPrompt").textContent;
+        try {
+          await navigator.clipboard.writeText(prompt);
+          document.getElementById("copyQuick").textContent = dictionary()["quick.copied"];
+        } catch {
+          document.getElementById("copyQuick").textContent = dictionary()["quick.copy"];
         }
       });
 

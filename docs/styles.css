@@ -236,6 +236,32 @@ h3 {
   margin-top: 28px;
 }
 
+.quick-start {
+  max-width: 880px;
+  margin-top: 28px;
+  padding: 20px;
+  border: 1px solid rgba(66, 214, 139, 0.4);
+  border-radius: 12px;
+  background: rgba(32, 37, 31, 0.88);
+}
+
+.quick-start-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.quick-start h2 {
+  max-width: 560px;
+  font-size: clamp(24px, 3vw, 36px);
+}
+
+.quick-start pre {
+  margin: 0;
+}
+
 .button,
 .copy-button {
   display: inline-flex;
@@ -650,6 +676,7 @@ a:focus-visible {
   }
 
   .flow-ribbon,
+  .quick-start-top,
   .shield-row,
   .signal-grid,
   .command-toolbar,
