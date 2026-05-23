@@ -27,6 +27,14 @@ Use this shared router when it exists:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> [--platform <platform>] [--concern <concern>]
 ```
 
+When the request clarity or correct command profile is uncertain, classify first:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<request text>"
+```
+
+`classify` outputs the clarity label, effort level, recommended route command, whether a question drill is needed, and a short reason. Use the recommended route as the `<command>` argument to `route`. If `question_drill: true`, run the recommended route (typically `triage` or `ambiguity`) and ask only the missing blocker questions before proceeding.
+
 Discover the supported values from the script itself:
 
 ```text
