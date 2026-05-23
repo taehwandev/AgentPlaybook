@@ -48,8 +48,10 @@ https://github.com/taehwandev/AgentPlaybook
 - It is not meant to be copied wholesale into every project.
 
 VibeGuard is the required safety gate for applying and maintaining
-AgentPlaybook. AgentPlaybook does not duplicate VibeGuard usage docs; use
-https://vibeguard.thdev.app/ for VibeGuard setup and usage.
+AgentPlaybook. AgentPlaybook does not duplicate full VibeGuard usage docs; use
+https://vibeguard.thdev.app/ for VibeGuard setup and usage. Agents should apply
+VibeGuard through the current VibeGuard flow and pass the selected
+AgentPlaybook root as the rule source.
 
 Website:
 
@@ -133,7 +135,9 @@ https://vibeguard.thdev.app/
 
 When applying AgentPlaybook, use the selected AgentPlaybook root as the
 VibeGuard rule source. If VibeGuard cannot run, report the blocker instead of
-bypassing the gate.
+bypassing the gate. Do not copy full VibeGuard onboarding or command reference
+material into public AgentPlaybook docs; link to VibeGuard's current
+instructions.
 
 ## Apply With Any AI Agent
 
@@ -145,9 +149,8 @@ https://github.com/taehwandev/AgentPlaybook
 
 If AgentPlaybook already exists locally, link this repo to the existing copy.
 Do not clone, vendor, or copy a second copy unless no usable local copy exists.
-Run the required VibeGuard safety gate by following
-https://vibeguard.thdev.app/ and use the selected AgentPlaybook root as the
-rule source.
+Apply VibeGuard by following https://vibeguard.thdev.app/ and use the selected
+AgentPlaybook root as the rule source.
 Update the repo-local agent instructions with a short routing block. Keep
 repo-specific commands, paths, services, product policy, and domain language in
 this repo.
@@ -163,8 +166,9 @@ flow instead of copying the whole library:
    install, or team-pinned install.
 3. Validate the selected AgentPlaybook root with
    `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate`.
-4. Run the required VibeGuard safety gate with the selected AgentPlaybook root
-   as the rule source. Follow https://vibeguard.thdev.app/ for exact usage.
+4. Apply the required VibeGuard safety gate with the selected AgentPlaybook
+   root as the rule source. Follow https://vibeguard.thdev.app/ for exact
+   usage.
 5. Add a short routing block to the repo instruction file the agent runtime
    actually reads.
 6. Keep repo-specific commands, paths, services, product policy, and domain
@@ -194,7 +198,7 @@ Then use AgentPlaybook:
 <AGENTPLAYBOOK_ROOT>/index.md
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 
-Run the required VibeGuard safety gate from https://vibeguard.thdev.app/
+Apply the required VibeGuard safety gate from https://vibeguard.thdev.app/
 with <AGENTPLAYBOOK_ROOT> as the rule source before editing.
 For multi-step work, run the workflow route and follow its gate ledger.
 After each completed gate or task step, show:

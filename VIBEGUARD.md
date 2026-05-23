@@ -15,31 +15,31 @@ This file applies to edits in the AgentPlaybook repository. It should not be
 treated as downstream policy for every repository that links to AgentPlaybook.
 
 AgentPlaybook remains a reusable guidance library. VibeGuard remains the
-required setup, update, audit, evidence, and safe-fix CLI.
+required setup, update, audit, prompt, evidence, and safe-fix CLI.
 
 ## Execution Policy
 
-VibeGuard is required, but the execution source should be explicit.
+VibeGuard is required. The default application source is the published package:
 
-Prefer these sources in order:
+```bash
+npx --yes @taehwandev/vibeguard <command> [project]
+```
 
-1. A repo-pinned or team-approved VibeGuard checkout.
-2. An already installed local `vibeguard` binary.
-3. A reviewed GitHub package ref, pinned to a tag or commit.
-
-Do not run an unpinned GitHub package command in unattended automation. If no
-trusted VibeGuard source is available, stop and report the blocker instead of
-continuing without the safety gate.
+An installed local `vibeguard` binary is equivalent. A local checkout command is
+allowed only when validating VibeGuard itself or when the package command cannot
+run and the checkout is trusted. If VibeGuard cannot run from any approved
+source, stop and report the blocker instead of continuing without the safety
+gate.
 
 ## Audit Commands
 
-Run the local checkout during development when it is available:
+Run the official package command during normal AgentPlaybook maintenance:
 
 ```bash
-node <VIBEGUARD_ROOT>/src/cli.js audit . --rules .
+npx --yes @taehwandev/vibeguard audit . --rules .
 ```
 
-Run an installed binary when the repo or environment provides one:
+Run an installed binary when the environment provides one:
 
 ```bash
 vibeguard audit . --rules .
@@ -48,22 +48,11 @@ vibeguard audit . --rules .
 Use `vibeguard` as the canonical command name. Do not document deprecated
 hyphenated command spellings for new setup.
 
-When a local source is unavailable, use a maintainer-reviewed ref:
+Use a local checkout only when validating local VibeGuard changes:
 
 ```bash
-npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard#<VIBEGUARD_REF> -- vibeguard audit . --rules .
+node <VIBEGUARD_ROOT>/src/cli.js audit . --rules .
 ```
-
-Replace `<VIBEGUARD_REF>` with a reviewed tag or commit. The approved ref should
-come from one of these sources:
-
-- the target repo's local agent instructions
-- a pinned submodule, lockfile, or tool manifest
-- a release note, issue, PR, or commit reviewed by the repo maintainer
-- an explicit user-provided ref in the current task
-
-If no approved ref is available, ask for one or stop with the blocker. Do not
-invent a ref from the latest branch head.
 
 ## Auxiliary Commands
 
@@ -84,10 +73,18 @@ vibeguard evidence install-claude-hook .
 
 ## Setup And Fix Policy
 
-- Initial AgentPlaybook application should run `vibeguard setup` first, then
-  `vibeguard audit`.
-- Existing VibeGuard guardrails should be refreshed with `vibeguard update`,
-  then checked with `vibeguard audit`.
+- Initial AgentPlaybook application should use the current VibeGuard package
+  flow with the selected AgentPlaybook root as `--rules`:
+
+  ```bash
+  npx --yes @taehwandev/vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
+  npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
+  npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+  ```
+
+- Existing VibeGuard guardrails should be refreshed with
+  `npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>`, then
+  checked with the package audit command.
 - Normal AgentPlaybook maintenance should run audit-only before editing and
   before finishing.
 - Use `--fix` only after audit output shows low-risk safety fixes such as env
@@ -103,8 +100,8 @@ vibeguard evidence install-claude-hook .
 - Keep `.env.example` value-free.
 - Ask before deleting data, running migrations, deploying, changing credentials,
   or increasing paid API/model usage.
-- For target repos that apply AgentPlaybook, run VibeGuard setup/update and
-  audit with the selected AgentPlaybook root as `--rules`.
+- For target repos that apply AgentPlaybook, apply VibeGuard with the selected
+  AgentPlaybook root as `--rules`.
 - For normal AgentPlaybook repository maintenance, run `audit . --rules .`
   before editing and before finishing.
 - When an execution evidence adapter is configured, run `vibeguard evidence .`
@@ -117,12 +114,5 @@ Before finishing AgentPlaybook changes, run:
 
 ```bash
 python3 scripts/workflow.py validate
-node <VIBEGUARD_ROOT>/src/cli.js audit . --rules .
-```
-
-If the local checkout is unavailable and a reviewed GitHub package ref is
-approved, use a temporary npm cache when local npm permissions require it:
-
-```bash
-npm_config_cache=/private/tmp/agentplaybook-npm-cache npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard#<VIBEGUARD_REF> -- vibeguard audit . --rules .
+npx --yes @taehwandev/vibeguard audit . --rules .
 ```

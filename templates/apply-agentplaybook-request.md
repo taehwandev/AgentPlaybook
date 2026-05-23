@@ -38,9 +38,9 @@ scripts/workflow.py. Validate it with:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 
-VibeGuard is required. After selecting the AgentPlaybook root, run VibeGuard
-with the selected AgentPlaybook root as the rule source. Follow the VibeGuard
-docs for exact commands, package source, fixes, and evidence flow:
+VibeGuard is required. After selecting the AgentPlaybook root, apply VibeGuard
+with the selected AgentPlaybook root as the rule source. Follow the current
+VibeGuard docs for exact setup, audit, fix, package, and evidence flow:
 
 https://vibeguard.thdev.app/
 

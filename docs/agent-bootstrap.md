@@ -24,7 +24,7 @@ CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
 
 If AgentPlaybook already exists locally, link this repo to the existing copy.
 Do not clone, vendor, or copy a second copy unless no usable local copy exists.
-Run the required VibeGuard safety gate by following
+Apply the required VibeGuard safety gate by following
 https://vibeguard.thdev.app/ and use the selected AgentPlaybook root as the
 rule source.
 Update the repo-local agent instructions with a short routing block. Keep
@@ -82,11 +82,12 @@ If a usable root is found, use it. Do not reinstall.
 
 ## Required VibeGuard Gate
 
-VibeGuard is mandatory. After selecting the AgentPlaybook root, run VibeGuard
-against the target repo before editing target repo instructions. Use the
+VibeGuard is mandatory. After selecting the AgentPlaybook root, apply
+VibeGuard to the target repo before editing target repo instructions. Use the
 selected AgentPlaybook root as the VibeGuard rule source.
 
-VibeGuard setup and usage details live in VibeGuard docs:
+VibeGuard's current setup, audit, fix, package, and evidence flow lives in
+VibeGuard docs:
 
 ```text
 https://vibeguard.thdev.app/

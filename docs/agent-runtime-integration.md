@@ -16,7 +16,8 @@ AgentPlaybook should be consumed through a small bridge, not copied wholesale:
 1. Reusable library: one AgentPlaybook root.
 2. Runtime bridge: repo-local instructions or a pasted prompt.
 3. Task route: `scripts/workflow.py` output for the current task.
-4. Safety gate: required VibeGuard gate using AgentPlaybook as the rule source.
+4. Safety gate: current VibeGuard application flow using AgentPlaybook as the
+   rule source.
 
 Repo-local instructions remain the source of truth for commands, paths,
 services, product policy, and domain language.
@@ -118,7 +119,7 @@ For every runtime:
 2. Select the setup mode: existing local install, first-time local shared
    install, or team-pinned install.
 3. Locate or install the AgentPlaybook root and validate it.
-4. Run the required VibeGuard safety gate from
+4. Apply the required VibeGuard safety gate from
    https://vibeguard.thdev.app/ with the selected AgentPlaybook root as the
    rule source.
 5. Read AgentPlaybook `AGENTS.md`.

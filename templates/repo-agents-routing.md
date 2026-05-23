@@ -20,9 +20,9 @@ Shared AgentPlaybook library:
 Use repo-local instructions first.
 Use the shared index only to select the smallest relevant document set.
 VibeGuard is required before documentation, code, config, dependency, data,
-deployment, or credential changes. Follow https://vibeguard.thdev.app/ and use
-<AGENTPLAYBOOK_ROOT> as the rule source before editing and again before
-finishing.
+deployment, or credential changes. Apply the current VibeGuard flow from
+https://vibeguard.thdev.app/ and use <AGENTPLAYBOOK_ROOT> as the rule source
+before editing and again before finishing.
 For multi-step tasks, run the workflow script first when it exists and use its
 output as the command manifest. Keep its gate execution ledger current; each
 required gate must have evidence before completion. Show a short traffic-light

@@ -61,24 +61,29 @@ Then load only the supporting documents relevant to the task.
 VibeGuard is mandatory for AgentPlaybook maintenance and for repos that apply
 AgentPlaybook. Before documentation, code, configuration, dependency, data,
 deployment, or credential changes, run the VibeGuard audit for the target repo.
-For this repo, prefer the local or pinned VibeGuard source documented in
-`VIBEGUARD.md`. During local maintenance, use an installed binary when
-available:
+For this repo, use the current VibeGuard package flow documented in
+`VIBEGUARD.md`. During local maintenance, prefer the official package command:
+
+```text
+npx --yes @taehwandev/vibeguard audit . --rules .
+```
+
+An installed binary is equivalent when the environment provides one:
 
 ```text
 vibeguard audit . --rules .
 ```
 
-If `vibeguard` is not on `PATH` but a trusted local checkout exists, use:
+When actively developing or validating a local VibeGuard checkout, this fallback
+is acceptable:
 
 ```text
 node <VIBEGUARD_ROOT>/src/cli.js audit . --rules .
 ```
 
-Run it again before finishing. Do not run an unpinned GitHub package in
-unattended automation. Use `--fix` only for low-risk safety fixes, and never
-print detected secret values. If VibeGuard cannot run, stop and report the
-blocker instead of treating it as optional.
+Run it again before finishing. Use `--fix` only for low-risk safety fixes, and
+never print detected secret values. If VibeGuard cannot run, stop and report
+the blocker instead of treating it as optional.
 
 ## Workflow Script
 
