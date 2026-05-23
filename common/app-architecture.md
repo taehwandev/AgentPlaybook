@@ -1,6 +1,8 @@
 ---
-
-## keyflow_id: sys_3457cd5aad44 status: draft type: ai-generated
+keyflow_id: sys_3457cd5aad44
+status: draft
+type: ai-generated
+---
 
 # App Architecture Principles
 

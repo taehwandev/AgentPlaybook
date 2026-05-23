@@ -45,30 +45,55 @@ Then load only the supporting documents relevant to the task.
 
 ## Supporting Documents
 
+Use `index.md` as the full document map. Common direct routes:
+
 ```text
 /Users/taehwankwon/Documents/KeyFlowVault/agent/common/llm-coding-discipline.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/code-conventions.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/change-size-policy.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/dependency-policy.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/generated-files-policy.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/architecture-selection.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/architecture-design.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/product-spec-to-implementation.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/common/app-architecture.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/common/refactoring.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/common/testing.md
-/Users/taehwankwon/Documents/KeyFlowVault/agent/common/code-review.md
-/Users/taehwankwon/Documents/KeyFlowVault/agent/common/secure-development-baseline.md
-/Users/taehwankwon/Documents/KeyFlowVault/agent/common/local-tools.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/common/verification-policy.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/local-tools.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/common/agent-editing-safety.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/design-system.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/secure-development-baseline.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/security-privacy-review.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/data-persistence-sync.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/observability-error-handling.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/code-review.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/commit-review.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/common/commit-workflow.md
 ```
 
 ## Platform Documents
 
 ```text
 /Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/web/web-architecture.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/web/web-state-data.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/web/web-accessibility-i18n.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/web/web-review.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/ios/ios-architecture.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/ios/ios-state-concurrency.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/ios/ios-review.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/android/android-architecture.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/android/android-state-data.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/android/android-background-work.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/android/android-security.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/android/android-review.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/server/server-architecture.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/server/server-data-jobs.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/server/server-review.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/application/application-architecture.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/application/application-system-integration.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/application/application-security.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/platforms/application/application-review.md
 ```
 
 ## Product Pattern Documents
@@ -77,6 +102,13 @@ Then load only the supporting documents relevant to the task.
 /Users/taehwankwon/Documents/KeyFlowVault/agent/product-patterns/auth-rbac-permissions.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/product-patterns/invitation-workflows.md
 /Users/taehwankwon/Documents/KeyFlowVault/agent/product-patterns/billing-entitlements.md
+```
+
+## Workflow Documents
+
+```text
+/Users/taehwankwon/Documents/KeyFlowVault/agent/workflows/feature-implementation.md
+/Users/taehwankwon/Documents/KeyFlowVault/agent/workflows/review-and-commit.md
 ```
 
 ## Operating Rule

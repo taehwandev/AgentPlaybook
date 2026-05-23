@@ -11,9 +11,11 @@ Use after implementation, before handing off or committing.
 ## Read
 
 - `common/code-review.md`
+- `common/change-size-policy.md`
 - matching platform review card
 - `common/commit-workflow.md`
 - `common/commit-review.md` when reviewing existing commits
+- `common/generated-files-policy.md` when generated files, lockfiles, or snapshots changed
 
 ## Steps
 

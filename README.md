@@ -38,7 +38,9 @@ templates/        Repo-local routing snippets
 - `AGENTS.md` is the shared entrypoint for agent runtimes.
 - Use `index.md` to choose only the needed documents.
 - Start most coding work from `common/agent-operating-skill.md`.
-- A typical task should load `common/llm-coding-discipline.md`, one platform architecture card, and only relevant detail or concern cards.
+- A typical coding task should load `common/llm-coding-discipline.md`,
+  `common/code-conventions.md`, one platform architecture card, and only
+  relevant detail or concern cards.
 - Security, background work, release, permission, and OS integration concerns should load their detail cards explicitly.
 - Keep repo paths, commands, components, role matrices, domain terms, and product-specific policy out of this library.
 - Keep shared documents short, action-oriented, and reusable.

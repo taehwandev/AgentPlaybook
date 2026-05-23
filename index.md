@@ -12,6 +12,10 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 
 - Agent operating baseline: `common/agent-operating-skill.md`
 - All coding work: `common/llm-coding-discipline.md`
+- Code conventions, naming, comments, formatting: `common/code-conventions.md`
+- Change size and reviewable diff scope: `common/change-size-policy.md`
+- Dependencies, SDKs, packages, build plugins: `common/dependency-policy.md`
+- Generated files, lockfiles, snapshots, build artifacts: `common/generated-files-policy.md`
 - Architecture choice/change: `common/architecture-selection.md`
 - Architecture design: `common/architecture-design.md`
 - New feature or product ambiguity: `common/product-spec-to-implementation.md`
@@ -65,7 +69,16 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 
 ## Loading Rule
 
-For coding, read `common/agent-operating-skill.md` and `common/llm-coding-discipline.md` first. Then read one platform architecture card. Add platform detail, common, or product-pattern cards only when the task touches that concern.
+For coding, read `common/agent-operating-skill.md`,
+`common/llm-coding-discipline.md`, and `common/code-conventions.md` first. Then
+read one platform architecture card. Add platform detail, common, or
+product-pattern cards only when the task touches that concern.
+
+For broad diffs, refactors, PR review, or commit preparation, also read
+`common/change-size-policy.md`. For dependency, SDK, package, build plugin, or
+lockfile work, read `common/dependency-policy.md`. For codegen, generated
+clients, lockfiles, snapshots, build artifacts, translations, or generated
+assets, read `common/generated-files-policy.md`.
 
 For Android work touching background execution, release builds, exported components, deep links, WebView, permissions, or secrets, load the Android background/security cards instead of relying only on the architecture card.
 
@@ -79,6 +92,7 @@ For React/web feature work, usually read:
 
 ```text
 common/llm-coding-discipline.md
+common/code-conventions.md
 platforms/web/web-architecture.md
 platforms/web/web-state-data.md when state/data/storage is touched
 platforms/web/web-accessibility-i18n.md when UI text, forms, menus, dialogs, or localization are touched

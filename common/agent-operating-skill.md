@@ -51,6 +51,10 @@ Before finishing:
 
 - Architecture: `common/architecture-selection.md`,
   `common/architecture-design.md`, or `common/app-architecture.md`.
+- Code conventions: `common/code-conventions.md`.
+- Change size or broad diffs: `common/change-size-policy.md`.
+- Dependencies, SDKs, or build plugins: `common/dependency-policy.md`.
+- Generated files, lockfiles, or snapshots: `common/generated-files-policy.md`.
 - Refactoring: `common/refactoring.md`.
 - Tests and evidence: `common/testing.md` and
   `common/verification-policy.md`.
