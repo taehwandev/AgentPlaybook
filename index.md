@@ -15,6 +15,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `common/agent-interaction.md`
 - All coding work: `common/llm-coding-discipline.md`
 - Code conventions, naming, comments, formatting: `common/code-conventions.md`
+- Reusable code design, extraction, shared module/package contracts:
+  `common/reusable-code-design.md`
 - Stack, package manager, framework, runtime, and command discovery:
   `common/stack-discovery.md`
 - Project, app, repo, package, module, CLI, and service naming: `common/project-naming.md`
@@ -56,15 +58,21 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 ## Platform
 
 - Android architecture: `platforms/android/android-architecture.md`
+- Android Compose UI structure, stateful/stateless split, previews, packages:
+  `platforms/android/android-compose-ui.md`
 - Android state/data: `platforms/android/android-state-data.md`
 - Android background work: `platforms/android/android-background-work.md`
 - Android security: `platforms/android/android-security.md`
 - Android review: `platforms/android/android-review.md`
 - iOS architecture: `platforms/ios/ios-architecture.md`
+- iOS SwiftUI UI structure, ViewModel contracts, UiState, previews, packages:
+  `platforms/ios/ios-swiftui-ui.md`
 - iOS state/concurrency: `platforms/ios/ios-state-concurrency.md`
 - iOS security: `platforms/ios/ios-security.md`
 - iOS review: `platforms/ios/ios-review.md`
 - Web/React architecture: `platforms/web/web-architecture.md`
+- Web/React UI implementation, container/screen split, hooks, UiState:
+  `platforms/web/web-react-ui.md`
 - Web/React state/data: `platforms/web/web-state-data.md`
 - Web accessibility/i18n: `platforms/web/web-accessibility-i18n.md`
 - Web security: `platforms/web/web-security.md`
@@ -168,6 +176,8 @@ services, slugs, bundle ids, or renames, read `common/project-naming.md`.
 For broad diffs, refactors, PR review, or commit preparation, also read
 `common/change-size-policy.md`. When the worktree already contains changes or
 the task includes commit preparation, also read `common/worktree-hygiene.md`.
+When code is extracted into shared modules, reused by multiple callers, or
+promoted into a package/API, also read `common/reusable-code-design.md`.
 For dependency, SDK, package, build plugin, or lockfile work, read
 `common/dependency-policy.md`. For codegen, generated clients, lockfiles,
 snapshots, build artifacts, translations, or generated assets, read
@@ -195,6 +205,16 @@ For Android work touching background execution, release builds, exported
 components, deep links, WebView, permissions, or secrets, load the Android
 background/security cards instead of relying only on the architecture card.
 
+For Android Compose screen or component work, load
+`platforms/android/android-compose-ui.md` before implementation. This includes
+stateful/stateless boundaries, previews, component package structure, and
+design-system promotion decisions.
+
+For iOS SwiftUI screen or component work, load
+`platforms/ios/ios-swiftui-ui.md` before implementation. This includes
+route/screen/section boundaries, ViewModel contracts, explicit `UiState`,
+architecture tracks, previews, and design-system promotion decisions.
+
 For iOS work touching Keychain, Universal Links, URL schemes, app extensions,
 WebViews, permissions, entitlements, signing, release builds, or secrets, load
 the iOS security card instead of relying only on the architecture card.
@@ -213,6 +233,7 @@ For React/web feature work, usually read:
 common/llm-coding-discipline.md
 common/code-conventions.md
 platforms/web/web-architecture.md
+platforms/web/web-react-ui.md
 platforms/web/web-state-data.md when state/data/storage is touched
 platforms/web/web-accessibility-i18n.md when UI text, forms, menus, dialogs,
 or localization are touched

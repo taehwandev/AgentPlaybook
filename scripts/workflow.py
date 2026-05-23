@@ -163,11 +163,13 @@ PLATFORMS: Dict[str, Tuple[str, ...]] = {
     ),
     "ios": (
         "platforms/ios/ios-architecture.md",
+        "platforms/ios/ios-swiftui-ui.md",
         "platforms/ios/ios-state-concurrency.md",
         "platforms/ios/ios-review.md",
     ),
     "web": (
         "platforms/web/web-architecture.md",
+        "platforms/web/web-react-ui.md",
         "platforms/web/web-state-data.md",
         "platforms/web/web-review.md",
     ),
@@ -187,6 +189,7 @@ PLATFORMS: Dict[str, Tuple[str, ...]] = {
 CONCERNS: Dict[str, Tuple[str, ...]] = {
     "security": ("common/secure-development-baseline.md", "common/security-privacy-review.md"),
     "api": ("common/api-contract-compatibility.md",),
+    "reusability": ("common/reusable-code-design.md",),
     "ui": ("common/design-system.md", "common/ui-visual-verification.md"),
     "accessibility": ("common/accessibility-i18n.md",),
     "persistence": ("common/data-persistence-sync.md",),
@@ -209,9 +212,15 @@ CONCERNS: Dict[str, Tuple[str, ...]] = {
 
 PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
     ("android", "security"): ("platforms/android/android-security.md",),
+    ("android", "compose"): ("platforms/android/android-compose-ui.md",),
+    ("android", "ui"): ("platforms/android/android-compose-ui.md",),
     ("android", "background"): ("platforms/android/android-background-work.md",),
     ("ios", "security"): ("platforms/ios/ios-security.md",),
+    ("ios", "swiftui"): ("platforms/ios/ios-swiftui-ui.md",),
+    ("ios", "ui"): ("platforms/ios/ios-swiftui-ui.md",),
     ("web", "accessibility"): ("platforms/web/web-accessibility-i18n.md",),
+    ("web", "react"): ("platforms/web/web-react-ui.md",),
+    ("web", "ui"): ("platforms/web/web-react-ui.md",),
     ("web", "security"): ("platforms/web/web-security.md",),
     ("server", "security"): ("platforms/server/server-security.md",),
     ("application", "security"): ("platforms/application/application-security.md",),

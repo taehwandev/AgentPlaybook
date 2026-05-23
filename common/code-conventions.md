@@ -15,6 +15,10 @@ common baseline.
 For app, repo, package, module, CLI, service, slug, or bundle-id naming, also
 use `common/project-naming.md`.
 
+For code that is being extracted, moved into shared modules, reused by multiple
+callers, or promoted to a package/API, also use
+`common/reusable-code-design.md`.
+
 ## Priority
 
 1. Repo-local formatter, linter, compiler, and framework rules.
@@ -25,6 +29,8 @@ use `common/project-naming.md`.
 ## Rules
 
 - Make code easy to delete, move, and test.
+- Treat reuse as an ownership boundary. Extract shared code only when the caller
+  contract is clear enough to make future changes easier.
 - Prefer clear names over comments that explain unclear names.
 - Keep each function, component, class, hook, or service focused on one reason to change.
 - Keep UI, state, domain, data, and platform concerns separated at the nearest useful boundary.
@@ -57,5 +63,7 @@ For diff-size and split decisions, use `common/change-size-policy.md`.
 
 - Can a reviewer name the responsibility of this unit in one sentence?
 - Can the behavior be tested without booting unrelated systems?
+- Is shared code genuinely reusable, or did it only move duplication behind a
+  flag-heavy API?
 - Did this follow nearby naming, formatting, and architecture?
 - Is any complexity protecting a real product, platform, security, or data risk?

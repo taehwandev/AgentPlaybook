@@ -11,6 +11,9 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 ## Review
 
 - Check Compose state hoisting, ViewModel ownership, Flow collection, and lifecycle safety.
+- Check stateful holder vs stateless screen/component boundaries.
+- Confirm meaningful screen, section, and reusable component changes include
+  previews or a documented replacement check.
 - Verify loading, empty, error, permission-denied, and offline states.
 - Ensure repository/data source boundaries are not bypassed from UI.
 - Check permission, activity result, navigation argument, and process recreation behavior.
@@ -31,6 +34,7 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 ## UI Test Focus
 
 - Screen renders expected state from fake ViewModel/state.
+- Stateless screen and component previews cover the changed visual states.
 - User actions emit correct events or trigger expected navigation.
 - Permission denied and retry flows are covered.
 - Rotation, process death, or lifecycle changes do not lose critical state.

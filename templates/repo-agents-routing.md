@@ -50,6 +50,7 @@ Agent operating skill: <AGENTPLAYBOOK_ROOT>/common/agent-operating-skill.md
 Stack discovery: <AGENTPLAYBOOK_ROOT>/common/stack-discovery.md
 LLM discipline: <AGENTPLAYBOOK_ROOT>/common/llm-coding-discipline.md
 Code conventions: <AGENTPLAYBOOK_ROOT>/common/code-conventions.md
+Reusable code design: <AGENTPLAYBOOK_ROOT>/common/reusable-code-design.md
 Tool failure recovery: <AGENTPLAYBOOK_ROOT>/common/tool-failure-recovery.md
 Agent interaction: <AGENTPLAYBOOK_ROOT>/common/agent-interaction.md
 LLM wiki documentation: <AGENTPLAYBOOK_ROOT>/common/llm-wiki-documentation.md
@@ -58,6 +59,9 @@ Worktree hygiene: <AGENTPLAYBOOK_ROOT>/common/worktree-hygiene.md
 Defensive boundaries: <AGENTPLAYBOOK_ROOT>/common/defensive-boundaries.md
 UI visual verification: <AGENTPLAYBOOK_ROOT>/common/ui-visual-verification.md
 Workflow script: <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
+Android Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/android/android-compose-ui.md
+iOS SwiftUI UI: <AGENTPLAYBOOK_ROOT>/platforms/ios/ios-swiftui-ui.md
+Web React UI: <AGENTPLAYBOOK_ROOT>/platforms/web/web-react-ui.md
 Agent task lifecycle: <AGENTPLAYBOOK_ROOT>/workflows/agent-task-lifecycle.md
 Agent handoff/continuation: <AGENTPLAYBOOK_ROOT>/workflows/agent-handoff-continuation.md
 Scripted agent workflow: <AGENTPLAYBOOK_ROOT>/workflows/scripted-agent-workflow.md

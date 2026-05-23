@@ -249,9 +249,9 @@ Supported commands are `ambiguity`, `bugfix`, `docs`, `docs-review`, `feature`,
 
 Supported platforms are `android`, `application`, `ios`, `server`, and `web`.
 Supported concerns are `accessibility`, `api`, `auth`, `background`, `billing`,
-`cache`, `defensive`, `dependency`, `failure`, `generated`, `interaction`,
-`invite`, `observability`, `persistence`, `release`, `security`, `stack`, `ui`,
-`wiki`, and `worktree`.
+`cache`, `compose`, `defensive`, `dependency`, `failure`, `generated`,
+`interaction`, `invite`, `observability`, `persistence`, `react`, `release`,
+`reusability`, `security`, `stack`, `swiftui`, `ui`, `wiki`, and `worktree`.
 
 The route output contains `docs`, `gates`, `gate_ledger`, `attempt_limit`,
 `retry_scope`, `notes`, and `missing`. Agents should read the listed docs in
@@ -276,6 +276,34 @@ workflows/        Repeatable agent work paths
 scripts/          Executable workflow routers and validators
 templates/        Repo-local routing snippets
 docs/             Static public site source
+```
+
+## Concrete Implementation Guides
+
+AgentPlaybook cards should not stop at "write clean code." Platform routes now
+include implementation-detail cards that tell an agent which boundary to create,
+where state should live, and what evidence proves the work.
+
+- Android Compose: `platforms/android/android-compose-ui.md` covers
+  route/screen/component splits, `UiState`, architecture tracks, previews,
+  package layout, and verification.
+- iOS SwiftUI: `platforms/ios/ios-swiftui-ui.md` covers route/coordinator,
+  screen/section/view splits, ViewModel contracts, `UiState`, clean
+  architecture, previews, navigation effects, and tests.
+- Web React: `platforms/web/web-react-ui.md` covers route/page,
+  container/screen splits, hooks, typed `UiState`, query/mutation boundaries,
+  clean architecture, reusable components, and tests.
+- Shared reuse: `common/reusable-code-design.md` covers when code should stay
+  local, move into feature common, become a design-system primitive, or become a
+  shared package/API.
+
+For implementation work, route with the platform and concern instead of relying
+on only a broad architecture card:
+
+```bash
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform ios --concern swiftui
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform web --concern react --concern ui
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform android --concern compose
 ```
 
 ## Loading Model

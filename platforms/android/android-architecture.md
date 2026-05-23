@@ -10,6 +10,9 @@ Use for Compose/ViewModel/Flow, data, and Android platform boundary work.
 
 For Compose state, Flow, repository, persistence, permissions, or lifecycle details, also use `android-state-data.md`.
 
+For Compose screen/component structure, stateful/stateless split, previews, or
+package layout, also use `android-compose-ui.md`.
+
 For credentials, deep links, exported components, WebView, or release builds, also use `android-security.md`.
 
 For WorkManager, foreground services, alarms, notifications, sync, uploads, or downloads, also use `android-background-work.md`.
@@ -23,6 +26,8 @@ Screen/Composable/Fragment -> ViewModel -> Use Case -> Repository -> Data Source
 ## Rules
 
 - Composable renders state and sends events.
+- Split ViewModel-backed holder composables from stateless screen/content
+  composables.
 - ViewModel owns UI state and lifecycle-aware work.
 - Model loading, empty, error, permission denied explicitly.
 - Keep one-off events separate from persistent state.

@@ -11,6 +11,10 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
 ## Review
 
 - Check View/ViewModel ownership, navigation state, async task lifetime, and cancellation.
+- Check SwiftUI route/screen/section boundaries against
+  `ios-swiftui-ui.md` when SwiftUI screens changed.
+- Confirm `UiState` represents loading, content, empty, error, permission
+  denied, offline, disabled, and submitted states when applicable.
 - Verify main actor boundaries for UI updates.
 - Ensure API, persistence, keychain, file, notification, and permission APIs are wrapped.
 - Check loading, empty, error, permission-denied, and offline states.
@@ -31,6 +35,8 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
 - Main flow works from launch to completion.
 - Permission prompts and denied states are handled.
 - Async loading and cancellation do not leave stale UI.
+- SwiftUI previews or an equivalent visual check cover the changed visual
+  states when UI structure changed.
 - Dynamic Type, small screens, and VoiceOver labels are considered.
 - Release configuration does not expose debug endpoints, secrets, or broad
   entitlements.

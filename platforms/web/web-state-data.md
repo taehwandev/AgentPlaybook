@@ -8,6 +8,9 @@ type: ai-generated
 
 Use when touching React client state, server state, forms, API clients, cache, mocks, or browser persistence.
 
+For React container/screen boundaries, hook contracts, and typed `UiState`
+examples, also use `web-react-ui.md`.
+
 ## Defaults
 
 - Server state belongs in query/cache tools when the repo has one.
@@ -26,6 +29,16 @@ Need many routes to know it? -> session provider/store
 Need reload persistence? -> browser storage with migration
 Need document/business mutation? -> domain/store/use-case boundary
 ```
+
+## UiState
+
+- Use discriminated unions or typed state objects for screen states instead of
+  unrelated booleans and nullable fields.
+- Keep one-off effects such as toast, navigation, focus, file download, and
+  permission prompt separate from persistent state.
+- Convert DTOs to UI models before JSX renders them.
+- Keep protected access policy in named helpers or server/API boundaries; UI
+  visibility is not authorization.
 
 ## Browser Storage
 

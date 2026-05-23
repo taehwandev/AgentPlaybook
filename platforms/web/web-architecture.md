@@ -9,6 +9,8 @@ type: ai-generated
 Use for React web UI work: routing, pages, components, hooks, forms, data fetching, browser storage, and browser UX.
 
 Also use:
+- `web-react-ui.md` for route/page, container/screen, hook, `UiState`, reusable
+  component, and clean-architecture implementation details.
 - `web-state-data.md` for state, cache, forms, API clients, mocks, and browser persistence.
 - `web-accessibility-i18n.md` for text, focus, keyboard, dialogs, responsive copy, and localization.
 - `web-security.md` for auth, browser storage, tokens, redirects, embeds, uploads, and client-visible config.
@@ -25,6 +27,8 @@ Route/Page -> Feature -> Component -> Hook -> Service/Client
 - Component renders UI and emits intent. It should not own product policy.
 - Hook owns reusable state/effect wiring, not hidden business rules.
 - Service/Client owns HTTP, SDK, storage, and DTO conversion boundaries.
+- Split containers that wire state/effects from screens/components that render
+  explicit `UiState` and callbacks.
 
 ## React State Placement
 
@@ -39,6 +43,8 @@ Route/Page -> Feature -> Component -> Hook -> Service/Client
 
 - Keep server state separate from local UI state.
 - Keep form, modal, and selection state near the interaction owner.
+- Model loading, content, empty, error, permission denied, offline, disabled,
+  and submitted states explicitly when the flow can reach them.
 - Do not repeat raw fetch calls inside components.
 - Convert DTOs before they leak into JSX.
 - Use existing design system primitives first.

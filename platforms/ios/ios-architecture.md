@@ -8,6 +8,9 @@ type: ai-generated
 
 Use for SwiftUI/UIKit app structure, state, navigation, and async work.
 
+For SwiftUI screen/component structure, ViewModel contracts, `UiState`, previews,
+or clean-architecture implementation details, also use `ios-swiftui-ui.md`.
+
 For navigation, async work, persistence, permissions, or actor boundaries, also use `ios-state-concurrency.md`.
 
 For credentials, Keychain, local storage, Universal Links, URL schemes,
@@ -22,7 +25,11 @@ View/ViewController -> ViewModel/State -> Use Case -> Repository/Client -> Platf
 ## Rules
 
 - View renders state and sends intent.
+- Keep ViewModel-backed containers thin and delegate rendering to explicit
+  screen/section views when SwiftUI is used.
 - Model loading, empty, error, permission states explicitly.
+- Choose simple SwiftUI, MVVM, clean architecture, or reducer/state-machine
+  tracks based on real state, side-effect, domain, and test pressure.
 - Keep async task ownership and cancellation visible.
 - Keep UI updates on the correct actor boundary.
 - Wrap API, persistence, keychain, file, notification, permission APIs.

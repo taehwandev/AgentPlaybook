@@ -8,10 +8,15 @@ type: ai-generated
 
 Use when touching SwiftUI/UIKit state, navigation, async work, or platform permissions.
 
+For SwiftUI `UiState`, ViewModel, screen composition, and preview rules, also use
+`ios-swiftui-ui.md`.
+
 ## Defaults
 
 - View owns only local presentation state.
 - ViewModel or observable state owns loading, empty, error, and permission states.
+- Prefer typed state models or enums over scattered booleans and nullable data
+  when states are mutually exclusive.
 - Navigation state is modeled, not hidden in side effects.
 - Async work has visible ownership, cancellation, and error handling.
 - UI updates respect actor boundaries.

@@ -11,6 +11,10 @@ Use for React/web UI, browser behavior, and frontend PR review.
 ## Review
 
 - Check route/data boundaries, cache invalidation, form validation, and error states.
+- Check route/page, container/screen, hook, and component boundaries against
+  `web-react-ui.md` when React UI changed.
+- Confirm typed UI state represents loading, content, empty, error, permission
+  denied, offline, disabled, and submitted states when applicable.
 - Verify accessibility: labels, roles, focus order, keyboard use, contrast.
 - Check responsive layout for mobile, tablet, desktop.
 - Ensure permission and entitlement checks are not UI-only.
@@ -45,6 +49,8 @@ Use for React/web UI, browser behavior, and frontend PR review.
 
 - User can complete the main flow.
 - Loading, empty, error, and permission-denied states render correctly.
+- Container/screen split or equivalent keeps data/effects out of presentational
+  components.
 - Keyboard-only path works for forms, dialogs, menus, tables.
 - No text overflow or layout break across key viewport sizes.
 - Denied users cannot trigger the protected command, not only fail to see the button.
