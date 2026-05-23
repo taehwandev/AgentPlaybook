@@ -26,6 +26,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Defensive handling for external, persisted, generated, cached, or user-provided
   values: `common/defensive-boundaries.md`
 - Release, deployment, packaging, rollback: `common/release-deployment.md`
+- Release version, tag, artifact, build number, and deployment id scheme:
+  `common/release-versioning.md`
 - Accessibility, localization, dates, numbers, UI text: `common/accessibility-i18n.md`
 - Architecture choice/change: `common/architecture-selection.md`
 - Architecture design: `common/architecture-design.md`
@@ -160,8 +162,10 @@ snapshots, build artifacts, translations, or generated assets, read
 For API, DTO, route, event, webhook, shared fixture, or generated client
 changes, read `common/api-contract-compatibility.md`. For packaging,
 deployment, publishing, signing, migration rollout, or rollback-sensitive work,
-read `common/release-deployment.md`. For user-facing text, forms, controls,
-dates, numbers, media, or localization, read `common/accessibility-i18n.md`.
+read `common/release-deployment.md`. For release version, package version, app
+version, build number, tag, artifact name, or deployment id changes, also read
+`common/release-versioning.md`. For user-facing text, forms, controls, dates,
+numbers, media, or localization, read `common/accessibility-i18n.md`.
 
 For code that consumes external, persisted, generated, cached, platform, or
 user-provided values, read `common/defensive-boundaries.md`.

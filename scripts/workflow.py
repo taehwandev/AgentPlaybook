@@ -117,7 +117,11 @@ COMMANDS: Dict[str, Profile] = {
         notes=("Use when work is delegated, parallelized, or split into builder/verifier roles.",),
     ),
     "release": Profile(
-        docs=("workflows/release-readiness.md", "common/release-deployment.md"),
+        docs=(
+            "workflows/release-readiness.md",
+            "common/release-deployment.md",
+            "common/release-versioning.md",
+        ),
         gates=("package", "config", "smoke", "rollback", "handoff"),
     ),
     "retrospective": Profile(
@@ -163,7 +167,7 @@ CONCERNS: Dict[str, Tuple[str, ...]] = {
     "accessibility": ("common/accessibility-i18n.md",),
     "persistence": ("common/data-persistence-sync.md",),
     "cache": ("common/server-side-caching.md",),
-    "release": ("common/release-deployment.md",),
+    "release": ("common/release-deployment.md", "common/release-versioning.md"),
     "dependency": ("common/dependency-policy.md",),
     "generated": ("common/generated-files-policy.md",),
     "worktree": ("common/worktree-hygiene.md",),

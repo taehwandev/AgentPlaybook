@@ -93,8 +93,8 @@ Before finishing:
   `common/api-contract-compatibility.md`.
 - External, persisted, generated, cached, platform, or user-provided values:
   `common/defensive-boundaries.md`.
-- Release, deployment, packaging, signing, rollout, or rollback:
-  `common/release-deployment.md`.
+- Release, deployment, packaging, signing, rollout, rollback, versioning, or
+  tags: `common/release-deployment.md` and `common/release-versioning.md`.
 - User-facing text, forms, controls, dates, numbers, or localization:
   `common/accessibility-i18n.md`.
 - UI layout, interaction, text overflow, responsive behavior, or

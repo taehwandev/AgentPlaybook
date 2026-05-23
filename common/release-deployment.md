@@ -42,6 +42,21 @@ environment, verification gate, and rollback or forward-fix path.
   production config.
 - Release tags should identify the exact source revision used to build and
   publish artifacts, not just the latest branch head.
+- Version schemes should follow `common/release-versioning.md` and the
+  repo-local release contract.
+
+## Versioning
+
+Before choosing or changing a release version, read
+`common/release-versioning.md`.
+
+Do not impose one calendar versioning scheme across unrelated projects. The
+shared rule is to choose a documented scheme per artifact and keep it stable:
+
+- SemVer for compatibility-sensitive libraries, APIs, SDKs, generated clients,
+  plugins, or packages.
+- Monthly CalVer for apps, services, and date-oriented product releases.
+- Weekly CalVer only for real weekly release trains or operations cadences.
 
 ## Tag And Artifact Ownership
 

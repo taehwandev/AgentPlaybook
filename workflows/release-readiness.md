@@ -12,6 +12,7 @@ signing, or handing off release-sensitive work.
 ## Read
 
 - `common/release-deployment.md`
+- `common/release-versioning.md`
 - `common/verification-policy.md`
 - `common/secure-development-baseline.md`
 - `common/generated-files-policy.md`
@@ -20,17 +21,24 @@ signing, or handing off release-sensitive work.
 
 ## Steps
 
-1. Identify artifact, source revision, target environment, release owner, and rollback or forward-fix path.
-2. Inspect final diff for secrets, local config, generated files, migrations, dependency churn, and contract changes.
+1. Identify artifact, source revision, version scheme, target environment,
+   release owner, and rollback or forward-fix path.
+2. Inspect final diff for secrets, local config, generated files, migrations,
+   dependency churn, and contract changes.
 3. Run required build, package, migration, signing, or smoke checks.
 4. Verify tag, version, source revision, and artifact provenance match when tags
    are part of the release process.
-5. Verify environment config, secret injection, callback URLs, app ids, domains, and package identity when relevant.
-6. Record user-visible changes, breaking changes, security impact, operator action, and known residual risk.
-7. Confirm post-release smoke, logs, monitoring, or health checks can detect failure.
+5. Verify environment config, secret injection, callback URLs, app ids, domains,
+   and package identity when relevant.
+6. Record user-visible changes, breaking changes, security impact, operator
+   action, and known residual risk.
+7. Confirm post-release smoke, logs, monitoring, or health checks can detect
+   failure.
 
 ## Stop If
 
 - The release artifact or target environment is unclear.
+- The version scheme, reset rule, or version/tag/artifact relationship is
+  unclear.
 - A migration, signing, secret, or deployment change lacks a recovery path.
 - Required verification cannot run and no owner has accepted the release risk.
