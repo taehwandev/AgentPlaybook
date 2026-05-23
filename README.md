@@ -124,6 +124,38 @@ repo-specific commands, paths, services, product policy, and domain language in
 this repo.
 ```
 
+## Prompt A Local Agent
+
+When prompting Codex, Claude, Antigravity, or another local agent inside a
+project, tell it to read the current project's own agent instructions first.
+That keeps project commands, paths, product policy, and local constraints in the
+target repo while AgentPlaybook supplies shared workflow discipline.
+
+Use this shape for one task:
+
+```text
+Use this project's current agent instructions first.
+Read whichever exist in the target repo:
+AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
+CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+
+Then use AgentPlaybook:
+<AGENTPLAYBOOK_ROOT>/AGENTS.md
+<AGENTPLAYBOOK_ROOT>/index.md
+<AGENTPLAYBOOK_ROOT>/scripts/workflow.py
+
+Run VibeGuard audit with <AGENTPLAYBOOK_ROOT> as --rules before editing.
+For multi-step work, run the workflow route and follow its gate ledger.
+After each completed gate or task step, show:
+Gate signal: <gate> / executed / evidence: <evidence> / next: <next gate>
+
+For PRD-only work:
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --platform <platform> --concern <concern>
+
+For PRD -> ARD -> implementation:
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --platform <platform> --concern <concern>
+```
+
 Full bootstrap instructions live in [docs/agent-bootstrap.md](docs/agent-bootstrap.md).
 A shorter reusable prompt lives in
 [templates/apply-agentplaybook-request.md](templates/apply-agentplaybook-request.md).
@@ -174,8 +206,8 @@ python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
 ```
 
 Supported commands are `ambiguity`, `bugfix`, `docs`, `docs-review`, `feature`,
-`multi-agent`, `planning`, `product`, `refactor`, `release`, `retrospective`,
-`review`, and `task`.
+`multi-agent`, `planning`, `prd`, `product`, `refactor`, `release`,
+`retrospective`, `review`, and `task`.
 
 Supported platforms are `android`, `application`, `ios`, `server`, and `web`.
 Supported concerns are `accessibility`, `api`, `auth`, `background`, `billing`,
@@ -186,11 +218,11 @@ Supported concerns are `accessibility`, `api`, `auth`, `background`, `billing`,
 The route output contains `docs`, `gates`, `gate_ledger`, `attempt_limit`,
 `retry_scope`, `notes`, and `missing`. Agents should read the listed docs in
 order, use gates as the task checklist, mark each gate with evidence while
-working, and stop if any document is listed under `missing`. If a required gate
-is missed, the agent must stop finalization, return to the first missed gate
-only, roll back dependent agent-made changes when safe, and run the
-retrospective workflow. The missed gate gets one retry; the whole route is not
-restarted.
+working, and show a short gate signal after each completed gate or task step.
+Stop if any document is listed under `missing`. If a required gate is missed,
+the agent must stop finalization, return to the first missed gate only, roll
+back dependent agent-made changes when safe, and run the retrospective workflow.
+The missed gate gets one retry; the whole route is not restarted.
 
 ## Structure
 

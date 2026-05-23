@@ -18,7 +18,8 @@ mistakes.
 4. For multi-step tasks, use `scripts/workflow.py` when available to generate
    the workflow route.
 5. Keep a gate execution ledger for the route and mark each gate with evidence
-   when it is executed.
+   when it is executed. Show a short gate signal after each completed gate or
+   task step.
 6. Use `index.md` to load only relevant AgentPlaybook cards.
 7. Inspect existing code, docs, tests, and local conventions.
 8. Make the smallest change that genuinely addresses the request.
@@ -71,6 +72,7 @@ Before finishing:
 - Interrupted or transferred work: `workflows/agent-handoff-continuation.md`.
 - Ambiguous requests or blocker unknowns before PRD, ARD, task breakdown, or
   implementation: `workflows/ambiguity-gate.md`.
+- PRD or product requirements note: `workflows/prd-creation.md`.
 - Multi-step development: `workflows/development-cycle.md`.
 - Delegated or parallel agent work: `workflows/multi-agent-collaboration.md`.
 - Non-trivial review or release candidate review:

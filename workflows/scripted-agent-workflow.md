@@ -98,7 +98,7 @@ The route output is the command manifest for the agent:
 
 - `docs`: read these documents in order before editing or reviewing.
 - `gates`: use these as the task checklist and report against them.
-- `gate_ledger`: mark each gate as executed with evidence before final report.
+- `gate_ledger`: mark and show each gate as executed when it completes.
 - `attempt_limit`: original execution plus one retry for the missed gate.
 - `retry_scope`: where recovery resumes; this should be `first_missed_gate`.
 - `notes`: apply these routing hints before choosing commands or edits.
@@ -119,7 +119,17 @@ Attempt for this gate: 1/2
 ```
 
 Do not wait until the final response to reconstruct the ledger from memory. Mark
-each gate when it is executed.
+and show each gate when it is executed.
+
+After each completed gate or task step, emit a short progress signal in the
+active conversation or handoff record:
+
+```text
+Gate signal: <gate> / executed / evidence: <command, file, diff, note, or manual check> / next: <next gate>
+```
+
+Keep the signal short. It exists so humans and later agents can notice missed
+gates immediately instead of discovering them only in the final report.
 
 Before finalizing, compare the route's `gates` with the ledger:
 
@@ -156,6 +166,7 @@ The current script exposes these stable command profiles:
 - `task`: general multi-step agent work.
 - `ambiguity`: classify blockers, researchable unknowns, assumptions, and
   out-of-scope items before planning or implementation.
+- `prd`: produce or update a PRD/product requirements note before ARD or code.
 - `product`: PRD -> ARD -> review -> code -> review -> tests -> UI tests ->
   commit readiness.
 - `feature`: scoped feature implementation.

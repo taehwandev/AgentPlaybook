@@ -90,6 +90,7 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Agent handoff/continuation: `workflows/agent-handoff-continuation.md`
 - Scripted workflow routing: `workflows/scripted-agent-workflow.md`
 - Ambiguity gate: `workflows/ambiguity-gate.md`
+- PRD creation: `workflows/prd-creation.md`
 - Product architecture delivery: `workflows/product-architecture-delivery.md`
 - Development cycle: `workflows/development-cycle.md`
 - Multi-agent collaboration: `workflows/multi-agent-collaboration.md`
@@ -108,13 +109,21 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 For any multi-step agent task, start with `workflows/agent-task-lifecycle.md`.
 When `scripts/workflow.py` is available, use it to generate the command route
 before manually selecting workflow documents. Treat the route's gate ledger as a
-required execution record, not a summary to reconstruct after the work.
+required execution record, not a summary to reconstruct after the work. Show a
+short gate signal after each completed gate or task step.
 
 Before running project commands, adding dependencies, or using framework-specific
 APIs, use `common/stack-discovery.md`. When a command fails, use
 `common/tool-failure-recovery.md` before retrying or changing code. When the
 agent needs to ask a blocker question or approval, use
 `common/agent-interaction.md`.
+
+For PRD-only work, use `workflows/prd-creation.md` and prefer this scripted
+route:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --platform <platform> --concern <concern>
+```
 
 For product or feature work that needs PRD -> ARD -> implementation ->
 verification gates, use `workflows/product-architecture-delivery.md` and prefer

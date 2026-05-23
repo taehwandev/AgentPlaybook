@@ -65,6 +65,15 @@ treat approval for one risky action as permission for unrelated risky actions.
 For long-running work, report what context was gathered, what changed in the
 plan, and what verification remains. Keep updates short and evidence-based.
 
+When a scripted workflow route is used, show a gate signal after each completed
+gate or task step:
+
+```text
+Gate signal: <gate> / executed / evidence: <evidence> / next: <next gate>
+```
+
+Do not wait until the final response to reveal that a required gate was skipped.
+
 ## Handoff
 
 When stopping before completion, include:

@@ -68,6 +68,22 @@ COMMANDS: Dict[str, Profile] = {
         ),
         notes=("Use when product intent must become architecture and code.",),
     ),
+    "prd": Profile(
+        docs=(
+            "workflows/ambiguity-gate.md",
+            "workflows/prd-creation.md",
+            "common/product-spec-to-implementation.md",
+        ),
+        gates=(
+            "local product docs",
+            "ambiguity check",
+            "PRD draft",
+            "acceptance criteria",
+            "open decisions",
+            "handoff",
+        ),
+        notes=("Use when the deliverable is a PRD or product requirements note before ARD or code.",),
+    ),
     "ambiguity": Profile(
         docs=("workflows/ambiguity-gate.md", "common/product-spec-to-implementation.md"),
         gates=("classify unknowns", "research repo-answerable items", "ask blockers", "record assumptions"),
@@ -268,9 +284,12 @@ def print_markdown(route: Dict[str, object]) -> None:
     print("Attempt limit: `2`")
     print("Retry scope: `first_missed_gate`")
     print()
-    print("Mark every gate before final report:")
+    print("Mark and show every gate as it completes:")
     for item in route["gate_ledger"]:
         print(f"- [ ] `{item['gate']}` - evidence: ...")
+    print()
+    print("Progress signal format:")
+    print("`Gate signal: <gate> / executed / evidence: <evidence> / next: <next gate>`")
     print()
     print("If any required gate is not executed, stop finalization, return to the")
     print("first missed gate only, roll back only dependent agent-made changes when")

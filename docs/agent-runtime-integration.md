@@ -93,13 +93,17 @@ Generic agents:
 
 For every runtime:
 
-1. Identify the target repo and repo-local instructions.
+1. Identify the target repo and read the current repo-local instructions:
+   `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`,
+   `.agents/README.md`, `CONTRIBUTING.md`, task docs, PRD/ARD docs, or
+   equivalent project guidance.
 2. Locate the AgentPlaybook root.
 3. Run VibeGuard audit with the selected root as `--rules`.
 4. Read AgentPlaybook `AGENTS.md`.
 5. Use `index.md` or `scripts/workflow.py` to select the smallest document set.
-6. When a scripted route is used, keep a gate execution ledger and mark each
-   route gate with evidence when it is executed.
+6. When a scripted route is used, keep a gate execution ledger, mark each route
+   gate with evidence when it is executed, and show a short gate signal after
+   each completed gate or task step.
 7. Load only selected cards.
 8. Execute repo-local commands only from trusted repo-local instructions.
 9. Before reporting completion, confirm every required route gate has ledger
@@ -116,6 +120,7 @@ gate gets one retry; the whole route is not restarted.
 After connecting a runtime, verify:
 
 - the target repo instruction file points to the selected AgentPlaybook root
+- the runtime still reads the target repo's current agent instructions first
 - `AGENTS.md`, `index.md`, and `scripts/workflow.py` exist under that root
 - VibeGuard setup/audit passed or stopped with a reported blocker
 - the route gate ledger was completed when a scripted route was used

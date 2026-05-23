@@ -29,7 +29,8 @@ python3 scripts/workflow.py list
 - `agent-handoff-continuation.md`: preserve state across interruption, resume, or handoff.
 - `scripted-agent-workflow.md`: define script-backed command routing for agents.
 - `ambiguity-gate.md`: classify blockers, researchable unknowns, safe assumptions, and out-of-scope items before PRD, ARD, or implementation.
-- `product-architecture-delivery.md`: run PRD -> ARD -> review -> code -> review -> tests -> UI tests -> commit readiness.
+- `prd-creation.md`: write a PRD or product requirements note before ARD or code.
+- `product-architecture-delivery.md`: run PRD -> ARD -> review -> code -> review -> tests -> UI tests -> commit readiness with `product`.
 - `development-cycle.md`: complete the common build/change/verify/side-effect-audit/handoff cycle.
 - `multi-agent-collaboration.md`: split delegated or parallel agent work with explicit roles, gates, and disjoint write scopes.
 - `multi-perspective-review.md`: review non-trivial work through product, UX, architecture, reliability, security, release, and QA lenses.

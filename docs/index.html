@@ -14,6 +14,7 @@
     <header class="hero">
       <nav class="nav" aria-label="Primary navigation" data-i18n-attr="aria-label:nav.label">
         <div class="nav-links">
+          <a href="#prompting" data-i18n="nav.prompting">Prompting</a>
           <a href="#library" data-i18n="nav.library">Library</a>
           <a href="#tracks" data-i18n="nav.tracks">Tracks</a>
           <a href="#workflows" data-i18n="nav.workflows">Workflows</a>
@@ -40,6 +41,54 @@
     </header>
 
     <main>
+      <section id="prompting" class="section band">
+        <div class="section-heading">
+          <p class="eyebrow" data-i18n="prompting.eyebrow">Agent Delivery</p>
+          <h2 data-i18n="prompting.title">Tell the agent where to start.</h2>
+        </div>
+        <div class="grid three">
+          <article>
+            <h3 data-i18n="prompting.local.title">Read The Project First</h3>
+            <p data-i18n="prompting.local.body">
+              Local prompts should tell Codex, Claude, Antigravity, or another
+              agent to read the current project's AGENTS.md, CLAUDE.md, CODEX.md,
+              .agents/README.md, task docs, and PRD/ARD docs before applying
+              shared guidance.
+            </p>
+          </article>
+          <article>
+            <h3 data-i18n="prompting.prd.title">PRD Has Its Own Route</h3>
+            <p data-i18n="prompting.prd.body">
+              Use the prd route when the deliverable is a product requirements
+              note. Use the product route only when the task continues from PRD
+              into ARD, code, tests, UI checks, and commit readiness.
+            </p>
+          </article>
+          <article>
+            <h3 data-i18n="prompting.signal.title">Show Gate Signals</h3>
+            <p data-i18n="prompting.signal.body">
+              Every completed gate or task step should emit a short signal with
+              the gate name, evidence, and next gate. Missed gates should be
+              visible immediately, not discovered only at the final report.
+            </p>
+          </article>
+        </div>
+        <pre><code data-i18n="prompting.code">Use this project's current agent instructions first:
+AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
+CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+
+Then use AgentPlaybook:
+${AGENTPLAYBOOK_HOME}/AGENTS.md
+${AGENTPLAYBOOK_HOME}/index.md
+${AGENTPLAYBOOK_HOME}/scripts/workflow.py
+
+PRD only:
+python3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py route prd --platform web --concern ui
+
+After each completed gate:
+Gate signal: &lt;gate&gt; / executed / evidence: &lt;evidence&gt; / next: &lt;next gate&gt;</code></pre>
+      </section>
+
       <section id="library" class="section">
         <div class="section-heading">
           <p class="eyebrow" data-i18n="library.eyebrow">Library Model</p>
@@ -117,6 +166,15 @@
               out-of-scope items before planning or implementation.
             </p>
             <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/ambiguity-gate.md" data-i18n="workflow.link">Open workflow</a>
+          </article>
+          <article>
+            <h3 data-i18n="workflow.prd.title">PRD Creation</h3>
+            <p data-i18n="workflow.prd.body">
+              Produce a product requirements note with source-of-truth,
+              ambiguity, actor, outcome, scope, states, acceptance criteria, and
+              open-decision gates before ARD or code.
+            </p>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/prd-creation.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
             <h3 data-i18n="workflow.product_architecture.title">Product Architecture Delivery</h3>
@@ -232,6 +290,7 @@ Do not load every shared document by default.</code></pre>
           "meta.title": "Agent Playbook",
           "meta.description": "A compact shared playbook for AI coding agents, platform architecture, review, commits, and reusable product workflows.",
           "nav.label": "Primary navigation",
+          "nav.prompting": "Prompting",
           "nav.library": "Library",
           "nav.tracks": "Tracks",
           "nav.workflows": "Workflows",
@@ -244,6 +303,15 @@ Do not load every shared document by default.</code></pre>
           "hero.document_index": "Document Index",
           "hero.apply_guide": "Apply Guide",
           "hero.runtime_guide": "Runtime Guide",
+          "prompting.eyebrow": "Agent Delivery",
+          "prompting.title": "Tell the agent where to start.",
+          "prompting.local.title": "Read The Project First",
+          "prompting.local.body": "Local prompts should tell Codex, Claude, Antigravity, or another agent to read the current project's AGENTS.md, CLAUDE.md, CODEX.md, .agents/README.md, task docs, and PRD/ARD docs before applying shared guidance.",
+          "prompting.prd.title": "PRD Has Its Own Route",
+          "prompting.prd.body": "Use the prd route when the deliverable is a product requirements note. Use the product route only when the task continues from PRD into ARD, code, tests, UI checks, and commit readiness.",
+          "prompting.signal.title": "Show Gate Signals",
+          "prompting.signal.body": "Every completed gate or task step should emit a short signal with the gate name, evidence, and next gate. Missed gates should be visible immediately, not discovered only at the final report.",
+          "prompting.code": "Use this project's current agent instructions first:\nAGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,\nCONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.\n\nThen use AgentPlaybook:\n${AGENTPLAYBOOK_HOME}/AGENTS.md\n${AGENTPLAYBOOK_HOME}/index.md\n${AGENTPLAYBOOK_HOME}/scripts/workflow.py\n\nPRD only:\npython3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py route prd --platform web --concern ui\n\nAfter each completed gate:\nGate signal: <gate> / executed / evidence: <evidence> / next: <next gate>",
           "library.eyebrow": "Library Model",
           "library.title": "Small cards, loaded only when relevant.",
           "library.common.title": "Common",
@@ -262,6 +330,8 @@ Do not load every shared document by default.</code></pre>
           "workflow.handoff.body": "Preserve objective, files, commands, blockers, verification, and next step across interruption, resume, or transfer.",
           "workflow.ambiguity.title": "Ambiguity Gate",
           "workflow.ambiguity.body": "Classify blockers, researchable unknowns, safe assumptions, and out-of-scope items before planning or implementation.",
+          "workflow.prd.title": "PRD Creation",
+          "workflow.prd.body": "Produce a product requirements note with source-of-truth, ambiguity, actor, outcome, scope, states, acceptance criteria, and open-decision gates before ARD or code.",
           "workflow.product_architecture.title": "Product Architecture Delivery",
           "workflow.product_architecture.body": "Move product intent through PRD, ARD, review, implementation, tests, UI tests, and commit readiness gates.",
           "workflow.multi_agent.title": "Multi-Agent Collaboration",
@@ -293,6 +363,7 @@ Do not load every shared document by default.</code></pre>
           "meta.title": "에이전트 플레이북",
           "meta.description": "AI 코딩 에이전트, 플랫폼 아키텍처, 리뷰, 커밋, 재사용 가능한 제품 워크플로우를 위한 간결한 공유 플레이북입니다.",
           "nav.label": "주요 탐색",
+          "nav.prompting": "프롬프팅",
           "nav.library": "라이브러리",
           "nav.tracks": "트랙",
           "nav.workflows": "워크플로우",
@@ -305,6 +376,15 @@ Do not load every shared document by default.</code></pre>
           "hero.document_index": "문서 인덱스",
           "hero.apply_guide": "적용 가이드",
           "hero.runtime_guide": "런타임 가이드",
+          "prompting.eyebrow": "에이전트 전달",
+          "prompting.title": "에이전트가 어디서 시작할지 알려주세요.",
+          "prompting.local.title": "프로젝트 문서를 먼저 읽기",
+          "prompting.local.body": "로컬 프롬프트는 Codex, Claude, Antigravity 또는 다른 에이전트가 공유 가이드를 적용하기 전에 현재 프로젝트의 AGENTS.md, CLAUDE.md, CODEX.md, .agents/README.md, 작업 문서, PRD/ARD 문서를 먼저 읽도록 지시해야 합니다.",
+          "prompting.prd.title": "PRD 전용 라우트",
+          "prompting.prd.body": "산출물이 제품 요구사항 노트라면 prd 라우트를 사용합니다. PRD에서 ARD, 코드, 테스트, UI 확인, 커밋 준비까지 이어질 때만 product 라우트를 사용합니다.",
+          "prompting.signal.title": "게이트 신호 표시",
+          "prompting.signal.body": "각 게이트나 작업 단계가 끝날 때마다 게이트 이름, 근거, 다음 게이트를 담은 짧은 신호를 보여줘야 합니다. 누락된 게이트는 최종 보고가 아니라 즉시 드러나야 합니다.",
+          "prompting.code": "현재 프로젝트의 에이전트 지침을 먼저 읽으세요:\nAGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,\nCONTRIBUTING.md, 작업 문서, PRD/ARD 문서 또는 동등한 프로젝트 문서.\n\n그다음 AgentPlaybook을 사용하세요:\n${AGENTPLAYBOOK_HOME}/AGENTS.md\n${AGENTPLAYBOOK_HOME}/index.md\n${AGENTPLAYBOOK_HOME}/scripts/workflow.py\n\nPRD만 작성할 때:\npython3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py route prd --platform web --concern ui\n\n각 게이트 완료 후:\nGate signal: <gate> / executed / evidence: <evidence> / next: <next gate>",
           "library.eyebrow": "라이브러리 모델",
           "library.title": "필요한 순간에만 읽는 작은 카드.",
           "library.common.title": "공통",
@@ -323,6 +403,8 @@ Do not load every shared document by default.</code></pre>
           "workflow.handoff.body": "중단, 재개, 전달 상황에서 목표, 파일, 명령, 차단점, 검증, 다음 단계를 보존합니다.",
           "workflow.ambiguity.title": "모호성 게이트",
           "workflow.ambiguity.body": "계획이나 구현 전에 차단 질문, 조사 가능한 미지점, 안전한 가정, 범위 밖 항목을 분류합니다.",
+          "workflow.prd.title": "PRD 생성",
+          "workflow.prd.body": "ARD나 코드 전에 소스 오브 트루스, 모호성, 사용자, 결과, 범위, 상태, 인수 조건, 미결정 사항 게이트로 제품 요구사항 노트를 만듭니다.",
           "workflow.product_architecture.title": "제품 아키텍처 전달",
           "workflow.product_architecture.body": "제품 의도를 PRD, ARD, 리뷰, 구현, 테스트, UI 테스트, 커밋 준비 게이트까지 이어갑니다.",
           "workflow.multi_agent.title": "멀티 에이전트 협업",

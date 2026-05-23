@@ -36,7 +36,8 @@ or task-specific workflow to load next.
 5. Route: choose the smallest workflow and cards from `index.md`; do not load
    the whole library by default.
 6. Gate ledger: when a scripted route is used, create a ledger for every route
-   gate and mark each gate when it is executed.
+   gate, mark each gate when it is executed, and show a short gate signal after
+   each completed gate or task step.
 7. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
 8. Decide: make a reasonable assumption when safe; ask only when ambiguity

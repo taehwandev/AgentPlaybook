@@ -18,6 +18,10 @@ not copy the full playbook into the target repo.
 Apply AgentPlaybook to this project:
 https://github.com/taehwandev/AgentPlaybook
 
+Before changing anything, read this project's current agent instructions first:
+AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
+CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+
 If AgentPlaybook already exists locally, link this repo to the existing copy.
 Do not clone, vendor, or copy a second copy unless no usable local copy exists.
 Run VibeGuard setup and audit with the selected AgentPlaybook root as --rules.
@@ -36,12 +40,16 @@ agents, use `docs/agent-runtime-integration.md`.
 
 1. Identify the target project from the user's request and current working
    directory.
-2. Check whether the user supplied an explicit AgentPlaybook path.
-3. Check `AGENTPLAYBOOK_HOME`.
-4. Check legacy `KEYFLOW_AGENT_ROOT` only when present.
-5. Check common local installs such as `~/.agent-playbook`,
+2. Read the target project's current agent instructions before changing files:
+   `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`,
+   `.agents/README.md`, `CONTRIBUTING.md`, task docs, PRD/ARD docs, or
+   equivalent project docs.
+3. Check whether the user supplied an explicit AgentPlaybook path.
+4. Check `AGENTPLAYBOOK_HOME`.
+5. Check legacy `KEYFLOW_AGENT_ROOT` only when present.
+6. Check common local installs such as `~/.agent-playbook`,
    `~/AgentPlaybook`, and `~/GitHub/AgentPlaybook`.
-6. Check repo-pinned locations only when the target repo already contains one,
+7. Check repo-pinned locations only when the target repo already contains one,
    such as `.agents/AgentPlaybook`, `tools/AgentPlaybook`, or a git submodule.
 
 A usable AgentPlaybook root contains both:

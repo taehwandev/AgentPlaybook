@@ -24,6 +24,15 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --platform <platf
 
 Use that output as the command manifest before writing PRD or ARD.
 
+When the requested deliverable is only a PRD or product requirements note, use
+`workflows/prd-creation.md` through the PRD route instead:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --platform <platform> --concern <concern>
+```
+
+Use the full `product` route when the task continues from PRD into ARD and code.
+
 ## Scaled Use
 
 Use the full PRD and ARD gates for non-trivial behavior, architecture, data,

@@ -93,8 +93,9 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
 The route output contains `docs`, `gates`, `gate_ledger`, `attempt_limit`,
 `retry_scope`, `notes`, and `missing`. Read listed documents in order, follow
 the gates as the task checklist, keep the gate ledger current while working,
-and stop if `missing` is not empty. If a required gate is missed, follow the
-missed gate recovery rule instead of finalizing. See
+show a short gate signal after each completed gate or task step, and stop if
+`missing` is not empty. If a required gate is missed, follow the missed gate
+recovery rule instead of finalizing. See
 `workflows/scripted-agent-workflow.md` for the full consumption rules.
 
 ## Supporting Documents
