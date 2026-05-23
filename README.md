@@ -170,7 +170,7 @@ python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
 npx --yes @taehwandev/vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
 ```
 
-Refresh an existing managed VibeGuard block only when requested:
+Refresh an existing managed VibeGuard block only when explicitly requested:
 
 ```bash
 export AGENTPLAYBOOK_HOME="/path/to/existing/AgentPlaybook"
@@ -223,10 +223,11 @@ already exists, ask me a short application drill before running setup or update.
 Use the selected AgentPlaybook root as the VibeGuard rule source.
 Update the repo-local agent instructions with a short routing block. Keep
 repo-specific commands, paths, services, product policy, and domain language in
-this repo. If existing Claude, Codex, Antigravity, or other runtime instruction
-files are present, update the necessary AgentPlaybook pointer there in the same
-pass. If the runtime reads AGENTS.md, do not create a duplicate runtime-specific
-file.
+this repo. If existing repo-local Claude, Codex, Antigravity, or other runtime
+instruction files are present, update the necessary AgentPlaybook pointer there
+in the same pass. If the runtime reads AGENTS.md, do not create a duplicate
+runtime-specific file. Treat user-level runtime bridges as optional Step 2 work,
+not part of the required application prompt.
 ```
 
 ### Actual Application Flow
@@ -255,9 +256,16 @@ flow instead of copying the whole library:
    they point to the same AgentPlaybook root or back to `AGENTS.md`.
 10. Do not create new runtime-specific instruction files when the active
     runtime already reads `AGENTS.md`.
-11. For follow-up work, run `workflow.py classify` when request clarity is
-   uncertain, then `workflow.py route ...` and follow the gate ledger.
-12. Before reporting success, verify the routing block, VibeGuard gate result,
+11. Offer optional Step 2 for user-level runtime bridges. Only update personal
+   or global runtime instruction files when the user chooses that option. The
+   bridge must explicitly tell the runtime to read the current target project's
+   local instructions first: Codex-style agents read `AGENTS.md`, Claude reads
+   `CLAUDE.md`, and Antigravity reads its configured project instruction
+   document.
+12. For follow-up work, run `workflow.py classify` when request clarity is
+   uncertain, then `workflow.py route ... --request "<USER_REQUEST>"` and
+   follow the gate ledger. Answer direct questions before routing.
+13. Before reporting success, verify the routing block, VibeGuard gate result,
    and any route gates that were required.
 
 ## Prompt A Local Agent
@@ -274,6 +282,10 @@ Use this project's current agent instructions first.
 Read whichever exist in the target repo:
 AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
 CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+Do not rely on implicit runtime discovery. Codex-style agents should explicitly
+read the current project's AGENTS.md / AGENTS.override.md, Claude should read
+CLAUDE.md when present, and Antigravity should read its configured project
+instruction document before AgentPlaybook.
 
 Then use AgentPlaybook:
 <AGENTPLAYBOOK_ROOT>/AGENTS.md
@@ -284,7 +296,9 @@ Apply the required VibeGuard safety gate with <AGENTPLAYBOOK_ROOT> as the rule
 source before editing. Use the published VibeGuard package command; the
 VibeGuard site is a human reference and does not need to be fetched by the
 agent.
-For multi-step work, run the workflow route and follow its gate ledger.
+For multi-step work, run the workflow route with `--request "<USER_REQUEST>"`
+and follow its gate ledger. If the user asks a direct question, answer it before
+starting project work.
 After each completed gate or task step, show:
 Gate signal: GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
 
@@ -293,10 +307,10 @@ paused. RED means the gate was missed or lacks evidence and must use
 missed-gate recovery.
 
 For PRD-only work:
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 
 For PRD -> ARD -> implementation:
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Full bootstrap instructions live in [docs/agent-bootstrap.md](docs/agent-bootstrap.md).
@@ -319,6 +333,11 @@ bridge file or a pasted prompt.
   [templates/use-agentplaybook-prompt.md](templates/use-agentplaybook-prompt.md)
   into the agent with the target repo, task, AgentPlaybook root, and VibeGuard
   docs link filled in.
+- For stronger future behavior, use the optional Step 2 prompt in
+  [templates/apply-agentplaybook-request.md](templates/apply-agentplaybook-request.md)
+  to update user-level runtime bridges such as `~/.codex/AGENTS.md`,
+  `~/.claude/CLAUDE.md`, `~/.antigravity`, `~/.antigravitycli`, or
+  `~/.antigravity-ide`.
 - For runtime-specific setup rules, read
   [docs/agent-runtime-integration.md](docs/agent-runtime-integration.md).
 
@@ -348,12 +367,12 @@ documents manually, editing, reviewing, committing, or reporting completion:
 
 ```bash
 python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" list
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" classify "Improve the X button in HomeScreen"
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route triage
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route product --platform web --concern security --concern ui
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform kmp --concern compose --concern state
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform flutter --concern widget --concern state
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route docs-review --concern wiki
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" classify "Change the button on home"
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route triage --request "Change the button on home"
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route product --request "<USER_REQUEST>" --platform web --concern security --concern ui
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform kmp --concern compose --concern state
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform flutter --concern widget --concern state
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route docs-review --request "<USER_REQUEST>" --concern wiki
 python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
 ```
 
@@ -457,22 +476,23 @@ For implementation work, route with the platform and concern instead of relying
 on only a broad architecture card:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform ios --concern swiftui
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform ios --concern uikit
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform web --concern react --concern ui
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform android --concern compose
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform kmp --concern compose --concern platform
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform flutter --concern widget --concern channel
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform server --concern api --concern auth
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --platform application --concern desktop
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform ios --concern swiftui
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform ios --concern uikit
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform web --concern react --concern ui
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform android --concern compose
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform kmp --concern compose --concern platform
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform flutter --concern widget --concern channel
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform server --concern api --concern auth
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform application --concern desktop
 ```
 
 ## Loading Model
 
 1. Start from the target repo's local instructions.
 2. Open this repository's `AGENTS.md`.
-3. For multi-step work, run `scripts/workflow.py route ...` to generate the
-   command route before selecting task documents.
+3. For multi-step work, run `scripts/workflow.py route ... --request
+   "<USER_REQUEST>"` to generate the command route before selecting task
+   documents.
 4. Use `index.md` to choose the smallest relevant document set.
 5. Read the common baseline cards required for the task.
 6. Add exactly the platform, product-pattern, or workflow cards that match the
@@ -487,8 +507,10 @@ This is the core design: small cards, loaded only when relevant.
 - Repo-local instructions always win.
 - `AGENTS.md` is the shared entrypoint for agent runtimes.
 - Use `index.md` to choose only the needed documents.
-- Run `scripts/workflow.py route ...` for multi-step workflows before selecting
-  documents manually.
+- Answer direct user questions before starting workflow routing, editing, or
+  project-specific commands.
+- Run `scripts/workflow.py route ... --request "<USER_REQUEST>"` for multi-step
+  workflows before selecting documents manually.
 - Classify unclear requests before loading broad context or using deep model
   effort.
 - Discover the repo stack before choosing package managers, framework APIs, or

@@ -137,7 +137,8 @@ Audit only, preserving existing guardrails:
 npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
 ```
 
-Refresh an existing managed VibeGuard block only when requested:
+Refresh an existing managed VibeGuard block only when the user explicitly
+selects that option:
 
 ```bash
 npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
@@ -204,8 +205,8 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 9. Link only `AGENTS.md`, `index.md`, and any direct route cards the repo wants.
 10. Do not paste the full AgentPlaybook library into repo-local files.
 11. For multi-step setup or migration work, run
-   `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route ...` before editing,
-   keep the workflow route gate ledger,
+   `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route ... --request
+   "<USER_REQUEST>"` before editing, keep the workflow route gate ledger,
    and verify every required gate is `GREEN` with evidence before reporting
    success.
 

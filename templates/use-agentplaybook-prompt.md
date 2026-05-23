@@ -31,6 +31,11 @@ Rules:
 1. Identify the target repo and read repo-local instructions first, including
    AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
    CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+   Do not rely on implicit runtime discovery. If you are Codex-style, explicitly
+   read the current project's AGENTS.md or AGENTS.override.md; if you are
+   Claude, explicitly read CLAUDE.md when present; if you are Antigravity or
+   another runtime, explicitly read the project instruction document that
+   runtime is configured to load.
 2. Do not assume this runtime automatically loaded AgentPlaybook. Explicitly
    read <AGENTPLAYBOOK_ROOT>/AGENTS.md and <AGENTPLAYBOOK_ROOT>/index.md.
 3. Do not copy the whole AgentPlaybook library into this repo. Link only the
@@ -42,13 +47,15 @@ Rules:
    VibeGuard mode with the published package command and <AGENTPLAYBOOK_ROOT>
    as the rule source. The VibeGuard site is a human reference and does not
    need to be fetched by the agent. If the VibeGuard command cannot run, stop
-   and report the blocker.
+   and report the blocker. Use VibeGuard update only when I explicitly choose
+   to refresh an existing managed block.
 5. For multi-step tasks, run this before selecting task documents, editing,
    reviewing, committing, or reporting completion:
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<USER_REQUEST>"
-   python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <COMMAND> [--platform <PLATFORM>] [--concern <CONCERN>]
+   python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
    Use the route output as the command manifest.
+   If the request is a direct question, answer it before routing or editing.
    If the workflow router cannot run, stop and report the blocker before
    continuing.
    Use the lowest capable effort level. Do not use deep reasoning or a

@@ -19,7 +19,14 @@ Shared AgentPlaybook library:
 <AGENTPLAYBOOK_ROOT>/index.md
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 
-Use repo-local instructions first.
+Use repo-local instructions first. Explicitly read the current target project's
+instruction file for this runtime before using AgentPlaybook: Codex-style agents
+read `AGENTS.md` / `AGENTS.override.md`, Claude reads `CLAUDE.md` when present,
+Codex-specific setups read `CODEX.md` when present, and Antigravity or generic
+agents read their configured project instruction document or `.agents/README.md`
+when used. If this block is being installed into a personal or global runtime
+instructions file, it must still tell the runtime to read the current project's
+local instruction files first.
 Use the shared index only to select the smallest relevant document set.
 VibeGuard is required before documentation, code, config, dependency, data,
 deployment, or credential changes. Apply the current VibeGuard package command
@@ -32,12 +39,14 @@ application drill first: add pointer vs merge vs pin; audit-only vs refresh
 with update vs first-time setup; apply now vs prepare instructions only.
 Default to preserving current guardrails and running audit only unless the user
 chooses to refresh the managed block.
-For multi-step tasks, run the workflow script first and use its output as the
-command manifest before selecting task documents, editing, reviewing,
-committing, or reporting completion. If the workflow router cannot run, stop and
-report the blocker before continuing. Keep its gate execution ledger current; each
-required gate must have evidence before completion. Show a short traffic-light
-gate signal after each completed gate or task step. Completion requires every
+For multi-step tasks, run the workflow script first with `--request
+"<USER_REQUEST>"` and use its output as the command manifest before selecting
+task documents, editing, reviewing, committing, or reporting completion. If the
+current user message is a direct question, answer it before routing or editing.
+If the workflow router cannot run, stop and report the blocker before
+continuing. Keep its gate execution ledger current; each required gate must
+have evidence before completion. Show a short traffic-light gate signal after
+each completed gate or task step. Completion requires every
 required gate to be GREEN. YELLOW means blocked or paused. RED means missed or
 missing evidence and triggers missed-gate recovery: stop finalization, roll back
 only dependent agent-made changes after the missed gate when safe, return to the

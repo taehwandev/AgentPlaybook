@@ -12,13 +12,20 @@ AgentPlaybook.
 Use `templates/use-agentplaybook-prompt.md` instead when you only want one task
 to follow AgentPlaybook without changing repo-local instruction files.
 
+## Step 1: Required Application Prompt
+
 ```text
-Apply AgentPlaybook to this project:
+Step 1 - Apply AgentPlaybook to this project:
 https://github.com/taehwandev/AgentPlaybook
 
-Before changing anything, read this project's current agent instructions first:
+Before changing anything, open and read this project's current agent instructions first:
 AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
 CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+Do not rely on implicit runtime discovery: Codex-style agents must explicitly
+read the current project's AGENTS.md or AGENTS.override.md, Claude must
+explicitly read CLAUDE.md when present, and Antigravity or generic agents must
+explicitly read the project instruction document they are configured to load.
+Do not claim the file was read unless you actually opened it.
 
 Use an existing local AgentPlaybook install if one is available. Check an
 explicit path from me first, then AGENTPLAYBOOK_HOME, then common local clones
@@ -63,7 +70,7 @@ If I choose audit-only:
 
 npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
 
-If I choose to refresh the managed VibeGuard block:
+If I explicitly choose to refresh the managed VibeGuard block:
 
 npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
 npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
@@ -88,15 +95,17 @@ routing block. Preserve existing project rules. Keep repo-specific commands,
 paths, services, product policy, and domain language in this repo.
 
 Prefer AGENTS.md as the canonical instruction file when the active runtimes read
-it. If existing Claude, Codex, Antigravity CLI, or other runtime instruction
+it. If repo-local Claude, Codex, Antigravity CLI, or other runtime instruction
 files are present, update their AgentPlaybook pointer in the same pass or point
 them back to AGENTS.md. Do not create a separate runtime-specific file only to
-duplicate guidance when the runtime already reads AGENTS.md.
+duplicate guidance when the active runtime already reads AGENTS.md.
 
-For any multi-step setup or follow-up task, run the workflow route before
-selecting task documents, editing, reviewing, committing, or reporting
-completion. If the workflow router cannot run, stop and report the blocker
-before continuing. Show a gate signal after each completed gate or task step:
+For any multi-step setup or follow-up task, run the workflow route with
+`--request "<USER_REQUEST>"` before selecting task documents, editing,
+reviewing, committing, or reporting completion. If the request is a direct
+question, answer it before routing or editing. If the workflow router cannot
+run, stop and report the blocker before continuing. Show a gate signal after
+each completed gate or task step:
 
 Gate signal: GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
 
@@ -107,6 +116,35 @@ recovery.
 After connecting it, verify that the referenced AgentPlaybook AGENTS.md and
 index.md files exist, confirm the VibeGuard gate is passing, then continue with
 my original task.
+```
+
+## Step 2: Optional User-Level Bridge Prompt
+
+```text
+Optional Step 2 - Register a user-level runtime bridge on this machine.
+
+Use this only if I choose the optional setup for better future agent behavior.
+Preserve existing personal instructions. Add or update a short managed block; do
+not replace unrelated user content.
+
+Update the active user-level file for the runtime I choose:
+Codex -> ~/.codex/AGENTS.md
+Claude -> ~/.claude/CLAUDE.md
+Antigravity CLI -> ~/.antigravitycli/AGENTS.md
+Antigravity SDK/IDE -> check ~/.antigravity and ~/.antigravity-ide for the
+instruction file the active runtime loads.
+
+The bridge must force this behavior:
+- Start every task by identifying the current project root.
+- Before project work, open the project-root instruction file for the active runtime.
+- Codex reads AGENTS.md / AGENTS.override.md.
+- Claude reads CLAUDE.md.
+- Antigravity reads its project instruction document, .antigravitycli,
+  .agents/README.md, or AGENTS.md.
+- Do not claim an instruction file was read unless you actually opened it.
+- If I ask a direct question, answer it before routing, editing, or running commands.
+- If my request is ambiguous and the answer changes behavior, scope, safety, or
+  external state, ask before working.
 ```
 
 For a team-pinned install, add this sentence:

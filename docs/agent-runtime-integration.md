@@ -61,6 +61,10 @@ instruction file each agent runtime reads:
 - Antigravity or generic agents: the project instruction file the runtime
   actually reads, or `.agents/README.md` when the repo uses a shared agent
   folder.
+- Personal or global runtime docs: treat these as optional Step 2 bridge work.
+  Update them only when the user chooses the stronger future-behavior setup.
+  Examples include `~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`,
+  `~/.antigravity`, `~/.antigravitycli`, and `~/.antigravity-ide`.
 
 Prefer one canonical instruction file, usually `AGENTS.md`, when all active
 runtimes read it. When `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, or
@@ -68,6 +72,15 @@ Antigravity CLI docs already exist, update them in the same application pass so
 they point to the selected AgentPlaybook root or back to `AGENTS.md`. Do not
 create a separate runtime-specific file only to duplicate guidance that the
 runtime already reads from `AGENTS.md`.
+
+Every runtime bridge must explicitly tell the agent to read the current target
+project's own instructions first. Do not rely on implicit discovery. State the
+runtime-specific entrypoint directly: Codex-style agents should read the current
+project's `AGENTS.md` / `AGENTS.override.md`, Claude should read the current
+project's `CLAUDE.md` when present, Codex-specific setups should read `CODEX.md`
+when present, and Antigravity should read the Antigravity/project instruction
+surface it is configured to load. Then tell the agent to follow AgentPlaybook as
+shared guidance only after those local instructions.
 
 Use `templates/repo-agents-routing.md` as the source block. Keep the block
 short and point to:
@@ -149,21 +162,25 @@ For every runtime:
 4. Install only when no usable root exists, then validate the selected root.
 5. Inspect existing VibeGuard files and agent instructions. Ask the application
    drill before running setup or update when the repo already has custom
-   instructions or guardrails.
+   instructions or guardrails. Use VibeGuard `update` only when the user
+   explicitly selects refreshing an existing managed block; otherwise preserve
+   current guardrails and run audit.
 6. Apply the selected VibeGuard mode with the published package command and the
    selected AgentPlaybook root as the rule source. Treat
    https://vibeguard.thdev.app/ as the human-facing reference, not a runtime
    fetch dependency.
 7. Add or update the canonical repo instruction file, preferring `AGENTS.md`
    when supported.
-8. Update any existing runtime-specific instruction files in the same pass, or
-   leave them out only when the runtime reads `AGENTS.md` and no separate file
-   exists.
+8. Update any existing repo-local runtime-specific instruction files in the
+   same pass, or leave them out only when the runtime reads `AGENTS.md` and no
+   separate file exists. Offer optional Step 2 for personal/global runtime
+   bridges; only update those files when the user chooses it.
 9. Read AgentPlaybook `AGENTS.md`.
-10. For multi-step tasks, run `scripts/workflow.py route ...` to select the
-    smallest document set and gate manifest. Use `index.md` only for simple
-    answer-only work or an explicitly accepted fallback when the script cannot
-    run.
+10. For multi-step tasks, run `scripts/workflow.py route ... --request
+    "<USER_REQUEST>"` to select the smallest document set and gate manifest.
+    If the request is a direct question, answer it before routing or editing.
+    Use `index.md` only for simple answer-only work or an explicitly accepted
+    fallback when the script cannot run.
 11. Keep a gate execution ledger, mark each route
    gate with evidence when it is executed, assign a traffic-light signal, and
    show a short gate signal after each completed gate or task step.
@@ -206,7 +223,7 @@ After connecting a runtime, verify:
 - the agent can produce a route, such as:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route task
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route task --request "<USER_REQUEST>"
 ```
 
 ## Stop If
