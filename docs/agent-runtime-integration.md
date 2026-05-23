@@ -21,6 +21,24 @@ AgentPlaybook should be consumed through a small bridge, not copied wholesale:
 Repo-local instructions remain the source of truth for commands, paths,
 services, product policy, and domain language.
 
+## Setup Modes
+
+Select one mode before wiring a runtime:
+
+- Existing local install: preferred when AgentPlaybook is already present on the
+  machine. Reuse that root and do not clone another copy.
+- First-time local shared install: clone once to a stable path such as
+  `~/.agent-playbook` when no usable root exists.
+- Team-pinned install: use a submodule, vendored dependency, or workspace
+  dependency when every teammate and agent must use the same reviewed version.
+
+A usable root contains `AGENTS.md`, `index.md`, and `scripts/workflow.py`.
+Validate the selected root with:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
+```
+
 ## Long-Lived Repo Setup
 
 For repos that will keep using AgentPlaybook, add a short routing block to the
@@ -97,18 +115,20 @@ For every runtime:
    `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`,
    `.agents/README.md`, `CONTRIBUTING.md`, task docs, PRD/ARD docs, or
    equivalent project guidance.
-2. Locate the AgentPlaybook root.
-3. Run VibeGuard audit with the selected root as `--rules`.
-4. Read AgentPlaybook `AGENTS.md`.
-5. Use `index.md` or `scripts/workflow.py` to select the smallest document set.
-6. When a scripted route is used, keep a gate execution ledger, mark each route
+2. Select the setup mode: existing local install, first-time local shared
+   install, or team-pinned install.
+3. Locate or install the AgentPlaybook root and validate it.
+4. Run VibeGuard audit with the selected root as `--rules`.
+5. Read AgentPlaybook `AGENTS.md`.
+6. Use `index.md` or `scripts/workflow.py` to select the smallest document set.
+7. When a scripted route is used, keep a gate execution ledger, mark each route
    gate with evidence when it is executed, and show a short gate signal after
    each completed gate or task step.
-7. Load only selected cards.
-8. Execute repo-local commands only from trusted repo-local instructions.
-9. Before reporting completion, confirm every required route gate has ledger
+8. Load only selected cards.
+9. Execute repo-local commands only from trusted repo-local instructions.
+10. Before reporting completion, confirm every required route gate has ledger
    evidence.
-10. Report verification and residual risk.
+11. Report verification and residual risk.
 
 If a required route gate was missed, the runtime must stop finalization, roll
 back only dependent agent-made changes after the missed gate when safe, return

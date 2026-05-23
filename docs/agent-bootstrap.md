@@ -36,6 +36,22 @@ For one-shot task use without editing repo-local instructions, use
 For runtime-specific setup across Codex, Claude, Antigravity, and generic
 agents, use `docs/agent-runtime-integration.md`.
 
+## Setup Decision
+
+Choose the setup mode before editing the target repo:
+
+1. Existing local install: use this when the user already has AgentPlaybook on
+   the machine. Link to that root and do not clone or vendor a second copy.
+2. First-time local shared install: use this when no usable copy exists and the
+   user wants one install reused across personal repos. Clone once to a stable
+   path such as `~/.agent-playbook`.
+3. Team-pinned install: use this when the repo needs a reviewed version shared
+   by teammates and agents. Add a submodule, vendored dependency, or workspace
+   dependency only after approval.
+
+Always report which setup mode was selected before changing repo-local
+instructions.
+
 ## Discovery Order
 
 1. Identify the target project from the user's request and current working
@@ -57,6 +73,7 @@ A usable AgentPlaybook root contains both:
 ```text
 AGENTS.md
 index.md
+scripts/workflow.py
 ```
 
 If a usable root is found, use it. Do not reinstall.
@@ -98,6 +115,12 @@ If no usable local or repo-pinned copy exists, choose one of these modes:
   dependency. This is best for teams that need a reviewed version.
 Ask before using network access, adding a submodule, changing git remotes, or
 writing outside the target repo.
+
+After installing or selecting a root, run:
+
+```bash
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
+```
 
 ## Connect The Target Repo
 

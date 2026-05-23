@@ -59,17 +59,51 @@ https://agentplaybook.thdev.app/
 
 ## Quick Start
 
-If AgentPlaybook already exists locally, use that copy. Point the target repo to
-the existing root instead of cloning or copying another copy.
+Choose one setup path first. Do not install a second copy when a usable local or
+repo-pinned copy already exists.
 
-For a new local shared install, clone the playbook somewhere stable:
+### Path A: Existing Local Install
+
+Use this when AgentPlaybook is already on the machine.
+
+1. Locate the existing root. Prefer an explicit path from the user, then
+   `AGENTPLAYBOOK_HOME`, then common local locations such as
+   `~/.agent-playbook`, `~/AgentPlaybook`, or `~/GitHub/AgentPlaybook`.
+2. Verify that the root contains `AGENTS.md`, `index.md`, and
+   `scripts/workflow.py`.
+3. Point the target repo to that root. Do not clone, vendor, or copy another
+   AgentPlaybook checkout.
+
+```bash
+export AGENTPLAYBOOK_HOME="/path/to/existing/AgentPlaybook"
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+```
+
+### Path B: First-Time Local Shared Install
+
+Use this when no usable local or repo-pinned copy exists and the user wants one
+shared install for multiple personal repos.
 
 ```bash
 export AGENTPLAYBOOK_HOME="$HOME/.agent-playbook"
 git clone https://github.com/taehwandev/AgentPlaybook.git "$AGENTPLAYBOOK_HOME"
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
 ```
 
-Then add a short pointer to the target repo's `AGENTS.md`,
+### Path C: Team-Pinned Install
+
+Use this when every teammate and agent must use the same reviewed version. Add
+AgentPlaybook as a submodule, vendored dependency, or workspace dependency only
+after the repo owner approves the pinned location and update policy.
+
+```bash
+git submodule add https://github.com/taehwandev/AgentPlaybook.git .agents/AgentPlaybook
+python3 .agents/AgentPlaybook/scripts/workflow.py validate
+```
+
+### Connect The Target Repo
+
+After choosing the root, add a short pointer to the target repo's `AGENTS.md`,
 `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`, or equivalent local agent
 instructions:
 

@@ -24,11 +24,19 @@ Use an existing local AgentPlaybook install if one is available. Check an
 explicit path from me first, then AGENTPLAYBOOK_HOME, then common local clones
 such as ~/.agent-playbook or ~/GitHub/AgentPlaybook.
 
-If a usable install exists, link this repo to that copy. Do not clone, vendor,
-or copy a second copy.
+Select one setup mode and tell me which one you selected before editing:
 
-If no usable install exists, ask before cloning to ~/.agent-playbook or adding
-AgentPlaybook as a repo-pinned submodule.
+- Existing local install: if a usable install exists, link this repo to that
+  copy. Do not clone, vendor, or copy a second copy.
+- First-time local shared install: if no usable install exists, ask before
+  cloning once to ~/.agent-playbook.
+- Team-pinned install: ask before adding AgentPlaybook as a repo-pinned
+  submodule, vendored dependency, or workspace dependency.
+
+A usable AgentPlaybook root must contain AGENTS.md, index.md, and
+scripts/workflow.py. Validate it with:
+
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 
 VibeGuard is required. After selecting the AgentPlaybook root, run VibeGuard
 setup and audit with that root as --rules. Use a local, repo-pinned, or

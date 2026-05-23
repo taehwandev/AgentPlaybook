@@ -48,6 +48,14 @@
         </div>
         <div class="grid three">
           <article>
+            <h3 data-i18n="prompting.setup.title">Choose A Setup Mode</h3>
+            <p data-i18n="prompting.setup.body">
+              Reuse an existing local install when it exists. Clone once for a
+              first-time personal setup. Use a repo-pinned dependency when a team
+              needs the same reviewed version.
+            </p>
+          </article>
+          <article>
             <h3 data-i18n="prompting.local.title">Read The Project First</h3>
             <p data-i18n="prompting.local.body">
               Local prompts should tell Codex, Claude, Antigravity, or another
@@ -73,7 +81,15 @@
             </p>
           </article>
         </div>
-        <pre><code data-i18n="prompting.code">Use this project's current agent instructions first:
+        <pre><code data-i18n="prompting.code">Choose setup mode first:
+1. Existing local install: use AGENTPLAYBOOK_HOME or the path I provide.
+2. First-time local shared install: clone once to ~/.agent-playbook.
+3. Team-pinned install: use a repo-pinned submodule or dependency.
+
+Validate the selected root:
+python3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py validate
+
+Use this project's current agent instructions first:
 AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
 CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
 
@@ -305,13 +321,15 @@ Do not load every shared document by default.</code></pre>
           "hero.runtime_guide": "Runtime Guide",
           "prompting.eyebrow": "Agent Delivery",
           "prompting.title": "Tell the agent where to start.",
+          "prompting.setup.title": "Choose A Setup Mode",
+          "prompting.setup.body": "Reuse an existing local install when it exists. Clone once for a first-time personal setup. Use a repo-pinned dependency when a team needs the same reviewed version.",
           "prompting.local.title": "Read The Project First",
           "prompting.local.body": "Local prompts should tell Codex, Claude, Antigravity, or another agent to read the current project's AGENTS.md, CLAUDE.md, CODEX.md, .agents/README.md, task docs, and PRD/ARD docs before applying shared guidance.",
           "prompting.prd.title": "PRD Has Its Own Route",
           "prompting.prd.body": "Use the prd route when the deliverable is a product requirements note. Use the product route only when the task continues from PRD into ARD, code, tests, UI checks, and commit readiness.",
           "prompting.signal.title": "Show Gate Signals",
           "prompting.signal.body": "Every completed gate or task step should emit a short signal with the gate name, evidence, and next gate. Missed gates should be visible immediately, not discovered only at the final report.",
-          "prompting.code": "Use this project's current agent instructions first:\nAGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,\nCONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.\n\nThen use AgentPlaybook:\n${AGENTPLAYBOOK_HOME}/AGENTS.md\n${AGENTPLAYBOOK_HOME}/index.md\n${AGENTPLAYBOOK_HOME}/scripts/workflow.py\n\nPRD only:\npython3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py route prd --platform web --concern ui\n\nAfter each completed gate:\nGate signal: <gate> / executed / evidence: <evidence> / next: <next gate>",
+          "prompting.code": "Choose setup mode first:\n1. Existing local install: use AGENTPLAYBOOK_HOME or the path I provide.\n2. First-time local shared install: clone once to ~/.agent-playbook.\n3. Team-pinned install: use a repo-pinned submodule or dependency.\n\nValidate the selected root:\npython3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py validate\n\nUse this project's current agent instructions first:\nAGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,\nCONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.\n\nThen use AgentPlaybook:\n${AGENTPLAYBOOK_HOME}/AGENTS.md\n${AGENTPLAYBOOK_HOME}/index.md\n${AGENTPLAYBOOK_HOME}/scripts/workflow.py\n\nPRD only:\npython3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py route prd --platform web --concern ui\n\nAfter each completed gate:\nGate signal: <gate> / executed / evidence: <evidence> / next: <next gate>",
           "library.eyebrow": "Library Model",
           "library.title": "Small cards, loaded only when relevant.",
           "library.common.title": "Common",
@@ -378,13 +396,15 @@ Do not load every shared document by default.</code></pre>
           "hero.runtime_guide": "런타임 가이드",
           "prompting.eyebrow": "에이전트 전달",
           "prompting.title": "에이전트가 어디서 시작할지 알려주세요.",
+          "prompting.setup.title": "설정 방식 선택",
+          "prompting.setup.body": "이미 로컬 설치본이 있으면 재사용합니다. 개인 첫 설정이면 한 번만 클론합니다. 팀이 같은 검토 버전을 써야 하면 레포에 고정된 의존성을 사용합니다.",
           "prompting.local.title": "프로젝트 문서를 먼저 읽기",
           "prompting.local.body": "로컬 프롬프트는 Codex, Claude, Antigravity 또는 다른 에이전트가 공유 가이드를 적용하기 전에 현재 프로젝트의 AGENTS.md, CLAUDE.md, CODEX.md, .agents/README.md, 작업 문서, PRD/ARD 문서를 먼저 읽도록 지시해야 합니다.",
           "prompting.prd.title": "PRD 전용 라우트",
           "prompting.prd.body": "산출물이 제품 요구사항 노트라면 prd 라우트를 사용합니다. PRD에서 ARD, 코드, 테스트, UI 확인, 커밋 준비까지 이어질 때만 product 라우트를 사용합니다.",
           "prompting.signal.title": "게이트 신호 표시",
           "prompting.signal.body": "각 게이트나 작업 단계가 끝날 때마다 게이트 이름, 근거, 다음 게이트를 담은 짧은 신호를 보여줘야 합니다. 누락된 게이트는 최종 보고가 아니라 즉시 드러나야 합니다.",
-          "prompting.code": "현재 프로젝트의 에이전트 지침을 먼저 읽으세요:\nAGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,\nCONTRIBUTING.md, 작업 문서, PRD/ARD 문서 또는 동등한 프로젝트 문서.\n\n그다음 AgentPlaybook을 사용하세요:\n${AGENTPLAYBOOK_HOME}/AGENTS.md\n${AGENTPLAYBOOK_HOME}/index.md\n${AGENTPLAYBOOK_HOME}/scripts/workflow.py\n\nPRD만 작성할 때:\npython3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py route prd --platform web --concern ui\n\n각 게이트 완료 후:\nGate signal: <gate> / executed / evidence: <evidence> / next: <next gate>",
+          "prompting.code": "먼저 설정 방식을 선택하세요:\n1. 기존 로컬 설치: AGENTPLAYBOOK_HOME 또는 내가 제공한 경로를 사용합니다.\n2. 개인 첫 설정: ~/.agent-playbook에 한 번만 클론합니다.\n3. 팀 고정 설정: 레포에 고정된 submodule 또는 dependency를 사용합니다.\n\n선택한 root를 검증하세요:\npython3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py validate\n\n현재 프로젝트의 에이전트 지침을 먼저 읽으세요:\nAGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,\nCONTRIBUTING.md, 작업 문서, PRD/ARD 문서 또는 동등한 프로젝트 문서.\n\n그다음 AgentPlaybook을 사용하세요:\n${AGENTPLAYBOOK_HOME}/AGENTS.md\n${AGENTPLAYBOOK_HOME}/index.md\n${AGENTPLAYBOOK_HOME}/scripts/workflow.py\n\nPRD만 작성할 때:\npython3 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py route prd --platform web --concern ui\n\n각 게이트 완료 후:\nGate signal: <gate> / executed / evidence: <evidence> / next: <next gate>",
           "library.eyebrow": "라이브러리 모델",
           "library.title": "필요한 순간에만 읽는 작은 카드.",
           "library.common.title": "공통",
