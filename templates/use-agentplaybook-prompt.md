@@ -56,6 +56,10 @@ Rules:
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
    Use the route output as the command manifest.
    If the request is a direct question, answer it before routing or editing.
+   If the direct question asks how to start app, product, or feature work,
+   answer with PRD -> ARD -> implementation gates before lower-level coding
+   steps. If the task then proceeds into code, use the product route unless an
+   existing PRD/ARD or repo-local instruction makes the slice clearly trivial.
    If the workflow router cannot run, stop and report the blocker before
    continuing.
    Use the lowest capable effort level. Do not use deep reasoning or a
@@ -96,7 +100,8 @@ Use these common command profiles:
 
 - General task: `task`
 - Product PRD/ARD to implementation: `product`
-- Feature: `feature`
+- Feature: `feature` only after PRD/ARD is satisfied or unnecessary for a
+  scoped trivial slice
 - Bug or failing command: `bugfix --concern failure`
 - PRD/product requirements note only: `prd`
 - Documentation update: `docs --concern wiki`

@@ -103,9 +103,13 @@ duplicate guidance when the active runtime already reads AGENTS.md.
 For any multi-step setup or follow-up task, run the workflow route with
 `--request "<USER_REQUEST>"` before selecting task documents, editing,
 reviewing, committing, or reporting completion. If the request is a direct
-question, answer it before routing or editing. If the workflow router cannot
-run, stop and report the blocker before continuing. Show a gate signal after
-each completed gate or task step:
+question, answer it before routing or editing. If the direct question asks how
+to start app, product, or feature work, answer with PRD -> ARD ->
+implementation gates before lower-level coding steps. If the task proceeds into
+code, use the `product` route unless an existing PRD/ARD or repo-local
+instruction makes the slice clearly trivial. If the workflow router cannot run,
+stop and report the blocker before continuing. Show a gate signal after each
+completed gate or task step:
 
 Gate signal: GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
 
@@ -143,6 +147,8 @@ The bridge must force this behavior:
   .agents/README.md, or AGENTS.md.
 - Do not claim an instruction file was read unless you actually opened it.
 - If I ask a direct question, answer it before routing, editing, or running commands.
+- If I ask how to start app, product, or feature work, include PRD -> ARD ->
+  implementation before lower-level coding steps.
 - If my request is ambiguous and the answer changes behavior, scope, safety, or
   external state, ask before working.
 ```

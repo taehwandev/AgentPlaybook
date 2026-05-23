@@ -43,6 +43,10 @@ For multi-step tasks, run the workflow script first with `--request
 "<USER_REQUEST>"` and use its output as the command manifest before selecting
 task documents, editing, reviewing, committing, or reporting completion. If the
 current user message is a direct question, answer it before routing or editing.
+If the direct question asks how to start app, product, or feature work, answer
+with the PRD -> ARD -> implementation path before lower-level coding steps. If
+the work then proceeds into code, use the `product` route unless an existing
+PRD/ARD or repo-local instruction makes the slice clearly trivial.
 If the workflow router cannot run, stop and report the blocker before
 continuing. Keep its gate execution ledger current; each required gate must
 have evidence before completion. Show a short traffic-light gate signal after
