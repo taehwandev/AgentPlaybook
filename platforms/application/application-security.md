@@ -8,6 +8,9 @@ type: ai-generated
 
 Use for desktop/native app security: Mac apps, Tauri, Electron, menu bar tools, local files, shell access, update flows, IPC, and privileged OS APIs.
 
+Also use `common/secure-development-baseline.md` for shared secret handling,
+authorization, logging, diagnostics, and open-source repository safety rules.
+
 ## Rules
 
 - Keep file, shell, clipboard, notification, accessibility, power, and update APIs behind narrow adapters.

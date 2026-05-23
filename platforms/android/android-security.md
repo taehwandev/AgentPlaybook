@@ -8,6 +8,9 @@ type: ai-generated
 
 Use when Android work touches credentials, local storage, IPC, deep links, WebView, permissions, exported components, or release builds.
 
+Also use `common/secure-development-baseline.md` for shared secret handling,
+authorization, logging, diagnostics, and open-source repository safety rules.
+
 ## Rules
 
 - Store secrets with Android Keystore-backed storage or an accepted repo-local secure storage wrapper.
