@@ -8,13 +8,36 @@
       name="description"
       content="A shared playbook that tells AI coding agents how to use local instructions, route work, and report evidence."
     >
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://playbook.thdev.app/">
+    <meta property="og:title" content="AgentPlaybook — Smart shared discipline for AI coding agents.">
+    <meta property="og:description" content="A shared playbook that guides AI coding agents to read local rules, choose targeted workflows, and report verified evidence.">
+    <meta property="og:image" content="./og-image.svg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://playbook.thdev.app/">
+    <meta property="twitter:title" content="AgentPlaybook">
+    <meta property="twitter:description" content="A shared playbook that guides AI coding agents to read local rules, choose targeted workflows, and report verified evidence.">
+    <meta property="twitter:image" content="./og-image.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css?family=Outfit:400,600,700,800|Inter:400,500,600,700|JetBrains+Mono:400,500,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
+    <!-- Background glows for modern futuristic atmosphere -->
+    <div class="ambient-glow glow-top-right" aria-hidden="true"></div>
+    <div class="ambient-glow glow-bottom-left" aria-hidden="true"></div>
+
     <header class="topbar">
       <a class="brand" href="#start" aria-label="AgentPlaybook home" data-i18n-attr="aria-label:brand.label">
-        <span class="brand-mark" aria-hidden="true">AP</span>
-        <span>AgentPlaybook</span>
+        <img class="brand-mark-img" src="./favicon.svg" alt="" aria-hidden="true">
+        <span class="brand-text">AgentPlaybook</span>
       </a>
       <nav class="nav" aria-label="Primary navigation" data-i18n-attr="aria-label:nav.label">
         <a href="#start" data-i18n="nav.start">Start</a>
@@ -33,12 +56,11 @@
       <section id="start" class="hero" aria-labelledby="hero-title">
         <div class="hero-copy">
           <p class="eyebrow" data-i18n="hero.eyebrow">AgentPlaybook</p>
-          <h1 id="hero-title" data-i18n="hero.title">Apply AgentPlaybook with one agent prompt.</h1>
+          <h1 id="hero-title" data-i18n="hero.title">Run your coding agents with shared discipline.</h1>
           <p class="lede" data-i18n="hero.lede">
-            AgentPlaybook is the shared instruction layer for AI coding agents.
-            It tells the agent to read local project rules first, choose the
-            right workflow cards, and report the evidence for what it actually
-            did.
+            AgentPlaybook bridges the gap between raw LLMs and clean engineering.
+            It guides AI coding agents to prioritize local project rules, load targeted workflow cards dynamically,
+            and always report verifiable evidence for their changes.
           </p>
         </div>
 
@@ -46,11 +68,21 @@
           <div class="quick-card-header">
             <div>
               <p class="eyebrow" data-i18n="quick.eyebrow">Use this first</p>
-              <h2 id="quick-title" data-i18n="quick.title">Paste this into your coding agent.</h2>
+              <h2 id="quick-title" data-i18n="quick.title">Drop this into your coding agent.</h2>
             </div>
             <button type="button" class="button primary" id="copyQuick" data-i18n="quick.copy">Copy request</button>
           </div>
-          <pre><code id="quickPrompt" data-i18n="quick.prompt">Apply AgentPlaybook to this project:
+
+          <div class="editor-window">
+            <div class="editor-header">
+              <div class="window-controls">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <span class="window-title">agent-setup.prompt</span>
+            </div>
+            <pre><code id="quickPrompt" data-i18n="quick.prompt">Apply AgentPlaybook to this project:
 https://github.com/taehwandev/AgentPlaybook
 
 Use this project's current agent instructions first.
@@ -64,25 +96,27 @@ If the runtime reads AGENTS.md, do not create duplicate runtime-specific files.
 Then apply the current VibeGuard package command with AgentPlaybook as rules,
 add only a short routing block,
 then continue with my task.</code></pre>
+          </div>
         </section>
       </section>
 
       <section id="apply" class="section" aria-labelledby="apply-title">
         <div class="section-heading">
           <p class="eyebrow" data-i18n="apply.eyebrow">Apply</p>
-          <h2 id="apply-title" data-i18n="apply.title">The default path is agent-driven.</h2>
+          <h2 id="apply-title" data-i18n="apply.title">Let the agent guide the integration.</h2>
           <p data-i18n="apply.body">
-            Most users should paste the request above. Use manual modes only
-            when you are wiring a known local checkout, doing first-time
-            installation yourself, or pinning a team copy.
+            Most developers can simply copy the prompt above. Use manual configurations only when
+            linking a specific local checkout, setting up a global personal copy, or pinning a version for your team.
           </p>
         </div>
 
-        <div class="mode-tabs" role="tablist" aria-label="Application modes" data-i18n-attr="aria-label:modes.label">
-          <button type="button" data-mode="agent" aria-pressed="true" data-i18n="mode.agent">Agent handles it</button>
-          <button type="button" data-mode="existing" aria-pressed="false" data-i18n="mode.existing">Existing local</button>
-          <button type="button" data-mode="first" aria-pressed="false" data-i18n="mode.first">First-time local</button>
-          <button type="button" data-mode="team" aria-pressed="false" data-i18n="mode.team">Team-pinned</button>
+        <div class="mode-tabs-wrapper">
+          <div class="mode-tabs" role="tablist" aria-label="Application modes" data-i18n-attr="aria-label:modes.label">
+            <button type="button" data-mode="agent" aria-pressed="true" data-i18n="mode.agent">Agent handles it</button>
+            <button type="button" data-mode="existing" aria-pressed="false" data-i18n="mode.existing">Existing local</button>
+            <button type="button" data-mode="first" aria-pressed="false" data-i18n="mode.first">First-time local</button>
+            <button type="button" data-mode="team" aria-pressed="false" data-i18n="mode.team">Team-pinned</button>
+          </div>
         </div>
 
         <div class="mode-layout">
@@ -90,45 +124,56 @@ then continue with my task.</code></pre>
             <h3 id="modeTitle" data-i18n="mode.agent.title">Let the agent choose the path.</h3>
             <p id="modeBody" data-i18n="mode.agent.body">
               The agent should inspect local instructions, reuse an existing
-              AgentPlaybook root if available, connect a short routing block,
-              and continue with the user's task.
+              AgentPlaybook root if available, ask before any new download, update
+              existing runtime pointers, connect a short routing block, and continue
+              with the user's task.
             </p>
             <button type="button" class="button" id="copyMode" data-i18n="mode.copy">Copy</button>
           </article>
-          <pre class="code-panel"><code id="modeCode"></code></pre>
+
+          <div class="editor-window">
+            <div class="editor-header">
+              <div class="window-controls">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <span class="window-title" id="modeWindowTitle">agent-setup.prompt</span>
+            </div>
+            <pre class="code-panel"><code id="modeCode"></code></pre>
+          </div>
         </div>
       </section>
 
       <section id="routing" class="section band" aria-labelledby="routing-title">
         <div class="section-heading">
           <p class="eyebrow" data-i18n="routing.eyebrow">Routing</p>
-          <h2 id="routing-title" data-i18n="routing.title">The playbook is loaded selectively.</h2>
+          <h2 id="routing-title" data-i18n="routing.title">Smart, lightweight, selective routing.</h2>
           <p data-i18n="routing.body">
-            Agents should not read everything by default. They classify the
-            request, route to the smallest useful document set, then execute the
-            route gates with evidence.
+            Loading the entire playbook at once wastes tokens and degrades agent performance.
+            Instead, our workflow router loads only the exact rules needed for the task—keeping context tight and execution razor-sharp.
           </p>
         </div>
         <div class="flow-grid">
           <article>
-            <span>01</span>
-            <h3 data-i18n="flow.local.title">Read local rules</h3>
-            <p data-i18n="flow.local.body">Project instructions remain the source of truth for commands and domain policy.</p>
+            <div class="step-badge">01</div>
+            <h3 data-i18n="flow.local.title">Respect local rules</h3>
+            <p data-i18n="flow.local.body">Local rules and configs are the ultimate source of truth for commands, architecture, and domain logic.</p>
           </article>
           <article>
-            <span>02</span>
-            <h3 data-i18n="flow.route.title">Select route</h3>
-            <p data-i18n="flow.route.body">Use the workflow router for feature, docs, review, release, PRD, or debugging work.</p>
+            <div class="step-badge">02</div>
+            <h3 data-i18n="flow.route.title">Find optimal path</h3>
+            <p data-i18n="flow.route.body">Dynamically select paths tailored to features, bugfixes, code reviews, PRDs, releases, or documentation.</p>
           </article>
           <article>
-            <span>03</span>
-            <h3 data-i18n="flow.cards.title">Load cards</h3>
-            <p data-i18n="flow.cards.body">Read only the common, platform, workflow, and product cards needed for the task.</p>
+            <div class="step-badge">03</div>
+            <h3 data-i18n="flow.cards.title">Load core cards only</h3>
+            <p data-i18n="flow.cards.body">Load only the specific common, platform, workflow, and product cards relevant to the current task step.</p>
           </article>
           <article>
-            <span>04</span>
-            <h3 data-i18n="flow.evidence.title">Report evidence</h3>
-            <p data-i18n="flow.evidence.body">Completion requires concrete verification or a clear blocked reason.</p>
+            <div class="step-badge">04</div>
+            <h3 data-i18n="flow.evidence.title">Report verification evidence</h3>
+            <p data-i18n="flow.evidence.body">Every completed task requires verification logs or a detailed, honest explanation of blockers.</p>
           </article>
         </div>
       </section>
@@ -140,18 +185,22 @@ then continue with my task.</code></pre>
         </div>
         <div class="library-grid">
           <article>
+            <div class="library-icon">🛠️</div>
             <h3 data-i18n="library.common.title">Common discipline</h3>
             <p data-i18n="library.common.body">Stack discovery, coding discipline, testing, verification, project naming, error handling, and worktree hygiene.</p>
           </article>
           <article>
+            <div class="library-icon">📱</div>
             <h3 data-i18n="library.platform.title">Platform guides</h3>
             <p data-i18n="library.platform.body">Concrete implementation cards for web, iOS, Android, server, application, KMP, and Flutter work.</p>
           </article>
           <article>
+            <div class="library-icon">🔄</div>
             <h3 data-i18n="library.workflow.title">Workflows</h3>
             <p data-i18n="library.workflow.body">Feature, bugfix, documentation, review, release, PRD, multi-agent, and retrospective routes.</p>
           </article>
           <article>
+            <div class="library-icon">🧩</div>
             <h3 data-i18n="library.product.title">Product patterns</h3>
             <p data-i18n="library.product.body">Auth, RBAC, invitations, billing, entitlements, and tenant boundaries.</p>
           </article>
@@ -161,15 +210,21 @@ then continue with my task.</code></pre>
       <section id="vibeguard" class="section band compact" aria-labelledby="vibeguard-title">
         <div class="section-heading">
           <p class="eyebrow" data-i18n="vibeguard.eyebrow">Safety Gate</p>
-          <h2 id="vibeguard-title" data-i18n="vibeguard.title">VibeGuard details live on the VibeGuard site.</h2>
+          <h2 id="vibeguard-title" data-i18n="vibeguard.title">Code safety guaranteed with VibeGuard.</h2>
           <p data-i18n="vibeguard.body">
-            AgentPlaybook covers routing and shared engineering guidance. Use
-            VibeGuard for the required safety gate and its operating details.
+            While AgentPlaybook guides coding flows and developer practices,
+            VibeGuard provides the crucial guardrails—preventing credential leaks, verifying security, and maintaining local code integrity.
           </p>
           <a class="button primary" href="https://vibeguard.thdev.app/" data-i18n="vibeguard.link">Open VibeGuard</a>
         </div>
       </section>
     </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <p>&copy; 2026 AgentPlaybook. Crafted with human care and elegant engineering.</p>
+      </div>
+    </footer>
 
     <script>
       const translations = {
@@ -185,42 +240,42 @@ then continue with my task.</code></pre>
           "nav.vibeguard": "Safety",
           "language.label": "Language",
           "hero.eyebrow": "AgentPlaybook",
-          "hero.title": "Apply AgentPlaybook with one agent prompt.",
-          "hero.lede": "AgentPlaybook is the shared instruction layer for AI coding agents. It tells the agent to read local project rules first, choose the right workflow cards, and report the evidence for what it actually did.",
+          "hero.title": "Run your coding agents with shared discipline.",
+          "hero.lede": "AgentPlaybook bridges the gap between raw LLMs and clean engineering. It guides AI coding agents to prioritize local project rules, load targeted workflow cards dynamically, and always report verifiable evidence for their changes.",
           "quick.eyebrow": "Use this first",
-          "quick.title": "Paste this into your coding agent.",
+          "quick.title": "Drop this into your coding agent.",
           "quick.copy": "Copy request",
-          "quick.copied": "Copied",
+          "quick.copied": "Copied ✓",
           "quick.prompt": "Apply AgentPlaybook to this project:\nhttps://github.com/taehwandev/AgentPlaybook\n\nUse this project's current agent instructions first.\nIf AgentPlaybook already exists locally, link to that copy.\nDo not download, clone, vendor, or copy another one unless I approve after you ask:\n\"AgentPlaybook already exists locally at <path>. Download or pin a new copy anyway?\"\nIf agent instructions or VibeGuard files already exist, ask how to apply it.\nAfter the application mode is selected, update existing Claude, Codex,\nAntigravity CLI, or other runtime instruction pointers in the same pass.\nIf the runtime reads AGENTS.md, do not create duplicate runtime-specific files.\nThen apply the current VibeGuard package command with AgentPlaybook as rules,\nadd only a short routing block,\nthen continue with my task.",
           "apply.eyebrow": "Apply",
-          "apply.title": "The default path is agent-driven.",
-          "apply.body": "Most users should paste the request above. Use manual modes only when you are wiring a known local checkout, doing first-time installation yourself, or pinning a team copy.",
+          "apply.title": "Let the agent guide the integration.",
+          "apply.body": "Most developers can simply copy the prompt above. Use manual configurations only when linking a specific local checkout, setting up a global personal copy, or pinning a version for your team.",
           "modes.label": "Application modes",
           "mode.agent": "Agent handles it",
           "mode.existing": "Existing local",
           "mode.first": "First-time local",
           "mode.team": "Team-pinned",
           "mode.copy": "Copy",
-          "mode.copied": "Copied",
+          "mode.copied": "Copied ✓",
           "mode.agent.title": "Let the agent choose the path.",
-          "mode.agent.body": "The agent should inspect local instructions, reuse an existing AgentPlaybook root if available, ask before any new download, update existing runtime pointers, connect a short routing block, and continue with the user's task.",
+          "mode.agent.body": "The agent will inspect your local project rules, reuse any existing AgentPlaybook checkout, verify with you before any new download, update runtime files, insert a minimal router, and seamlessly continue your coding task.",
           "mode.existing.title": "Manual: reuse an existing local root.",
-          "mode.existing.body": "Use this only when you know the local AgentPlaybook path and want to wire the repo yourself.",
+          "mode.existing.body": "Perfect when you already have AgentPlaybook downloaded locally and want to wire the path to the target repository yourself.",
           "mode.first.title": "Manual: clone a personal shared copy.",
-          "mode.first.body": "Use this only after checking that no usable local root exists and you want one checkout reused across personal repos.",
+          "mode.first.body": "Best if you want a single, shared AgentPlaybook directory on your machine to reuse across multiple personal repositories.",
           "mode.team.title": "Manual: pin a reviewed copy for a team.",
-          "mode.team.body": "Use this when every teammate and agent must use the same reviewed version.",
+          "mode.team.body": "Use this to lock a specific, human-reviewed version of AgentPlaybook as a submodule so every team member and agent operates on identical rules.",
           "routing.eyebrow": "Routing",
-          "routing.title": "The playbook is loaded selectively.",
-          "routing.body": "Agents should not read everything by default. They classify the request, route to the smallest useful document set, then execute the route gates with evidence.",
-          "flow.local.title": "Read local rules",
-          "flow.local.body": "Project instructions remain the source of truth for commands and domain policy.",
-          "flow.route.title": "Select route",
-          "flow.route.body": "Use the workflow router for feature, docs, review, release, PRD, or debugging work.",
-          "flow.cards.title": "Load cards",
-          "flow.cards.body": "Read only the common, platform, workflow, and product cards needed for the task.",
-          "flow.evidence.title": "Report evidence",
-          "flow.evidence.body": "Completion requires concrete verification or a clear blocked reason.",
+          "routing.title": "Smart, lightweight, selective routing.",
+          "routing.body": "Loading the entire playbook at once wastes tokens and degrades agent performance. Instead, our workflow router loads only the exact rules needed for the task—keeping context tight and execution razor-sharp.",
+          "flow.local.title": "Respect local rules",
+          "flow.local.body": "Local rules and configs are the ultimate source of truth for commands, architecture, and domain logic.",
+          "flow.route.title": "Find optimal path",
+          "flow.route.body": "Dynamically select paths tailored to features, bugfixes, code reviews, PRDs, releases, or documentation.",
+          "flow.cards.title": "Load core cards only",
+          "flow.cards.body": "Load only the specific common, platform, workflow, and product cards relevant to the current task step.",
+          "flow.evidence.title": "Report verification evidence",
+          "flow.evidence.body": "Every completed task requires verification logs or a detailed, honest explanation of blockers.",
           "library.eyebrow": "Library",
           "library.title": "Small reusable cards for common agent work.",
           "library.common.title": "Common discipline",
@@ -232,8 +287,8 @@ then continue with my task.</code></pre>
           "library.product.title": "Product patterns",
           "library.product.body": "Auth, RBAC, invitations, billing, entitlements, and tenant boundaries.",
           "vibeguard.eyebrow": "Safety Gate",
-          "vibeguard.title": "VibeGuard details live on the VibeGuard site.",
-          "vibeguard.body": "AgentPlaybook covers routing and shared engineering guidance. Use VibeGuard for the required safety gate and its operating details.",
+          "vibeguard.title": "Code safety guaranteed with VibeGuard.",
+          "vibeguard.body": "While AgentPlaybook guides coding flows and developer practices, VibeGuard provides the crucial guardrails—preventing credential leaks, verifying security, and maintaining local code integrity.",
           "vibeguard.link": "Open VibeGuard"
         },
         ko: {
@@ -248,56 +303,56 @@ then continue with my task.</code></pre>
           "nav.vibeguard": "안전",
           "language.label": "언어",
           "hero.eyebrow": "AgentPlaybook",
-          "hero.title": "에이전트 프롬프트 하나로 AgentPlaybook을 적용하세요.",
-          "hero.lede": "AgentPlaybook은 AI 코딩 에이전트를 위한 공유 지침 계층입니다. 에이전트가 프로젝트 로컬 규칙을 먼저 읽고, 알맞은 워크플로우 카드를 고르고, 실제 수행 근거를 보고하게 합니다.",
-          "quick.eyebrow": "먼저 사용",
-          "quick.title": "이 내용을 코딩 에이전트에 붙여넣으세요.",
-          "quick.copy": "요청 복사",
-          "quick.copied": "복사됨",
+          "hero.title": "에이전트 프롬프트 한 줄로 AgentPlaybook을 시작하세요.",
+          "hero.lede": "AgentPlaybook은 AI 코딩 에이전트를 위한 스마트하고 직관적인 공유 지침입니다. 에이전트가 프로젝트 고유의 규칙을 최우선으로 존중하고, 작업별 최적의 워크플로우를 스스로 선택하며, 실제로 수정한 작업 근거를 꼼꼼하게 남기도록 이끕니다.",
+          "quick.eyebrow": "시작하기",
+          "quick.title": "프롬프트 창에 바로 붙여넣어 보세요.",
+          "quick.copy": "프롬프트 복사",
+          "quick.copied": "복사 완료 ✓",
           "quick.prompt": "이 프로젝트에 AgentPlaybook을 적용해줘:\nhttps://github.com/taehwandev/AgentPlaybook\n\n현재 프로젝트의 에이전트 지침을 먼저 읽어줘.\nAgentPlaybook이 이미 로컬에 있으면 그 복사본에 연결해줘.\n내가 승인하기 전에는 새로 다운로드, 클론, 벤더링, 복사하지 말고 먼저 물어봐줘:\n\"AgentPlaybook이 이미 <path>에 있습니다. 그래도 새로 다운로드하거나 고정 복사본을 만들까요?\"\n에이전트 지침이나 VibeGuard 파일이 이미 있으면 적용 방식을 먼저 물어봐줘.\n적용 방식이 정해진 뒤 Claude, Codex, Antigravity CLI 또는 다른 런타임 지침 파일이 이미 있으면 같은 적용 작업에서 AgentPlaybook 포인터를 갱신해줘.\n런타임이 AGENTS.md를 읽는다면 중복 런타임 전용 파일은 만들지 마.\n그 다음 AgentPlaybook을 rules로 쓰는 최신 VibeGuard 패키지 명령을 실행하고,\n짧은 라우팅 블록만 추가한 뒤 내 작업을 이어서 진행해줘.",
           "apply.eyebrow": "적용",
-          "apply.title": "기본 경로는 에이전트가 처리합니다.",
-          "apply.body": "대부분의 사용자는 위 요청을 붙여넣으면 됩니다. 알고 있는 로컬 체크아웃을 직접 연결하거나, 처음 설치를 직접 하거나, 팀 버전을 고정할 때만 수동 모드를 사용하세요.",
+          "apply.title": "귀찮은 설정은 에이전트에게 맡겨두세요.",
+          "apply.body": "대부분의 경우 위의 요청 프롬프트만 붙여넣으면 에이전트가 알아서 연동 흐름을 구축합니다. 로컬 소스를 직접 다루거나, 팀 전원이 엄격하게 동일한 규칙을 공유하고자 할 때만 수동 모드를 사용하세요.",
           "modes.label": "적용 모드",
-          "mode.agent": "에이전트 처리",
-          "mode.existing": "기존 로컬",
+          "mode.agent": "에이전트에게 일임",
+          "mode.existing": "기존 로컬 연결",
           "mode.first": "첫 로컬 설정",
-          "mode.team": "팀 고정",
-          "mode.copy": "복사",
-          "mode.copied": "복사됨",
-          "mode.agent.title": "에이전트가 경로를 고르게 합니다.",
-          "mode.agent.body": "에이전트는 로컬 지침을 확인하고, 가능한 경우 기존 AgentPlaybook root를 재사용하고, 새 다운로드 전에는 물어본 뒤, 기존 런타임 포인터를 갱신하고, 짧은 라우팅 블록을 연결하고 사용자 작업을 이어가야 합니다.",
-          "mode.existing.title": "수동: 기존 로컬 root를 재사용합니다.",
-          "mode.existing.body": "로컬 AgentPlaybook 경로를 알고 있고 직접 레포를 연결하고 싶을 때만 사용합니다.",
-          "mode.first.title": "수동: 개인 공유 복사본을 클론합니다.",
-          "mode.first.body": "사용 가능한 로컬 root가 없음을 확인한 뒤 여러 개인 레포에서 재사용할 체크아웃을 직접 만들 때만 사용합니다.",
-          "mode.team.title": "수동: 팀용 검토 버전을 고정합니다.",
-          "mode.team.body": "모든 팀원과 에이전트가 같은 검토 버전을 사용해야 할 때 사용합니다.",
+          "mode.team": "팀 고정 관리",
+          "mode.copy": "스크립트 복사",
+          "mode.copied": "복사 완료 ✓",
+          "mode.agent.title": "에이전트가 알아서 최적의 길을 찾습니다.",
+          "mode.agent.body": "에이전트가 프로젝트 로컬 가이드를 직접 분석하고, 이미 설치된 AgentPlaybook이 있다면 재사용하며, 런타임 설정을 업데이트하고 미니 라우터를 연결한 뒤 즉시 본 작업에 착수합니다.",
+          "mode.existing.title": "수동: 이미 다운로드된 로컬 경로를 연결합니다.",
+          "mode.existing.body": "머신에 이미 AgentPlaybook을 받아두었고, 특정 레포와 수동으로 연결하여 고유한 도메인 설정을 가져가고 싶을 때 매우 유용합니다.",
+          "mode.first.title": "수동: 나만의 공용 복사본을 로컬에 클론합니다.",
+          "mode.first.body": "내 컴퓨터 전체에서 여러 개인 프로젝트들이 동일하게 공유하고 재사용할 수 있는 단일 에이전트 지침 저장소를 구축할 때 적합합니다.",
+          "mode.team.title": "수동: 팀 전원을 위해 특정 버전을 고정합니다.",
+          "mode.team.body": "서브모듈 형태로 검토를 마친 버전의 AgentPlaybook을 고정시켜, 모든 팀원과 AI 에이전트가 단 1px의 오차도 없이 동일한 규칙으로 협업하도록 만듭니다.",
           "routing.eyebrow": "라우팅",
-          "routing.title": "플레이북은 필요한 부분만 로드됩니다.",
-          "routing.body": "에이전트는 모든 문서를 기본으로 읽지 않습니다. 요청을 분류하고, 필요한 최소 문서 세트로 라우팅한 뒤, 근거와 함께 게이트를 실행합니다.",
-          "flow.local.title": "로컬 규칙 읽기",
-          "flow.local.body": "프로젝트 지침은 명령과 도메인 정책의 기준입니다.",
-          "flow.route.title": "라우트 선택",
-          "flow.route.body": "기능, 문서, 리뷰, 릴리스, PRD, 디버깅 작업에는 워크플로우 라우터를 사용합니다.",
-          "flow.cards.title": "카드 로드",
-          "flow.cards.body": "작업에 필요한 공통, 플랫폼, 워크플로우, 제품 카드만 읽습니다.",
-          "flow.evidence.title": "근거 보고",
-          "flow.evidence.body": "완료에는 구체적인 검증 근거 또는 명확한 차단 사유가 필요합니다.",
+          "routing.title": "모든 가이드를 구질구질하게 한 번에 읽지 않습니다.",
+          "routing.body": "수백 장의 지침을 전부 읽으면 프롬프트 비용이 치솟고 집중력이 흐트러집니다. 스마트 워크플로우 라우터는 현재 작업(신규 구현, 버그 수정, 문서화 등)에 꼭 필요한 지침 카드만 똑똑하게 골라 로드하여 빠른 속도와 정확도를 보장합니다.",
+          "flow.local.title": "프로젝트 로컬 가이드 우선 존중",
+          "flow.local.body": "저장소 고유의 실행 명령어, 도메인 패턴, 아키텍처 원칙을 에이전트가 최우선 절대 기준으로 삼습니다.",
+          "flow.route.title": "상황에 적합한 작업 경로 탐색",
+          "flow.route.body": "새 기능 추가부터 핫픽스, 코드 리뷰, PRD 도출 등 현재 상황에 딱 들어맞는 전용 워크플로우를 타도록 안내합니다.",
+          "flow.cards.title": "필수 코어 카드만 효율적 로드",
+          "flow.cards.body": "불필요한 리드 타임을 제거하고 정확도를 극대화하기 위해, 오직 이번 작업 단계에 필요한 필수 카드만 모아 읽습니다.",
+          "flow.evidence.title": "검증 근거와 상세 결과 피드백",
+          "flow.evidence.body": "작업 완수는 말뿐이 아닌 실행된 테스트 로그, 컴파일 결과 또는 명확히 해명된 블로커 근거로 확실히 증명합니다.",
           "library.eyebrow": "라이브러리",
-          "library.title": "반복되는 에이전트 작업을 위한 작은 재사용 카드.",
-          "library.common.title": "공통 규율",
-          "library.common.body": "스택 탐색, 코딩 규율, 테스트, 검증, 프로젝트 네이밍, 오류 처리, 작업 트리 위생을 다룹니다.",
-          "library.platform.title": "플랫폼 가이드",
-          "library.platform.body": "Web, iOS, Android, server, application, KMP, Flutter 작업을 위한 구체적인 구현 카드입니다.",
-          "library.workflow.title": "워크플로우",
-          "library.workflow.body": "기능, 버그 수정, 문서, 리뷰, 릴리스, PRD, 멀티 에이전트, 회고 라우트입니다.",
-          "library.product.title": "제품 패턴",
-          "library.product.body": "인증, RBAC, 초대, 과금, 권한, 테넌트 경계를 다룹니다.",
+          "library.title": "에이전트 작업을 위해 세분화된 고성능 재사용 카드.",
+          "library.common.title": "공통 엔지니어링 규율",
+          "library.common.body": "스택 탐색, 안전 코딩, 테스트 및 검증 규칙, 예외 처리 설계, 그리고 깃 워크트리 관리 규율을 포함합니다.",
+          "library.platform.title": "플랫폼 전용 가이드",
+          "library.platform.body": "웹, iOS, 안드로이드, 서버, KMP, 플러터 등 다양한 환경에서 에이전트가 한 치의 오차도 없이 구현하도록 돕는 카드입니다.",
+          "library.workflow.title": "워크플로우 프로세스",
+          "library.workflow.body": "구현, 버그 킬러, 고품격 문서 작성, 멀티 에이전트 협업, 코드 회고 등 검증된 16종 이상의 상세 동선을 정의합니다.",
+          "library.product.title": "검증된 프로덕트 패턴",
+          "library.product.body": "인증/인가, 권한 제어(RBAC), 초대 수락, 청구(Billing), 요금제 구독 처리 등 비즈니스 코어 요소를 실수 없이 작성하도록 지원합니다.",
           "vibeguard.eyebrow": "안전 관문",
-          "vibeguard.title": "VibeGuard 상세 설명은 VibeGuard 사이트에서 다룹니다.",
-          "vibeguard.body": "AgentPlaybook은 라우팅과 공유 엔지니어링 지침만 다룹니다. 필수 안전 관문과 운영 세부사항은 VibeGuard를 사용하세요.",
-          "vibeguard.link": "VibeGuard 열기"
+          "vibeguard.title": "코드 안전을 책임지는 든든한 VibeGuard",
+          "vibeguard.body": "AgentPlaybook이 전반적인 흐름과 지능적인 라우팅을 리드한다면, VibeGuard는 작업 전후로 보안 토큰 유출, 데이터 파괴, 코드 결함 등 치명적인 리스크를 차단하는 든든한 감시자가 되어 줍니다.",
+          "vibeguard.link": "VibeGuard 바로가기"
         }
       };
 
@@ -362,6 +417,17 @@ then continue with my task.</code></pre>
         document.getElementById("modeBody").textContent = dict[mode.bodyKey];
         document.getElementById("modeCode").textContent = mode.codeKey ? dict[mode.codeKey] : mode.code;
         document.getElementById("copyMode").textContent = dict["mode.copy"];
+
+        // Update tab titles and file names depending on mode
+        const modeWindowTitle = document.getElementById("modeWindowTitle");
+        if (modeWindowTitle) {
+          if (currentMode === "agent") {
+            modeWindowTitle.textContent = "agent-setup.prompt";
+          } else {
+            modeWindowTitle.textContent = "setup-playbook.sh";
+          }
+        }
+
         document.querySelectorAll("[data-mode]").forEach((button) => {
           button.setAttribute("aria-pressed", String(button.dataset.mode === currentMode));
         });
@@ -401,6 +467,11 @@ then continue with my task.</code></pre>
         try {
           await navigator.clipboard.writeText(text);
           button.textContent = dictionary()[copiedKey];
+          button.classList.add("copied");
+          setTimeout(() => {
+            button.textContent = dictionary()[fallbackKey];
+            button.classList.remove("copied");
+          }, 2000);
         } catch {
           button.textContent = dictionary()[fallbackKey];
         }

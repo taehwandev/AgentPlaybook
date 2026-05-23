@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#07090e" />
+      <stop offset="100%" stop-color="#0f131d" />
+    </linearGradient>
+
+    <!-- Emerald-to-Cyan Gradients -->
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2bfd93" />
+      <stop offset="50%" stop-color="#00e5ff" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2bfd93" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#00e5ff" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Base Card -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" stroke="rgba(255,255,255,0.06)" stroke-width="8" />
+
+  <!-- Outer Ambient Glow Grid Ring -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="rgba(0, 229, 255, 0.03)" stroke-width="4" stroke-dasharray="8 8" />
+  <circle cx="256" cy="256" r="210" fill="none" stroke="rgba(43, 253, 147, 0.02)" stroke-width="2" />
+
+  <!-- Abstract AP Monogram -->
+  <g filter="url(#neonGlow)">
+    <!-- Intertwined futuristic 'A' and 'P' paths -->
+    <!-- Stylized 'A' leg and crossbar -->
+    <path d="M160 360 L230 160 C235 145, 245 140, 256 140 C267 140, 277 145, 282 160 L352 360"
+          fill="none" stroke="url(#logoGrad)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Stylized 'P' loop overlapping the 'A' -->
+    <path d="M232 230 L285 230 C325 230, 355 205, 355 175 C355 145, 325 120, 285 120 L256 120"
+          fill="none" stroke="url(#logoGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 40)" />
+
+    <!-- A smart grid node circle representing the Agent's AI core -->
+    <circle cx="256" cy="256" r="16" fill="#ffffff" filter="drop-shadow(0px 0px 8px #00e5ff)" />
+  </g>
+</svg>

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06070a" />
+      <stop offset="100%" stop-color="#0c0e15" />
+    </linearGradient>
+
+    <!-- Glowing Accent Gradients -->
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2bfd93" />
+      <stop offset="100%" stop-color="#00e5ff" />
+    </linearGradient>
+
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2bfd93" />
+      <stop offset="50%" stop-color="#00e5ff" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="24" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1200" height="630" fill="url(#bgGrad)" />
+
+  <!-- Abstract Tech Grid Lines -->
+  <path d="M 0,90 L 1200,90 M 0,180 L 1200,180 M 0,270 L 1200,270 M 0,360 L 1200,360 M 0,450 L 1200,450 M 0,540 L 1200,540"
+        stroke="rgba(255, 255, 255, 0.015)" stroke-width="1" />
+  <path d="M 150,0 L 150,630 M 300,0 L 300,630 M 450,0 L 450,630 M 600,0 L 600,630 M 750,0 L 750,630 M 900,0 L 900,630 M 1050,0 L 1050,630"
+        stroke="rgba(255, 255, 255, 0.015)" stroke-width="1" />
+
+  <!-- Ambient Glowing Orbs in Background -->
+  <circle cx="200" cy="315" r="280" fill="#00e5ff" opacity="0.04" filter="url(#glow)" />
+  <circle cx="950" cy="150" r="250" fill="#2bfd93" opacity="0.03" filter="url(#glow)" />
+
+  <!-- Left Side: Glowing Branding Logo (Vector) -->
+  <g transform="translate(120, 145)" filter="url(#glow)">
+    <!-- Logo outer circle -->
+    <circle cx="170" cy="170" r="150" fill="none" stroke="rgba(43, 253, 147, 0.08)" stroke-width="4" />
+    <circle cx="170" cy="170" r="170" fill="none" stroke="rgba(0, 229, 255, 0.03)" stroke-width="2" stroke-dasharray="10 10" />
+
+    <!-- Stylized 'A' and 'P' paths -->
+    <path d="M100 240 L152 90 C156 80, 163 75, 170 75 C177 75, 184 80, 188 90 L240 240"
+          fill="none" stroke="url(#glowGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" />
+
+    <path d="M152 142 L191 142 C221 142, 242 123, 242 100 C242 77, 221 58, 191 58 L170 58"
+          fill="none" stroke="url(#glowGrad)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 30)" />
+
+    <!-- Core interactive AI node -->
+    <circle cx="170" cy="172" r="12" fill="#ffffff" filter="drop-shadow(0px 0px 6px #00e5ff)" />
+  </g>
+
+  <!-- Right Side: Clean Futuristic Typography -->
+  <g transform="translate(560, 240)">
+    <!-- Label -->
+    <text x="0" y="0" font-family="'Outfit', 'Inter', sans-serif" font-weight="700" font-size="20" fill="#2bfd93" letter-spacing="4">AGENTPLAYBOOK</text>
+
+    <!-- Title -->
+    <text x="0" y="80" font-family="'Outfit', 'Inter', sans-serif" font-weight="800" font-size="72" fill="url(#textGrad)" letter-spacing="-2">AgentPlaybook</text>
+
+    <!-- Subtitle -->
+    <text x="0" y="140" font-family="'Inter', sans-serif" font-weight="500" font-size="22" fill="#949eb4">Smart shared discipline for AI coding agents.</text>
+
+    <!-- Badges / Features -->
+    <g transform="translate(0, 190)">
+      <rect x="0" y="0" width="190" height="38" rx="8" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
+      <text x="95" y="24" font-family="'Inter', sans-serif" font-weight="600" font-size="13" fill="#f1f3f9" text-anchor="middle">✓ Respects Local Rules</text>
+
+      <rect x="205" y="0" width="190" height="38" rx="8" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
+      <text x="300" y="24" font-family="'Inter', sans-serif" font-weight="600" font-size="13" fill="#f1f3f9" text-anchor="middle">✓ Selective Routing</text>
+
+      <rect x="410" y="0" width="190" height="38" rx="8" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
+      <text x="505" y="24" font-family="'Inter', sans-serif" font-weight="600" font-size="13" fill="#f1f3f9" text-anchor="middle">✓ Verified Evidence</text>
+    </g>
+  </g>
+</svg>
