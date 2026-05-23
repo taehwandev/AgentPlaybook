@@ -42,6 +42,7 @@ Current command profiles:
 - `feature`
 - `multi-agent`
 - `planning`
+- `prd`
 - `product`
 - `refactor`
 - `release`
@@ -82,6 +83,11 @@ Current concern values:
 
 Use `--concern` more than once when a task crosses risk areas. Use
 `--format json` when another tool should parse the route.
+
+Some concerns are baseline concerns. `stack`, `failure`, and `interaction` are
+valid concerns, but their core cards are already loaded by every route through
+`CORE_DOCS`; selecting them may add a route note instead of changing the document
+list.
 
 Examples:
 

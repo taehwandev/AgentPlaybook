@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +18,8 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 
 ROOT = Path(__file__).resolve().parents[1]
+MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+FRONTMATTER_REQUIRED_KEYS = ("keyflow_id:", "status:", "type:")
 
 
 @dataclass(frozen=True)
@@ -209,7 +212,16 @@ PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
     ("android", "background"): ("platforms/android/android-background-work.md",),
     ("ios", "security"): ("platforms/ios/ios-security.md",),
     ("web", "accessibility"): ("platforms/web/web-accessibility-i18n.md",),
+    ("web", "security"): ("platforms/web/web-security.md",),
+    ("server", "security"): ("platforms/server/server-security.md",),
     ("application", "security"): ("platforms/application/application-security.md",),
+}
+
+
+BASELINE_CONCERNS: Dict[str, str] = {
+    "stack": "already included in every route through CORE_DOCS.",
+    "failure": "already included in every route through CORE_DOCS.",
+    "interaction": "already included in every route through CORE_DOCS.",
 }
 
 
@@ -239,6 +251,9 @@ def resolve_docs(command: str, platform: Optional[str], concerns: List[str]) -> 
     notes = list(profile.notes)
     if command == "product" and not platform:
         notes.append("Select at least one platform card before writing ARD.")
+    for concern in concerns:
+        if concern in BASELINE_CONCERNS:
+            notes.append(f"Concern `{concern}` is {BASELINE_CONCERNS[concern]}")
 
     return {
         "root": str(ROOT),
@@ -325,13 +340,55 @@ def validate() -> int:
         refs.update(docs)
 
     missing = sorted(doc for doc in refs if not (ROOT / doc).exists())
+    markdown_files = sorted(ROOT.rglob("*.md"))
+    bad_frontmatter: List[str] = []
+    bad_links: List[str] = []
+
+    for path in markdown_files:
+        relative = path.relative_to(ROOT)
+        text = path.read_text(encoding="utf-8")
+        if not text.startswith("---\n"):
+            bad_frontmatter.append(f"{relative}: missing frontmatter")
+            continue
+        end = text.find("\n---", 4)
+        if end == -1:
+            bad_frontmatter.append(f"{relative}: unterminated frontmatter")
+            continue
+        header = text[4:end]
+        missing_keys = [key[:-1] for key in FRONTMATTER_REQUIRED_KEYS if key not in header]
+        if missing_keys:
+            bad_frontmatter.append(f"{relative}: missing {', '.join(missing_keys)}")
+
+        for raw_link in MARKDOWN_LINK_RE.findall(text):
+            link = raw_link.strip()
+            target = link.split("#", 1)[0].split(" ", 1)[0].strip("<>")
+            if not target or target.startswith("#"):
+                continue
+            if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", target):
+                continue
+            if not (path.parent / target).resolve().exists():
+                bad_links.append(f"{relative}: {raw_link}")
+
     if missing:
         print("Missing workflow references:", file=sys.stderr)
         for doc in missing:
             print(f"- {doc}", file=sys.stderr)
+    if bad_frontmatter:
+        print("Invalid markdown frontmatter:", file=sys.stderr)
+        for item in bad_frontmatter:
+            print(f"- {item}", file=sys.stderr)
+    if bad_links:
+        print("Broken markdown links:", file=sys.stderr)
+        for item in bad_links:
+            print(f"- {item}", file=sys.stderr)
+
+    if missing or bad_frontmatter or bad_links:
         return 1
 
-    print(f"OK: {len(refs)} workflow references exist.")
+    print(
+        f"OK: {len(refs)} workflow references exist; "
+        f"{len(markdown_files)} markdown frontmatter blocks and links are valid."
+    )
     return 0
 
 
@@ -352,7 +409,7 @@ def build_parser() -> argparse.ArgumentParser:
     route.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
     subparsers.add_parser("list", help="List available commands, platforms, and concerns.")
-    subparsers.add_parser("validate", help="Validate referenced document paths.")
+    subparsers.add_parser("validate", help="Validate route references, markdown frontmatter, and links.")
     return parser
 
 

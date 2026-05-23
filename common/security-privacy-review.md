@@ -17,8 +17,8 @@ For platform-specific surfaces, also consult the matching security or review doc
 Android: platforms/android/android-security.md
 iOS: platforms/ios/ios-security.md
 Application/Desktop: platforms/application/application-security.md
-Server: platforms/server/server-review.md
-Web: platforms/web/web-review.md
+Server: platforms/server/server-security.md
+Web: platforms/web/web-security.md
 ```
 
 ## Priority

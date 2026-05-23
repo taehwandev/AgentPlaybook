@@ -67,9 +67,11 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Web/React architecture: `platforms/web/web-architecture.md`
 - Web/React state/data: `platforms/web/web-state-data.md`
 - Web accessibility/i18n: `platforms/web/web-accessibility-i18n.md`
+- Web security: `platforms/web/web-security.md`
 - Web review: `platforms/web/web-review.md`
 - Server architecture: `platforms/server/server-architecture.md`
 - Server data/jobs: `platforms/server/server-data-jobs.md`
+- Server security: `platforms/server/server-security.md`
 - Server review: `platforms/server/server-review.md`
 - Application architecture: `platforms/application/application-architecture.md`
 - Application system integration: `platforms/application/application-system-integration.md`

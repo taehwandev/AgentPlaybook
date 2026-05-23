@@ -11,6 +11,7 @@ Use for React web UI work: routing, pages, components, hooks, forms, data fetchi
 Also use:
 - `web-state-data.md` for state, cache, forms, API clients, mocks, and browser persistence.
 - `web-accessibility-i18n.md` for text, focus, keyboard, dialogs, responsive copy, and localization.
+- `web-security.md` for auth, browser storage, tokens, redirects, embeds, uploads, and client-visible config.
 - product-pattern docs for auth, invite, billing, entitlement, or tenant work.
 
 ## Boundaries
