@@ -15,6 +15,16 @@ Keep momentum. Ask only when the answer can change behavior, safety,
 architecture, data handling, cost, or external state. Otherwise make a
 reasonable assumption, state it briefly, and proceed.
 
+Match the user's language for conversation. Keep shared agent-facing documents
+in English.
+
+## Communication
+
+- Be concise, factual, and action-oriented.
+- Report evidence and progress instead of generic confidence.
+- Avoid open-ended questions when a concrete decision frame is possible.
+- Avoid overclaiming; separate what was verified from what remains risky.
+
 ## Questions
 
 When a question is needed:
@@ -59,3 +69,6 @@ When stopping before completion, include:
 - commands run and results
 - blockers or decisions needed
 - safest next step
+
+For completed work, include changed files, verification, skipped checks, and
+remaining risk.

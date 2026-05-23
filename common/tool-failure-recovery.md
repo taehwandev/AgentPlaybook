@@ -6,8 +6,8 @@ type: human-reviewed-needed
 
 # Tool Failure Recovery
 
-Use when a build, test, lint, typecheck, formatter, package, script, or local
-tool command fails.
+Use when a build, test, lint, typecheck, formatter, package, script, file-edit,
+or local tool command fails.
 
 ## Default
 
@@ -23,7 +23,7 @@ Capture the useful facts before editing:
 - first failing file and line number, when present
 - error code, exception type, test name, or assertion message
 - whether the failure is from code, config, missing dependency, environment,
-  sandbox, permissions, network, timeout, or flaky external state
+  sandbox, permissions, network, timeout, flaky external state, or edit context
 - whether the failing area was touched by the current task
 
 If output is truncated, rerun the narrowest command that exposes the relevant
@@ -38,6 +38,26 @@ error. Do not paste secret values from logs.
   destructive cleanup, external state, or a product decision.
 - If the same command fails twice for different reasons, repeat diagnosis from
   the new output instead of assuming the old cause.
+
+## Common Scenarios
+
+Lint or formatting failure:
+
+- Prefer repo-local format or lint commands.
+- If auto-fix changes unrelated files, keep only changes that belong to the
+  task and report the rest.
+
+Compile or type failure:
+
+- Fix the type, import, contract, or generated artifact that caused the error.
+- Do not downgrade types, add ignore comments, or loosen compiler rules just to
+  make the check pass.
+
+File edit failure:
+
+- Re-read the target file and patch the current content.
+- Check whether another change altered the expected context.
+- Avoid broad rewrites when a smaller patch is available.
 
 ## Flaky Failures
 
