@@ -24,8 +24,8 @@ Task:
 AgentPlaybook root:
 <AGENTPLAYBOOK_ROOT>
 
-VibeGuard source:
-<LOCAL_OR_PINNED_VIBEGUARD_SOURCE>
+VibeGuard docs:
+https://vibeguard.thdev.app/
 
 Rules:
 1. Identify the target repo and read repo-local instructions first, including
@@ -36,13 +36,9 @@ Rules:
 3. Do not copy the whole AgentPlaybook library into this repo. Link only the
    relevant root, index, workflow script, and selected cards.
 4. VibeGuard is required. Before editing documentation, code, config,
-   dependency, data, deployment, or credential surfaces, run:
-   vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
-   If the local command is unavailable but a trusted checkout exists, run:
-   node <VIBEGUARD_ROOT>/src/cli.js audit . --rules <AGENTPLAYBOOK_ROOT>
-   Otherwise use the local or pinned VibeGuard source I provided. Do not run an
-   unpinned GitHub package command in unattended automation. If VibeGuard cannot
-   run, stop and report the blocker.
+   dependency, data, deployment, or credential surfaces, run the required
+   safety gate from https://vibeguard.thdev.app/ with <AGENTPLAYBOOK_ROOT> as
+   the rule source. If VibeGuard cannot run, stop and report the blocker.
 5. For multi-step tasks, run:
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<USER_REQUEST>"
@@ -76,7 +72,7 @@ Rules:
 13. Ask only blocker questions. Prefer concrete options with tradeoffs and a
    recommended default.
 14. Before finishing, confirm every required route gate is `GREEN` with ledger
-    evidence, rerun the relevant verification and VibeGuard audit, then
+    evidence, rerun the relevant verification and VibeGuard safety gate, then
     report changed files, checks run, skipped checks, and residual risk.
 ```
 

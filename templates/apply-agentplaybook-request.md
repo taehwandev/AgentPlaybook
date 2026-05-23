@@ -39,33 +39,10 @@ scripts/workflow.py. Validate it with:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 
 VibeGuard is required. After selecting the AgentPlaybook root, run VibeGuard
-setup for a first-time repo or update for an existing VibeGuard install, then
-audit with that root as --rules. Use a local, repo-pinned, or team-approved
-VibeGuard source when available:
+with the selected AgentPlaybook root as the rule source. Follow the VibeGuard
+docs for exact commands, package source, fixes, and evidence flow:
 
-First-time target repo:
-vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
-
-Existing VibeGuard install:
-vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
-
-Then audit:
-vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
-
-If no trusted local source exists, use a reviewed GitHub package tag or commit:
-
-First-time target repo:
-npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard#<VIBEGUARD_REF> -- vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
-
-Existing VibeGuard install:
-npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard#<VIBEGUARD_REF> -- vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
-
-Then audit:
-npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard#<VIBEGUARD_REF> -- vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
-
-Do not run an unpinned GitHub package command in unattended automation. Use
---fix only after audit output shows a low-risk safety fix and this repo allows
-that automatic change.
+https://vibeguard.thdev.app/
 
 If VibeGuard cannot run, stop and tell me the blocker.
 
@@ -84,8 +61,8 @@ paused. RED means the gate was missed or lacks evidence and must use missed-gate
 recovery.
 
 After connecting it, verify that the referenced AgentPlaybook AGENTS.md and
-index.md files exist, confirm VibeGuard is passing, then continue with my
-original task.
+index.md files exist, confirm the VibeGuard gate is passing, then continue with
+my original task.
 ```
 
 For a team-pinned install, add this sentence:

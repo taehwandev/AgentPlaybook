@@ -48,8 +48,8 @@ https://github.com/taehwandev/AgentPlaybook
 - It is not meant to be copied wholesale into every project.
 
 VibeGuard is the required safety gate for applying and maintaining
-AgentPlaybook. It handles deterministic setup, preflight audit, safe fixes, and
-secret/cost/data-risk checks.
+AgentPlaybook. AgentPlaybook does not duplicate VibeGuard usage docs; use
+https://vibeguard.thdev.app/ for VibeGuard setup and usage.
 
 Website:
 
@@ -122,64 +122,18 @@ Do not load every shared document by default.
 You can also vendor this repository as a submodule or workspace dependency if
 your team wants a pinned version.
 
-VibeGuard is required in every distribution mode:
+### Safety Gate
 
-```bash
-# First-time target repo:
-vibeguard setup . --rules "${AGENTPLAYBOOK_HOME}"
+VibeGuard is required in every distribution mode, but its commands and
+operating details live in VibeGuard docs:
 
-# Then audit:
-vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
+```text
+https://vibeguard.thdev.app/
 ```
 
-For an existing target repo that already has VibeGuard guardrails, refresh the
-managed block before auditing:
-
-```bash
-# Existing VibeGuard install:
-vibeguard update . --rules "${AGENTPLAYBOOK_HOME}"
-
-# Then audit:
-vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
-```
-
-If `vibeguard` is not on `PATH` but a trusted local checkout exists, run the
-checkout directly:
-
-```bash
-# First-time target repo:
-node "${VIBEGUARD_HOME}/src/cli.js" setup . --rules "${AGENTPLAYBOOK_HOME}"
-
-# Existing VibeGuard install:
-node "${VIBEGUARD_HOME}/src/cli.js" update . --rules "${AGENTPLAYBOOK_HOME}"
-
-# Then audit:
-node "${VIBEGUARD_HOME}/src/cli.js" audit . --rules "${AGENTPLAYBOOK_HOME}"
-```
-
-Use an installed, repo-pinned, local-checkout, or team-approved VibeGuard source
-first. If a local source is unavailable, use a reviewed GitHub tag or commit:
-
-```bash
-# First-time target repo:
-npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard#<VIBEGUARD_REF> -- vibeguard setup . --rules "${AGENTPLAYBOOK_HOME}"
-
-# Existing VibeGuard install:
-npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard#<VIBEGUARD_REF> -- vibeguard update . --rules "${AGENTPLAYBOOK_HOME}"
-
-# Then audit:
-npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard#<VIBEGUARD_REF> -- vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
-```
-
-Run `--fix` only after audit output shows a low-risk safety fix and the target
-repo allows that automatic change.
-
-When the target runtime has VibeGuard execution evidence configured, summarize
-it before final reporting:
-
-```bash
-vibeguard evidence .
-```
+When applying AgentPlaybook, use the selected AgentPlaybook root as the
+VibeGuard rule source. If VibeGuard cannot run, report the blocker instead of
+bypassing the gate.
 
 ## Apply With Any AI Agent
 
@@ -191,10 +145,9 @@ https://github.com/taehwandev/AgentPlaybook
 
 If AgentPlaybook already exists locally, link this repo to the existing copy.
 Do not clone, vendor, or copy a second copy unless no usable local copy exists.
-Run VibeGuard setup or update, then audit with the selected AgentPlaybook root
-as --rules.
-Use a local, repo-pinned, or reviewed VibeGuard source. Do not run an unpinned
-GitHub package command in unattended automation.
+Run the required VibeGuard safety gate by following
+https://vibeguard.thdev.app/ and use the selected AgentPlaybook root as the
+rule source.
 Update the repo-local agent instructions with a short routing block. Keep
 repo-specific commands, paths, services, product policy, and domain language in
 this repo.
@@ -210,16 +163,16 @@ flow instead of copying the whole library:
    install, or team-pinned install.
 3. Validate the selected AgentPlaybook root with
    `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate`.
-4. Run VibeGuard with the selected root as `--rules`: `setup` for first-time
-   repos or `update` for existing VibeGuard installs, then `audit`.
+4. Run the required VibeGuard safety gate with the selected AgentPlaybook root
+   as the rule source. Follow https://vibeguard.thdev.app/ for exact usage.
 5. Add a short routing block to the repo instruction file the agent runtime
    actually reads.
 6. Keep repo-specific commands, paths, services, product policy, and domain
    language in the target repo.
 7. For follow-up work, run `workflow.py classify` when request clarity is
    uncertain, then `workflow.py route ...` and follow the gate ledger.
-8. Before reporting success, verify the routing block, VibeGuard audit, and any
-   route gates that were required.
+8. Before reporting success, verify the routing block, VibeGuard gate result,
+   and any route gates that were required.
 
 ## Prompt A Local Agent
 
@@ -241,7 +194,8 @@ Then use AgentPlaybook:
 <AGENTPLAYBOOK_ROOT>/index.md
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 
-Run VibeGuard audit with <AGENTPLAYBOOK_ROOT> as --rules before editing.
+Run the required VibeGuard safety gate from https://vibeguard.thdev.app/
+with <AGENTPLAYBOOK_ROOT> as the rule source before editing.
 For multi-step work, run the workflow route and follow its gate ledger.
 After each completed gate or task step, show:
 Gate signal: GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
@@ -274,7 +228,7 @@ bridge file or a pasted prompt.
 - For one-shot use, paste
   [templates/use-agentplaybook-prompt.md](templates/use-agentplaybook-prompt.md)
   into the agent with the target repo, task, AgentPlaybook root, and VibeGuard
-  source filled in.
+  docs link filled in.
 - For runtime-specific setup rules, read
   [docs/agent-runtime-integration.md](docs/agent-runtime-integration.md).
 
@@ -287,13 +241,12 @@ bridge file or a pasted prompt.
 - Team-pinned install: add AgentPlaybook as a git submodule or vendored
   dependency when every teammate and agent must use the same reviewed version.
 
-In every mode, VibeGuard is mandatory. Run VibeGuard `setup` for a first-time
-target repo or `update` for an existing VibeGuard install, then run `audit`
-against the target repo and pass the selected AgentPlaybook root as `--rules`.
-Prefer a local, repo-pinned, or reviewed VibeGuard source. If VibeGuard cannot
-run, report the blocker instead of bypassing the gate. The target repo keeps
-its own commands, paths, services, product policy, and domain rules.
-AgentPlaybook provides shared defaults only.
+In every mode, VibeGuard is mandatory. AgentPlaybook names that requirement and
+the selected rule source; VibeGuard owns the operating flow.
+Use https://vibeguard.thdev.app/. If VibeGuard cannot run, report the blocker
+instead of bypassing the gate. The target repo keeps its own commands, paths,
+services, product policy, and domain rules. AgentPlaybook provides shared
+defaults only.
 
 ## Workflow Router
 
@@ -484,50 +437,21 @@ This is the core design: small cards, loaded only when relevant.
 
 ## VibeGuard Relationship
 
-AgentPlaybook and VibeGuard should stay separate, but they are integrated by
-policy. VibeGuard is not optional when applying AgentPlaybook.
+AgentPlaybook and VibeGuard stay separate.
 
-AgentPlaybook is the reusable rule library. It answers:
+- AgentPlaybook owns reusable agent guidance: routing, workflow gates,
+  engineering cards, and platform/product patterns.
+- VibeGuard owns the required safety gate and its operational UX.
+- AgentPlaybook links to VibeGuard instead of documenting VibeGuard operational
+  details here.
+- VibeGuard should use AgentPlaybook as a rule source when applying this
+  playbook to a target repo.
 
-- What should an AI coding agent read before editing?
-- How should it route planning, implementation, review, testing, and handoff?
-- Which platform or product-pattern risks should be considered?
-- What guidance can be reused across many repositories?
+VibeGuard documentation:
 
-VibeGuard is the required safety layer and CLI. It answers:
-
-- How can a non-developer apply safety guardrails by giving an agent one link?
-- What deterministic preflight checks should run before code is changed?
-- Which safe fixes can be applied automatically?
-- When should the agent stop before secrets, cost, data, or destructive risk?
-
-Keeping them separate has practical benefits:
-
-- Users can install or update the safety CLI without changing the playbook.
-- Teams can pin the playbook version while still running the required
-  VibeGuard gate on every target repo.
-- VibeGuard can consume or summarize selected AgentPlaybook cards without
-  copying the full library.
-- AgentPlaybook remains general-purpose, while VibeGuard can optimize its UX for
-  beginners and non-developers.
-
-The integration model is link-based and mandatory:
-
-- VibeGuard must reference AgentPlaybook as the configured rule source when
-  applying this playbook to a repo.
-- AgentPlaybook must point users to VibeGuard for installation, preflight checks,
-  and safe auto-fixes.
-- VibeGuard execution should use an installed, repo-pinned, team-approved, or
-  reviewed package ref; unpinned package execution is not the default.
-- Shared rules should live in AgentPlaybook when they are broadly reusable.
-- VibeGuard-specific CLI behavior, audit output, setup/update flow, evidence,
-  prompt generation, and beginner UX should live in VibeGuard.
-- Do not duplicate long guidance between the two projects. Link it or promote it
-  into the more general project.
-
-Do not merge the projects while VibeGuard remains a CLI with setup, update,
-audit, prompt, evidence, fix, localization, and beginner onboarding behavior.
-Separate repos keep ownership clear while making the safety gate required.
+```text
+https://vibeguard.thdev.app/
+```
 
 ## Language And Localization
 
