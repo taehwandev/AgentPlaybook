@@ -13,6 +13,8 @@ agent instructions, release notes, or knowledge-base pages.
 
 - `workflows/agent-task-lifecycle.md`
 - `common/code-conventions.md` for naming and clarity
+- `common/llm-wiki-documentation.md` for wiki, knowledge-base, runbook,
+  onboarding, durable architecture, or operational docs
 - `common/project-naming.md` when names, slugs, or product identifiers appear
 - `common/verification-policy.md` when links, examples, or commands can be checked
 - task-specific architecture, product-pattern, security, or release cards when the docs describe those surfaces
@@ -22,9 +24,33 @@ agent instructions, release notes, or knowledge-base pages.
 1. Identify the document audience, purpose, source of truth, and expected action.
 2. Check existing docs for overlap before adding a new page or section.
 3. Keep repo-specific commands, paths, role matrices, and domain terms in repo-local docs.
-4. Link to shared cards instead of copying full guidance.
-5. Verify examples, links, file paths, commands, and metadata where practical.
-6. Report what changed, what was verified, and any stale or missing source material.
+4. Write shared agent library guidance in English. Localize only public-facing
+   site copy or repo-local docs that intentionally target another locale.
+5. Link to shared cards instead of copying full guidance.
+6. Verify examples, links, file paths, commands, and metadata where practical.
+7. Report what changed, what was verified, and any stale or missing source material.
+
+## Promote Local Lessons
+
+Move a local lesson into shared docs only when it remains useful after removing
+project names, service names, local paths, command names, and platform-specific
+API names.
+
+Shared docs should capture:
+
+- the recurring risk
+- when to load the guidance
+- the decision rule
+- the verification question
+
+Keep local docs responsible for:
+
+- product policy
+- repository commands
+- file paths
+- domain vocabulary
+- platform-specific implementation details
+- examples that only make sense in one codebase
 
 ## Stop If
 

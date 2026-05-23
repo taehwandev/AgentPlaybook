@@ -14,6 +14,8 @@ Use when turning a product request, PRD, design note, or vague feature idea into
 - Separate known facts, assumptions, and open decisions.
 - Find repo-local product docs before inventing behavior.
 - Ask only when ambiguity changes the result or risk.
+- Use `workflows/ambiguity-gate.md` when an unknown might change behavior,
+  architecture, security, release risk, or verification.
 
 ## Define The Contract
 

@@ -12,51 +12,59 @@
   </head>
   <body>
     <header class="hero">
-      <nav class="nav" aria-label="Primary">
-        <a href="#library">Library</a>
-        <a href="#tracks">Tracks</a>
-        <a href="#workflows">Workflows</a>
-        <a href="#usage">Usage</a>
+      <nav class="nav" aria-label="Primary navigation" data-i18n-attr="aria-label:nav.label">
+        <div class="nav-links">
+          <a href="#library" data-i18n="nav.library">Library</a>
+          <a href="#tracks" data-i18n="nav.tracks">Tracks</a>
+          <a href="#workflows" data-i18n="nav.workflows">Workflows</a>
+          <a href="#usage" data-i18n="nav.usage">Usage</a>
+        </div>
+        <div class="language-switcher" aria-label="Language" data-i18n-attr="aria-label:language.label">
+          <button type="button" data-lang-choice="en" aria-pressed="true">EN</button>
+          <button type="button" data-lang-choice="ko" aria-pressed="false">KO</button>
+        </div>
       </nav>
-      <p class="eyebrow">Shared rules for AI-assisted engineering</p>
-      <h1>Agent Playbook</h1>
-      <p class="lede">
+      <p class="eyebrow" data-i18n="hero.eyebrow">Shared rules for AI-assisted engineering</p>
+      <h1 data-i18n="hero.title">Agent Playbook</h1>
+      <p class="lede" data-i18n="hero.lede">
         A compact operating manual for coding agents. It keeps common behavior,
         architecture, review, commit, and product-pattern guidance in one
         reusable place while repo-local instructions stay in each project.
       </p>
       <div class="hero-actions" aria-label="Key links">
-        <a class="button primary" href="https://github.com/taehwandev/agent-playbook/blob/main/AGENTS.md">Agent Entry</a>
-        <a class="button" href="https://github.com/taehwandev/agent-playbook/blob/main/index.md">Document Index</a>
+        <a class="button primary" href="https://github.com/taehwandev/AgentPlaybook/blob/main/AGENTS.md" data-i18n="hero.agent_entry">Agent Entry</a>
+        <a class="button" href="https://github.com/taehwandev/AgentPlaybook/blob/main/index.md" data-i18n="hero.document_index">Document Index</a>
+        <a class="button" href="https://github.com/taehwandev/AgentPlaybook/blob/main/docs/agent-bootstrap.md" data-i18n="hero.apply_guide">Apply Guide</a>
       </div>
     </header>
 
     <main>
       <section id="library" class="section">
         <div class="section-heading">
-          <p class="eyebrow">Library Model</p>
-          <h2>Small cards, loaded only when relevant.</h2>
+          <p class="eyebrow" data-i18n="library.eyebrow">Library Model</p>
+          <h2 data-i18n="library.title">Small cards, loaded only when relevant.</h2>
         </div>
         <div class="grid three">
           <article>
-            <h3>Common</h3>
-            <p>
+            <h3 data-i18n="library.common.title">Common</h3>
+            <p data-i18n="library.common.body">
               Baseline behavior for LLM coding discipline, code conventions,
               project naming, change size, dependencies, generated files, API
-              contracts, release readiness, accessibility, architecture design,
-              refactoring, testing, review, commits, verification, and safety.
+              contracts, server-side caching, release readiness, accessibility,
+              architecture design, refactoring, testing, review, commits,
+              verification, and safety.
             </p>
           </article>
           <article>
-            <h3>Platforms</h3>
-            <p>
+            <h3 data-i18n="library.platforms.title">Platforms</h3>
+            <p data-i18n="library.platforms.body">
               Focused architecture and review tracks for web, iOS, Android,
               server, and desktop/application work.
             </p>
           </article>
           <article>
-            <h3>Product Patterns</h3>
-            <p>
+            <h3 data-i18n="library.product.title">Product Patterns</h3>
+            <p data-i18n="library.product.body">
               Reusable SaaS mechanics such as auth, RBAC, invitations, billing,
               entitlements, and tenant boundaries.
             </p>
@@ -66,119 +74,335 @@
 
       <section id="tracks" class="section band">
         <div class="section-heading">
-          <p class="eyebrow">Execution Tracks</p>
-          <h2>Common first, then one platform.</h2>
+          <p class="eyebrow" data-i18n="tracks.eyebrow">Execution Tracks</p>
+          <h2 data-i18n="tracks.title">Common first, then one platform.</h2>
         </div>
         <div class="track-list">
-          <a href="https://github.com/taehwandev/agent-playbook/blob/main/platforms/web/web-architecture.md">Web / React</a>
-          <a href="https://github.com/taehwandev/agent-playbook/blob/main/platforms/ios/ios-architecture.md">iOS</a>
-          <a href="https://github.com/taehwandev/agent-playbook/blob/main/platforms/android/android-architecture.md">Android</a>
-          <a href="https://github.com/taehwandev/agent-playbook/blob/main/platforms/server/server-architecture.md">Server</a>
-          <a href="https://github.com/taehwandev/agent-playbook/blob/main/platforms/application/application-architecture.md">Application</a>
+          <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/platforms/web/web-architecture.md">Web / React</a>
+          <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/platforms/ios/ios-architecture.md">iOS</a>
+          <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/platforms/android/android-architecture.md">Android</a>
+          <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/platforms/server/server-architecture.md">Server</a>
+          <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/platforms/application/application-architecture.md">Application</a>
         </div>
       </section>
 
       <section id="workflows" class="section">
         <div class="section-heading">
-          <p class="eyebrow">Workflow Layer</p>
-          <h2>Repeatable paths for common agent work.</h2>
+          <p class="eyebrow" data-i18n="workflows.eyebrow">Workflow Layer</p>
+          <h2 data-i18n="workflows.title">Repeatable paths for common agent work.</h2>
         </div>
         <div class="grid three">
           <article>
-            <h3>Agent Task Lifecycle</h3>
-            <p>
+            <h3 data-i18n="workflow.lifecycle.title">Agent Task Lifecycle</h3>
+            <p data-i18n="workflow.lifecycle.body">
               Route any agent task from intake through local rules, risk scan,
               selected cards, action, verification, and report.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/agent-task-lifecycle.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/agent-task-lifecycle.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
-            <h3>Agent Handoff</h3>
-            <p>
+            <h3 data-i18n="workflow.handoff.title">Agent Handoff</h3>
+            <p data-i18n="workflow.handoff.body">
               Preserve objective, files, commands, blockers, verification, and
               next step across interruption, resume, or transfer.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/agent-handoff-continuation.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/agent-handoff-continuation.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
-            <h3>Development Cycle</h3>
-            <p>
+            <h3 data-i18n="workflow.ambiguity.title">Ambiguity Gate</h3>
+            <p data-i18n="workflow.ambiguity.body">
+              Classify blockers, researchable unknowns, safe assumptions, and
+              out-of-scope items before planning or implementation.
+            </p>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/ambiguity-gate.md" data-i18n="workflow.link">Open workflow</a>
+          </article>
+          <article>
+            <h3 data-i18n="workflow.product_architecture.title">Product Architecture Delivery</h3>
+            <p data-i18n="workflow.product_architecture.body">
+              Move product intent through PRD, ARD, review, implementation,
+              tests, UI tests, and commit readiness gates.
+            </p>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/product-architecture-delivery.md" data-i18n="workflow.link">Open workflow</a>
+          </article>
+          <article>
+            <h3 data-i18n="workflow.multi_agent.title">Multi-Agent Collaboration</h3>
+            <p data-i18n="workflow.multi_agent.body">
+              Split delegated or parallel work through explicit roles, gates,
+              owned files, forbidden files, and disjoint write scopes.
+            </p>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/multi-agent-collaboration.md" data-i18n="workflow.link">Open workflow</a>
+          </article>
+          <article>
+            <h3 data-i18n="workflow.multi_review.title">Multi-Perspective Review</h3>
+            <p data-i18n="workflow.multi_review.body">
+              Review non-trivial changes through product, UX, architecture,
+              reliability, security, release, and QA lenses.
+            </p>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/multi-perspective-review.md" data-i18n="workflow.link">Open workflow</a>
+          </article>
+          <article>
+            <h3 data-i18n="workflow.development.title">Development Cycle</h3>
+            <p data-i18n="workflow.development.body">
               Route multi-step implementation from intake and scope through
               design, implementation, verification, review, and handoff.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/development-cycle.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/development-cycle.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
-            <h3>Planning Research</h3>
-            <p>
+            <h3 data-i18n="workflow.planning.title">Planning Research</h3>
+            <p data-i18n="workflow.planning.body">
               Inspect local evidence, separate facts from assumptions, compare
               options, and produce a risk-aware recommendation.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/planning-research.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/planning-research.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
-            <h3>Documentation Update</h3>
-            <p>
+            <h3 data-i18n="workflow.docs.title">Documentation Update</h3>
+            <p data-i18n="workflow.docs.body">
               Create, review, or restructure docs while linking source guidance
               and keeping repo-specific details local.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/documentation-update.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/documentation-update.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
-            <h3>Feature Implementation</h3>
-            <p>
+            <h3 data-i18n="workflow.feature.title">Feature Implementation</h3>
+            <p data-i18n="workflow.feature.body">
               Convert a request into assumptions, scope, implementation steps,
               and verification evidence without adding speculative features.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/feature-implementation.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/feature-implementation.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
-            <h3>Bugfix Debugging</h3>
-            <p>
+            <h3 data-i18n="workflow.bugfix.title">Bugfix Debugging</h3>
+            <p data-i18n="workflow.bugfix.body">
               Reproduce a failure, define expected behavior, fix the cause, add
               a regression check, and report evidence.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/bugfix-debugging.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/bugfix-debugging.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
-            <h3>Refactor Cleanup</h3>
-            <p>
+            <h3 data-i18n="workflow.refactor.title">Refactor Cleanup</h3>
+            <p data-i18n="workflow.refactor.body">
               Improve ownership, naming, deletion, or structure while keeping
               behavior and verification stable.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/refactor-cleanup.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/refactor-cleanup.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
-            <h3>Release Readiness</h3>
-            <p>
+            <h3 data-i18n="workflow.release.title">Release Readiness</h3>
+            <p data-i18n="workflow.release.body">
               Prepare package, deploy, migration, signing, or tagging work with
               artifact, environment, smoke, and recovery checks.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/release-readiness.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/release-readiness.md" data-i18n="workflow.link">Open workflow</a>
           </article>
           <article>
-            <h3>Review And Commit</h3>
-            <p>
+            <h3 data-i18n="workflow.review.title">Review And Commit</h3>
+            <p data-i18n="workflow.review.body">
               Review the current work product, check platform-specific risk,
               verify the result, and prepare a clean commit unit.
             </p>
-            <a href="https://github.com/taehwandev/agent-playbook/blob/main/workflows/review-and-commit.md">Open workflow</a>
+            <a href="https://github.com/taehwandev/AgentPlaybook/blob/main/workflows/review-and-commit.md" data-i18n="workflow.link">Open workflow</a>
           </article>
         </div>
       </section>
 
       <section id="usage" class="section band">
         <div class="section-heading">
-          <p class="eyebrow">Usage</p>
-          <h2>Route repos to the shared index.</h2>
+          <p class="eyebrow" data-i18n="usage.eyebrow">Usage</p>
+          <h2 data-i18n="usage.title">Route repos to the shared index.</h2>
         </div>
-        <pre><code>Shared agent library:
-&lt;KEYFLOW_AGENT_ROOT&gt;/AGENTS.md
+        <pre><code data-i18n="usage.code">Required VibeGuard gate:
+npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit . --rules ${AGENTPLAYBOOK_HOME}
+
+Shared AgentPlaybook library:
+${AGENTPLAYBOOK_HOME}/AGENTS.md
 
 Use repo-local instructions first.
 Use the shared index only to select the smallest relevant document set.
 Do not load every shared document by default.</code></pre>
       </section>
     </main>
+    <script>
+      const translations = {
+        en: {
+          "meta.title": "Agent Playbook",
+          "meta.description": "A compact shared playbook for AI coding agents, platform architecture, review, commits, and reusable product workflows.",
+          "nav.label": "Primary navigation",
+          "nav.library": "Library",
+          "nav.tracks": "Tracks",
+          "nav.workflows": "Workflows",
+          "nav.usage": "Usage",
+          "language.label": "Language",
+          "hero.eyebrow": "Shared rules for AI-assisted engineering",
+          "hero.title": "Agent Playbook",
+          "hero.lede": "A compact operating manual for coding agents. It keeps common behavior, architecture, review, commit, and product-pattern guidance in one reusable place while repo-local instructions stay in each project.",
+          "hero.agent_entry": "Agent Entry",
+          "hero.document_index": "Document Index",
+          "hero.apply_guide": "Apply Guide",
+          "library.eyebrow": "Library Model",
+          "library.title": "Small cards, loaded only when relevant.",
+          "library.common.title": "Common",
+          "library.common.body": "Baseline behavior for LLM coding discipline, code conventions, project naming, change size, dependencies, generated files, API contracts, server-side caching, release readiness, accessibility, architecture design, refactoring, testing, review, commits, verification, and safety.",
+          "library.platforms.title": "Platforms",
+          "library.platforms.body": "Focused architecture and review tracks for web, iOS, Android, server, and desktop/application work.",
+          "library.product.title": "Product Patterns",
+          "library.product.body": "Reusable SaaS mechanics such as auth, RBAC, invitations, billing, entitlements, and tenant boundaries.",
+          "tracks.eyebrow": "Execution Tracks",
+          "tracks.title": "Common first, then one platform.",
+          "workflows.eyebrow": "Workflow Layer",
+          "workflows.title": "Repeatable paths for common agent work.",
+          "workflow.lifecycle.title": "Agent Task Lifecycle",
+          "workflow.lifecycle.body": "Route any agent task from intake through local rules, risk scan, selected cards, action, verification, and report.",
+          "workflow.handoff.title": "Agent Handoff",
+          "workflow.handoff.body": "Preserve objective, files, commands, blockers, verification, and next step across interruption, resume, or transfer.",
+          "workflow.ambiguity.title": "Ambiguity Gate",
+          "workflow.ambiguity.body": "Classify blockers, researchable unknowns, safe assumptions, and out-of-scope items before planning or implementation.",
+          "workflow.product_architecture.title": "Product Architecture Delivery",
+          "workflow.product_architecture.body": "Move product intent through PRD, ARD, review, implementation, tests, UI tests, and commit readiness gates.",
+          "workflow.multi_agent.title": "Multi-Agent Collaboration",
+          "workflow.multi_agent.body": "Split delegated or parallel work through explicit roles, gates, owned files, forbidden files, and disjoint write scopes.",
+          "workflow.multi_review.title": "Multi-Perspective Review",
+          "workflow.multi_review.body": "Review non-trivial changes through product, UX, architecture, reliability, security, release, and QA lenses.",
+          "workflow.development.title": "Development Cycle",
+          "workflow.development.body": "Route multi-step implementation from intake and scope through design, implementation, verification, review, and handoff.",
+          "workflow.planning.title": "Planning Research",
+          "workflow.planning.body": "Inspect local evidence, separate facts from assumptions, compare options, and produce a risk-aware recommendation.",
+          "workflow.docs.title": "Documentation Update",
+          "workflow.docs.body": "Create, review, or restructure docs while linking source guidance and keeping repo-specific details local.",
+          "workflow.feature.title": "Feature Implementation",
+          "workflow.feature.body": "Convert a request into assumptions, scope, implementation steps, and verification evidence without adding speculative features.",
+          "workflow.bugfix.title": "Bugfix Debugging",
+          "workflow.bugfix.body": "Reproduce a failure, define expected behavior, fix the cause, add a regression check, and report evidence.",
+          "workflow.refactor.title": "Refactor Cleanup",
+          "workflow.refactor.body": "Improve ownership, naming, deletion, or structure while keeping behavior and verification stable.",
+          "workflow.release.title": "Release Readiness",
+          "workflow.release.body": "Prepare package, deploy, migration, signing, or tagging work with artifact, environment, smoke, and recovery checks.",
+          "workflow.review.title": "Review And Commit",
+          "workflow.review.body": "Review the current work product, check platform-specific risk, verify the result, and prepare a clean commit unit.",
+          "workflow.link": "Open workflow",
+          "usage.eyebrow": "Usage",
+          "usage.title": "Route repos to the shared index.",
+          "usage.code": "Required VibeGuard gate:\nnpm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit . --rules ${AGENTPLAYBOOK_HOME}\n\nShared AgentPlaybook library:\n${AGENTPLAYBOOK_HOME}/AGENTS.md\n\nUse repo-local instructions first.\nUse the shared index only to select the smallest relevant document set.\nDo not load every shared document by default."
+        },
+        ko: {
+          "meta.title": "에이전트 플레이북",
+          "meta.description": "AI 코딩 에이전트, 플랫폼 아키텍처, 리뷰, 커밋, 재사용 가능한 제품 워크플로우를 위한 간결한 공유 플레이북입니다.",
+          "nav.label": "주요 탐색",
+          "nav.library": "라이브러리",
+          "nav.tracks": "트랙",
+          "nav.workflows": "워크플로우",
+          "nav.usage": "사용법",
+          "language.label": "언어",
+          "hero.eyebrow": "AI 지원 엔지니어링을 위한 공유 규칙",
+          "hero.title": "에이전트 플레이북",
+          "hero.lede": "코딩 에이전트를 위한 간결한 운영 매뉴얼입니다. 공통 동작, 아키텍처, 리뷰, 커밋, 제품 패턴 가이드를 재사용 가능한 한 곳에 두고, 레포별 지침은 각 프로젝트에 남겨둡니다.",
+          "hero.agent_entry": "에이전트 진입점",
+          "hero.document_index": "문서 인덱스",
+          "hero.apply_guide": "적용 가이드",
+          "library.eyebrow": "라이브러리 모델",
+          "library.title": "필요한 순간에만 읽는 작은 카드.",
+          "library.common.title": "공통",
+          "library.common.body": "LLM 코딩 규율, 코드 컨벤션, 프로젝트 네이밍, 변경 크기, 의존성, 생성 파일, API 계약, 서버 사이드 캐싱, 릴리스 준비, 접근성, 아키텍처 설계, 리팩터링, 테스트, 리뷰, 커밋, 검증, 안전 규칙의 기준을 제공합니다.",
+          "library.platforms.title": "플랫폼",
+          "library.platforms.body": "웹, iOS, Android, 서버, 데스크톱/애플리케이션 작업을 위한 집중된 아키텍처 및 리뷰 트랙입니다.",
+          "library.product.title": "제품 패턴",
+          "library.product.body": "인증, RBAC, 초대, 과금, 권한, 테넌트 경계 같은 재사용 가능한 SaaS 메커니즘을 다룹니다.",
+          "tracks.eyebrow": "실행 트랙",
+          "tracks.title": "공통을 먼저 읽고, 그다음 하나의 플랫폼을 고릅니다.",
+          "workflows.eyebrow": "워크플로우 계층",
+          "workflows.title": "반복되는 에이전트 작업을 위한 경로.",
+          "workflow.lifecycle.title": "에이전트 작업 생명주기",
+          "workflow.lifecycle.body": "모든 에이전트 작업을 입력, 로컬 규칙, 위험 스캔, 선택된 카드, 실행, 검증, 보고 흐름으로 라우팅합니다.",
+          "workflow.handoff.title": "에이전트 핸드오프",
+          "workflow.handoff.body": "중단, 재개, 전달 상황에서 목표, 파일, 명령, 차단점, 검증, 다음 단계를 보존합니다.",
+          "workflow.ambiguity.title": "모호성 게이트",
+          "workflow.ambiguity.body": "계획이나 구현 전에 차단 질문, 조사 가능한 미지점, 안전한 가정, 범위 밖 항목을 분류합니다.",
+          "workflow.product_architecture.title": "제품 아키텍처 전달",
+          "workflow.product_architecture.body": "제품 의도를 PRD, ARD, 리뷰, 구현, 테스트, UI 테스트, 커밋 준비 게이트까지 이어갑니다.",
+          "workflow.multi_agent.title": "멀티 에이전트 협업",
+          "workflow.multi_agent.body": "위임 또는 병렬 작업을 명확한 역할, 게이트, 소유 파일, 금지 파일, 분리된 작성 범위로 나눕니다.",
+          "workflow.multi_review.title": "다중 관점 리뷰",
+          "workflow.multi_review.body": "중요 변경을 제품, UX, 아키텍처, 안정성, 보안, 릴리스, QA 관점으로 검토합니다.",
+          "workflow.development.title": "개발 사이클",
+          "workflow.development.body": "다단계 구현을 입력과 범위 정의부터 설계, 구현, 검증, 리뷰, 인계까지 라우팅합니다.",
+          "workflow.planning.title": "기획 및 리서치",
+          "workflow.planning.body": "로컬 근거를 확인하고, 사실과 가정을 분리하며, 선택지를 비교해 위험을 반영한 추천안을 만듭니다.",
+          "workflow.docs.title": "문서 업데이트",
+          "workflow.docs.body": "소스 가이드를 연결하고 레포별 세부사항은 로컬에 남기면서 문서를 생성, 검토, 재구성합니다.",
+          "workflow.feature.title": "기능 구현",
+          "workflow.feature.body": "요청을 가정, 범위, 구현 단계, 검증 근거로 바꾸되 추측성 기능은 추가하지 않습니다.",
+          "workflow.bugfix.title": "버그 수정 및 디버깅",
+          "workflow.bugfix.body": "실패를 재현하고 기대 동작을 정의한 뒤 원인을 고치고 회귀 검사를 추가해 근거를 보고합니다.",
+          "workflow.refactor.title": "리팩터 정리",
+          "workflow.refactor.body": "동작과 검증을 유지하면서 소유권, 네이밍, 삭제, 구조를 개선합니다.",
+          "workflow.release.title": "릴리스 준비",
+          "workflow.release.body": "패키징, 배포, 마이그레이션, 서명, 태깅 작업을 산출물, 환경, 스모크, 복구 검사와 함께 준비합니다.",
+          "workflow.review.title": "리뷰 및 커밋",
+          "workflow.review.body": "현재 작업 결과를 검토하고 플랫폼별 위험을 확인하며 결과를 검증한 뒤 깔끔한 커밋 단위를 준비합니다.",
+          "workflow.link": "워크플로우 열기",
+          "usage.eyebrow": "사용법",
+          "usage.title": "레포를 공유 인덱스로 라우팅합니다.",
+          "usage.code": "필수 VibeGuard 게이트:\nnpm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit . --rules ${AGENTPLAYBOOK_HOME}\n\n공유 AgentPlaybook 라이브러리:\n${AGENTPLAYBOOK_HOME}/AGENTS.md\n\n레포 로컬 지침을 먼저 사용합니다.\n공유 인덱스는 필요한 최소 문서 세트를 고를 때만 사용합니다.\n모든 공유 문서를 기본으로 로드하지 않습니다."
+        }
+      };
+
+      const getSavedLanguage = () => {
+        try {
+          return localStorage.getItem("agent-playbook-language");
+        } catch {
+          return null;
+        }
+      };
+
+      const saveLanguage = (language) => {
+        try {
+          localStorage.setItem("agent-playbook-language", language);
+        } catch {
+          return;
+        }
+      };
+
+      const applyLanguage = (language) => {
+        const nextLanguage = translations[language] ? language : "en";
+        const dictionary = translations[nextLanguage];
+        document.documentElement.lang = nextLanguage;
+        document.title = dictionary["meta.title"];
+        const description = document.querySelector('meta[name="description"]');
+        if (description) {
+          description.setAttribute("content", dictionary["meta.description"]);
+        }
+
+        document.querySelectorAll("[data-i18n]").forEach((element) => {
+          const value = dictionary[element.dataset.i18n];
+          if (value !== undefined) {
+            element.textContent = value;
+          }
+        });
+
+        document.querySelectorAll("[data-i18n-attr]").forEach((element) => {
+          element.getAttribute("data-i18n-attr").split(",").forEach((mapping) => {
+            const [attribute, key] = mapping.trim().split(":");
+            const value = dictionary[key];
+            if (attribute && value !== undefined) {
+              element.setAttribute(attribute, value);
+            }
+          });
+        });
+
+        document.querySelectorAll("[data-lang-choice]").forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.langChoice === nextLanguage));
+        });
+
+        saveLanguage(nextLanguage);
+      };
+
+      document.querySelectorAll("[data-lang-choice]").forEach((button) => {
+        button.addEventListener("click", () => applyLanguage(button.dataset.langChoice));
+      });
+
+      const browserLanguage = navigator.language && navigator.language.toLowerCase().startsWith("ko") ? "ko" : "en";
+      applyLanguage(getSavedLanguage() || browserLanguage);
+    </script>
   </body>
 </html>

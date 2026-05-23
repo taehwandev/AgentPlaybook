@@ -4,13 +4,23 @@ status: stable
 type: human-reviewed
 ---
 
-# KeyFlow Shared Agent Instructions
+# AgentPlaybook Shared Agent Instructions
 
-This file is the entrypoint for agents that consult the shared KeyFlow agent library.
+This file is the entrypoint for agents that consult the shared AgentPlaybook library.
 
 ## Purpose
 
-Use this library to prevent repeated mistakes across repositories. It provides shared operating habits, review criteria, architecture principles, and platform guidance. Repo-local instructions remain the source of truth for project paths, commands, naming, domain rules, and product-specific policy.
+Use this library to prevent repeated mistakes across repositories. It provides
+shared operating habits, review criteria, architecture principles, and platform
+guidance. Repo-local instructions remain the source of truth for project paths,
+commands, naming, domain rules, and product-specific policy.
+
+## Language Policy
+
+Write shared agent library documents in English. This includes `AGENTS.md`,
+`index.md`, `common/`, `platforms/`, `product-patterns/`, `workflows/`, and
+`templates/`. Public-facing site copy under `docs/` may be localized, but it
+must not become the source of truth for agent guidance.
 
 ## Priority
 
@@ -18,50 +28,103 @@ When instructions conflict, follow this order:
 
 1. System and developer instructions from the active agent runtime.
 2. The user's current request.
-3. The target repo's local instructions, such as `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, or `CONTRIBUTING.md`.
-4. More specific shared KeyFlow documents, such as platform or product-pattern docs.
-5. Shared KeyFlow common cards.
+3. The target repo's local instructions, such as `AGENTS.md`, `CLAUDE.md`,
+   `CODEX.md`, `.agents/README.md`, or `CONTRIBUTING.md`.
+4. More specific shared AgentPlaybook documents, such as platform or product-pattern docs.
+5. Shared AgentPlaybook common cards.
 6. General guidance in `README.md`.
 
-If the conflict changes behavior, verification, security, or data handling, call it out before or after the work.
+If the conflict changes behavior, verification, security, or data handling, call
+it out before or after the work.
 
 ## Always Read For Agent Work
 
 For implementation, review, refactoring, debugging, documentation, or planning tasks, first consult:
 
 ```text
-<KEYFLOW_AGENT_ROOT>/common/agent-operating-skill.md
+<AGENTPLAYBOOK_ROOT>/common/agent-operating-skill.md
 ```
 
 Then load only the supporting documents relevant to the task.
 
-## Supporting Documents
+## Required VibeGuard Gate
 
-Use `index.md` as the full document map. Do not duplicate the full index in repo-local instructions. Start with these direct routes, then load only the specific cards selected by `index.md`.
+VibeGuard is mandatory for AgentPlaybook maintenance and for repos that apply
+AgentPlaybook. Before documentation, code, configuration, dependency, data,
+deployment, or credential changes, run the VibeGuard audit for the target repo.
+For this repo, use:
 
 ```text
-<KEYFLOW_AGENT_ROOT>/index.md
-<KEYFLOW_AGENT_ROOT>/common/llm-coding-discipline.md
-<KEYFLOW_AGENT_ROOT>/common/code-conventions.md
+npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit . --rules .
+```
+
+Run it again before finishing. Use `--fix` only for low-risk safety fixes, and
+never print detected secret values. If VibeGuard cannot run, stop and report the
+blocker instead of treating it as optional.
+
+## Workflow Script
+
+For repeated multi-step tasks, prefer the shared workflow router when available:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> [--platform <platform>] [--concern <concern>]
+```
+
+Use the script output as a document and gate manifest, then execute the task with
+the target repo's local commands. If the script is unavailable or the route is
+missing a clearly relevant concern, fall back to `index.md` and report the gap.
+Discover valid commands, platforms, and concerns with:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
+```
+
+The route output contains `docs`, `gates`, `notes`, and `missing`. Read listed
+documents in order, follow the gates as the task checklist, and stop if
+`missing` is not empty. See
+`workflows/scripted-agent-workflow.md` for the full consumption rules.
+
+## Supporting Documents
+
+Use `index.md` as the full document map. Do not duplicate the full index in
+repo-local instructions. Start with these direct routes, then load only the
+specific cards selected by `index.md`.
+
+```text
+<AGENTPLAYBOOK_ROOT>/index.md
+<AGENTPLAYBOOK_ROOT>/common/llm-coding-discipline.md
+<AGENTPLAYBOOK_ROOT>/common/code-conventions.md
+<AGENTPLAYBOOK_ROOT>/common/agent-editing-safety.md
 ```
 
 ## Workflow Documents
 
 ```text
-<KEYFLOW_AGENT_ROOT>/workflows/agent-task-lifecycle.md
-<KEYFLOW_AGENT_ROOT>/workflows/agent-handoff-continuation.md
-<KEYFLOW_AGENT_ROOT>/workflows/development-cycle.md
-<KEYFLOW_AGENT_ROOT>/workflows/planning-research.md
-<KEYFLOW_AGENT_ROOT>/workflows/documentation-update.md
-<KEYFLOW_AGENT_ROOT>/workflows/feature-implementation.md
-<KEYFLOW_AGENT_ROOT>/workflows/bugfix-debugging.md
-<KEYFLOW_AGENT_ROOT>/workflows/refactor-cleanup.md
-<KEYFLOW_AGENT_ROOT>/workflows/release-readiness.md
-<KEYFLOW_AGENT_ROOT>/workflows/review-and-commit.md
+<AGENTPLAYBOOK_ROOT>/workflows/agent-task-lifecycle.md
+<AGENTPLAYBOOK_ROOT>/workflows/agent-handoff-continuation.md
+<AGENTPLAYBOOK_ROOT>/workflows/scripted-agent-workflow.md
+<AGENTPLAYBOOK_ROOT>/workflows/ambiguity-gate.md
+<AGENTPLAYBOOK_ROOT>/workflows/product-architecture-delivery.md
+<AGENTPLAYBOOK_ROOT>/workflows/development-cycle.md
+<AGENTPLAYBOOK_ROOT>/workflows/multi-agent-collaboration.md
+<AGENTPLAYBOOK_ROOT>/workflows/multi-perspective-review.md
+<AGENTPLAYBOOK_ROOT>/workflows/retrospective-learning.md
+<AGENTPLAYBOOK_ROOT>/workflows/planning-research.md
+<AGENTPLAYBOOK_ROOT>/workflows/documentation-update.md
+<AGENTPLAYBOOK_ROOT>/workflows/feature-implementation.md
+<AGENTPLAYBOOK_ROOT>/workflows/bugfix-debugging.md
+<AGENTPLAYBOOK_ROOT>/workflows/refactor-cleanup.md
+<AGENTPLAYBOOK_ROOT>/workflows/release-readiness.md
+<AGENTPLAYBOOK_ROOT>/workflows/review-and-commit.md
 ```
 
 ## Operating Rule
 
-Do not copy this whole library into a repo. Link only the documents relevant to that repo. Keep repo-specific paths, commands, role matrices, API names, and domain language in the repo-local instructions.
+Do not copy this whole library into a repo. Link only the documents relevant to
+that repo. Keep repo-specific paths, commands, role matrices, API names, and
+domain language in the repo-local instructions.
 
-`<KEYFLOW_AGENT_ROOT>` means the directory containing this shared library. In a repo-local template, replace it with that repo's actual shared-library path or an environment variable such as `${KEYFLOW_AGENT_ROOT}`.
+`<AGENTPLAYBOOK_ROOT>` means the directory containing this shared library. In a
+repo-local template, replace it with an existing local install path,
+`${AGENTPLAYBOOK_HOME}`, or a repo-pinned submodule path. `${KEYFLOW_AGENT_ROOT}`
+is accepted only as a legacy local alias when already configured.

@@ -35,12 +35,15 @@ or task-specific workflow to load next.
 
 ## Route To
 
-- Coding work: `workflows/development-cycle.md`
+- Product or feature delivery with PRD/ARD gates: `workflows/product-architecture-delivery.md`
+- Lower-level coding work: `workflows/development-cycle.md`
 - Feature behavior: `workflows/feature-implementation.md`
 - Bug or regression: `workflows/bugfix-debugging.md`
 - Refactor or cleanup: `workflows/refactor-cleanup.md`
 - Release-sensitive work: `workflows/release-readiness.md`
 - Final review or commit: `workflows/review-and-commit.md`
+- Repeatable lesson after task, handoff, incident, or missed signal:
+  `workflows/retrospective-learning.md`
 - Long-running, interrupted, or transferred work: `workflows/agent-handoff-continuation.md`
 
 ## Stop If

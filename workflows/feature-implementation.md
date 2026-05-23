@@ -14,6 +14,7 @@ Use when implementing a new feature or meaningful behavior change.
 - `common/llm-coding-discipline.md`
 - `common/code-conventions.md`
 - `common/product-spec-to-implementation.md`
+- `workflows/product-architecture-delivery.md` when PRD and ARD gates are needed
 - `workflows/development-cycle.md` for the full verify and side-effect audit cycle
 - one matching platform architecture card
 - task-specific common cards for touched API contracts, release config,

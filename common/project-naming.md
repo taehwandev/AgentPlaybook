@@ -41,11 +41,11 @@ For a new project, separate these values before creating files or config:
 ## Examples
 
 ```text
-Display name: KeyFlow Vault
-Repo/folder: keyflow-vault
-CLI: keyflow-vault
-Bundle id: com.example.keyflowvault
-Env prefix: KEYFLOW_VAULT
+Display name: Atlas Notes
+Repo/folder: atlas-notes
+CLI: atlas-notes
+Bundle id: com.example.atlasnotes
+Env prefix: ATLAS_NOTES
 ```
 
 ```text

@@ -14,11 +14,13 @@ mistakes.
 
 1. Identify the target project and task type.
 2. Read repo-local instructions before changing files.
-3. Use `index.md` to load only relevant KeyFlow cards.
-4. Inspect existing code, docs, tests, and local conventions.
-5. Make the smallest change that genuinely addresses the request.
-6. Verify with the narrowest reliable command first.
-7. Report what changed, what was verified, and what risk remains.
+3. For multi-step tasks, use `scripts/workflow.py` when available to generate
+   the workflow route.
+4. Use `index.md` to load only relevant AgentPlaybook cards.
+5. Inspect existing code, docs, tests, and local conventions.
+6. Make the smallest change that genuinely addresses the request.
+7. Verify with the narrowest reliable command first.
+8. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -49,9 +51,16 @@ Before finishing:
 
 ## Task Routing
 
+- Scripted workflow route: `workflows/scripted-agent-workflow.md` and
+  `scripts/workflow.py` when the task has multiple steps.
 - Any multi-step agent task: `workflows/agent-task-lifecycle.md`.
 - Interrupted or transferred work: `workflows/agent-handoff-continuation.md`.
+- Ambiguous requests or blocker unknowns before PRD, ARD, task breakdown, or
+  implementation: `workflows/ambiguity-gate.md`.
 - Multi-step development: `workflows/development-cycle.md`.
+- Delegated or parallel agent work: `workflows/multi-agent-collaboration.md`.
+- Non-trivial review or release candidate review:
+  `workflows/multi-perspective-review.md`.
 - Planning or research: `workflows/planning-research.md`.
 - Documentation update: `workflows/documentation-update.md`.
 - Feature work: `workflows/feature-implementation.md`.
@@ -61,18 +70,26 @@ Before finishing:
 - Final review or commit: `workflows/review-and-commit.md`.
 - Architecture: `common/architecture-selection.md`,
   `common/architecture-design.md`, or `common/app-architecture.md`.
+- LLM-readable wiki, knowledge-base, runbook, or durable documentation:
+  `common/llm-wiki-documentation.md`.
 - Code conventions: `common/code-conventions.md`.
 - Project, app, repo, package, module, CLI, or service naming:
   `common/project-naming.md`.
 - Change size or broad diffs: `common/change-size-policy.md`.
+- Existing checkout, user-owned changes, or commit preparation:
+  `common/worktree-hygiene.md`.
 - Dependencies, SDKs, or build plugins: `common/dependency-policy.md`.
 - Generated files, lockfiles, or snapshots: `common/generated-files-policy.md`.
 - API, DTO, route, event, webhook, or shared fixture contracts:
   `common/api-contract-compatibility.md`.
+- External, persisted, generated, cached, platform, or user-provided values:
+  `common/defensive-boundaries.md`.
 - Release, deployment, packaging, signing, rollout, or rollback:
   `common/release-deployment.md`.
 - User-facing text, forms, controls, dates, numbers, or localization:
   `common/accessibility-i18n.md`.
+- UI layout, interaction, text overflow, responsive behavior, or
+  accessibility-visible state: `common/ui-visual-verification.md`.
 - Refactoring: `common/refactoring.md`.
 - Tests and evidence: `common/testing.md` and
   `common/verification-policy.md`.

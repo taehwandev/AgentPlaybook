@@ -6,8 +6,7 @@ type: human-reviewed-needed
 
 # Agent Handoff Continuation Workflow
 
-Use when work may continue across turns, interruptions, context compaction,
-another agent, or a handoff back to the user.
+Use when work may continue across turns, interruptions, context compaction, another agent, or a handoff back to the user.
 
 ## Read
 
@@ -40,5 +39,4 @@ Maintain enough state for another agent or future turn to continue:
 
 - The newest user request changes the objective.
 - The working tree changed in a way that makes the previous plan unsafe.
-- Required verification or external state cannot be checked and the remaining
-  risk is too high to continue.
+- Required verification or external state cannot be checked and the remaining risk is too high to continue.

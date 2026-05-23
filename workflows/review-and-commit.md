@@ -12,6 +12,7 @@ Use after implementation, before handing off or committing.
 
 - `common/code-review.md`
 - `common/change-size-policy.md`
+- `common/worktree-hygiene.md`
 - `workflows/development-cycle.md` for side-effect audit questions
 - matching platform review card
 - `common/commit-workflow.md`
@@ -23,7 +24,8 @@ Use after implementation, before handing off or committing.
 ## Steps
 
 1. Inspect the final diff, not memory of the work.
-2. Review against the user request, repo-local rules, service guide, platform risks, and side-effect audit questions.
+2. Review against the user request, repo-local rules, project/product guidance,
+   platform risks, and side-effect audit questions.
 3. Run or record the nearest useful verification.
 4. Remove only unused code created by the change.
 5. Split unrelated work before committing.

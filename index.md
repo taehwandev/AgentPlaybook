@@ -15,14 +15,19 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Code conventions, naming, comments, formatting: `common/code-conventions.md`
 - Project, app, repo, package, module, CLI, and service naming: `common/project-naming.md`
 - Change size and reviewable diff scope: `common/change-size-policy.md`
+- Existing checkout and user-owned diff safety: `common/worktree-hygiene.md`
 - Dependencies, SDKs, packages, build plugins: `common/dependency-policy.md`
 - Generated files, lockfiles, snapshots, build artifacts: `common/generated-files-policy.md`
 - API, DTO, route, event, webhook contract compatibility: `common/api-contract-compatibility.md`
+- Defensive handling for external, persisted, generated, cached, or user-provided
+  values: `common/defensive-boundaries.md`
 - Release, deployment, packaging, rollback: `common/release-deployment.md`
 - Accessibility, localization, dates, numbers, UI text: `common/accessibility-i18n.md`
 - Architecture choice/change: `common/architecture-selection.md`
 - Architecture design: `common/architecture-design.md`
 - New feature or product ambiguity: `common/product-spec-to-implementation.md`
+- LLM-readable wiki, knowledge-base, runbook, or durable documentation:
+  `common/llm-wiki-documentation.md`
 - App boundary/state/data shape: `common/app-architecture.md`
 - Refactor: `common/refactoring.md`
 - Testing or bug regression: `common/testing.md`
@@ -30,9 +35,11 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Local tools, AI CLIs, runtime, usage telemetry: `common/local-tools.md`
 - File editing safety, secrets, external state: `common/agent-editing-safety.md`
 - Design system or shared UI rules: `common/design-system.md`
+- UI visual and interaction verification: `common/ui-visual-verification.md`
 - Secure development, secrets, client keys, open-source-safe setup: `common/secure-development-baseline.md`
 - Security/privacy/secrets/tenant risk: `common/security-privacy-review.md`
 - Persistence, cache, sync, migration: `common/data-persistence-sync.md`
+- Server-rendered/API/edge/database caching and invalidation: `common/server-side-caching.md`
 - Errors, logs, audit, diagnostics: `common/observability-error-handling.md`
 - Code review: `common/code-review.md`
 - Commit review: start with code review, then add `common/commit-review.md`
@@ -71,7 +78,13 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 
 - Agent task lifecycle: `workflows/agent-task-lifecycle.md`
 - Agent handoff/continuation: `workflows/agent-handoff-continuation.md`
+- Scripted workflow routing: `workflows/scripted-agent-workflow.md`
+- Ambiguity gate: `workflows/ambiguity-gate.md`
+- Product architecture delivery: `workflows/product-architecture-delivery.md`
 - Development cycle: `workflows/development-cycle.md`
+- Multi-agent collaboration: `workflows/multi-agent-collaboration.md`
+- Multi-perspective review: `workflows/multi-perspective-review.md`
+- Retrospective learning: `workflows/retrospective-learning.md`
 - Planning/research: `workflows/planning-research.md`
 - Documentation update: `workflows/documentation-update.md`
 - Feature implementation: `workflows/feature-implementation.md`
@@ -83,43 +96,82 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 ## Loading Rule
 
 For any multi-step agent task, start with `workflows/agent-task-lifecycle.md`.
-For multi-step development work, continue with `workflows/development-cycle.md`.
-For coding, read `common/agent-operating-skill.md`,
-`common/llm-coding-discipline.md`, and `common/code-conventions.md` first. Then
-read one platform architecture card. Add platform detail, common, or
-product-pattern cards only when the task touches that concern.
+When `scripts/workflow.py` is available, use it to generate the command route
+before manually selecting workflow documents.
 
-For documentation-only work, use `workflows/documentation-update.md`. For
-planning, research, comparison, or recommendations before implementation, use
-`workflows/planning-research.md`. For interrupted, long-running, or transferred
-work, use `workflows/agent-handoff-continuation.md`.
+For product or feature work that needs PRD -> ARD -> implementation ->
+verification gates, use `workflows/product-architecture-delivery.md` and prefer
+this scripted route:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --platform <platform> --concern <concern>
+```
+
+For lower-level multi-step development work, continue with
+`workflows/development-cycle.md`. For vague or risky requests, use
+`workflows/ambiguity-gate.md` before PRD, ARD, task breakdown, or
+implementation. After a task, incident, handoff, repeated mistake, or missed
+signal, use `workflows/retrospective-learning.md` only when there is a reusable
+lesson. For coding, read
+`common/agent-operating-skill.md`, `common/llm-coding-discipline.md`, and
+`common/code-conventions.md` first. Then read one platform architecture card.
+Add platform detail, common, or product-pattern cards only when the task touches
+that concern.
+
+For documentation-only work, use `workflows/documentation-update.md`. For wiki,
+knowledge-base, runbook, onboarding, durable architecture, or operational docs
+that humans and agents will read, also use `common/llm-wiki-documentation.md`.
+For planning, research, comparison, or recommendations before implementation,
+use `workflows/planning-research.md`. For interrupted, long-running, or
+transferred work, use `workflows/agent-handoff-continuation.md`.
+
+For delegated or parallel agent work, use
+`workflows/multi-agent-collaboration.md`. For non-trivial reviews, release
+candidates, or changes that need product, UX, architecture, reliability,
+security, and QA lenses, use `workflows/multi-perspective-review.md`.
 
 For new project scaffolds, app names, repo names, package ids, modules, CLIs,
 services, slugs, bundle ids, or renames, read `common/project-naming.md`.
 
 For broad diffs, refactors, PR review, or commit preparation, also read
-`common/change-size-policy.md`. For dependency, SDK, package, build plugin, or
-lockfile work, read `common/dependency-policy.md`. For codegen, generated
-clients, lockfiles, snapshots, build artifacts, translations, or generated
-assets, read `common/generated-files-policy.md`.
+`common/change-size-policy.md`. When the worktree already contains changes or
+the task includes commit preparation, also read `common/worktree-hygiene.md`.
+For dependency, SDK, package, build plugin, or lockfile work, read
+`common/dependency-policy.md`. For codegen, generated clients, lockfiles,
+snapshots, build artifacts, translations, or generated assets, read
+`common/generated-files-policy.md`.
 
-For API, DTO, route, event, webhook, shared fixture, or generated client changes,
-read `common/api-contract-compatibility.md`. For packaging, deployment,
-publishing, signing, migration rollout, or rollback-sensitive work, read
-`common/release-deployment.md`. For user-facing text, forms, controls, dates,
-numbers, media, or localization, read `common/accessibility-i18n.md`.
+For API, DTO, route, event, webhook, shared fixture, or generated client
+changes, read `common/api-contract-compatibility.md`. For packaging,
+deployment, publishing, signing, migration rollout, or rollback-sensitive work,
+read `common/release-deployment.md`. For user-facing text, forms, controls,
+dates, numbers, media, or localization, read `common/accessibility-i18n.md`.
 
-For Android work touching background execution, release builds, exported components, deep links, WebView, permissions, or secrets, load the Android background/security cards instead of relying only on the architecture card.
+For code that consumes external, persisted, generated, cached, platform, or
+user-provided values, read `common/defensive-boundaries.md`.
+
+For UI layout, visible state, interaction, text overflow, responsive behavior,
+or accessibility-visible changes, read `common/ui-visual-verification.md`.
+
+For server-rendered data, API response caching, framework data cache,
+request-level memoization, edge/CDN cache, database query cache, materialized
+read models, or cache invalidation, read `common/server-side-caching.md`.
+
+For Android work touching background execution, release builds, exported
+components, deep links, WebView, permissions, or secrets, load the Android
+background/security cards instead of relying only on the architecture card.
 
 For iOS work touching Keychain, Universal Links, URL schemes, app extensions,
 WebViews, permissions, entitlements, signing, release builds, or secrets, load
 the iOS security card instead of relying only on the architecture card.
 
-For desktop/application work touching menu bar/tray controls, shell/file/clipboard APIs, power assertions, IPC, signing, notarization, updates, or first launch, load the application system/security cards.
+For desktop/application work touching menu bar/tray controls, shell, file,
+clipboard APIs, power assertions, IPC, signing, notarization, updates, or first
+launch, load the application system/security cards.
 
 When the task touches keys, auth, permissions, user data, logs, analytics,
-external integrations, local config, release config, or a public/open-source repo,
-read `common/secure-development-baseline.md` before implementation.
+external integrations, local config, release config, or a public/open-source
+repo, read `common/secure-development-baseline.md` before implementation.
 
 For React/web feature work, usually read:
 
@@ -128,10 +180,13 @@ common/llm-coding-discipline.md
 common/code-conventions.md
 platforms/web/web-architecture.md
 platforms/web/web-state-data.md when state/data/storage is touched
-platforms/web/web-accessibility-i18n.md when UI text, forms, menus, dialogs, or localization are touched
+platforms/web/web-accessibility-i18n.md when UI text, forms, menus, dialogs,
+or localization are touched
 ```
 
-For review, read `common/code-review.md` first. Then read the matching platform review card. Add `common/security-privacy-review.md` and product-pattern cards only for affected auth, invite, billing, tenancy, or security concerns.
+For review, read `common/code-review.md` first. Then read the matching platform
+review card. Add `common/security-privacy-review.md` and product-pattern cards
+only for affected auth, invite, billing, tenancy, or security concerns.
 
 Stop reading when you can answer:
 

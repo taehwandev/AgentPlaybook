@@ -12,12 +12,16 @@ is the default workflow when the task is larger than a one-line edit.
 The goal is one complete cycle: understand the request, make the smallest useful
 change, verify the changed surface, audit side effects, and report evidence.
 
+When this cycle is reached from `scripts/workflow.py`, treat the script output as
+the command manifest and keep the implementation inside its listed gates.
+
 ## Read
 
 - `common/agent-operating-skill.md`
 - `common/llm-coding-discipline.md`
 - `common/code-conventions.md`
 - `common/change-size-policy.md`
+- `common/worktree-hygiene.md` when the checkout already contains changes
 - one matching platform architecture card from `index.md`
 - task-specific concern cards from `index.md`
 
@@ -48,6 +52,8 @@ Pick the closest check to the changed boundary first:
   docs build when available.
 - Pure logic: focused unit test for the changed function, mapper, policy, parser,
   validator, or reducer.
+- Boundary mapping: normal, invalid, missing, stale, duplicated, lower bound,
+  and upper bound cases for the changed parser, mapper, adapter, or reducer.
 - Type/interface changes: compile, typecheck, generated client check, or contract
   test for the changed module.
 - UI/state change: focused state test, component/screen test, screenshot/layout
@@ -73,6 +79,8 @@ After verification, inspect the final diff and ask:
 - Did formatting, generated files, lockfiles, dependency updates, or release files
   change unexpectedly?
 - Did any public API, DTO, route, event, schema, storage format, or fixture change?
+- Did any external, persisted, generated, cached, or user-provided value cross a
+  boundary without validation?
 - Did auth, permission, tenant, billing, privacy, logging, analytics, or secret
   handling change?
 - Did state ownership, cache invalidation, lifecycle, background work, or cleanup

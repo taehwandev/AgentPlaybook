@@ -40,6 +40,7 @@ not exact command strings.
 | Copy or labels | locale/message parity when applicable, plus affected UI or snapshot check when text can overflow |
 | Pure refactor | nearest tests for the moved or extracted behavior; typecheck/build when exported contracts changed |
 | Runtime behavior | targeted unit, integration, or component test; manual smoke for the affected user/API path when no test exists |
+| Boundary value mapping | normal, missing, invalid, lower bound, upper bound, stale, duplicate, and unavailable cases for the parser, mapper, or adapter |
 | Shared module, API, schema, or DTO | caller-focused tests plus contract, serialization, or compatibility check |
 | UI layout or interaction | component or browser check for main interaction, loading, empty, error, disabled, and responsive states as relevant |
 | Auth, permissions, tenant, billing, or privacy | allowed and denied paths; stale, revoked, or invalid input path when relevant |
@@ -116,6 +117,7 @@ Do not say a feature is complete when:
 - only formatting or compilation was checked for a behavioral change
 - UI visibility was checked but the protected command or trusted boundary was not
   exercised
+- boundary-dependent behavior was checked only with normal input
 - an API response, DTO, migration, cache, or generated artifact changed without a
   compatibility or consumer check
 - a visual snapshot was updated without stating the product reason

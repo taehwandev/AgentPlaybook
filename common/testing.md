@@ -24,6 +24,8 @@ Test behavior users or other code depend on.
 - permission denied
 - validation error
 - API/network error
+- boundary values, including zero, minimum, maximum, overflow, malformed,
+  stale, duplicated, cancelled, and unavailable inputs
 
 ## Prefer
 

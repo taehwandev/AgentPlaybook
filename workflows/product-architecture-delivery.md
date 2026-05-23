@@ -1,0 +1,205 @@
+---
+keyflow_id: sys_product_architecture_delivery_workflow
+status: review
+type: human-reviewed-needed
+---
+
+# Product Architecture Delivery Workflow
+
+Use when a task should move from product intent to implementation through a full
+delivery gate:
+
+```text
+PRD -> ARD -> Review -> Code Work -> Review -> Tests -> UI Tests -> Commit Readiness
+```
+
+This is a common workflow. Platform-specific cards decide how to implement and
+verify each phase.
+
+For agent execution, prefer the scripted route when available:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --platform <platform> --concern <concern>
+```
+
+Use that output as the command manifest before writing PRD or ARD.
+
+## Read
+
+- `workflows/agent-task-lifecycle.md`
+- `workflows/ambiguity-gate.md` when product behavior, risk, scope, or verification is unclear
+- `workflows/development-cycle.md`
+- `common/product-spec-to-implementation.md`
+- `common/architecture-selection.md`
+- `common/architecture-design.md`
+- `common/api-contract-compatibility.md` when contracts, DTOs, routes, events, or
+  shared fixtures are touched
+- `common/security-privacy-review.md` and `common/secure-development-baseline.md`
+  when auth, permissions, user data, secrets, logs, external services, or public
+  repositories are touched
+- matching platform architecture, state/data, security, and review cards from
+  `index.md`
+
+## Platform Card Selection
+
+Select platform cards from the affected surface before writing the ARD:
+
+- Android app, Compose, ViewModel, Flow, Gradle, Android storage, permissions,
+  background work, release build: Android cards.
+- iOS app, SwiftUI/UIKit, actors/tasks, Keychain, app links, entitlements, signing:
+  iOS cards.
+- Web/React UI, routes, forms, browser storage, accessibility, i18n: Web cards.
+- Server/API, database, jobs, webhooks, auth enforcement, queues: Server cards.
+- Desktop/native shell, IPC, files, shell, clipboard, updates, signing:
+  Application cards.
+
+If multiple platforms are affected, load each matching platform architecture card
+and one shared contract card. Do not load unrelated platforms just because the
+repo is a monorepo.
+
+## 1. PRD
+
+Produce or update a product requirements note before coding when behavior is
+non-trivial.
+
+PRD must answer:
+
+- Who is the user or system actor?
+- What outcome should change?
+- What states must exist: success, loading, empty, error, permission denied,
+  offline, conflict, rollback?
+- What data, auth, permission, billing, privacy, or external-service surfaces are
+  touched?
+- What are the acceptance criteria?
+- What is explicitly out of scope?
+- What open decisions block implementation?
+
+Stop before ARD when product behavior is ambiguous enough to change architecture,
+security, data, or verification.
+
+## 2. ARD
+
+ARD means architecture requirements and decision note. It translates the PRD into
+implementation boundaries.
+
+ARD must answer:
+
+- Which platform cards were loaded and why?
+- What owns UI, state, domain, data, platform, and integration responsibilities?
+- What modules, packages, routes, endpoints, screens, or services are touched?
+- What contracts change: API, DTO, event, route, schema, fixture, storage format,
+  generated client, or deep link?
+- Where are auth, permission, tenant, billing, secret, logging, and privacy
+  boundaries enforced?
+- What dependency, generated-file, migration, release, or compatibility risk
+  exists?
+- What is the smallest implementation slice?
+- What verification proves the slice and what UI test or manual UI smoke is
+  required if UI changes?
+
+ARD should be short. Use repo-local ADR or design-doc format when it exists.
+Otherwise leave a concise note in the task, PR, issue, TODO, or changed docs.
+
+## 3. Pre-Code Review
+
+Review PRD and ARD before implementation:
+
+- Acceptance criteria are testable.
+- Platform cards and concern cards match the affected surface.
+- The implementation slice is narrow enough to review and revert.
+- Security, data, contract, and release risks are visible.
+- Verification and UI test paths are known or explicitly unavailable.
+
+Do not start code work when this review finds a blocking product or architecture
+decision.
+
+For broad or high-risk changes, use `workflows/multi-perspective-review.md` to
+check product, UX, architecture, reliability, security, release, and QA risk
+before implementation.
+
+## 4. Code Work
+
+Use `workflows/development-cycle.md` for implementation.
+
+Rules:
+
+- Change only the ARD-scoped files.
+- Keep dependency, generated, formatting, migration, and release churn separate
+  when possible.
+- Update docs, fixtures, or generated clients only when they are part of the
+  scoped contract.
+- Preserve user-owned changes.
+
+## 5. Review
+
+Inspect the final diff against PRD, ARD, repo-local rules, platform cards, and
+`workflows/development-cycle.md` side-effect audit.
+
+Review must confirm:
+
+- The code satisfies the PRD acceptance criteria.
+- The implementation follows the ARD boundaries or records why it changed.
+- No unrelated behavior, refactor, dependency, generated, release, or formatting
+  churn is mixed in.
+- Security, privacy, contract, persistence, observability, and accessibility
+  impacts were checked when touched.
+
+## 6. Tests
+
+Run the minimum verification that proves the changed boundary first. Then broaden
+only when the side-effect audit or risk surface requires it.
+
+Use `common/verification-policy.md` and the matching platform review card for the
+exact command style.
+
+## 7. UI Tests
+
+Run UI verification when user-visible UI, navigation, layout, text, accessibility,
+or interaction behavior changed.
+
+UI verification can be automated or manual, but it must name the checked state:
+
+- primary success path
+- loading, empty, error, permission denied, or offline state when affected
+- navigation or deep-link path when affected
+- accessibility, long text, localization, responsive layout, or focus behavior
+  when affected
+
+If no UI changed, record UI test as not applicable.
+
+## 8. Commit Readiness
+
+Before commit or handoff, answer:
+
+- Is the diff one reviewable intent?
+- Does every changed line trace to PRD, ARD, verification, or required generated
+  output?
+- Are secrets, local config, debug logs, private data, build outputs, and
+  unrelated artifacts absent from the diff?
+- Did required tests pass, fail with understood cause, or get explicitly skipped
+  with residual risk?
+- Is rollback or forward-fix clear for migrations, release config, and contract
+  changes?
+- Can the commit message state what changed, why, and how it was verified without
+  hiding uncertainty?
+
+Output one of:
+
+```text
+Commit-ready: yes
+Commit-ready: no - blockers: ...
+Commit-ready: partial - safe subset: ... / remaining risk: ...
+```
+
+If PRD, ARD, verification, UI test, handoff, or commit-readiness gaps revealed a
+repeatable lesson, run `workflows/retrospective-learning.md` after handoff.
+
+## Stop If
+
+- PRD acceptance criteria are missing for a non-trivial behavior change.
+- ARD cannot identify platform cards, ownership boundaries, or verification.
+- The task requires product, security, billing, legal, release, or data policy not
+  present in the repo.
+- UI changed but no UI verification or acceptable manual smoke path exists.
+- Commit readiness would require hiding skipped checks, unrelated changes, or
+  unresolved risk.

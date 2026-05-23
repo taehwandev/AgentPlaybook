@@ -40,12 +40,33 @@ environment, verification gate, and rollback or forward-fix path.
   changes, security impact, and required operator action.
 - Never print or commit deployment secrets, signing material, or generated
   production config.
+- Release tags should identify the exact source revision used to build and
+  publish artifacts, not just the latest branch head.
+
+## Tag And Artifact Ownership
+
+When a release uses source-control tags:
+
+- Create or move the tag only after the intended release revision has passed the
+  required source and artifact verification.
+- Keep the tag on the revision used to build the published artifacts.
+- Do not move a prior release tag to a later commit for documentation, workflow,
+  or unrelated follow-up reasons.
+- If a post-release fix changes behavior or artifacts, publish a new version or
+  release candidate instead of moving the old tag.
+- If a post-release fix changes only process or documentation, commit it after
+  the release tag and leave the tag where it is.
+- Do not overwrite, force-push, or republish an existing public release without
+  explicit approval and a clear correction note.
+- For annotated tags, verify the peeled commit target, not only the tag object.
 
 ## Release Gate
 
 Before release, confirm:
 
 - source revision and artifact version are known
+- release tag, package version, and artifact provenance point to the same source
+  revision when tags are used
 - required tests, builds, or smoke checks passed or have accepted risk
 - config and secret injection happened in the intended environment
 - monitoring, logs, crash reports, or health checks can show failure
@@ -55,4 +76,3 @@ Before release, confirm:
 
 Verify the most important user or system path after release. If verification is
 manual, record exactly what was checked and what was not checked.
-

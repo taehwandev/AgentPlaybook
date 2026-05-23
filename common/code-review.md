@@ -6,7 +6,9 @@ type: ai-generated
 
 # Code Review
 
-Use to review the current work product: working tree, diff, PR, or implementation result. Review against the user's request, repo-local instructions, and any service/product guide.
+Use to review the current work product: working tree, diff, PR, or
+implementation result. Review against the user's request, repo-local
+instructions, and any project or product guidance.
 
 ## Priority
 
@@ -20,7 +22,7 @@ Use to review the current work product: working tree, diff, PR, or implementatio
 ## Check
 
 - Does this satisfy the request?
-- Does it follow the service/product guide and repo-local rules?
+- Does it follow project/product guidance and repo-local rules?
 - Are failure and edge states handled?
 - Are client and server permission boundaries consistent?
 - Are data, privacy, billing, or tenant boundaries affected?
