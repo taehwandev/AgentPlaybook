@@ -19,7 +19,7 @@ Classify the request before loading many documents or doing deep reasoning.
 
 | Class | Signal | Default Action |
 | --- | --- | --- |
-| `direct-question` | Asks for an explanation, timing, policy, status, or meaning without asking the agent to change files or run work. | Answer first. Do not start workflow routing, editing, or project-specific commands unless a separate action remains. |
+| `direct-question` | Asks for an explanation, timing, policy, status, or meaning without asking the agent to change files or run work. | Answer first. Do not start workflow routing, editing, or project-specific commands unless a separate action remains. If the question asks how to start app, product, or feature work, the answer must include the PRD -> ARD -> implementation path before lower-level coding steps. |
 | `clear-exact` | Names a file, symbol, command, error, stack trace, failing test, or precise behavior. | Use quick or standard effort; inspect the named target first. |
 | `clear-scoped` | Names a screen/component/feature and intended change, but local context is needed. | Use standard effort; inspect local code and route to the matching platform card. |
 | `vague-action` | Says "fix", "improve", "clean up", "make better", or similar without target behavior. | Use ambiguity gate or question drill before implementation. |
@@ -39,6 +39,9 @@ Examples:
   referenced file and line before loading broad architecture cards.
 - "Build invitations with roles and billing limits" -> `broad-product`; use PRD
   or product workflow with auth, invitation, and billing cards.
+- "Show me how we build an app/feature in this repo" -> `direct-question` if
+  answer-only, but the answer must front-load PRD -> ARD -> implementation. If
+  the user asks to proceed, use the `product` route, not `feature`.
 
 ## Effort Profiles
 
@@ -97,7 +100,8 @@ enough decisions are captured.
 - For exact UI targets, inspect the named screen/component and nearby patterns
   before product-wide architecture.
 - For broad product requests, spend tokens on PRD/acceptance criteria before
-  implementation details.
+  implementation details. Do not collapse "app-making" or "feature delivery"
+  into implementation-only steps.
 - Summarize large files or command output; keep only evidence needed for the
   next decision.
 

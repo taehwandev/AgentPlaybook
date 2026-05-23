@@ -40,6 +40,9 @@ Before editing:
   broad-product, risky-unclear, or direct-question before choosing effort.
 - If classified as direct-question, answer first and do not start work unless a
   separate actionable request remains.
+- If the direct question asks how to start app, product, or feature work, answer
+  with the PRD -> ARD -> implementation sequence first. Do not give an
+  implementation-only workflow for product delivery.
 - Check repo-local `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`,
   `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or equivalent docs.
 - Check stack manifests, lockfiles, and config before running commands, adding
@@ -86,6 +89,9 @@ Before finishing:
 - Ambiguous requests or blocker unknowns before PRD, ARD, task breakdown, or
   implementation: `workflows/ambiguity-gate.md`.
 - PRD or product requirements note: `workflows/prd-creation.md`.
+- App, product, or feature delivery that may continue into code:
+  `workflows/product-architecture-delivery.md`. Use this before the lower-level
+  feature workflow unless the request is already a trivial, scoped change.
 - Multi-step development: `workflows/development-cycle.md`.
 - Delegated or parallel agent work: `workflows/multi-agent-collaboration.md`.
 - Non-trivial review or release candidate review:

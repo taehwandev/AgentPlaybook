@@ -104,12 +104,8 @@ COMMANDS: Dict[str, Profile] = {
         notes=("Use before PRD, ARD, task breakdown, or implementation when unknowns can change behavior or risk.",),
     ),
     "feature": Profile(
-        docs=(
-            "workflows/feature-implementation.md",
-            "workflows/development-cycle.md",
-            "common/product-spec-to-implementation.md",
-        ),
-        gates=("acceptance criteria", "implementation", "verification", "handoff"),
+        docs=("workflows/feature-implementation.md", "workflows/product-architecture-delivery.md", "workflows/development-cycle.md", "common/product-spec-to-implementation.md"),
+        gates=("PRD/ARD applicability", "acceptance criteria", "implementation", "verification", "handoff"),
     ),
     "bugfix": Profile(
         docs=("workflows/bugfix-debugging.md", "workflows/development-cycle.md"),
@@ -353,6 +349,7 @@ def classify_request(text: str) -> Dict[str, object]:
         "\ud478\uc26c\ud574\uc918",
         "\uc2e4\ud589\ud574\uc918",
         "\ub9cc\ub4e4\uc5b4\uc918",
+        r"(\ud574\ubcf4\uc790|\uc9c4\ud589\ud574\uc918|\ud30c\uc545\ud574\uc918|\ud30c\uc545\uc880)",
     )
     exact_patterns = (
         r"`[^`]+`",
@@ -369,6 +366,7 @@ def classify_request(text: str) -> Dict[str, object]:
     broad_patterns = (
         r"\b(build|implement|design|create|add|plan)\b.*\b(feature|flow|system|architecture|prd|ard|product)\b",
         r"\b(auth|rbac|permission|billing|entitlement|invite|tenant|migration|release|deployment)\b",
+        r"(\uc571|\uae30\ub2a5|\ud654\uba74|\uc81c\ud488|\ud50c\ub85c\uc6b0|\uc11c\ube44\uc2a4).*(\ub9cc\ub4e4|\ub9cc\ub4dc|\uad6c\ud604|\uc124\uacc4|\ucd94\uac00|\uc791\uc5c5|\uc9c4\ud589)|prd|ard|\uc694\uad6c\uc0ac\ud56d|\uc544\ud0a4\ud14d\ucc98",
     )
     risky_patterns = (
         r"\b(delete|drop|destroy|migrate|deploy|release|publish|payment|billing|secret|token|credential|permission|security|tenant)\b",
@@ -390,11 +388,11 @@ def classify_request(text: str) -> Dict[str, object]:
 
     if has_direct_question and not asks_agent_action:
         clarity = ANSWER_ONLY_CLARITY
-        effort = "quick"
-        route = "none"
+        effort = "standard" if has_broad else "quick"
+        route = "product" if has_broad else "none"
         question_drill = False
         response_mode = "answer_first"
-        reason = "The request is a direct question, so answer it before starting any workflow or edit."
+        reason = ("The request asks how to approach app/product/feature work. Answer first, but include the PRD -> ARD -> implementation gate before lower-level steps." if has_broad else "The request is a direct question, so answer it before starting any workflow or edit.")
     elif has_risky and not has_broad and not (has_exact or has_scoped):
         clarity = "risky-unclear"
         effort = "deep"
@@ -469,6 +467,8 @@ def print_classification(result: Dict[str, object]) -> None:
     print("## Next")
     if result["clarity"] == ANSWER_ONLY_CLARITY:
         print("- Answer the user's direct question first.")
+        if result["recommended_route"] == "product":
+            print("- Include PRD -> ARD -> implementation first; if work proceeds, run the `product` route.")
         print("- Do not start a workflow route, edit files, or run project-specific work unless a separate action remains.")
     elif result["question_drill"]:
         print("- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route triage --request \"<request text>\"`.")
@@ -486,10 +486,12 @@ def route_block_reason(command: str, classification: Optional[Dict[str, object]]
     if not classification:
         return None
     if classification["clarity"] == ANSWER_ONLY_CLARITY:
-        return (
-            "The current request is a direct question. Answer it in the conversation "
-            "before starting a workflow route, editing files, or running project-specific work."
-        )
+        reason = "The current request is a direct question. Answer it in the conversation before starting a workflow route, editing files, or running project-specific work."
+        if classification["recommended_route"] == "product":
+            reason += " Include PRD -> ARD -> implementation gates before lower-level coding steps."
+        return reason
+    if classification["recommended_route"] == "product" and command == "feature":
+        return "The current request is broad app/product/feature work. Use route `product` so PRD and ARD gates run before implementation; do not route it as `feature`."
     if classification["question_drill"] and command not in QUESTION_ROUTE_COMMANDS:
         return (
             f"The current request needs clarification before route `{command}`. "

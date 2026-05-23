@@ -188,6 +188,12 @@ this scripted route:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --platform <platform> --concern <concern>
 ```
 
+Use this `product` route, not the lower-level `feature` route, when the request
+is broad app-building, product delivery, a new multi-screen flow, architecture,
+data/auth/billing/release behavior, or a "show me how to build it" request that
+will continue into code. The `feature` route is only for scoped slices where the
+PRD/ARD gate is already satisfied or clearly unnecessary.
+
 For lower-level multi-step development work, continue with
 `workflows/development-cycle.md`. For vague or risky requests, use
 `workflows/ambiguity-gate.md` before PRD, ARD, task breakdown, or

@@ -43,9 +43,12 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<request text>"
 `classify` outputs the clarity label, effort level, recommended route command,
 whether a question drill is needed, response mode, and a short reason. Use the
 recommended route as the `<command>` argument to `route`. If `response_mode:
-answer_first`, answer the user before routing or editing. If `question_drill:
-true`, run the recommended route (typically `triage` or `ambiguity`) with
-`--request` and ask only the missing blocker questions before proceeding.
+answer_first`, answer the user before routing or editing. When an answer-first
+question asks how to start app, product, or feature work, the answer must include
+PRD -> ARD -> implementation gates before lower-level coding steps. If
+`question_drill: true`, run the recommended route (typically `triage` or
+`ambiguity`) with `--request` and ask only the missing blocker questions before
+proceeding.
 
 Discover the supported values from the script itself:
 
@@ -135,8 +138,13 @@ Examples:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "<USER_REQUEST>" --platform android --concern security --concern ui
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route bugfix --request "<USER_REQUEST>" --platform server --concern api
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route docs-review --request "<USER_REQUEST>" --concern wiki
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "Show me how we build an app feature here" --platform android --concern ui
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 ```
+
+Do not force broad app/product requests through the `feature` route. The router
+blocks `feature` when request classification recommends `product`, because that
+would skip the PRD and ARD gates.
 
 ## Output Contract
 

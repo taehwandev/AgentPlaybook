@@ -13,6 +13,11 @@ delivery gate:
 PRD -> ARD -> Review -> Code Work -> Review -> Tests -> UI Tests -> Commit Readiness
 ```
 
+Use this route by default when the user asks to build an app, start a product
+feature, create a multi-screen flow, or "show how implementation works" by doing
+real product work. Those requests need front matter before code unless they are
+explicitly trivial and already scoped by an existing PRD/ARD.
+
 This is a common workflow. Platform-specific cards decide how to implement and
 verify each phase.
 
@@ -50,6 +55,8 @@ A change is trivial only when all of these are true:
 
 The lightweight note should still name intent, touched boundary, and
 verification. If any condition is false, use the full workflow.
+Do not treat a broad "app-making" or feature-delivery request as trivial just
+because the first implementation slice is small.
 
 ## Read
 
