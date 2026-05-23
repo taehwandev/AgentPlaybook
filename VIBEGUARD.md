@@ -51,7 +51,16 @@ When a local source is unavailable, use a maintainer-reviewed ref:
 npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard#<VIBEGUARD_REF> -- vibe-guard audit . --rules .
 ```
 
-Replace `<VIBEGUARD_REF>` with a reviewed tag or commit.
+Replace `<VIBEGUARD_REF>` with a reviewed tag or commit. The approved ref should
+come from one of these sources:
+
+- the target repo's local agent instructions
+- a pinned submodule, lockfile, or tool manifest
+- a release note, issue, PR, or commit reviewed by the repo maintainer
+- an explicit user-provided ref in the current task
+
+If no approved ref is available, ask for one or stop with the blocker. Do not
+invent a ref from the latest branch head.
 
 ## Setup And Fix Policy
 

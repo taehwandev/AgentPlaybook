@@ -39,6 +39,21 @@ error. Do not paste secret values from logs.
 - If the same command fails twice for different reasons, repeat diagnosis from
   the new output instead of assuming the old cause.
 
+## Environment And Permission Failures
+
+Some failures cannot be corrected by editing project files. If output points to
+sandbox, permission, network, registry, cache, missing toolchain, or unavailable
+service state:
+
+- Do not keep editing code to compensate for an environment failure.
+- Retry only after a concrete condition changes, such as approval, network
+  access, a different documented cache path, an installed tool, or a repo-local
+  setup command.
+- Use approved escalation paths for network, package, or filesystem access.
+- Prefer temporary local caches over changing global caches when the package
+  manager supports it.
+- Report the blocker when the needed condition cannot be changed safely.
+
 ## Common Scenarios
 
 Lint or formatting failure:

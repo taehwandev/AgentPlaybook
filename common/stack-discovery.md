@@ -27,10 +27,15 @@ Look for the files that define the stack:
 - package manager lockfiles: `pnpm-lock.yaml`, `package-lock.json`,
   `yarn.lock`, `bun.lockb`, `bun.lock`
 - Python: `pyproject.toml`, lockfiles, `requirements*.txt`, `.python-version`
+- Python package managers: `uv.lock`, `poetry.lock`, `Pipfile.lock`,
+  `requirements*.txt`
 - Swift/iOS: `Package.swift`, `Podfile`, Xcode project/workspace, scheme docs
 - Android/JVM: `settings.gradle*`, `build.gradle*`, `gradle.properties`,
   `gradle/wrapper/gradle-wrapper.properties`
-- Rust/Go: `Cargo.toml`, `Cargo.lock`, `go.mod`, `go.sum`
+- build/task runners: `Makefile`, `justfile`, `Taskfile.yml`, `mise.toml`,
+  `lefthook.yml`
+- Rust: `Cargo.toml`, `Cargo.lock`, `rust-toolchain*`
+- Go: `go.mod`, `go.sum`, `go.work`
 - containers or CI: `Dockerfile`, compose files, CI workflow files
 
 Prefer the lockfile, wrapper, and repo scripts over global defaults.

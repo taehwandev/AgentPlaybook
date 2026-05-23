@@ -30,6 +30,11 @@ the opening section:
 Use frontmatter when the repo already supports it. Otherwise keep the contract as
 a short "At a glance" section near the top.
 
+Shared AgentPlaybook cards may use the smaller `keyflow_id` / `status` / `type`
+frontmatter contract. Add owner, source of truth, last verified, applies-to, and
+related pages when a page is a durable wiki, runbook, operational procedure, or
+runtime-facing integration guide whose facts can age independently.
+
 ## Structure
 
 - Start with what the reader can do after reading the page.

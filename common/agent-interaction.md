@@ -27,6 +27,11 @@ in English.
 
 ## Questions
 
+Runtime, system, and developer instructions take precedence over this card. If
+the runtime requires one short question, ask one short question. Use structured
+choices only when they are allowed by the active runtime and helpful for the
+decision.
+
 When a question is needed:
 
 - Ask one to three questions at most.
