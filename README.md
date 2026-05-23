@@ -127,11 +127,56 @@ your team wants a pinned version.
 ### Safety Gate
 
 VibeGuard is required in every distribution mode, but its commands and
-operating details live in VibeGuard docs:
+operating details live in VibeGuard docs. The AgentPlaybook-side contract is to
+pass the selected AgentPlaybook root as the rule source.
+
+Do not run `setup` or `update` blindly. First inspect the target repo for
+existing agent instructions, `.vibeguard.json`, `VIBEGUARD.md`, or a managed
+VibeGuard block. When any of those exist, ask a short application drill before
+changing files:
 
 ```text
-https://vibeguard.thdev.app/
+Application drill:
+1. AgentPlaybook link style: add a short pointer (recommended), merge into the
+   current instruction file, or pin a repo-local copy?
+2. VibeGuard handling: audit only with current guardrails (recommended for
+   existing custom docs), refresh the managed block with update, or first-time
+   setup?
+3. Scope: apply now and continue the original task, or prepare instructions
+   only?
 ```
+
+After the user answers, use the matching command shape.
+
+Audit only, preserving existing guardrails:
+
+```bash
+export AGENTPLAYBOOK_HOME="/path/to/existing/AgentPlaybook"
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+npx --yes @taehwandev/vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
+```
+
+Refresh an existing managed VibeGuard block only when requested:
+
+```bash
+export AGENTPLAYBOOK_HOME="/path/to/existing/AgentPlaybook"
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+npx --yes @taehwandev/vibeguard update . --rules "${AGENTPLAYBOOK_HOME}"
+npx --yes @taehwandev/vibeguard audit . --fix --rules "${AGENTPLAYBOOK_HOME}"
+npx --yes @taehwandev/vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
+```
+
+First-time VibeGuard setup only when the target has no guardrails yet:
+
+```bash
+export AGENTPLAYBOOK_HOME="/path/to/existing/AgentPlaybook"
+python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+npx --yes @taehwandev/vibeguard setup . --rules "${AGENTPLAYBOOK_HOME}"
+npx --yes @taehwandev/vibeguard audit . --fix --rules "${AGENTPLAYBOOK_HOME}"
+npx --yes @taehwandev/vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
+```
+
+Full VibeGuard usage: `https://vibeguard.thdev.app/`
 
 When applying AgentPlaybook, use the selected AgentPlaybook root as the
 VibeGuard rule source. If VibeGuard cannot run, report the blocker instead of
@@ -149,8 +194,9 @@ https://github.com/taehwandev/AgentPlaybook
 
 If AgentPlaybook already exists locally, link this repo to the existing copy.
 Do not clone, vendor, or copy a second copy unless no usable local copy exists.
-Apply VibeGuard by following https://vibeguard.thdev.app/ and use the selected
-AgentPlaybook root as the rule source.
+Inspect the current repo instructions and VibeGuard files first. If either
+already exists, ask me a short application drill before running setup or update.
+Use the selected AgentPlaybook root as the VibeGuard rule source.
 Update the repo-local agent instructions with a short routing block. Keep
 repo-specific commands, paths, services, product policy, and domain language in
 this repo.
@@ -166,16 +212,17 @@ flow instead of copying the whole library:
    install, or team-pinned install.
 3. Validate the selected AgentPlaybook root with
    `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate`.
-4. Apply the required VibeGuard safety gate with the selected AgentPlaybook
-   root as the rule source. Follow https://vibeguard.thdev.app/ for exact
-   usage.
-5. Add a short routing block to the repo instruction file the agent runtime
+4. Inspect existing VibeGuard and repo-local instruction files. Ask the
+   application drill when the repo already has custom instructions or guardrails.
+5. Apply the selected VibeGuard mode with the selected AgentPlaybook root as the
+   rule source: audit-only, refresh with `update`, or first-time `setup`.
+6. Add a short routing block to the repo instruction file the agent runtime
    actually reads.
-6. Keep repo-specific commands, paths, services, product policy, and domain
+7. Keep repo-specific commands, paths, services, product policy, and domain
    language in the target repo.
-7. For follow-up work, run `workflow.py classify` when request clarity is
+8. For follow-up work, run `workflow.py classify` when request clarity is
    uncertain, then `workflow.py route ...` and follow the gate ledger.
-8. Before reporting success, verify the routing block, VibeGuard gate result,
+9. Before reporting success, verify the routing block, VibeGuard gate result,
    and any route gates that were required.
 
 ## Prompt A Local Agent

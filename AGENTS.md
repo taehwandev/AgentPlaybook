@@ -61,6 +61,9 @@ Then load only the supporting documents relevant to the task.
 VibeGuard is mandatory for AgentPlaybook maintenance and for repos that apply
 AgentPlaybook. Before documentation, code, configuration, dependency, data,
 deployment, or credential changes, run the VibeGuard audit for the target repo.
+When applying AgentPlaybook to another repo, do not run VibeGuard `setup` or
+`update` blindly; use the application drill in `docs/agent-bootstrap.md` when
+the target already has agent instructions or guardrails.
 For this repo, use the current VibeGuard package flow documented in
 `VIBEGUARD.md`. During local maintenance, prefer the official package command:
 

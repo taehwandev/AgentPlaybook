@@ -36,10 +36,11 @@ Rules:
 3. Do not copy the whole AgentPlaybook library into this repo. Link only the
    relevant root, index, workflow script, and selected cards.
 4. VibeGuard is required. Before editing documentation, code, config,
-   dependency, data, deployment, or credential surfaces, apply the current
-   VibeGuard safety gate from https://vibeguard.thdev.app/ with
-   <AGENTPLAYBOOK_ROOT> as the rule source. If VibeGuard cannot run, stop and
-   report the blocker.
+   dependency, data, deployment, or credential surfaces, inspect existing
+   VibeGuard files and agent instructions. If they already exist, ask the
+   application drill before running setup or update. Then apply the selected
+   VibeGuard mode from https://vibeguard.thdev.app/ with <AGENTPLAYBOOK_ROOT>
+   as the rule source. If VibeGuard cannot run, stop and report the blocker.
 5. For multi-step tasks, run:
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<USER_REQUEST>"

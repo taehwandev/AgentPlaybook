@@ -73,8 +73,17 @@ vibeguard evidence install-claude-hook .
 
 ## Setup And Fix Policy
 
-- Initial AgentPlaybook application should use the current VibeGuard package
-  flow with the selected AgentPlaybook root as `--rules`:
+- Before running `setup` or `update` in a target repo, inspect existing
+  repo-local instructions, `.vibeguard.json`, `VIBEGUARD.md`, and managed
+  VibeGuard blocks.
+- If the target already has instructions or guardrails, ask an application drill
+  before changing files: add pointer vs merge vs pin; audit-only vs refresh
+  with update vs first-time setup; apply now vs prepare instructions only.
+- Existing custom guardrails should default to audit-only unless the user
+  chooses to refresh the managed block.
+- Initial AgentPlaybook application in a repo with no guardrails should use the
+  current VibeGuard package flow with the selected AgentPlaybook root as
+  `--rules`:
 
   ```bash
   npx --yes @taehwandev/vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
@@ -82,9 +91,9 @@ vibeguard evidence install-claude-hook .
   npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
   ```
 
-- Existing VibeGuard guardrails should be refreshed with
-  `npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>`, then
-  checked with the package audit command.
+- Existing managed VibeGuard guardrails should be refreshed with
+  `npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>` only
+  when that mode is selected, then checked with the package audit command.
 - Normal AgentPlaybook maintenance should run audit-only before editing and
   before finishing.
 - Use `--fix` only after audit output shows low-risk safety fixes such as env

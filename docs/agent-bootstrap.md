@@ -86,8 +86,50 @@ VibeGuard is mandatory. After selecting the AgentPlaybook root, apply
 VibeGuard to the target repo before editing target repo instructions. Use the
 selected AgentPlaybook root as the VibeGuard rule source.
 
-VibeGuard's current setup, audit, fix, package, and evidence flow lives in
-VibeGuard docs:
+Do not choose `setup` or `update` by file existence alone. First inspect:
+
+- current repo-local agent instructions
+- `.vibeguard.json`
+- `VIBEGUARD.md`
+- any managed VibeGuard block
+
+When the target already has instructions or guardrails, ask this application
+drill before changing files:
+
+```text
+Application drill:
+1. AgentPlaybook link style: add a short pointer, merge into the current
+   instruction file, or pin a repo-local copy?
+2. VibeGuard handling: audit only with current guardrails, refresh the managed
+   block with update, or first-time setup?
+3. Scope: apply now and continue the original task, or prepare instructions
+   only?
+```
+
+Audit only, preserving existing guardrails:
+
+```bash
+npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+```
+
+Refresh an existing managed VibeGuard block only when requested:
+
+```bash
+npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+```
+
+Use `setup` only for first-time target repos with no guardrails:
+
+```bash
+npx --yes @taehwandev/vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+```
+
+Full VibeGuard setup, audit, fix, package, and evidence flow lives in VibeGuard
+docs:
 
 ```text
 https://vibeguard.thdev.app/

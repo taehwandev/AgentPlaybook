@@ -119,21 +119,23 @@ For every runtime:
 2. Select the setup mode: existing local install, first-time local shared
    install, or team-pinned install.
 3. Locate or install the AgentPlaybook root and validate it.
-4. Apply the required VibeGuard safety gate from
-   https://vibeguard.thdev.app/ with the selected AgentPlaybook root as the
-   rule source.
-5. Read AgentPlaybook `AGENTS.md`.
-6. Use `index.md` or `scripts/workflow.py` to select the smallest document set.
-7. When a scripted route is used, keep a gate execution ledger, mark each route
+4. Inspect existing VibeGuard files and agent instructions. Ask the application
+   drill before running setup or update when the repo already has custom
+   instructions or guardrails.
+5. Apply the selected VibeGuard mode from https://vibeguard.thdev.app/ with the
+   selected AgentPlaybook root as the rule source.
+6. Read AgentPlaybook `AGENTS.md`.
+7. Use `index.md` or `scripts/workflow.py` to select the smallest document set.
+8. When a scripted route is used, keep a gate execution ledger, mark each route
    gate with evidence when it is executed, assign a traffic-light signal, and
    show a short gate signal after each completed gate or task step.
-8. Load only selected cards.
-9. Execute repo-local commands only from trusted repo-local instructions.
-10. Before reporting completion, confirm every required route gate is `GREEN`
+9. Load only selected cards.
+10. Execute repo-local commands only from trusted repo-local instructions.
+11. Before reporting completion, confirm every required route gate is `GREEN`
     with ledger evidence.
-11. When a VibeGuard execution evidence adapter is configured, follow
+12. When a VibeGuard execution evidence adapter is configured, follow
     https://vibeguard.thdev.app/ and compare the summary with claimed commands.
-12. Report verification and residual risk.
+13. Report verification and residual risk.
 
 If a required route gate was missed, the runtime must stop finalization, roll
 back only dependent agent-made changes after the missed gate when safe, return

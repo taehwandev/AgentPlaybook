@@ -39,10 +39,37 @@ scripts/workflow.py. Validate it with:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 
 VibeGuard is required. After selecting the AgentPlaybook root, apply VibeGuard
-with the selected AgentPlaybook root as the rule source. Follow the current
-VibeGuard docs for exact setup, audit, fix, package, and evidence flow:
+with the selected AgentPlaybook root as the rule source.
 
-https://vibeguard.thdev.app/
+Before changing files, inspect this repo's current agent instructions,
+.vibeguard.json, VIBEGUARD.md, and any managed VibeGuard block.
+
+If this repo already has instructions or guardrails, ask me this application
+drill before running setup or update:
+
+1. AgentPlaybook link style: add a short pointer, merge into the current
+   instruction file, or pin a repo-local copy?
+2. VibeGuard handling: audit only with current guardrails, refresh the managed
+   block with update, or first-time setup?
+3. Scope: apply now and continue my original task, or prepare instructions only?
+
+If I choose audit-only:
+
+npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+
+If I choose to refresh the managed VibeGuard block:
+
+npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+
+If this repo has never used VibeGuard and I choose first-time setup:
+
+npx --yes @taehwandev/vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+
+For full VibeGuard usage, use https://vibeguard.thdev.app/.
 
 If VibeGuard cannot run, stop and tell me the blocker.
 
