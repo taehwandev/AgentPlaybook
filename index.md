@@ -107,7 +107,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 
 For any multi-step agent task, start with `workflows/agent-task-lifecycle.md`.
 When `scripts/workflow.py` is available, use it to generate the command route
-before manually selecting workflow documents.
+before manually selecting workflow documents. Treat the route's gate ledger as a
+required execution record, not a summary to reconstruct after the work.
 
 Before running project commands, adding dependencies, or using framework-specific
 APIs, use `common/stack-discovery.md`. When a command fails, use

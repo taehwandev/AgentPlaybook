@@ -103,6 +103,8 @@ writing outside the target repo.
    Otherwise use the absolute path or repo-relative submodule path.
 6. Link only `AGENTS.md`, `index.md`, and any direct route cards the repo wants.
 7. Do not paste the full AgentPlaybook library into the repo-local file.
+8. For multi-step setup or migration work, keep the workflow route gate ledger
+   and verify every required gate has evidence before reporting success.
 
 Use `templates/repo-agents-routing.md` as the routing block source.
 

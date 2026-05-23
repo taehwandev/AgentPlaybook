@@ -45,15 +45,27 @@ Rules:
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <COMMAND> [--platform <PLATFORM>] [--concern <CONCERN>]
    Use the route output as the command manifest.
-6. Load only the listed documents and the smallest relevant platform, product,
+6. Keep a gate execution ledger from the route output. Mark each required gate
+   when it is executed and include concrete evidence such as a command, file,
+   diff, manual check, or decision note. Do not reconstruct the ledger from
+   memory at the end.
+7. If any required gate was not executed, stop before final report, commit,
+   release, or handoff. Roll back only agent-made changes from the failed
+   attempt when safe, preserve user-owned changes, restart from the first gate,
+   and run the retrospective workflow. Do not exceed two total attempts.
+8. When a gate is missed, the retrospective must include `AI mistake`,
+   `Proposed fix`, and `Discussion result`. Write the discussion result in the
+   user's language for the task.
+9. Load only the listed documents and the smallest relevant platform, product,
    or common cards. Do not load every shared document by default.
-7. Discover the repo stack before choosing package managers, framework APIs, or
+10. Discover the repo stack before choosing package managers, framework APIs, or
    project commands. Preserve user-owned worktree changes.
-8. When commands fail, read stdout/stderr and fix only the smallest relevant
+11. When commands fail, read stdout/stderr and fix only the smallest relevant
    issue. Do not blindly retry, delete tests, or silence errors.
-9. Ask only blocker questions. Prefer concrete options with tradeoffs and a
+12. Ask only blocker questions. Prefer concrete options with tradeoffs and a
    recommended default.
-10. Before finishing, rerun the relevant verification and VibeGuard audit, then
+13. Before finishing, confirm every required route gate has ledger evidence,
+    rerun the relevant verification and VibeGuard audit, then
     report changed files, checks run, skipped checks, and residual risk.
 ```
 

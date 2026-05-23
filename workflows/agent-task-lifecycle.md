@@ -35,17 +35,22 @@ or task-specific workflow to load next.
    billing, data, release, generated files, dependencies, or local tools.
 5. Route: choose the smallest workflow and cards from `index.md`; do not load
    the whole library by default.
-6. Inspect: read existing code, docs, tests, commands, and current user changes
+6. Gate ledger: when a scripted route is used, create a ledger for every route
+   gate and mark each gate when it is executed.
+7. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
-7. Decide: make a reasonable assumption when safe; ask only when ambiguity
+8. Decide: make a reasonable assumption when safe; ask only when ambiguity
    changes result or risk.
-8. Act: execute the scoped work with periodic progress updates for long tasks.
-9. Verify: collect evidence with the narrowest reliable command or manual check.
-10. Recover: when a command fails, diagnose stdout/stderr and make the smallest
+9. Act: execute the scoped work with periodic progress updates for long tasks.
+10. Verify: collect evidence with the narrowest reliable command or manual check.
+11. Recover: when a command fails, diagnose stdout/stderr and make the smallest
     correction before retrying.
-11. Review: inspect the final diff, output, or artifact against the request and
+12. Ledger check: before finalizing, compare required gates against executed
+    evidence. If any required gate is missing, follow the missed gate recovery
+    rule in `workflows/scripted-agent-workflow.md`.
+13. Review: inspect the final diff, output, or artifact against the request and
     risks.
-12. Report: state what changed or was found, verification status, skipped
+14. Report: state what changed or was found, verification status, skipped
     checks, and residual risk.
 
 ## Route To

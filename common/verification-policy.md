@@ -71,6 +71,7 @@ In the final response, include:
 - whether each check passed, failed, or was not run
 - a short reason for skipped checks
 - residual risk when verification is partial
+- workflow gate ledger status when a scripted route was used
 
 Prefer this compact format when multiple checks were run:
 
@@ -84,6 +85,10 @@ Verified:
 For manual checks, name the user path, environment, input, and observed result.
 Do not report screenshots, logs, or smoke checks as proof unless they exercise
 the changed behavior.
+
+When a scripted route was used, every route gate must have evidence before the
+work is reported complete. If a required gate was not executed, follow missed
+gate recovery instead of reporting completion.
 
 Manual evidence should be specific:
 

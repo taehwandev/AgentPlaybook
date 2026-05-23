@@ -45,6 +45,19 @@ the file and can identify the lines you changed.
 - Treat generated files and lockfiles as user-visible diff noise unless the task
   or toolchain requires them.
 
+## Rollback Current Attempt
+
+Use when a workflow gate was missed or the current attempt must be abandoned.
+
+- Roll back only changes made by the agent in the failed attempt.
+- Preserve pre-existing user changes, even in files the agent also touched.
+- Prefer a targeted reverse patch or explicit file edit over broad repository
+  reset commands.
+- Do not use destructive history or filesystem cleanup without a direct user
+  request.
+- If safe rollback cannot be separated from user-owned changes, stop and report
+  the blocker instead of guessing.
+
 ## Before Reporting
 
 - Re-check the final diff or touched files.

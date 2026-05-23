@@ -22,6 +22,7 @@ Run this workflow when any of these happened:
 - Verification passed but product, UI, security, data, release, or contract risk was still missed.
 - A subagent or handoff caused duplicated work, conflict, or loss of context.
 - The agent loaded the wrong docs, too many docs, or not enough docs.
+- The agent missed any required workflow route gate, even once.
 - A fake, placeholder, mocked, or TODO behavior was mistaken for complete behavior.
 - A build, test, UI smoke, release, or commit-readiness check was unclear or absent.
 - The next agent is likely to repeat the issue without a rule, doc, or test change.
@@ -58,15 +59,21 @@ Use this shape:
 ```text
 Retrospective:
 - Trigger:
+- AI mistake:
 - Missed signal:
 - Earliest gate that should catch it:
 - Root cause:
+- Proposed fix:
 - Durable fix:
 - Updated doc/test/task:
+- Discussion result:
 - Follow-up:
 ```
 
-Keep the write-up factual. Do not assign blame or narrate effort.
+Keep the write-up factual. Do not assign blame or narrate effort. Write the
+retrospective discussion result in the user's language for that task. For
+example, answer in Korean when the user is working in Korean, and in English
+when the user is working in English.
 
 ## Durable Fix Options
 

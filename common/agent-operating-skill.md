@@ -17,11 +17,14 @@ mistakes.
 3. Discover the project stack before choosing commands or libraries.
 4. For multi-step tasks, use `scripts/workflow.py` when available to generate
    the workflow route.
-5. Use `index.md` to load only relevant AgentPlaybook cards.
-6. Inspect existing code, docs, tests, and local conventions.
-7. Make the smallest change that genuinely addresses the request.
-8. Verify with the narrowest reliable command first.
-9. Report what changed, what was verified, and what risk remains.
+5. Keep a gate execution ledger for the route and mark each gate with evidence
+   when it is executed.
+6. Use `index.md` to load only relevant AgentPlaybook cards.
+7. Inspect existing code, docs, tests, and local conventions.
+8. Make the smallest change that genuinely addresses the request.
+9. Verify with the narrowest reliable command first.
+10. Confirm the route gate ledger before reporting completion.
+11. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -48,6 +51,8 @@ While editing:
 
 Before finishing:
 
+- Confirm every required workflow route gate has ledger evidence when a scripted
+  route was used.
 - Run the most relevant test, build, typecheck, lint, or smoke check.
 - If verification cannot run, state why and what risk remains.
 - Include file references when explaining non-trivial changes.

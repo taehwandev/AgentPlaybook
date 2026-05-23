@@ -98,11 +98,52 @@ The route output is the command manifest for the agent:
 
 - `docs`: read these documents in order before editing or reviewing.
 - `gates`: use these as the task checklist and report against them.
+- `gate_ledger`: mark each gate as executed with evidence before final report.
+- `attempt_limit`: maximum total attempts for a route after a missed gate.
 - `notes`: apply these routing hints before choosing commands or edits.
 - `missing`: stop if this is not empty; fix the playbook reference first.
 
 Markdown output is optimized for direct agent reading. JSON output exposes the
 same fields for wrappers, launchers, or CI checks.
+
+## Gate Execution Ledger
+
+For every scripted route, maintain a gate ledger while working:
+
+```text
+Attempt: 1/2
+- gate: ...
+  status: executed | missed
+  evidence: command, file, diff, note, or manual check
+```
+
+Do not wait until the final response to reconstruct the ledger from memory. Mark
+each gate when it is executed.
+
+Before finalizing, compare the route's `gates` with the ledger:
+
+- Every required gate must be marked `executed` with evidence.
+- If any required gate is missing, do not continue finalization.
+- Treat a missing gate as an execution error even when the final code or docs
+  look correct.
+- If a route gate is truly irrelevant, stop and correct the route before
+  editing; do not silently skip the gate inside a completion report.
+
+## Missed Gate Recovery
+
+If the agent missed any required gate:
+
+1. Stop the current attempt before final report, commit, release, or handoff.
+2. Identify the exact gate that was skipped and what work happened after it.
+3. Roll back only agent-made changes from the failed attempt when safe. Preserve
+   pre-existing user changes and ask before destructive cleanup.
+4. Restart from the first gate and keep a new ledger.
+5. Run `workflows/retrospective-learning.md` because at least one gate was
+   missed.
+
+Do not exceed two total attempts. If the second attempt misses any required gate,
+stop and report the blocker, the missed gate, the rollback status, and the
+retrospective summary.
 
 ## Command Profiles
 
@@ -178,6 +219,9 @@ Workflow route:
 Verified:
 - python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 - ...task-specific checks...
+
+Gate ledger:
+- gate: ... / executed / evidence: ...
 ```
 
 ## Stop If

@@ -24,7 +24,11 @@ deployment, or credential changes. Run
 `vibe-guard audit . --rules <AGENTPLAYBOOK_ROOT>` before editing and again
 before finishing.
 For multi-step tasks, run the workflow script first when it exists and use its
-output as the command manifest.
+output as the command manifest. Keep its gate execution ledger current; each
+required gate must have evidence before completion. If any required gate is
+missed, stop finalization, roll back only agent-made changes from the failed
+attempt when safe, restart from the first gate, and run the retrospective
+workflow. Do not exceed two attempts.
 Do not load every shared document by default.
 Replace `<AGENTPLAYBOOK_ROOT>` with an existing local install path,
 `${AGENTPLAYBOOK_HOME}`, or a repo-pinned submodule path. Use legacy

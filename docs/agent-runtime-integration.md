@@ -98,9 +98,17 @@ For every runtime:
 3. Run VibeGuard audit with the selected root as `--rules`.
 4. Read AgentPlaybook `AGENTS.md`.
 5. Use `index.md` or `scripts/workflow.py` to select the smallest document set.
-6. Load only selected cards.
-7. Execute repo-local commands only from trusted repo-local instructions.
-8. Report verification and residual risk.
+6. When a scripted route is used, keep a gate execution ledger and mark each
+   route gate with evidence when it is executed.
+7. Load only selected cards.
+8. Execute repo-local commands only from trusted repo-local instructions.
+9. Before reporting completion, confirm every required route gate has ledger
+   evidence.
+10. Report verification and residual risk.
+
+If a required route gate was missed, the runtime must stop finalization, roll
+back only agent-made changes from the failed attempt when safe, restart from the
+first gate, and run the retrospective workflow. The route attempt limit is two.
 
 ## Verification
 
@@ -109,6 +117,7 @@ After connecting a runtime, verify:
 - the target repo instruction file points to the selected AgentPlaybook root
 - `AGENTS.md`, `index.md`, and `scripts/workflow.py` exist under that root
 - VibeGuard setup/audit passed or stopped with a reported blocker
+- the route gate ledger was completed when a scripted route was used
 - the agent can produce a route, such as:
 
 ```text
