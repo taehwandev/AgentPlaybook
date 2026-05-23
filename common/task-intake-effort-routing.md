@@ -19,6 +19,7 @@ Classify the request before loading many documents or doing deep reasoning.
 
 | Class | Signal | Default Action |
 | --- | --- | --- |
+| `direct-question` | Asks for an explanation, timing, policy, status, or meaning without asking the agent to change files or run work. | Answer first. Do not start workflow routing, editing, or project-specific commands unless a separate action remains. |
 | `clear-exact` | Names a file, symbol, command, error, stack trace, failing test, or precise behavior. | Use quick or standard effort; inspect the named target first. |
 | `clear-scoped` | Names a screen/component/feature and intended change, but local context is needed. | Use standard effort; inspect local code and route to the matching platform card. |
 | `vague-action` | Says "fix", "improve", "clean up", "make better", or similar without target behavior. | Use ambiguity gate or question drill before implementation. |
@@ -27,6 +28,9 @@ Classify the request before loading many documents or doing deep reasoning.
 
 Examples:
 
+- "When does the agent run VibeGuard update?" -> `direct-question`; answer that
+  update is only used after explicit approval to refresh an existing managed
+  VibeGuard block, otherwise audit current guardrails.
 - "Change the button on home" -> `vague-action`; ask which button, state, and
   expected behavior unless the repo has one obvious home button.
 - "Improve the X button in `HomeScreen`" -> `clear-scoped`; inspect
@@ -80,9 +84,12 @@ enough decisions are captured.
 
 - Start with repo-local instructions and this intake card; do not load the full
   library.
-- Use `scripts/workflow.py classify "<request>"` for unclear or multi-step
-  requests when the script is available; skip it only for clear, low-risk,
-  answer-only tasks.
+- Use `scripts/workflow.py classify "<request>"` for unclear, direct-question,
+  or multi-step requests when the script is available; skip it only for clear,
+  low-risk answer-only tasks after answering them.
+- Use `scripts/workflow.py route <command> --request "<request>"` for multi-step
+  routes. If the script reports `direct-question`, answer before routing. If it
+  reports `question_drill: true`, use `triage` or `ambiguity` before work.
 - Route after classification: load only the command/platform/concern cards that
   match the task.
 - For exact errors, read the error output, referenced files, and nearby code

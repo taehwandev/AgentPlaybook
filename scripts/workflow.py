@@ -20,6 +20,8 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple
 ROOT = Path(__file__).resolve().parents[1]
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 FRONTMATTER_REQUIRED_KEYS = ("keyflow_id:", "status:", "type:")
+QUESTION_ROUTE_COMMANDS = {"triage", "ambiguity"}
+ANSWER_ONLY_CLARITY = "direct-question"
 
 
 @dataclass(frozen=True)
@@ -313,8 +315,48 @@ def classify_request(text: str) -> Dict[str, object]:
     lowered = normalized.lower()
     tokens = normalized.split()
 
+    direct_question_patterns = (
+        r"\?",
+        r"\b(what|when|where|why|how|which|who|should|do i|does|is|are|can i)\b",
+        "\uc5b8\uc81c",
+        "\ubb34\uc5c7",
+        "\ubb50",
+        "\uc5b4\ub5bb\uac8c",
+        "\uc65c",
+        "\uc5b4\ub514",
+        "\uc5b4\ub290",
+        "\ub204\uac00",
+        "\uc778\uac00",
+        "\ub9de\uc544",
+        "\uac70\uc57c",
+        "\uac74\uac00",
+        "\ub098\uc694",
+        "\ud569\ub2c8\uae4c",
+        "\ud560\uae4c",
+    )
+    question_action_patterns = (
+        r"\b(can you|could you|would you|please|go ahead and)\b",
+        "\ud574\uc918",
+        "\ud574\uc8fc\uc138\uc694",
+        "\ud574\uc904\ub798",
+        "\ubc14\uafd4\uc918",
+        "\uace0\uccd0\uc918",
+        "\uc218\uc815\ud574\uc918",
+        "\uc801\uc6a9\ud574\uc918",
+        "\ucd94\uac00\ud574\uc918",
+        "\uba85\uc2dc\ud574\uc918",
+        "\ub123\uc5b4\uc918",
+        "\ub2f4\uc544\uc918",
+        "\uc801\uc6a9",
+        "\ub2e4\uc2dc \uc801\uc6a9",
+        "\ucee4\ubc0b\ud574\uc918",
+        "\ud478\uc26c\ud574\uc918",
+        "\uc2e4\ud589\ud574\uc918",
+        "\ub9cc\ub4e4\uc5b4\uc918",
+    )
     exact_patterns = (
         r"`[^`]+`",
+        r"(?:^|\s)(?:~|\.{1,2}|/)[\w./-]+",
         r"\b[\w./-]+\.(kt|swift|tsx|ts|jsx|js|py|go|rs|java|md|json|yml|yaml|toml)\b",
         r":\d+\b",
         r"\b(error|exception|traceback|stack trace|compiler|lint|test failed|failing test)\b",
@@ -341,44 +383,59 @@ def classify_request(text: str) -> Dict[str, object]:
     has_broad = any(re.search(pattern, lowered) for pattern in broad_patterns)
     has_risky = any(re.search(pattern, lowered) for pattern in risky_patterns)
     has_vague = any(re.search(pattern, lowered) for pattern in vague_patterns)
+    has_direct_question = any(re.search(pattern, lowered) for pattern in direct_question_patterns)
+    asks_agent_action = any(re.search(pattern, lowered) for pattern in question_action_patterns)
     short_without_target = len(tokens) <= 8 and not (has_exact or has_scoped)
     asks_drill = any(phrase in lowered for phrase in ("grill me", "ask me questions", "help define requirements"))
 
-    if has_risky and not has_broad and not (has_exact or has_scoped):
+    if has_direct_question and not asks_agent_action:
+        clarity = ANSWER_ONLY_CLARITY
+        effort = "quick"
+        route = "none"
+        question_drill = False
+        response_mode = "answer_first"
+        reason = "The request is a direct question, so answer it before starting any workflow or edit."
+    elif has_risky and not has_broad and not (has_exact or has_scoped):
         clarity = "risky-unclear"
         effort = "deep"
         route = "ambiguity"
         question_drill = True
+        response_mode = "clarify_first"
         reason = "Risk-sensitive terms appear without an exact implementation target."
     elif has_broad and not has_exact:
         clarity = "broad-product"
         effort = "deep"
         route = "product"
         question_drill = asks_drill
+        response_mode = "work"
         reason = "The request appears to define product or architecture behavior."
     elif has_exact:
         clarity = "clear-exact"
         effort = "quick"
         route = "task"
         question_drill = False
+        response_mode = "work"
         reason = "The request names an exact file, symbol, command, or error signal."
     elif has_scoped:
         clarity = "clear-scoped"
         effort = "standard"
         route = "feature"
         question_drill = False
+        response_mode = "work"
         reason = "The request names a scoped UI, code, or feature owner."
     elif asks_drill or has_vague or short_without_target:
         clarity = "vague-action"
         effort = "standard"
         route = "triage"
         question_drill = True
+        response_mode = "clarify_first"
         reason = "The request asks for action but lacks a precise target or acceptance criteria."
     else:
         clarity = "clear-scoped"
         effort = "standard"
         route = "task"
         question_drill = False
+        response_mode = "work"
         reason = "No high-risk ambiguity was detected, but local context is still needed."
 
     return {
@@ -387,8 +444,10 @@ def classify_request(text: str) -> Dict[str, object]:
         "effort": effort,
         "recommended_route": route,
         "question_drill": question_drill,
+        "response_mode": response_mode,
         "reason": reason,
         "notes": [
+            "Answer direct user questions before routing, editing, or running project work.",
             "Use repo-local instructions before editing.",
             "Escalate effort if local inspection finds broader risk.",
             "Use the lowest capable model or reasoning depth when the runtime supports it.",
@@ -403,20 +462,50 @@ def print_classification(result: Dict[str, object]) -> None:
     print(f"Effort: `{result['effort']}`")
     print(f"Recommended route: `{result['recommended_route']}`")
     print(f"Question drill: `{str(result['question_drill']).lower()}`")
+    print(f"Response mode: `{result['response_mode']}`")
     print()
     print(f"Reason: {result['reason']}")
     print()
     print("## Next")
-    if result["question_drill"]:
-        print("- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route triage`.")
+    if result["clarity"] == ANSWER_ONLY_CLARITY:
+        print("- Answer the user's direct question first.")
+        print("- Do not start a workflow route, edit files, or run project-specific work unless a separate action remains.")
+    elif result["question_drill"]:
+        print("- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route triage --request \"<request text>\"`.")
         print("- Ask only blocker questions after checking available local context.")
     else:
-        print(f"- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route {result['recommended_route']}` with matching platform/concerns when needed.")
+        print(
+            f"- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route {result['recommended_route']} "
+            "--request \"<request text>\"` with matching platform/concerns when needed."
+        )
         print("- Inspect the named target or smallest relevant local context first.")
     print("- Keep the route gate ledger current if a workflow route is used.")
 
 
-def resolve_docs(command: str, platform: Optional[str], concerns: List[str]) -> Dict[str, object]:
+def route_block_reason(command: str, classification: Optional[Dict[str, object]]) -> Optional[str]:
+    if not classification:
+        return None
+    if classification["clarity"] == ANSWER_ONLY_CLARITY:
+        return (
+            "The current request is a direct question. Answer it in the conversation "
+            "before starting a workflow route, editing files, or running project-specific work."
+        )
+    if classification["question_drill"] and command not in QUESTION_ROUTE_COMMANDS:
+        return (
+            f"The current request needs clarification before route `{command}`. "
+            "Use `triage` or `ambiguity`, ask the blocker questions, and rerun the work route "
+            "only after the request is clear."
+        )
+    return None
+
+
+def resolve_docs(
+    command: str,
+    platform: Optional[str],
+    concerns: List[str],
+    request_classification: Optional[Dict[str, object]] = None,
+    request_classified: bool = False,
+) -> Dict[str, object]:
     profile = COMMANDS[command]
     docs: List[str] = [*CORE_DOCS, *profile.docs]
 
@@ -436,13 +525,28 @@ def resolve_docs(command: str, platform: Optional[str], concerns: List[str]) -> 
         if concern in BASELINE_CONCERNS:
             notes.append(f"Concern `{concern}` is {BASELINE_CONCERNS[concern]}")
 
+    gates = list(profile.gates)
+    if command not in QUESTION_ROUTE_COMMANDS:
+        gates = ["request intake", *gates]
+
+    if request_classification:
+        notes.append(
+            "Request classification is attached to this route; keep it as evidence for the request intake or classify request gate."
+        )
+    elif request_classified:
+        notes.append(
+            "Caller asserted the request was already classified or answered; record that evidence for the request intake gate."
+        )
+
     return {
         "root": str(ROOT),
         "command": command,
         "platform": platform,
         "concerns": concerns,
+        "request_classification": request_classification,
+        "request_classified": request_classified,
         "docs": unique(docs),
-        "gates": list(profile.gates),
+        "gates": gates,
         "attempt_limit": 2,
         "retry_scope": "first_missed_gate",
         "gate_ledger": [
@@ -452,7 +556,7 @@ def resolve_docs(command: str, platform: Optional[str], concerns: List[str]) -> 
                 "signal": "PENDING",
                 "evidence": "",
             }
-            for gate in profile.gates
+            for gate in gates
         ],
         "notes": notes,
         "missing": missing,
@@ -469,6 +573,21 @@ def print_markdown(route: Dict[str, object]) -> None:
         concerns = ", ".join(f"`{item}`" for item in route["concerns"])
         print(f"Concerns: {concerns}")
     print()
+    if route["request_classification"]:
+        classification = route["request_classification"]
+        print("## Request Classification")
+        print(f"- Clarity: `{classification['clarity']}`")
+        print(f"- Effort: `{classification['effort']}`")
+        print(f"- Recommended route: `{classification['recommended_route']}`")
+        print(f"- Question drill: `{str(classification['question_drill']).lower()}`")
+        print(f"- Response mode: `{classification['response_mode']}`")
+        print(f"- Reason: {classification['reason']}")
+        print()
+    elif route["request_classified"]:
+        print("## Request Classification")
+        print("- Caller asserted the current request was already classified or answered before this route.")
+        print("- Record that evidence before marking `request intake` GREEN.")
+        print()
     print("## Read In Order")
     for doc in route["docs"]:
         print(f"- `{doc}`")
@@ -509,6 +628,7 @@ def print_markdown(route: Dict[str, object]) -> None:
     print()
     print("## Agent Contract")
     print("- Treat this route as the command manifest for the task.")
+    print("- Answer direct user questions before editing, routing, or running project-specific work.")
     print("- Read the listed documents before editing or reviewing files.")
     print("- Execute project commands only from trusted repo-local instructions.")
     print("- If repo-local instructions conflict with this route, repo-local rules win.")
@@ -592,6 +712,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=sorted(set(CONCERNS) | {key[1] for key in PLATFORM_CONCERNS}),
         help="Affected concern. Can be repeated.",
     )
+    route.add_argument("--request", help="Current user request text. Required unless --request-classified is used.")
+    route.add_argument(
+        "--request-classified",
+        action="store_true",
+        help="Assert the current request was already classified or answered before routing.",
+    )
     route.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
     classify = subparsers.add_parser("classify", help="Classify request clarity and effort.")
@@ -630,7 +756,34 @@ def main(argv: List[str]) -> int:
             print_classification(result)
         return 0
 
-    route = resolve_docs(args.command, args.platform, args.concern)
+    request_classification = classify_request(args.request) if args.request else None
+    if not request_classification and not args.request_classified:
+        print(
+            "Route requires request intake evidence. Pass --request \"<USER_REQUEST>\" "
+            "or --request-classified after answering/classifying the current request.",
+            file=sys.stderr,
+        )
+        return 2
+
+    block_reason = route_block_reason(args.command, request_classification)
+    if block_reason:
+        print(block_reason, file=sys.stderr)
+        if request_classification:
+            print(
+                f"Classification: {request_classification['clarity']} / "
+                f"response_mode: {request_classification['response_mode']} / "
+                f"question_drill: {str(request_classification['question_drill']).lower()}",
+                file=sys.stderr,
+            )
+        return 2
+
+    route = resolve_docs(
+        args.command,
+        args.platform,
+        args.concern,
+        request_classification=request_classification,
+        request_classified=args.request_classified,
+    )
     if args.format == "json":
         print(json.dumps(route, indent=2, sort_keys=True))
     else:

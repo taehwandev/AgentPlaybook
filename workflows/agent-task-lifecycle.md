@@ -30,15 +30,17 @@ or task-specific workflow to load next.
 
 1. Intake: identify the user goal, target project, task type, constraints, and
    whether the user asked for edits or only analysis. Classify request clarity
-   and effort before loading broad context.
+   and effort before loading broad context. If the user asked a direct question,
+   answer it before starting work.
 2. Local rules: read repo-local instructions before project-specific work.
 3. Stack discovery: inspect manifests, lockfiles, wrappers, and repo scripts
    before choosing commands or framework-specific APIs.
 4. Risk scan: mark touched surfaces such as secrets, external state, auth,
    billing, data, release, generated files, dependencies, or local tools.
-5. Route: for multi-step tasks, run `scripts/workflow.py route ...` before
-   manually choosing workflow cards. Use `index.md` only for simple answer-only
-   work or an explicitly accepted fallback when the script cannot run.
+5. Route: for multi-step tasks, run `scripts/workflow.py route ... --request
+   "<USER_REQUEST>"` before manually choosing workflow cards. Use `index.md`
+   only for simple answer-only work or an explicitly accepted fallback when the
+   script cannot run.
 6. Gate ledger: create a ledger for every route gate, mark each gate when it is
    executed, and show a short traffic-light gate signal after each completed
    gate or task step.
@@ -78,6 +80,7 @@ or task-specific workflow to load next.
 
 - The target project cannot be identified safely.
 - Required repo-local instructions or referenced task documents are unavailable.
+- The user asked a direct question and it has not been answered.
 - The task requires external-state changes without clear user approval.
 - The same blocker repeats and no meaningful progress is possible without user
   input or an external change.

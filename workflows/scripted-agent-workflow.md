@@ -25,8 +25,14 @@ repo.
 Run this shared router for every multi-step task when it exists:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> [--platform <platform>] [--concern <concern>]
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
+
+The route command requires request intake evidence. Pass the current user
+request with `--request`, or pass `--request-classified` only after the request
+was already classified or answered. If the request is a direct question, the
+script blocks routing so the agent answers before editing or running project
+commands.
 
 When the request clarity or correct command profile is uncertain, classify first:
 
@@ -34,7 +40,12 @@ When the request clarity or correct command profile is uncertain, classify first
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<request text>"
 ```
 
-`classify` outputs the clarity label, effort level, recommended route command, whether a question drill is needed, and a short reason. Use the recommended route as the `<command>` argument to `route`. If `question_drill: true`, run the recommended route (typically `triage` or `ambiguity`) and ask only the missing blocker questions before proceeding.
+`classify` outputs the clarity label, effort level, recommended route command,
+whether a question drill is needed, response mode, and a short reason. Use the
+recommended route as the `<command>` argument to `route`. If `response_mode:
+answer_first`, answer the user before routing or editing. If `question_drill:
+true`, run the recommended route (typically `triage` or `ambiguity`) with
+`--request` and ask only the missing blocker questions before proceeding.
 
 Discover the supported values from the script itself:
 
@@ -121,9 +132,9 @@ list.
 Examples:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --platform android --concern security --concern ui
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route bugfix --platform server --concern api
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route docs-review --concern wiki
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "<USER_REQUEST>" --platform android --concern security --concern ui
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route bugfix --request "<USER_REQUEST>" --platform server --concern api
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route docs-review --request "<USER_REQUEST>" --concern wiki
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 ```
 
@@ -132,6 +143,8 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 The route output is the command manifest for the agent:
 
 - `docs`: read these documents in order before editing or reviewing.
+- `request_classification`: classify evidence attached from `--request`, when
+  provided.
 - `gates`: use these as the task checklist and report against them.
 - `gate_ledger`: mark and show each gate as executed when it completes.
 - `signal`: traffic-light state for each gate: `PENDING`, `GREEN`, `YELLOW`, or
@@ -253,9 +266,10 @@ If the script output conflicts with repo-local instructions, repo-local
 instructions win. If the route is missing a concern that the task clearly touches,
 add the concern manually and report the gap.
 
-If the workflow router is unavailable or cannot run, stop and report the blocker
-before continuing. Use prose-only routing from `index.md` only for simple
-answer-only work or after the user explicitly accepts the fallback.
+If the workflow router is unavailable, rejects a route, or cannot run, stop and
+report the blocker before continuing. Use prose-only routing from `index.md`
+only for simple answer-only work or after the user explicitly accepts the
+fallback.
 
 ## Script Creation Rule
 

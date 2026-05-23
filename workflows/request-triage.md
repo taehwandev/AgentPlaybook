@@ -21,14 +21,16 @@ planning or implementation.
 
 1. Identify the requested deliverable: answer, edit, review, PRD, plan,
    debugging, refactor, release, or handoff.
-2. Classify clarity: `clear-exact`, `clear-scoped`, `vague-action`,
-   `broad-product`, or `risky-unclear`.
+2. Classify clarity: `direct-question`, `clear-exact`, `clear-scoped`,
+   `vague-action`, `broad-product`, or `risky-unclear`.
 3. Select effort: `quick`, `standard`, `deep`, or `specialist`.
-4. If `clear-exact`, inspect the named target and avoid broad route loading.
-5. If `clear-scoped`, run the smallest matching workflow route.
-6. If `vague-action` or `risky-unclear`, run a question drill or ambiguity gate.
-7. If `broad-product`, use PRD/product workflow before implementation.
-8. Record the selected route only when it changes the work.
+4. If `direct-question`, answer before workflow routing, editing, or
+   project-specific commands. Stop unless a separate actionable request remains.
+5. If `clear-exact`, inspect the named target and avoid broad route loading.
+6. If `clear-scoped`, run the smallest matching workflow route.
+7. If `vague-action` or `risky-unclear`, run a question drill or ambiguity gate.
+8. If `broad-product`, use PRD/product workflow before implementation.
+9. Record the selected route only when it changes the work.
 
 ## Question Drill Output
 
@@ -49,6 +51,8 @@ Why this matters:
 
 - The request could affect data, security, billing, release, destructive
   changes, or external state and the key decision is unclear.
+- The user asked a direct question and the agent is about to start work without
+  answering it.
 - The user asked for requirements discovery and the agent is about to implement.
 - The agent is about to use deep effort or a specialist agent for a clear
   low-risk request without a reason.

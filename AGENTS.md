@@ -63,7 +63,9 @@ AgentPlaybook. Before documentation, code, configuration, dependency, data,
 deployment, or credential changes, run the VibeGuard audit for the target repo.
 When applying AgentPlaybook to another repo, do not run VibeGuard `setup` or
 `update` blindly; use the application drill in `docs/agent-bootstrap.md` when
-the target already has agent instructions or guardrails.
+the target already has agent instructions or guardrails. Use `update` only when
+the user explicitly chooses to refresh an existing managed VibeGuard block;
+otherwise run audit with the current guardrails.
 For this repo, use the current VibeGuard package flow documented in
 `VIBEGUARD.md`. During local maintenance, prefer the official package command:
 
@@ -94,27 +96,30 @@ For every multi-step task, run the shared workflow router before selecting
 documents manually, editing, reviewing, committing, or reporting completion:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> [--platform <platform>] [--concern <concern>]
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 Use the script output as a document and gate manifest, then execute the task with
-the target repo's local commands. If the script is unavailable, cannot run, or
-the route is missing a clearly relevant concern, stop and report the gap before
-continuing. Use `index.md` as a fallback only for simple answer-only work or
-after the user explicitly accepts the fallback.
+the target repo's local commands. The route command must receive the current
+user request or `--request-classified` after the request was already classified
+or answered. If the request is a direct question, answer it before editing,
+routing, or running project-specific work. If the script is unavailable, cannot
+run, or the route is missing a clearly relevant concern, stop and report the gap
+before continuing. Use `index.md` as a fallback only for simple answer-only work
+or after the user explicitly accepts the fallback.
 Discover valid commands, platforms, and concerns with:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
 ```
 
-The route output contains `docs`, `gates`, `gate_ledger`, `attempt_limit`,
-`retry_scope`, `notes`, and `missing`. Read listed documents in order, follow
-the gates as the task checklist, keep the gate ledger current while working,
-show a short traffic-light gate signal after each completed gate or task step,
-and stop if `missing` is not empty. Completion requires every required gate to
-be `GREEN`. If a required gate is missed, follow the missed gate recovery rule
-instead of finalizing. See
+The route output contains `request_classification`, `docs`, `gates`,
+`gate_ledger`, `attempt_limit`, `retry_scope`, `notes`, and `missing`. Read
+listed documents in order, follow the gates as the task checklist, keep the gate
+ledger current while working, show a short traffic-light gate signal after each
+completed gate or task step, and stop if `missing` is not empty. Completion
+requires every required gate to be `GREEN`. If a required gate is missed, follow
+the missed gate recovery rule instead of finalizing. See
 `workflows/scripted-agent-workflow.md` for the full consumption rules.
 
 ## Supporting Documents

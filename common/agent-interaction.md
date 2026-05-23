@@ -15,6 +15,11 @@ Keep momentum. Ask only when the answer can change behavior, safety,
 architecture, data handling, cost, or external state. Otherwise make a
 reasonable assumption, state it briefly, and proceed.
 
+If the user asks a direct question, answer it before starting workflow routing,
+editing files, or running project-specific commands. Continue into work only
+when the same message also contains a separate actionable request or the user
+follows up with one.
+
 Match the user's language for conversation. Keep shared agent-facing documents
 in English.
 
@@ -74,6 +79,12 @@ network/package execution that is not already trusted by repo-local policy.
 
 Approval requests should name the command or action, target, and risk. Do not
 treat approval for one risky action as permission for unrelated risky actions.
+
+For VibeGuard, `audit` is the normal safety gate. Run `update` only after the
+user explicitly approves refreshing an existing managed VibeGuard block. Run
+`setup` only for a first-time target repo with no guardrails or after explicit
+approval. If the user asks when VibeGuard is updated, answer this policy before
+doing any work.
 
 ## Status Updates
 

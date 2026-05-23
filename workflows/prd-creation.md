@@ -12,7 +12,7 @@ implementation, tests, or release planning.
 For agent execution, run the scripted route before writing the PRD:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Use `workflows/product-architecture-delivery.md` only when the work continues

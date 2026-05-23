@@ -13,11 +13,14 @@ mistakes.
 ## Core Loop
 
 1. Identify the target project and task type.
-2. Classify request clarity and effort before loading broad context.
+2. Classify request clarity and effort before loading broad context. If the user
+   asks a direct question, answer it before starting workflow routing, editing,
+   or project-specific commands.
 3. Read repo-local instructions before changing files.
 4. Discover the project stack before choosing commands or libraries.
-5. For multi-step tasks, run `scripts/workflow.py route ...` before selecting
-   task documents, editing, reviewing, committing, or reporting completion.
+5. For multi-step tasks, run `scripts/workflow.py route ... --request
+   "<USER_REQUEST>"` before selecting task documents, editing, reviewing,
+   committing, or reporting completion.
 6. Keep a gate execution ledger for the route and mark each gate with evidence
    when it is executed. Show a short gate signal after each completed gate or
    task step.
@@ -34,7 +37,9 @@ Before editing:
 
 - Confirm target path and project.
 - Classify the request as clear-exact, clear-scoped, vague-action,
-  broad-product, or risky-unclear before choosing effort.
+  broad-product, risky-unclear, or direct-question before choosing effort.
+- If classified as direct-question, answer first and do not start work unless a
+  separate actionable request remains.
 - Check repo-local `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`,
   `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or equivalent docs.
 - Check stack manifests, lockfiles, and config before running commands, adding
@@ -67,8 +72,9 @@ Before finishing:
   `common/task-intake-effort-routing.md` and `workflows/request-triage.md`.
 - Scripted workflow route: `workflows/scripted-agent-workflow.md` and
   `scripts/workflow.py` are mandatory for multi-step tasks when the script is
-  available. If the script cannot run, report the blocker before using
-  `index.md` as a fallback.
+  available. Pass `--request "<USER_REQUEST>"` so the script can block direct
+  questions and unclear work before implementation. If the script cannot run,
+  report the blocker before using `index.md` as a fallback.
 - Stack, package manager, framework, runtime, or command discovery:
   `common/stack-discovery.md`.
 - Failed commands, compiler errors, lint errors, or broken verification:
