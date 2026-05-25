@@ -85,6 +85,34 @@ Choose the smallest track that makes ownership clear:
 Do not add use cases, repositories, reducers, or modules only for ceremony. Add
 them when they isolate a real product rule, side effect, or test boundary.
 
+## Edge-To-Edge And IME Insets
+
+Compose screens should handle edge-to-edge and keyboard overlap explicitly:
+
+- Call `enableEdgeToEdge()` from the owning `Activity.onCreate()` before
+  `setContent` when the app should draw behind system bars. Treat this as the
+  default path for modern fullscreen/edge-to-edge Compose screens, especially
+  for apps targeting Android 15/API 35 or higher.
+- Do not confuse edge-to-edge with immersive mode. `enableEdgeToEdge()` lets
+  content draw behind transparent or translucent system bars; hiding system bars
+  is a separate immersive-mode decision.
+- Configure the Activity with `android:windowSoftInputMode="adjustResize"` when
+  the screen needs IME insets so Compose can resize or pad content as the
+  software keyboard appears and disappears.
+- Use `Modifier.imePadding()` on the screen container, scroll container, or
+  bottom action area that must move above the software keyboard. Do not rely on
+  fixed `Dp` keyboard spacers or legacy `adjustResize` behavior alone.
+- Prefer Compose inset modifiers such as `safeDrawingPadding`,
+  `windowInsetsPadding`, `windowInsetsBottomHeight`, and `imePadding` over
+  hand-rolled system bar or keyboard measurements. Avoid double-applying insets
+  across parent and child layouts.
+- For `LazyColumn` or other scrolling forms, verify the focused text field and
+  bottom actions remain visible while the IME opens. Use inset-sized bottom
+  spacers when needed instead of only `contentPadding`.
+- Keep tappable controls and gesture targets out of unsafe system gesture areas
+  unless the product intentionally owns that interaction and verifies it on
+  gesture navigation and 3-button navigation.
+
 ## Preview Rule
 
 Every new or meaningfully changed screen, section, or reusable component needs a
