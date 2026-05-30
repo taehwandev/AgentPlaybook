@@ -39,6 +39,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Release version, tag, artifact, build number, and deployment id scheme:
   `common/release-versioning.md`
 - Accessibility, localization, dates, numbers, UI text: `common/accessibility-i18n.md`
+- Human-authored prose, voice fidelity, and AI-writing signal cleanup:
+  `common/human-authored-writing.md`
 - Architecture choice/change: `common/architecture-selection.md`
 - Architecture design: `common/architecture-design.md`
 - New feature or product ambiguity: `common/product-spec-to-implementation.md`
@@ -249,6 +251,11 @@ read `common/release-deployment.md`. For release version, package version, app
 version, build number, tag, artifact name, or deployment id changes, also read
 `common/release-versioning.md`. For user-facing text, forms, controls, dates,
 numbers, media, or localization, read `common/accessibility-i18n.md`.
+
+For prose, documentation tone, release notes, marketing copy, emails, or
+AI-writing signal cleanup, read `common/human-authored-writing.md`. For UI text,
+forms, localized copy, or accessibility-sensitive content, also read
+`common/accessibility-i18n.md`.
 
 For uploads, downloads, generated files, media, attachments, signed or temporary
 URLs, public/private asset movement, asset cleanup, or asset references embedded
