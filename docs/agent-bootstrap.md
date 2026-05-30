@@ -202,8 +202,11 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
    short pointer or by pointing them back to `AGENTS.md`.
 7. Do not create new runtime-specific instruction files when the runtime already
    reads `AGENTS.md`.
-8. Prefer `${AGENTPLAYBOOK_HOME}` when the environment variable is configured.
-   Otherwise use the absolute path or repo-relative submodule path.
+8. Keep committed repo-local paths portable. Prefer `${AGENTPLAYBOOK_HOME}` for
+   a shared local install, or use a repo-relative pinned path such as
+   `.agents/AgentPlaybook`. Do not commit personal absolute paths such as
+   `/Users/.../AgentPlaybook`; use those only in shell env setup, one-shot
+   prompts, or uncommitted user-level runtime bridges.
 9. Link only `AGENTS.md`, `index.md`, and any direct route cards the repo wants.
 10. Do not paste the full AgentPlaybook library into repo-local files.
 11. For multi-step setup or migration work, run

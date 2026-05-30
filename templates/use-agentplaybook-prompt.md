@@ -39,7 +39,12 @@ Rules:
 2. Do not assume this runtime automatically loaded AgentPlaybook. Explicitly
    read <AGENTPLAYBOOK_ROOT>/AGENTS.md and <AGENTPLAYBOOK_ROOT>/index.md.
 3. Do not copy the whole AgentPlaybook library into this repo. Link only the
-   relevant root, index, workflow script, and selected cards.
+   relevant root, index, workflow script, and selected cards. If you edit
+   committed repo-local instruction files, use a portable root reference such
+   as ${AGENTPLAYBOOK_HOME} or a repo-relative pinned path like
+   .agents/AgentPlaybook; do not commit a personal absolute path. Full local
+   paths are acceptable only in this one-shot prompt, shell env setup, or
+   uncommitted user-level runtime bridges.
 4. VibeGuard is required. Before editing documentation, code, config,
    dependency, data, deployment, or credential surfaces, inspect existing
    VibeGuard files and agent instructions. If they already exist, ask the

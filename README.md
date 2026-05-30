@@ -154,6 +154,13 @@ their AgentPlaybook pointer in the same pass or point them back to `AGENTS.md`.
 Do not create extra runtime-specific files only to duplicate the same routing
 block.
 
+Keep committed repo-local instructions portable. Do not write a personal
+absolute path such as `/Users/.../AgentPlaybook` into files that will be shared
+through Git. Use `${AGENTPLAYBOOK_HOME}` for a shared local install, or a
+repo-relative path such as `.agents/AgentPlaybook` for a repo-pinned install.
+Personal full paths belong only in shell environment setup, one-shot prompts,
+or uncommitted user-level runtime bridges.
+
 ```text
 Shared AgentPlaybook guidance:
 ${AGENTPLAYBOOK_HOME}/AGENTS.md
@@ -258,11 +265,14 @@ already exists, ask me a short application drill before running setup or update.
 Use the selected AgentPlaybook root as the VibeGuard rule source.
 Update the repo-local agent instructions with a short routing block. Keep
 repo-specific commands, paths, services, product policy, and domain language in
-this repo. If existing repo-local Claude, Codex, Antigravity, or other runtime
-instruction files are present, update the necessary AgentPlaybook pointer there
-in the same pass. If the runtime reads AGENTS.md, do not create a duplicate
-runtime-specific file. Treat user-level runtime bridges as optional Step 2 work,
-not part of the required application prompt.
+this repo. In committed repo-local instruction files, use a portable
+AgentPlaybook root reference: `${AGENTPLAYBOOK_HOME}` for shared local installs
+or a repo-relative pinned path such as `.agents/AgentPlaybook`; do not commit my
+personal absolute path. If existing repo-local Claude, Codex, Antigravity, or
+other runtime instruction files are present, update the necessary AgentPlaybook
+pointer there in the same pass. If the runtime reads AGENTS.md, do not create a
+duplicate runtime-specific file. Treat user-level runtime bridges as optional
+Step 2 work, not part of the required application prompt.
 ```
 
 ### Actual Application Flow
@@ -284,25 +294,30 @@ flow instead of copying the whole library:
    rule source: audit-only, refresh with `update`, or first-time `setup`.
 7. Add a short routing block to the repo instruction file the agent runtime
    actually reads, preferring `AGENTS.md` when supported.
-8. Keep repo-specific commands, paths, services, product policy, and domain
+8. Use a portable AgentPlaybook root reference in committed repo-local files:
+   `${AGENTPLAYBOOK_HOME}` for shared local installs or a repo-relative pinned
+   path such as `.agents/AgentPlaybook`. Personal absolute paths are allowed
+   only in shell env setup, one-shot prompts, or uncommitted user-level runtime
+   bridges. Replace existing committed personal paths before reporting success.
+9. Keep repo-specific commands, paths, services, product policy, and domain
    language in the target repo.
-9. Update any existing runtime-specific instruction files, such as
+10. Update any existing runtime-specific instruction files, such as
    `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, or Antigravity CLI docs, so
    they point to the same AgentPlaybook root or back to `AGENTS.md`.
-10. Do not create new runtime-specific instruction files when the active
+11. Do not create new runtime-specific instruction files when the active
     runtime already reads `AGENTS.md`.
-11. Offer optional Step 2 for user-level runtime bridges. Only update personal
+12. Offer optional Step 2 for user-level runtime bridges. Only update personal
    or global runtime instruction files when the user chooses that option. The
    bridge must explicitly tell the runtime to read the current target project's
    local instructions first: Codex-style agents read `AGENTS.md`, Claude reads
    `CLAUDE.md`, and Antigravity reads its configured project instruction
    document.
-12. For follow-up work, run `workflow.py classify` when request clarity is
+13. For follow-up work, run `workflow.py classify` when request clarity is
    uncertain, then `workflow.py route ... --request "<USER_REQUEST>"` and
    follow the gate ledger. Answer direct questions before routing.
-13. When wrapper scripts are available, run `agent-preflight.py` before edits and
+14. When wrapper scripts are available, run `agent-preflight.py` before edits and
    `agent-finish-check.py` before final report, commit, release, or handoff.
-14. Before reporting success, verify the routing block, VibeGuard gate result,
+15. Before reporting success, verify the routing block, VibeGuard gate result,
    and any route gates that were required.
 
 ## Prompt A Local Agent

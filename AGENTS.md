@@ -228,10 +228,15 @@ Antigravity CLI docs are present, update their AgentPlaybook pointer in the same
 pass or point them back to `AGENTS.md`; do not create extra runtime-specific
 files only for duplication.
 
-`<AGENTPLAYBOOK_ROOT>` means the directory containing this shared library. In a
-repo-local template, replace it with an existing local install path,
-`${AGENTPLAYBOOK_HOME}`, or a repo-pinned submodule path. `${KEYFLOW_AGENT_ROOT}`
-is accepted only as a legacy local alias when already configured.
+`<AGENTPLAYBOOK_ROOT>` means the directory containing this shared library. In
+committed or shared repo-local instructions, do not replace it with a personal
+absolute path such as `/Users/.../AgentPlaybook`. Use `${AGENTPLAYBOOK_HOME}`
+when each machine can set the variable, or a repo-relative pinned path such as
+`.agents/AgentPlaybook` when the root is committed or pinned with the target
+repo. Personal absolute paths are acceptable only in uncommitted local runtime
+bridges, one-shot prompts, or shell environment setup for a specific user.
+`${KEYFLOW_AGENT_ROOT}` is accepted only as a legacy local alias when already
+configured.
 
 <!-- vibeguard:start version=1 -->
 ## VibeGuard

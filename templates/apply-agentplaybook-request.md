@@ -94,6 +94,14 @@ AGENTS.override.md, CLAUDE.md, CODEX.md, or .agents/README.md, with a short
 routing block. Preserve existing project rules. Keep repo-specific commands,
 paths, services, product policy, and domain language in this repo.
 
+When writing committed repo-local instruction files, do not commit my personal
+absolute path such as /Users/.../AgentPlaybook. Use ${AGENTPLAYBOOK_HOME} for a
+shared local install, or a repo-relative pinned path such as
+.agents/AgentPlaybook for a team-pinned install. Full local paths are allowed
+only in shell environment setup, one-shot prompts, or uncommitted user-level
+runtime bridges. If an existing committed instruction file contains a personal
+absolute path, replace it with a portable reference before reporting success.
+
 Prefer AGENTS.md as the canonical instruction file when the active runtimes read
 it. If repo-local Claude, Codex, Antigravity CLI, or other runtime instruction
 files are present, update their AgentPlaybook pointer in the same pass or point

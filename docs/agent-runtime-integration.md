@@ -93,6 +93,13 @@ short and point to:
 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
 ```
 
+For committed repo-local instruction files, keep the root reference portable.
+Use `${AGENTPLAYBOOK_HOME}` when each machine can set the variable, or a
+repo-relative pinned path such as `.agents/AgentPlaybook` when the playbook is
+kept with the target repo. Do not commit personal absolute paths such as
+`/Users/.../AgentPlaybook`; keep them in shell environment setup, one-shot
+prompts, or uncommitted user-level runtime bridges only.
+
 Do not paste the full playbook into runtime-specific files.
 
 ## One-Shot Prompt Setup

@@ -23,6 +23,18 @@ type: human-reviewed-needed
   작업 기준도 바뀝니다. 최신화는 작업 사이에 사람이 명시적으로 실행하는
   것이 안전합니다.
 
+## 경로 표기 원칙
+
+- Git에 커밋되는 `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`
+  같은 repo-local 지침에는 `/Users/.../AgentPlaybook` 같은 개인 절대 경로를
+  넣지 마세요.
+- 개인 로컬 공유 설치는 `${AGENTPLAYBOOK_HOME}`으로 가리키고, 팀 고정
+  설치는 `.agents/AgentPlaybook` 같은 repo-relative 경로를 사용하세요.
+- 개인 절대 경로는 shell 환경변수 설정, 커밋하지 않는 사용자 전역 런타임
+  브리지, 또는 한 번만 붙여넣는 one-shot 프롬프트에서만 허용합니다.
+- 기존에 커밋된 지침에서 개인 절대 경로를 발견하면 push 전에 portable
+  reference로 바꿔야 합니다.
+
 ## 개인 로컬 설치 최신화
 
 ```bash

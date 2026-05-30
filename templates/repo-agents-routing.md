@@ -72,9 +72,13 @@ with an `--allow-vibeguard-review` reason. `--request-classified` must include
 `--classification-evidence`; if a request asks for a question drill, missing
 drill evidence is 🐱🔴 RED and requires missed-gate recovery.
 Do not load every shared document by default.
-Replace `<AGENTPLAYBOOK_ROOT>` with an existing local install path,
-`${AGENTPLAYBOOK_HOME}`, or a repo-pinned submodule path. Use legacy
-`${KEYFLOW_AGENT_ROOT}` only when the environment already provides it.
+Replace `<AGENTPLAYBOOK_ROOT>` with a portable root reference. In committed
+repo-local instructions, use `${AGENTPLAYBOOK_HOME}` for shared local installs
+or a repo-relative pinned path such as `.agents/AgentPlaybook`; do not commit a
+personal absolute path such as `/Users/.../AgentPlaybook`. Full local paths
+belong only in shell environment setup, one-shot prompts, or uncommitted
+user-level runtime bridges. Use legacy `${KEYFLOW_AGENT_ROOT}` only when the
+environment already provides it.
 Keep repo paths, commands, components, role matrices, and domain terms in this repo.
 ```
 
