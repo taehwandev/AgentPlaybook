@@ -42,6 +42,10 @@ SIGNAL_DISPLAY = {
 }
 
 
+def display_signal(signal: object) -> str:
+    return SIGNAL_DISPLAY.get(str(signal), str(signal))
+
+
 def unique(items: Iterable[str]) -> List[str]:
     seen: Set[str] = set()
     result: List[str] = []
