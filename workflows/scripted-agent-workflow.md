@@ -85,6 +85,13 @@ Current platform values:
 Current concern values:
 
 - `accessibility`
+- `aeo`
+- `ai-mode`
+- `ai-overviews`
+- `ai-search`
+- `ai-search-optimization`
+- `answer-engine`
+- `answer-engine-optimization`
 - `api`
 - `asset`
 - `assets`
@@ -92,9 +99,12 @@ Current concern values:
 - `background`
 - `billing`
 - `cache`
+- `canonical`
+- `channel`
 - `component`
 - `component-api`
 - `compose`
+- `copy`
 - `defensive`
 - `dependency`
 - `desktop`
@@ -104,28 +114,49 @@ Current concern values:
 - `errors`
 - `generated`
 - `failure`
+- `generated`
+- `generative-ai`
+- `generative-ai-search`
+- `geo`
 - `intake`
 - `invite`
 - `interaction`
+- `llms`
+- `llms-txt`
 - `module`
 - `observability`
+- `open-graph`
 - `persistence`
+- `platform`
+- `prose`
 - `react`
 - `release`
 - `reusability`
+- `robots`
 - `security`
 - `seo`
+- `sitemap`
 - `stack`
 - `state`
 - `structure`
+- `structured-data`
 - `swiftui`
 - `ui`
 - `uikit`
+- `voice`
+- `widget`
 - `wiki`
 - `worktree`
+- `writing`
 
 Use `--concern` more than once when a task crosses risk areas. Use
 `--format json` when another tool should parse the route.
+
+The router also infers the canonical `seo` concern from explicit public
+discovery keywords in `--request`, such as SEO, AI search, AEO, GEO, AI
+Overviews, AI Mode, `llms.txt`, sitemap, robots, canonical, Open Graph, and
+structured data. Inference is a convenience, not a replacement for adding
+specific `--concern` values when local context shows the risk.
 
 Some concerns are baseline concerns. `stack`, `failure`, and `interaction` are
 valid concerns, but their core cards are already loaded by every route through

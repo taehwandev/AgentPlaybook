@@ -423,14 +423,17 @@ Supported commands are `ambiguity`, `bugfix`, `docs`, `docs-review`, `feature`,
 `retrospective`, `review`, `task`, and `triage`.
 
 Supported platforms are `android`, `application`, `flutter`, `ios`, `kmp`,
-`server`, and `web`. Supported concerns are `accessibility`, `api`, `auth`,
-`background`, `billing`, `asset`, `assets`, `cache`, `channel`, `component`,
-`component-api`, `compose`, `copy`, `defensive`, `dependency`, `desktop`,
-`discovery`, `effort`, `error`, `errors`, `failure`, `generated`, `intake`,
-`interaction`, `invite`, `module`, `observability`, `persistence`, `platform`,
-`react`, `prose`, `release`, `reusability`, `security`, `seo`, `stack`, `state`,
-`structure`, `swiftui`, `ui`, `uikit`, `voice`, `widget`, `wiki`, `worktree`,
-and `writing`.
+`server`, and `web`. Supported concerns are `accessibility`, `aeo`, `ai-mode`,
+`ai-overviews`, `ai-search`, `ai-search-optimization`, `answer-engine`,
+`answer-engine-optimization`, `api`, `asset`, `assets`, `auth`, `background`,
+`billing`, `cache`, `canonical`, `channel`, `component`, `component-api`,
+`compose`, `copy`, `defensive`, `dependency`, `desktop`, `discovery`, `effort`,
+`error`, `errors`, `failure`, `generated`, `generative-ai`,
+`generative-ai-search`, `geo`, `intake`, `interaction`, `invite`, `llms`,
+`llms-txt`, `module`, `observability`, `open-graph`, `persistence`, `platform`,
+`prose`, `react`, `release`, `reusability`, `robots`, `security`, `seo`,
+`sitemap`, `stack`, `state`, `structure`, `structured-data`, `swiftui`, `ui`,
+`uikit`, `voice`, `widget`, `wiki`, `worktree`, and `writing`.
 
 Use `classify` before route selection when the request may be vague or when the
 agent runtime can choose model/reasoning effort. The classifier is intentionally
@@ -438,6 +441,12 @@ cheap: it suggests `clear-exact`, `clear-scoped`, `vague-action`,
 `broad-product`, or `risky-unclear`, then recommends quick, standard, deep, or
 specialist effort. It is a first pass, not a replacement for repo-local
 inspection.
+
+The router infers the canonical `seo` concern from explicit public-discovery
+keywords in the request, including SEO, AI search, AEO, GEO, AI Overviews, AI
+Mode, `llms.txt`, sitemap, robots, canonical, Open Graph, and structured data.
+Agents should still pass exact concerns when local context shows a specific
+risk.
 
 If the workflow router cannot run, the agent must stop and report the blocker or
 ask whether to continue with an `index.md` fallback. The route output contains

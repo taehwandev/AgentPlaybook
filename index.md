@@ -46,7 +46,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - New feature or product ambiguity: `common/product-spec-to-implementation.md`
 - LLM-readable wiki, knowledge-base, runbook, or durable documentation:
   `common/llm-wiki-documentation.md`
-- Public discovery, SEO, sitemap, metadata, previews, and canonical URLs:
+- Public discovery, SEO, AI search visibility, sitemap, metadata, previews, and
+  canonical URLs:
   `common/public-discovery.md`
 - App boundary/state/data shape: `common/app-architecture.md`
 - State modeling, UiState, effects, reducers, stores, ViewModels, hooks:
@@ -269,8 +270,8 @@ URLs, public/private asset movement, asset cleanup, or asset references embedded
 in persisted content, read `common/asset-lifecycle.md`.
 
 For sitemap, robots, metadata, Open Graph previews, short links, public search,
-canonical URLs, link previews, structured data, or public discovery feeds, read
-`common/public-discovery.md`.
+AI search visibility, AEO/GEO claims, canonical URLs, link previews, structured
+data, or public discovery feeds, read `common/public-discovery.md`.
 
 For code that consumes external, persisted, generated, cached, platform, or
 user-provided values, read `common/defensive-boundaries.md`.

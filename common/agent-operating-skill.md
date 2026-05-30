@@ -139,8 +139,9 @@ Before finishing:
 - User-facing prose, documentation tone, release notes, marketing copy, emails,
   voice fidelity, or AI-writing signal cleanup:
   `common/human-authored-writing.md`.
-- SEO, sitemap, robots, metadata, Open Graph, short links, canonical URLs, or
-  public discovery feeds: `common/public-discovery.md`.
+- SEO, AI search visibility, AEO/GEO claims, sitemap, robots, metadata, Open
+  Graph, short links, canonical URLs, or public discovery feeds:
+  `common/public-discovery.md`.
 - UI layout, interaction, text overflow, responsive behavior, or
   accessibility-visible state: `common/ui-visual-verification.md`.
 - Refactoring: `common/refactoring.md`.

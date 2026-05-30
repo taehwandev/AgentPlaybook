@@ -212,6 +212,46 @@ PLATFORMS: Dict[str, Tuple[str, ...]] = {
 }
 
 
+PUBLIC_DISCOVERY_DOCS = ("common/public-discovery.md",)
+
+
+REQUEST_CONCERN_HINTS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
+    (
+        "seo",
+        (
+            r"\bseo\b",
+            r"\bsearch engine optimization\b",
+            r"\bai search\b",
+            r"\bai search optimization\b",
+            r"\bgenerative ai search\b",
+            r"\bgenerative ai\b",
+            r"\bai overviews?\b",
+            r"\bai mode\b",
+            r"\baeo\b",
+            r"\bgeo\b",
+            r"\banswer engine(?: optimization)?\b",
+            r"\bllms(?:\.txt|-txt)?\b",
+            r"\bsitemap\b",
+            r"\brobots(?:\.txt)?\b",
+            r"\bcanonical\b",
+            r"\bopen graph\b",
+            r"\bopengraph\b",
+            r"\bog image\b",
+            r"\bstructured data\b",
+            "\uac80\uc0c9 \ucd5c\uc801\ud654",
+            "ai \uac80\uc0c9",
+            "\uc0dd\uc131\ud615 ai",
+            "\uc0dd\uc131\ud615 \uac80\uc0c9",
+            "\uc0ac\uc774\ud2b8\ub9f5",
+            "\ub85c\ubd07.txt",
+            "\uce90\ub178\ub2c8\uceec",
+            "\uc624\ud508 \uadf8\ub798\ud504",
+            "\uad6c\uc870\ud654 \ub370\uc774\ud130",
+        ),
+    ),
+)
+
+
 CONCERNS: Dict[str, Tuple[str, ...]] = {
     "security": ("common/secure-development-baseline.md", "common/security-privacy-review.md"),
     "intake": ("common/task-intake-effort-routing.md", "workflows/request-triage.md"),
@@ -244,8 +284,25 @@ CONCERNS: Dict[str, Tuple[str, ...]] = {
     "interaction": ("common/agent-interaction.md",),
     "defensive": ("common/defensive-boundaries.md",),
     "observability": ("common/observability-error-handling.md", "common/error-modeling.md"),
-    "discovery": ("common/public-discovery.md",),
-    "seo": ("common/public-discovery.md",),
+    "discovery": PUBLIC_DISCOVERY_DOCS,
+    "seo": PUBLIC_DISCOVERY_DOCS,
+    "ai-mode": PUBLIC_DISCOVERY_DOCS,
+    "ai-overviews": PUBLIC_DISCOVERY_DOCS,
+    "ai-search": PUBLIC_DISCOVERY_DOCS,
+    "ai-search-optimization": PUBLIC_DISCOVERY_DOCS,
+    "aeo": PUBLIC_DISCOVERY_DOCS,
+    "answer-engine": PUBLIC_DISCOVERY_DOCS,
+    "answer-engine-optimization": PUBLIC_DISCOVERY_DOCS,
+    "canonical": PUBLIC_DISCOVERY_DOCS,
+    "generative-ai": PUBLIC_DISCOVERY_DOCS,
+    "generative-ai-search": PUBLIC_DISCOVERY_DOCS,
+    "geo": PUBLIC_DISCOVERY_DOCS,
+    "llms": PUBLIC_DISCOVERY_DOCS,
+    "llms-txt": PUBLIC_DISCOVERY_DOCS,
+    "open-graph": PUBLIC_DISCOVERY_DOCS,
+    "robots": PUBLIC_DISCOVERY_DOCS,
+    "sitemap": PUBLIC_DISCOVERY_DOCS,
+    "structured-data": PUBLIC_DISCOVERY_DOCS,
     "wiki": ("workflows/documentation-update.md", "common/llm-wiki-documentation.md"),
     "auth": ("product-patterns/auth-rbac-permissions.md", "product-patterns/auth-rbac-implementation.md"),
     "invite": ("product-patterns/invitation-workflows.md", "product-patterns/invitation-implementation.md"),
@@ -311,6 +368,17 @@ def unique(items: Iterable[str]) -> List[str]:
             seen.add(item)
             result.append(item)
     return result
+
+
+def infer_concerns_from_request(text: str) -> List[str]:
+    normalized = " ".join(text.strip().split())
+    if not normalized:
+        return []
+    inferred: List[str] = []
+    for concern, patterns in REQUEST_CONCERN_HINTS:
+        if any(re.search(pattern, normalized, re.IGNORECASE) for pattern in patterns):
+            inferred.append(concern)
+    return unique(inferred)
 
 
 def classify_request(text: str) -> Dict[str, object]:
@@ -831,13 +899,23 @@ def main(argv: List[str]) -> int:
             )
         return 2
 
+    inferred_concerns = infer_concerns_from_request(args.request or "")
+    concerns = unique([*args.concern, *inferred_concerns])
+    newly_inferred = [concern for concern in inferred_concerns if concern not in args.concern]
+
     route = resolve_docs(
         args.command,
         args.platform,
-        args.concern,
+        concerns,
         request_classification=request_classification,
         request_classified=args.request_classified,
     )
+    if newly_inferred:
+        route["inferred_concerns"] = newly_inferred
+        notes = route.get("notes")
+        if isinstance(notes, list):
+            joined = ", ".join(f"`{concern}`" for concern in newly_inferred)
+            notes.append(f"Inferred concern(s) from request keywords: {joined}.")
     if args.format == "json":
         print(json.dumps(route, indent=2, sort_keys=True))
     else:
