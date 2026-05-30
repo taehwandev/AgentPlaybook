@@ -6,19 +6,16 @@ type: human-reviewed-needed
 
 # Documentation Update Workflow
 
-Use when creating, reviewing, or restructuring docs, guides, specs, READMEs,
-agent instructions, release notes, or knowledge-base pages.
+Use when creating, reviewing, or restructuring docs, guides, specs, READMEs, agent instructions, release notes, or knowledge-base pages.
 
 ## Read
 
 - `workflows/agent-task-lifecycle.md`
 - `common/code-conventions.md` for naming and clarity
-- `common/llm-wiki-documentation.md` for wiki, knowledge-base, runbook,
-  onboarding, durable architecture, or operational docs
+- `common/llm-wiki-documentation.md` for wiki, knowledge-base, runbook, onboarding, durable architecture, or operational docs
 - `common/project-naming.md` when names, slugs, or product identifiers appear
 - `common/verification-policy.md` when links, examples, or commands can be checked
-- `common/human-authored-writing.md` when the task changes prose voice, tone, or
-  AI-writing signals without changing facts
+- `common/human-authored-writing.md` when the task changes prose voice, tone, or AI-writing signals without changing facts
 - task-specific architecture, product-pattern, security, or release cards when the docs describe those surfaces
 
 ## Steps
@@ -26,19 +23,15 @@ agent instructions, release notes, or knowledge-base pages.
 1. Identify the document audience, purpose, source of truth, and expected action.
 2. Check existing docs for overlap before adding a new page or section.
 3. Keep repo-specific commands, paths, role matrices, and domain terms in repo-local docs.
-4. Write shared agent library guidance in English. Localize only public-facing
-   site copy or repo-local docs that intentionally target another locale.
+4. Write shared agent library guidance in English. Localize only public-facing site copy or repo-local docs that intentionally target another locale.
 5. Link to shared cards instead of copying full guidance.
-6. For prose cleanup, preserve the original factual commitments and report when
-   a style edit would change meaning, genre, or voice ownership.
+6. For prose cleanup, preserve the original factual commitments and report when a style edit would change meaning, genre, or voice ownership.
 7. Verify examples, links, file paths, commands, and metadata where practical.
 8. Report what changed, what was verified, and any stale or missing source material.
 
 ## Promote Local Lessons
 
-Move a local lesson into shared docs only when it remains useful after removing
-project names, service names, local paths, command names, and platform-specific
-API names.
+Move a local lesson into shared docs only when it remains useful after removing project names, service names, local paths, command names, and platform-specific API names.
 
 Shared docs should capture:
 
