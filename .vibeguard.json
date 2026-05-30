@@ -1,0 +1,17 @@
+{
+  "mode": "guided",
+  "display": "emoji",
+  "rulesPath": ".",
+  "maxFileLines": 800,
+  "repository": {
+    "visibility": "unknown"
+  },
+  "update": {
+    "checkIntervalDays": 7
+  },
+  "autoFix": {
+    "envGitignore": true,
+    "envExample": true,
+    "simpleSecretQuarantine": true
+  }
+}

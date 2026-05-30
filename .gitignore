@@ -8,3 +8,19 @@ build/
 .env
 .env.*
 !.env.example
+# VibeGuard local secrets
+!.env.sample
+!.env.template
+!.env.dist
+!.env.defaults
+!.env.schema
+!.env*.default
+!.env*.defaults
+!.env*.dist
+!.env*.example
+!.env*.sample
+!.env*.schema
+!.env*.template
+.env.vibeguard.local
+# VibeGuard local state
+.vibeguard/
