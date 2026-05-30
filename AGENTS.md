@@ -119,9 +119,11 @@ The route output contains `request_classification`, `docs`, `gates`,
 listed documents in order, follow the gates as the task checklist, keep the gate
 ledger current while working, show a short traffic-light gate signal after each
 completed gate or task step, and stop if `missing` is not empty. Completion
-requires every required gate to be `GREEN`. If a required gate is missed, follow
-the missed gate recovery rule instead of finalizing. See
+requires every required gate to be `🐱🟢 GREEN`. If a required gate is missed,
+follow the missed gate recovery rule instead of finalizing. See
 `workflows/scripted-agent-workflow.md` for the full consumption rules.
+Use the cat signal badges in human-visible reports so misses are hard to skim
+past: `🐱🔵 PENDING`, `🐱🟢 GREEN`, `🐱🟡 YELLOW`, and `🐱🔴 RED`.
 
 ## Required Executable Evidence Gate
 
@@ -145,16 +147,27 @@ That directory is local runtime evidence and should usually be gitignored.
 
 Missing preflight evidence, missing finish-check evidence, or missing gate
 evidence is non-compliant even when the final code or documentation appears
-correct. If the wrappers are unavailable, the fallback is still strict: run the
+correct. `agent-preflight.py --request-classified` must include
+`--classification-evidence`; otherwise request intake is treated as skipped.
+If route classification or stored request text says `question_drill: true` or
+explicitly asks for a question drill, `agent-finish-check.py` must receive
+question-drill gate evidence such as `question drill if needed=<evidence>` or
+`ask blockers=<evidence>`. Missing drill evidence is a `🐱🔴 RED` gate and sets
+`retrospective_required: true`.
+
+If the wrappers are unavailable, the fallback is still strict: run the
 workflow router, `git status --short --untracked-files=all`, VibeGuard before
 work, VibeGuard again before finishing, and report each required gate with
 concrete evidence. Do not claim wrapper evidence exists unless the wrapper was
 actually run.
 
-VibeGuard `YELLOW` / `Needs review` is not completion. The finish check may be
+VibeGuard `🐱🟡 YELLOW` / `Needs review` is not completion. The finish check may be
 allowed to pass only when the agent explicitly reports the review state and
-passes `--allow-vibeguard-review "<reason>"`. `RED`, command failure, or missing
-VibeGuard output remains a blocker.
+passes `--allow-vibeguard-review "<reason>"`. `🐱🔴 RED`, command failure, or
+missing VibeGuard output remains a blocker.
+Human-visible finish-check output must include the cat signal badges; the
+machine-readable JSON keeps the stable `PENDING`, `GREEN`, `YELLOW`, and `RED`
+values.
 
 ## Supporting Documents
 

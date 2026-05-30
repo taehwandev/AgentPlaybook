@@ -54,8 +54,8 @@ or task-specific workflow to load next.
     correction before retrying.
 12. Ledger check: before finalizing, compare required gates against executed
     evidence and traffic-light state. Completion requires every required gate to
-    be `GREEN`. If any required gate is missing, `YELLOW`, or `RED`, follow the
-    corresponding pause or missed-gate recovery rule in
+    be `🐱🟢 GREEN`. If any required gate is missing, `🐱🟡 YELLOW`, or
+    `🐱🔴 RED`, follow the corresponding pause or missed-gate recovery rule in
     `workflows/scripted-agent-workflow.md`.
 13. Review: inspect the final diff, output, or artifact against the request and
     risks.

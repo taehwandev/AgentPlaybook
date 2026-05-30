@@ -68,8 +68,13 @@ python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-finish-check.py" \
 남깁니다. 보통 이 디렉터리는 커밋하지 않고 `.gitignore`에 둡니다. preflight
 근거, finish-check 근거, route gate 근거가 없으면 결과물이 맞아 보여도
 AgentPlaybook 기준으로는 non-compliant입니다.
+사람이 보는 보고에는 고양이 신호 배지를 씁니다: `🐱🔵 PENDING`은 아직
+도달 전, `🐱🟢 GREEN`은 근거와 함께 실행됨, `🐱🟡 YELLOW`는 보류 또는
+검토 필요, `🐱🔴 RED`는 누락 또는 근거 없음입니다. `--request-classified`를
+쓸 때는 `--classification-evidence`를 함께 남겨야 하며, "그릴미"처럼 질문
+드릴을 요청한 경우 드릴 근거가 없으면 `🐱🔴 RED`입니다.
 
-VibeGuard가 `YELLOW` / `Needs review`이면 완료가 아닙니다. 그 상태를 명시
+VibeGuard가 `🐱🟡 YELLOW` / `Needs review`이면 완료가 아닙니다. 그 상태를 명시
 보고하고, 받아들일 수 있는 사유가 있을 때만
 `--allow-vibeguard-review "<사유>"`로 finish check를 통과시킵니다.
 

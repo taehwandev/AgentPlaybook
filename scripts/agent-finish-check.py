@@ -14,6 +14,27 @@ from typing import Any
 
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+QUESTION_DRILL_PHRASES = (
+    "grill me",
+    "ask me questions",
+    "help define requirements",
+    "question drill",
+    "question_drill: true",
+    "question_drill true",
+    "\uadf8\ub9b4\ubbf8",
+)
+QUESTION_DRILL_EVIDENCE_GATES = (
+    "question drill if needed",
+    "ask blockers",
+    "question drill",
+    "clarification drill",
+)
+SIGNAL_DISPLAY = {
+    "PENDING": "\U0001f431\U0001f535 PENDING",
+    "GREEN": "\U0001f431\U0001f7e2 GREEN",
+    "YELLOW": "\U0001f431\U0001f7e1 YELLOW",
+    "RED": "\U0001f431\U0001f534 RED",
+}
 
 
 def clean_output(text: str) -> str:
@@ -67,6 +88,37 @@ def parse_gate(value: str) -> tuple[str, str]:
     return gate, evidence
 
 
+def question_drill_requested(text: str) -> bool:
+    lowered = text.lower()
+    return any(phrase in lowered for phrase in QUESTION_DRILL_PHRASES)
+
+
+def add_gate_signal(
+    gate_signals: list[dict[str, str]],
+    signal: str,
+    gate: str,
+    status: str,
+    evidence: str,
+) -> None:
+    gate_signals.append(
+        {
+            "gate": gate,
+            "signal": signal,
+            "status": status,
+            "evidence": evidence,
+        }
+    )
+
+
+def display_signal(signal: str) -> str:
+    return SIGNAL_DISPLAY.get(signal, signal)
+
+
+def append_unique(items: list[str], value: str) -> None:
+    if value not in items:
+        items.append(value)
+
+
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -113,13 +165,72 @@ def main() -> int:
             preflight = {}
 
     route = preflight.get("route") or {}
+    request_intake = preflight.get("request_intake") or {}
+    request_classification = route.get("request_classification") or {}
     required_gates = route.get("gates") or []
     if not required_gates:
         failures.append("preflight evidence is missing route gates")
     gate_evidence = dict(args.gate)
-    missing_gates = [gate for gate in required_gates if not gate_evidence.get(gate)]
-    if missing_gates:
-        failures.append("missing required gate evidence: " + ", ".join(missing_gates))
+    missed_gates: list[str] = []
+    gate_signals: list[dict[str, str]] = []
+    for gate in required_gates:
+        evidence = gate_evidence.get(gate, "")
+        if evidence:
+            add_gate_signal(gate_signals, "GREEN", gate, "executed", evidence)
+        else:
+            append_unique(missed_gates, gate)
+            add_gate_signal(gate_signals, "RED", gate, "missed", "missing evidence")
+
+    if missed_gates:
+        failures.append("missing required gate evidence: " + ", ".join(missed_gates))
+
+    if route.get("request_classified") and not request_intake.get("classification_evidence"):
+        append_unique(missed_gates, "request intake")
+        add_gate_signal(
+            gate_signals,
+            "RED",
+            "request intake",
+            "missed",
+            "--request-classified used without classification evidence",
+        )
+        failures.append("--request-classified used without classification evidence")
+
+    request_text = " ".join(
+        str(value)
+        for value in (
+            request_intake.get("request"),
+            request_intake.get("classification_evidence"),
+            request_classification.get("request"),
+        )
+        if value
+    )
+    question_drill_required = bool(
+        request_classification.get("question_drill")
+    ) or question_drill_requested(request_text)
+    question_drill_evidence_gate = next(
+        (gate for gate in QUESTION_DRILL_EVIDENCE_GATES if gate_evidence.get(gate)),
+        "",
+    )
+    if question_drill_required and question_drill_evidence_gate:
+        add_gate_signal(
+            gate_signals,
+            "GREEN",
+            "question drill",
+            "executed",
+            f"{question_drill_evidence_gate}: {gate_evidence[question_drill_evidence_gate]}",
+        )
+    elif question_drill_required:
+        append_unique(missed_gates, "question drill")
+        add_gate_signal(
+            gate_signals,
+            "RED",
+            "question drill",
+            "missed",
+            "request classification required a question drill but no drill evidence was provided",
+        )
+        failures.append(
+            "question drill was required by request classification but no question-drill gate evidence was provided"
+        )
 
     preflight_vibeguard_command = preflight.get("vibeguard") or {}
     preflight_vibeguard = preflight_vibeguard_command.get("overall") or {}
@@ -151,17 +262,43 @@ def main() -> int:
     vibeguard["overall"] = parse_overall(vibeguard_output)
 
     if validate["returncode"] != 0:
+        add_gate_signal(gate_signals, "RED", "workflow validate", "failed", "non-zero exit")
         failures.append("workflow validate failed")
+    else:
+        add_gate_signal(gate_signals, "GREEN", "workflow validate", "executed", "exit 0")
     if diff_check["returncode"] != 0:
+        add_gate_signal(gate_signals, "RED", "diff check", "failed", "non-zero exit")
         failures.append("git diff --check failed")
+    else:
+        add_gate_signal(gate_signals, "GREEN", "diff check", "executed", "exit 0")
     if vibeguard["returncode"] != 0:
+        add_gate_signal(gate_signals, "RED", "VibeGuard", "failed", "non-zero exit")
         failures.append("final VibeGuard audit failed")
 
     overall = vibeguard["overall"]["status"]
-    if overall != "Ready" and not args.allow_vibeguard_review:
+    if vibeguard["returncode"] != 0:
+        pass
+    elif overall != "Ready" and not args.allow_vibeguard_review:
+        add_gate_signal(gate_signals, "RED", "VibeGuard", "blocked", overall)
         failures.append(
             "final VibeGuard is not Ready; report the state and pass "
             "--allow-vibeguard-review with a reason if the review is acceptable"
+        )
+    elif overall != "Ready":
+        add_gate_signal(
+            gate_signals,
+            "YELLOW",
+            "VibeGuard",
+            "review accepted",
+            args.allow_vibeguard_review or overall,
+        )
+    else:
+        add_gate_signal(gate_signals, "GREEN", "VibeGuard", "executed", overall)
+
+    retrospective_required = bool(missed_gates)
+    if retrospective_required:
+        failures.append(
+            "retrospective required before final report, commit, release, or handoff"
         )
 
     result = {
@@ -170,8 +307,14 @@ def main() -> int:
         "project": str(project),
         "rules": str(rules),
         "preflight_evidence": str(evidence_path),
+        "request_intake": request_intake,
+        "request_classification": request_classification,
         "required_gates": required_gates,
         "gate_evidence": gate_evidence,
+        "gate_signals": gate_signals,
+        "missed_gates": missed_gates,
+        "question_drill_required": question_drill_required,
+        "retrospective_required": retrospective_required,
         "allow_vibeguard_review": args.allow_vibeguard_review,
         "validate": validate,
         "diff_check": diff_check,
@@ -183,6 +326,13 @@ def main() -> int:
     print(f"Finish evidence: {output_path}")
     print(f"Required gates: {required_gates}")
     print(f"VibeGuard overall: {overall}")
+    print(f"Retrospective required: {str(retrospective_required).lower()}")
+    print("Gate signals:")
+    for gate_signal in gate_signals:
+        print(
+            f"- {display_signal(gate_signal['signal'])} | gate: {gate_signal['gate']} | "
+            f"status: {gate_signal['status']}"
+        )
 
     if failures:
         for failure in failures:

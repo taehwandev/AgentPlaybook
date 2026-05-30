@@ -258,6 +258,43 @@ h1 {
   margin-top: 32px;
 }
 
+.signal-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.signal-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #0f131d;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.signal-chip.pending {
+  border-color: rgba(var(--cyan-rgb), 0.32);
+}
+
+.signal-chip.green {
+  border-color: rgba(var(--green-rgb), 0.36);
+}
+
+.signal-chip.yellow {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.signal-chip.red {
+  border-color: rgba(239, 68, 68, 0.42);
+}
+
 /* Beautiful Unified Code Console Component */
 .editor-window {
   border: 1px solid var(--line);

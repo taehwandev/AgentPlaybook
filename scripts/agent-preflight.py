@@ -94,12 +94,24 @@ def main() -> int:
         action="store_true",
         help="use only after request classification or answer-first handling",
     )
+    parser.add_argument(
+        "--classification-evidence",
+        help=(
+            "required with --request-classified; describes the prior "
+            "classification or answer-first handling"
+        ),
+    )
     parser.add_argument("--platform", action="append", default=[])
     parser.add_argument("--concern", action="append", default=[])
     parser.add_argument("--project", type=Path, default=Path.cwd())
     parser.add_argument("--rules", type=Path, default=playbook_root)
     parser.add_argument("--evidence", type=Path)
     args = parser.parse_args()
+    if args.request_classified and not args.classification_evidence:
+        parser.error(
+            "--request-classified requires --classification-evidence so request "
+            "intake cannot be skipped silently"
+        )
 
     project = args.project.resolve()
     rules = args.rules.resolve()
@@ -142,6 +154,11 @@ def main() -> int:
         "playbook_root": str(playbook_root),
         "project": str(project),
         "rules": str(rules),
+        "request_intake": {
+            "request": args.request or "",
+            "request_classified": args.request_classified,
+            "classification_evidence": args.classification_evidence or "",
+        },
         "route": route_payload,
         "route_parse_error": route_parse_error,
         "route_command": route_result,

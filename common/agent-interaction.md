@@ -95,13 +95,14 @@ When a scripted workflow route is used, show a gate signal after each completed
 gate or task step:
 
 ```text
-Gate signal: GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
+Gate signal: 🐱🟢 GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
 ```
 
-Use `GREEN` only when the gate was executed and has evidence. Use `YELLOW` when
-the gate is blocked or paused. Use `RED` when the gate was missed or lacks
-evidence after it should have run. Do not wait until the final response to reveal
-that a required gate was skipped.
+Use `🐱🔵 PENDING` when the gate has not been reached, `🐱🟢 GREEN` only when the
+gate was executed and has evidence, `🐱🟡 YELLOW` when the gate is blocked or
+paused, and `🐱🔴 RED` when the gate was missed or lacks evidence after it
+should have run. Do not wait until the final response to reveal that a required
+gate was skipped.
 
 ## Handoff
 

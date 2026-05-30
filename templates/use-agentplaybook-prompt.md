@@ -73,11 +73,11 @@ Rules:
 7. Keep a gate execution ledger from the route output. Mark each required gate
    when it is executed, include concrete evidence such as a command, file, diff,
    manual check, or decision note, and assign a traffic-light signal:
-   `GREEN` for executed with evidence, `YELLOW` for blocked or paused, and
-   `RED` for missed or missing evidence. Do not reconstruct the ledger from
-   memory at the end.
+   `🐱🔵 PENDING` for not reached, `🐱🟢 GREEN` for executed with evidence,
+   `🐱🟡 YELLOW` for blocked or paused, and `🐱🔴 RED` for missed or missing
+   evidence. Do not reconstruct the ledger from memory at the end.
 8. After each completed gate or task step, show:
-   Gate signal: GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
+   Gate signal: 🐱🟢 GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
 9. If any required gate was not executed, stop before final report, commit,
    release, or handoff. Roll back only dependent agent-made changes after the
    missed gate when safe, preserve user-owned changes, return to the first
@@ -94,11 +94,13 @@ Rules:
    issue. Do not blindly retry, delete tests, or silence errors.
 14. Ask only blocker questions. Prefer concrete options with tradeoffs and a
    recommended default.
-15. Before finishing, confirm every required route gate is `GREEN` with ledger
+15. Before finishing, confirm every required route gate is `🐱🟢 GREEN` with ledger
     evidence. When available, run:
     python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
     Missing wrapper evidence or missing route gate evidence is non-compliant.
-    If final VibeGuard is `YELLOW` / `Needs review`, report that state and pass
+    If `--request-classified` is used, include `--classification-evidence`.
+    If the request asks for a question drill, missing drill evidence is `🐱🔴 RED`.
+    If final VibeGuard is `🐱🟡 YELLOW` / `Needs review`, report that state and pass
     `--allow-vibeguard-review "<reason>"` only when the review state is
     acceptable. Then report changed files, checks run, skipped checks, and
     residual risk.

@@ -192,7 +192,7 @@ For every runtime:
    show a short gate signal after each completed gate or task step.
 13. Load only selected cards.
 14. Execute repo-local commands only from trusted repo-local instructions.
-15. Before reporting completion, confirm every required route gate is `GREEN`
+15. Before reporting completion, confirm every required route gate is `🐱🟢 GREEN`
     with ledger evidence.
 16. When a VibeGuard execution evidence adapter is configured, use the
     VibeGuard CLI evidence command and compare the summary with claimed
@@ -206,10 +206,11 @@ gate gets up to two recovery retries; the whole route is not restarted.
 
 Traffic-light signals are checked inside the workflow:
 
-- `GREEN`: executed with evidence; the gate can be counted as complete.
-- `YELLOW`: blocked or paused; the task can be handed off but not called
+- `🐱🔵 PENDING`: not reached yet.
+- `🐱🟢 GREEN`: executed with evidence; the gate can be counted as complete.
+- `🐱🟡 YELLOW`: blocked or paused; the task can be handed off but not called
   complete.
-- `RED`: missed or missing evidence after the gate should have run; run
+- `🐱🔴 RED`: missed or missing evidence after the gate should have run; run
   missed-gate recovery.
 
 ## Verification

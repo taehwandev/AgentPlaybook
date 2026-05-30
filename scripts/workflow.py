@@ -25,6 +25,12 @@ ANSWER_ONLY_CLARITY = "direct-question"
 RETRY_LIMIT = 2
 ATTEMPT_LIMIT = RETRY_LIMIT + 1
 RETRY_SCOPE = "first_missed_gate"
+SIGNAL_DISPLAY = {
+    "PENDING": "\U0001f431\U0001f535 PENDING",
+    "GREEN": "\U0001f431\U0001f7e2 GREEN",
+    "YELLOW": "\U0001f431\U0001f7e1 YELLOW",
+    "RED": "\U0001f431\U0001f534 RED",
+}
 
 
 @dataclass(frozen=True)
@@ -32,6 +38,10 @@ class Profile:
     docs: Tuple[str, ...]
     gates: Tuple[str, ...]
     notes: Tuple[str, ...] = ()
+
+
+def display_signal(signal: object) -> str:
+    return SIGNAL_DISPLAY.get(str(signal), str(signal))
 
 
 CORE_DOCS = (
@@ -459,7 +469,16 @@ def classify_request(text: str) -> Dict[str, object]:
     has_direct_question = any(re.search(pattern, lowered) for pattern in direct_question_patterns)
     asks_agent_action = any(re.search(pattern, lowered) for pattern in question_action_patterns)
     short_without_target = len(tokens) <= 8 and not (has_exact or has_scoped)
-    asks_drill = any(phrase in lowered for phrase in ("grill me", "ask me questions", "help define requirements"))
+    asks_drill = any(
+        phrase in lowered
+        for phrase in (
+            "grill me",
+            "ask me questions",
+            "help define requirements",
+            "question drill",
+            "\uadf8\ub9b4\ubbf8",
+        )
+    )
 
     if has_direct_question and not asks_agent_action:
         clarity = ANSWER_ONLY_CLARITY
@@ -475,11 +494,18 @@ def classify_request(text: str) -> Dict[str, object]:
         question_drill = True
         response_mode = "clarify_first"
         reason = "Risk-sensitive terms appear without an exact implementation target."
+    elif asks_drill:
+        clarity = "vague-action"
+        effort = "deep" if has_broad or has_risky else "standard"
+        route = "triage"
+        question_drill = True
+        response_mode = "clarify_first"
+        reason = "The request explicitly asks for a question drill before work."
     elif has_broad and not has_exact:
         clarity = "broad-product"
         effort = "deep"
         route = "product"
-        question_drill = asks_drill
+        question_drill = False
         response_mode = "work"
         reason = "The request appears to define product or architecture behavior."
     elif has_exact:
@@ -681,14 +707,16 @@ def print_markdown(route: Dict[str, object]) -> None:
     print()
     print("Mark and show every gate as it completes:")
     for item in route["gate_ledger"]:
-        print(f"- [{item['signal']}] `{item['gate']}` - evidence: ...")
+        print(f"- [{display_signal(item['signal'])}] `{item['gate']}` - evidence: ...")
     print()
     print("Progress signal format:")
-    print("`Gate signal: GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>`")
+    print("`Gate signal: \U0001f431\U0001f7e2 GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>`")
     print()
-    print("Completion check: every required gate must be GREEN before final report,")
-    print("commit, release, or handoff. YELLOW means blocked or paused. RED means")
-    print("missed and triggers missed-gate recovery.")
+    print("Signal legend: \U0001f431\U0001f535 PENDING not reached, \U0001f431\U0001f7e2 GREEN executed,")
+    print("\U0001f431\U0001f7e1 YELLOW blocked or review needed, \U0001f431\U0001f534 RED missed.")
+    print("Completion check: every required gate must be \U0001f431\U0001f7e2 GREEN before final")
+    print("report, commit, release, or handoff. \U0001f431\U0001f7e1 YELLOW means blocked or")
+    print("paused. \U0001f431\U0001f534 RED means missed and triggers missed-gate recovery.")
     print()
     print("If any required gate is not executed, stop finalization, return to the")
     print("first missed gate only, roll back only dependent agent-made changes when")

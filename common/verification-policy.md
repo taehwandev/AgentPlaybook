@@ -92,13 +92,14 @@ gate recovery instead of reporting completion.
 
 Traffic-light gate status is part of verification:
 
-- `GREEN`: executed with evidence.
-- `YELLOW`: blocked or paused; completion cannot be claimed.
-- `RED`: missed or missing evidence after the gate should have run; follow
+- `🐱🔵 PENDING`: not reached yet.
+- `🐱🟢 GREEN`: executed with evidence.
+- `🐱🟡 YELLOW`: blocked or paused; completion cannot be claimed.
+- `🐱🔴 RED`: missed or missing evidence after the gate should have run; follow
   missed-gate recovery.
 
 Before final report, commit, release, or handoff, every required gate must be
-`GREEN`.
+`🐱🟢 GREEN`.
 
 Manual evidence should be specific:
 

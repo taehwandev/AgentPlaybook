@@ -82,6 +82,12 @@ Drill rules:
 If the user explicitly asks for "grill me", "ask me questions", "help define
 requirements", or equivalent wording, run the drill as the deliverable until
 enough decisions are captured.
+For Korean requests, treat "그릴미" as the same explicit drill request.
+When wrapper evidence is available, a route classification with
+`question_drill: true` must finish with question-drill evidence such as
+`question drill if needed=<evidence>` or `ask blockers=<evidence>`. Missing
+drill evidence is a `🐱🔴 RED` gate and requires missed-gate recovery plus the
+retrospective workflow before final report, commit, release, or handoff.
 
 ## Token Controls
 

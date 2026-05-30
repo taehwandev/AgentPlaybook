@@ -223,28 +223,30 @@ Check it at two points:
 
 Use these meanings:
 
-- `PENDING`: the gate has not been reached yet.
-- `GREEN`: the gate was executed and has evidence.
-- `YELLOW`: the gate is blocked, paused, or waiting for approval; do not report
+- `🐱🔵 PENDING`: the gate has not been reached yet.
+- `🐱🟢 GREEN`: the gate was executed and has evidence.
+- `🐱🟡 YELLOW`: the gate is blocked, paused, or waiting for approval; do not report
   completion.
-- `RED`: the gate was missed or has no evidence after it should have run; follow
+- `🐱🔴 RED`: the gate was missed or has no evidence after it should have run; follow
   missed-gate recovery.
 
 After each completed gate or task step, emit a short progress signal in the
 active conversation or handoff record:
 
 ```text
-Gate signal: GREEN | gate: <gate> | evidence: <command, file, diff, note, or manual check> | next: <next gate>
+Gate signal: 🐱🟢 GREEN | gate: <gate> | evidence: <command, file, diff, note, or manual check> | next: <next gate>
 ```
 
 Keep the signal short. It exists so humans and later agents can notice missed
 gates immediately instead of discovering them only in the final report.
+Use the cat signal badge in human-visible text. Keep the plain signal value
+inside machine-readable fields so automation can still parse the ledger.
 
 Before finalizing, compare the route's `gates` with the ledger:
 
 - Every required gate must be marked `executed` with evidence.
-- Every required gate must be `GREEN` before completion is reported.
-- `YELLOW` can pause or hand off work, but it cannot be called complete.
+- Every required gate must be `🐱🟢 GREEN` before completion is reported.
+- `🐱🟡 YELLOW` can pause or hand off work, but it cannot be called complete.
 - If any required gate is missing, do not continue finalization.
 - Treat a missing gate as an execution error even when the final code or docs
   look correct.
@@ -270,16 +272,26 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REP
 
 `agent-preflight.py` records the route manifest, current git status, and
 VibeGuard audit result in `<TARGET_REPO>/.agentplaybook/preflight.json`.
+When `--request-classified` is used, it must also record
+`--classification-evidence`; otherwise request intake is treated as skipped.
 `agent-finish-check.py` requires evidence for every route gate, runs
 `workflow.py validate`, runs `git diff --check`, reruns VibeGuard, and writes
 `<TARGET_REPO>/.agentplaybook/finish.json`.
+It also writes `gate_signals`, `missed_gates`, and
+`retrospective_required`. If the route classification or stored request text
+requires a question drill, the finish check must receive drill evidence through
+a gate such as `question drill if needed=<evidence>` or
+`ask blockers=<evidence>`. Missing drill evidence is a `🐱🔴 RED` signal and
+blocks completion until missed-gate recovery and retrospective learning run.
+Human-visible wrapper output uses `🐱🔵 PENDING`, `🐱🟢 GREEN`,
+`🐱🟡 YELLOW`, and `🐱🔴 RED` so skipped gates stand out.
 
 Treat missing wrapper evidence as non-compliant. If the wrappers are unavailable,
 the agent must still run the same underlying checks manually and report the
-fallback explicitly. VibeGuard `YELLOW` / `Needs review` cannot be called
+fallback explicitly. VibeGuard `🐱🟡 YELLOW` / `Needs review` cannot be called
 complete unless the state is reported and an explicit
-`--allow-vibeguard-review` reason is recorded. Command failure, `RED`, missing
-route evidence, or missing VibeGuard output remains a blocker.
+`--allow-vibeguard-review` reason is recorded. Command failure, `🐱🔴 RED`,
+missing route evidence, or missing VibeGuard output remains a blocker.
 
 ## Missed Gate Recovery
 

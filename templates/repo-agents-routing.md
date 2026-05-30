@@ -53,20 +53,24 @@ If the workflow router cannot run, stop and report the blocker before
 continuing. Keep its gate execution ledger current; each required gate must
 have evidence before completion. Show a short traffic-light gate signal after
 each completed gate or task step. Completion requires every
-required gate to be GREEN. YELLOW means blocked or paused. RED means missed or
-missing evidence and triggers missed-gate recovery: stop finalization, roll back
-only dependent agent-made changes after the missed gate when safe, return to the
-first missed gate only, and run the retrospective workflow. The missed gate gets
-up to two recovery retries; do not restart the whole route.
+required gate to be 🐱🟢 GREEN. Use the cat signal badges in human-visible
+reports: 🐱🔵 PENDING means not reached, 🐱🟡 YELLOW means blocked or paused,
+and 🐱🔴 RED means missed or missing evidence and triggers missed-gate recovery:
+stop finalization, roll back only dependent agent-made changes after the missed
+gate when safe, return to the first missed gate only, and run the retrospective
+workflow. The missed gate gets up to two recovery retries; do not restart the
+whole route.
 When the wrapper scripts are available, run `agent-preflight.py` before editing,
 reviewing, committing, or reporting completion, and run `agent-finish-check.py`
 before final report, commit, release, or handoff. Pass evidence for every route
 gate to the finish check. The wrappers write local evidence under
 `.agentplaybook/`; this directory is runtime evidence and should usually be
 gitignored. Missing wrapper evidence or missing route gate evidence is
-non-compliant even when the final files look correct. VibeGuard YELLOW /
+non-compliant even when the final files look correct. VibeGuard 🐱🟡 YELLOW /
 `Needs review` must be reported explicitly and can pass the finish check only
-with an `--allow-vibeguard-review` reason.
+with an `--allow-vibeguard-review` reason. `--request-classified` must include
+`--classification-evidence`; if a request asks for a question drill, missing
+drill evidence is 🐱🔴 RED and requires missed-gate recovery.
 Do not load every shared document by default.
 Replace `<AGENTPLAYBOOK_ROOT>` with an existing local install path,
 `${AGENTPLAYBOOK_HOME}`, or a repo-pinned submodule path. Use legacy
