@@ -15,6 +15,10 @@ For files, shell, clipboard, notifications, background work, updates, power asse
 
 For signing, notarization, IPC, URL schemes, renderer bridges, shell/file access, or credential exposure risk, also use `application-security.md`.
 
+For Swift macOS apps, also use `../swift/swift-architecture.md`,
+`../swift/swift-code-structure.md`, and `../swift/swift-design-system.md` for
+Swift package, state, module, and design-system boundaries.
+
 ## Boundaries
 
 ```text

@@ -10,6 +10,11 @@ Use when deciding iOS targets, local Swift packages, feature folders, package
 layout, access control, public contracts, or where new SwiftUI/UIKit code should
 live.
 
+For Swift-wide package, file ownership, access control, public API, and target
+split rules, also use `../swift/swift-code-structure.md`.
+For Swift app architecture and design-system ownership, also use
+`../swift/swift-architecture.md` and `../swift/swift-design-system.md`.
+
 This card follows current Apple guidance: local Swift packages and targets can
 improve modularity, reuse, and maintenance, but they are useful only when they
 protect real ownership and dependency boundaries.
@@ -128,6 +133,9 @@ imports, fixture targets, public factory functions, or moving the test closer to
 the owner boundary.
 
 ## Feature Layout
+
+Use `../swift/swift-code-structure.md` for cross-platform Swift file and type
+ownership. These iOS examples show common target-local shapes.
 
 For SwiftUI features:
 

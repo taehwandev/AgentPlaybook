@@ -29,7 +29,8 @@ Look for the files that define the stack:
 - Python: `pyproject.toml`, lockfiles, `requirements*.txt`, `.python-version`
 - Python package managers: `uv.lock`, `poetry.lock`, `Pipfile.lock`,
   `requirements*.txt`
-- Swift/iOS: `Package.swift`, `Podfile`, Xcode project/workspace, scheme docs
+- Swift/Apple: `Package.swift`, `Package.resolved`, `Podfile`, Xcode
+  project/workspace, scheme docs, app or extension targets
 - Android/JVM: `settings.gradle*`, `build.gradle*`, `gradle.properties`,
   `gradle/wrapper/gradle-wrapper.properties`
 - build/task runners: `Makefile`, `justfile`, `Taskfile.yml`, `mise.toml`,
@@ -53,11 +54,16 @@ Prefer the lockfile, wrapper, and repo scripts over global defaults.
 ## Platform Routing Signals
 
 - Android files or Gradle Android plugins: load Android cards.
-- Xcode projects, workspaces, `Podfile`, or Swift app targets: load iOS cards.
+- Swift packages, Xcode projects, workspaces, `Podfile`, or Apple app targets:
+  load Swift cards first, then the matching platform cards.
+- iOS, UIKit, SwiftUI app targets, widgets, or app extensions: load iOS cards.
 - React, browser UI, routing, forms, or frontend bundlers: load Web cards.
 - API servers, database access, jobs, queues, or webhooks: load Server cards.
 - Desktop shell, tray/menu, IPC, file/clipboard, updater, or native packaging:
   load Application cards.
+- macOS Swift apps often need both Swift cards and Application cards: Swift for
+  package, state, design-system, and architecture boundaries; Application for
+  windows, panels, menu bar/tray, commands, OS resources, and packaging.
 
 Use these signals to select cards from `index.md`; do not treat them as a
 replacement for repo-local instructions.

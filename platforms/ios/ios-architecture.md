@@ -6,7 +6,13 @@ type: ai-generated
 
 # iOS Architecture
 
-Use for SwiftUI/UIKit app structure, state, navigation, and async work.
+Use for iOS SwiftUI/UIKit app structure, state, navigation, async work,
+permissions, and app target behavior.
+
+For Swift-wide app architecture, package, state owner, domain/data/platform
+boundary, and design-system rules, also use
+`../swift/swift-architecture.md`, `../swift/swift-code-structure.md`, and
+`../swift/swift-design-system.md`.
 
 For SwiftUI screen/component structure, ViewModel contracts, `UiState`, previews,
 or clean-architecture implementation details, also use `ios-swiftui-ui.md`.

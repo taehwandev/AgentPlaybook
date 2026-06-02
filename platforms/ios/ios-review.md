@@ -10,6 +10,8 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
 
 ## Review
 
+- Check Swift package, architecture, design-system, and target boundaries
+  against `../swift/swift-review.md` when Swift-wide concerns changed.
 - Check View/ViewModel ownership, navigation state, async task lifetime, and cancellation.
 - Check SwiftUI route/screen/section boundaries against
   `ios-swiftui-ui.md` when SwiftUI screens changed.
@@ -18,6 +20,9 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
 - Check target/package boundaries against `ios-module-structure.md` when new
   targets, local Swift packages, access-control changes, package exports, or
   feature contracts are touched.
+- Check design-system tokens, styles, primitives, variants, previews, and
+  reusable control contracts against `../swift/swift-design-system.md` when
+  shared UI or styling changed.
 - Confirm `UiState` represents loading, content, empty, error, permission
   denied, offline, disabled, and submitted states when applicable.
 - Verify main actor boundaries for UI updates.
