@@ -37,6 +37,28 @@ navigation, testing, or ownership boundary needs a split. Multi-module apps need
 clear dependency direction; otherwise the extra modules only move complexity into
 Gradle.
 
+## Reference Project Drill
+
+When using a large Android reference app, copy the boundary lesson, not the
+whole shape. Distill the reference into the current repo's scale:
+
+- Keep transferable boundaries such as included `build-logic`, convention
+  plugins, feature `api`/implementation splits, design-system modules,
+  repository API/implementation splits, domain use cases, and deterministic fake
+  or assertion modules.
+- Rename plugin ids, packages, modules, and generated namespaces to the target
+  repo. Never keep reference-project names in shared build or source contracts.
+- Drop reference-only dependencies such as ads, banking SDKs, billing, Firebase,
+  Hilt, KSP, generated factories, signing, flavors, analytics, or enterprise
+  verification tooling unless the current task explicitly needs them.
+- Collapse deep reference folder hierarchies when the target has only one
+  product area. A small app often needs `app`, `core:designsystem`,
+  `core:model`, `core:domain`, `core:data`, and one feature module before it
+  needs dozens of feature/common/holder modules.
+- Treat reference code as evidence for module direction and package naming, not
+  as authority over state, DI, security, or product policy when repo-local rules
+  differ.
+
 ## Module Families
 
 Use repo-local names first. A large Android app commonly separates these module
@@ -58,6 +80,34 @@ families:
 If the repo already uses convention plugins, apply the nearest plugin instead of
 copying dependency blocks by hand. If no convention exists, update or add one
 only when at least two modules will share the same setup.
+
+## Convention Plugin Shape
+
+Use `build-logic` to remove repeated Gradle setup, not to hide product behavior.
+A small Android repo usually needs only a few additive convention plugins:
+
+```text
+<repo>.android.application
+<repo>.android.library
+<repo>.android.library.compose
+<repo>.kotlin.library
+```
+
+Add specialized plugins only after repeated module setup proves the need, such
+as repository, Room, test-fixture, screenshot, or feature-implementation
+conventions. Keep convention plugins responsible for:
+
+- Android SDK versions, Java/Kotlin targets, test options, namespaces, and
+  Compose enablement
+- shared dependency bundles already used by multiple modules
+- debug-only dependencies such as Compose tooling
+- static analysis and test wiring when the repo has those tools configured
+- optional Compose compiler reports or metrics when the repo uses them for
+  stability diagnosis; keep them opt-in or scoped so normal builds are not noisy
+
+Do not put product routes, DI graph decisions, repository bindings, signing
+secrets, flavor policy, generated module discovery, or one-off module behavior
+inside a shared convention plugin.
 
 ## Split Decision
 
@@ -175,12 +225,18 @@ caller contract and repeated use:
 
 - Use design-system modules for domain-free primitives, tokens, typography,
   buttons, list rows, dialogs, sheets, and accessibility contracts.
+- Put theme, semantic color/type/shape tokens, component defaults, app UI
+  wrappers, and preview fixtures in the design-system module when they are
+  reused across features.
 - Use feature-common modules for product UI patterns shared by several feature
   owners.
 - Use holder modules for reusable workflow entrypoints or embedded surfaces that
   own their own state/effects and have a clear lifecycle.
 - Keep analytics labels, permission policy, route decisions, and repository
   calls in the caller or holder state owner, not in a leaf component.
+- Keep feature product cards, screen headers, fake data, route events, and
+  domain-to-UI mapping in feature modules or feature-common modules, not in the
+  design system.
 
 If a shared module needs many feature flags, product-specific callbacks, or a
 full screen `UiState`, keep the code feature-local instead.

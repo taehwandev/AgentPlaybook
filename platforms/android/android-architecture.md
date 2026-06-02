@@ -34,6 +34,28 @@ it. UI feature modules depend on repository/domain contracts, not repository
 internals; shared core/design-system modules do not depend on feature
 implementations.
 
+## Concrete Structure Baseline
+
+For a product-sized Compose app, start with this concrete structure and shrink it
+when the repo is smaller:
+
+```text
+app                         Activity, app startup, top-level navigation, DI wiring
+core/designsystem            theme, semantic tokens, component wrappers, previews
+core/model                   pure Kotlin product models and ids
+core/domain                  use cases, repository contracts, product policies
+core/data                    repository implementations, DTO/cache mapping, fakes
+feature/<name>/api           route contracts, entrypoints, public events
+feature/<name>/impl          Route, ViewModel, UiState, Screen, feature components
+build-logic                  convention plugins and shared build settings
+```
+
+Keep the `app` module thin. Put reusable visual primitives in the design system,
+pure business data in model/domain, source coordination in data, and screen
+orchestration in feature implementations. Skip `api` modules, use cases, or
+repository splits until another module, test boundary, platform dependency, or
+replaceable implementation needs the contract.
+
 ## Feature Slice Baseline
 
 Start every Android feature by naming the smallest architecture track that fits

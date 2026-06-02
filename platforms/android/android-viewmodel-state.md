@@ -37,17 +37,38 @@ Do not add a use case or repository only as a pass-through. Add it when it
 protects a product rule, side effect, test boundary, cache boundary, or platform
 API boundary.
 
+## State Holder Selection
+
+Choose the state holder by logic scope:
+
+- Use local `remember` state for simple UI element state owned by one composable,
+  such as expanded, focused, selected tab, gesture, animation, and scroll state.
+- Use a plain UI state holder class when UI logic is complex but lifecycle
+  dependent and does not need business/data-layer work. Examples include drawer,
+  pager, sheet, text-field formatter, drag/drop, and focus orchestration.
+- Use `ViewModel` when screen state is produced from data/domain layers, must
+  survive configuration changes, handles user actions that affect app data, or
+  emits navigation and platform effects.
+- Use a reducer/store when the transition graph is complex enough that actions,
+  state transitions, and effects should be testable without Android framework
+  objects.
+
+If a plain UI state holder needs data or domain information, pass the required
+stable values from the ViewModel or screen state. Do not make lifecycle-dependent
+UI logic depend directly on repositories or long-lived business state.
+
 ## ViewModel Contract
 
 ViewModels should expose one observable state stream and explicit intent methods
 or typed actions:
 
 ```kotlin
+@Immutable
 data class ProfileUiState(
     val content: ProfileViewData? = null,
     val status: LoadStatus = LoadStatus.Loading,
     val permission: PermissionState = PermissionState.Unknown,
-    val snackbar: SnackbarMessage? = null,
+    val isSubmitting: Boolean = false,
 )
 
 sealed interface ProfileAction {
@@ -70,20 +91,75 @@ Rules:
   or route callback for navigation, snackbar, permission launch, external
   activity, and file/share actions.
 
+## UiState Stability Contract
+
+For Compose-observed state, make stability an explicit contract instead of an
+afterthought:
+
+- In Compose-aware UI modules, annotate top-level screen state and display-model
+  data classes with `@Immutable` when every public property is immutable and
+  equality represents the visible state.
+- Annotate sealed UI-state marker interfaces such as `FooStatus` or `FooUiItem`
+  with `@Stable` only when every implementation keeps the same stability
+  contract. Annotate leaf data classes or data objects with `@Immutable`.
+- Actions and effects can stay unannotated unless repo-local convention uses
+  annotations for Compose-visible UI contracts. They should still be immutable
+  value objects.
+- Do not add Compose runtime annotations to pure domain, repository, or model
+  modules only to satisfy UI stability. Keep those modules structurally immutable,
+  then map to annotated UI models in the feature or design-system boundary.
+- Avoid `var`, mutable collections, mutable maps, arrays, raw SDK objects,
+  unguarded `Context`, `Activity`, `NavController`, `CoroutineScope`, or
+  repository references inside `UiState`.
+- Use immutable or persistent collections for lists that cross into Compose,
+  especially high-churn `LazyColumn` or `LazyRow` models. If the repo uses
+  `kotlinx.collections.immutable`, prefer `ImmutableList` plus `persistentListOf`
+  for default states and mapper output.
+- Keep callbacks and one-off commands out of `UiState`. Actions and effects are
+  separate contracts.
+- Treat `@Stable` and `@Immutable` as promises to the Compose compiler, not lint
+  suppressions. Remove the annotation or fix the model when the promise is false.
+
+Prefer deterministic default state owned by the state model or preview fixture:
+
+```kotlin
+@Immutable
+data class ProfileUiState(
+    val status: ProfileStatus = ProfileStatus.Loading,
+    val items: ImmutableList<ProfileRow> = persistentListOf(),
+    val canEdit: Boolean = false,
+)
+
+@Stable
+sealed interface ProfileStatus {
+    data object Loading : ProfileStatus
+
+    @Immutable
+    data class Content(val profile: ProfileViewData) : ProfileStatus
+
+    @Immutable
+    data class Error(val message: UiMessage) : ProfileStatus
+}
+```
+
 ## Implementation Pattern
 
 Use repo-local naming and DI first, but keep this contract intact:
 
 ```kotlin
+@Immutable
 data class ProfileUiState(
     val status: ProfileStatus = ProfileStatus.Loading,
     val canEdit: Boolean = false,
 )
 
+@Stable
 sealed interface ProfileStatus {
     data object Loading : ProfileStatus
     data object Empty : ProfileStatus
+    @Immutable
     data class Content(val profile: ProfileViewData) : ProfileStatus
+    @Immutable
     data class Error(val message: UiMessage) : ProfileStatus
     data object PermissionDenied : ProfileStatus
 }

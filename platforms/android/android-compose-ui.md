@@ -35,6 +35,9 @@ Route/Holder Composable -> Screen Composable -> Section Composable
   ViewModels, activities, or routers.
 - Design-system primitives know visual and interaction contracts, not product
   routes, analytics labels, or fake data.
+- Each layer should pass the smallest stable model or value set needed by the
+  next layer. Avoid sending a whole screen `UiState` into sections and leaf
+  components when a narrower value keeps recomposition and ownership clearer.
 
 ## Stateful And Stateless
 
@@ -58,6 +61,9 @@ Stateless composables:
   field draft state.
 - Expose user intent as callbacks such as `onBackClick`, `onRetryClick`,
   `onQueryChange`, or `onAction` when the action set is already typed.
+- Keep state reads as close as practical to the composable that needs them. A
+  screen can branch on high-level status, but repeated rows and leaf components
+  should receive row models or plain values.
 
 ## Route And Screen Template
 
@@ -148,6 +154,46 @@ Rules for applying this template:
   ViewModel into the screen to reduce parameters.
 - Keep `modifier` on the public composable and apply it to the root layout once.
 
+## Compose Code Writing Rules
+
+Write Compose code so state ownership, recomposition boundaries, and preview
+contracts are visible in the function signature:
+
+- Prefer one public or internal `Route` plus one public or internal stateless
+  `Screen`; keep helper sections and leaf components private until another
+  caller proves a reusable contract.
+- Keep public composable parameters ordered as stable inputs, callbacks or
+  slots, `modifier`, then optional visual defaults. Follow the repo's local
+  ordering when it is stricter.
+- Avoid reading `ViewModel`, DI, `LocalContext`, `LocalActivity`, `NavController`,
+  or service locators below the route/holder boundary. If a platform value is
+  required by a leaf, pass a plain value or callback instead.
+- Use `remember` for UI-local objects, expensive calculations, gesture or
+  animation state, and stable wrappers. Do not wrap every expression in
+  `remember`; cheap derived values can be recomputed.
+- Use `derivedStateOf` only when a derived value is expensive or changes less
+  often than its inputs and can reduce real recomposition work.
+- Use `rememberUpdatedState` for callbacks or values captured by long-lived
+  `LaunchedEffect`, `DisposableEffect`, or animation callbacks.
+- Defer high-frequency state reads as far down the tree as practical. Prefer a
+  lambda or lambda-based modifier when a parent only needs to pass a changing
+  value to a child and should not recompose for every frame.
+- Key effects by the lifecycle owner or the specific input that should restart
+  the effect. Avoid broad keys such as a whole `UiState` unless the whole state
+  should restart the work.
+- Do not write to Compose state from a composable body in response to the state
+  value read earlier in that same composition. Put that transition in a callback,
+  effect, state holder, or reducer so recomposition does not loop.
+- For `LazyColumn`, `LazyRow`, pager, and grid content, provide stable `key` and
+  `contentType` when items can reorder, update independently, animate, or hold
+  local state.
+- Keep row item models stable and immutable. Avoid constructing a new mutable
+  list, random id, formatter, painter, or callback wrapper for every item during
+  every recomposition.
+- Keep layout dimensions stable for repeated cells, navigation items, controls,
+  and animated surfaces. Dynamic content should not resize the whole control
+  unless the product intentionally owns that layout shift.
+
 ## UI State
 
 Model screen states explicitly:
@@ -163,6 +209,60 @@ loading -> content -> empty -> error -> permission denied -> offline
   painter, icon lambdas, or resource ids.
 - Map domain models to UI models in the feature UI/state boundary.
 - User-facing strings should follow repo-local localization rules.
+
+## Stability And Recomposition
+
+Compose performance starts with stable inputs. Treat stability annotations as a
+model contract, not an optimization trick:
+
+- In Compose-aware UI modules, annotate screen `UiState`, UI display models,
+  component-default holders, and design-system token holders with `@Immutable`
+  when all public properties are immutable.
+- Annotate sealed marker interfaces with `@Stable` only when all implementations
+  are stable or immutable. Annotate leaf implementations with `@Immutable`.
+- Do not add Compose annotations to pure domain, repository, or shared model
+  modules just for the UI. Keep those types free of Compose runtime and map them
+  into annotated UI models at the feature or design-system boundary.
+- Use immutable collections for state that enters Compose. Prefer
+  `ImmutableList` and persistent collection builders when the repo already uses
+  `kotlinx.collections.immutable`.
+- Avoid mutable properties, mutable collections, raw platform objects,
+  repositories, flows, channels, and callbacks inside `UiState`.
+- Keep painter, icon, resource, `Color`, `Dp`, and typography decisions in UI
+  display models or design-system tokens, not domain models.
+- If state can refresh while showing stale content, model that explicitly
+  instead of layering `isLoading`, `error`, and nullable data in contradictory
+  combinations.
+
+When a screen still recomposes too broadly, inspect first instead of guessing:
+
+- Check whether the same large `UiState` is passed into many sections.
+- Check whether item models, keys, callbacks, or lists are recreated on every
+  recomposition.
+- Check whether a local state read was hoisted higher than necessary.
+- Check whether the component API forces unstable product objects into a shared
+  primitive.
+
+## Advanced Stability Options
+
+Use compiler and Gradle-level stability tools only after diagnosing a real
+recomposition or performance issue:
+
+- Check Compose compiler reports, Layout Inspector, benchmark traces, or another
+  repo-local measurement before changing stability policy.
+- Strong skipping is a compiler behavior, not a replacement for good state
+  modeling. Check the repo's Kotlin/Compose compiler version before adding any
+  explicit strong-skipping configuration, because newer toolchains may enable it
+  by default.
+- A Compose stability configuration file can mark external or standard-library
+  types as stable, but it is a codebase-wide contract. Add entries only for
+  types whose immutability and equality behavior the project can defend.
+- If normal `List`, `Set`, or `Map` parameters keep a composable unstable, first
+  prefer immutable collections or a small annotated wrapper in the UI boundary.
+  Do not annotate a mutable collection holder only to silence compiler output.
+- Use `@NonSkippableComposable` or equivalent opt-outs only when a composable has
+  a deliberate side-effect or measurement contract that must run even with
+  unchanged inputs, and document the reason near the call or component.
 
 ## Architecture Tracks
 
@@ -311,13 +411,25 @@ contracts to a shared design-system module. Shared design-system modules can use
 
 ```text
 core/designsystem/.../theme/
+core/designsystem/.../tokens/
 core/designsystem/.../component/
 core/designsystem/.../component/<domain-free-group>/
+core/designsystem/.../preview/
 ```
 
 Keep generated resources, route contracts, domain models, repositories, and fake
 services outside shared UI component packages unless the repo documents a more
 specific boundary.
+
+Design-system modules should own theme, semantic tokens, typography, shapes,
+component defaults, accessibility semantics, and domain-free primitives. Feature
+modules should own product copy, route events, analytics labels, permission
+policy, domain-to-UI mapping, and feature-only cards or sections.
+
+When a repo has design-system wrappers, feature modules should prefer those
+wrappers over direct Material, platform, or third-party UI primitives. Direct
+imports of raw UI primitives belong primarily inside the design system, or in a
+feature-local one-off with a clear reason to avoid promotion.
 
 ## Component API Rules
 
@@ -333,6 +445,9 @@ specific boundary.
   Context side effects, or DI.
 - Accessibility labels, roles, selected states, enabled states, and content
   descriptions are part of the component contract.
+- Defaults objects such as `FooButtonDefaults`, `FooCardDefaults`, and token
+  holders should be stable or immutable and should read theme values through
+  composable getters only when the value is theme-dependent.
 
 ## Reuse Decision
 
@@ -345,6 +460,8 @@ Before moving Compose UI into a shared package, ask:
   still owned by the caller?
 - Can previews demonstrate the reusable states without feature setup?
 - Will extraction reduce duplicated fixes without creating a flag-heavy API?
+- Does the shared API use semantic tokens and slots instead of leaking one
+  feature's exact colors, padding, copy, or route policy?
 
 If the answer is no, keep it local or in feature common rather than promoting it
 to the design system.
