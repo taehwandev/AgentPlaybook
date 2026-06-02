@@ -9,9 +9,13 @@ type: ai-generated
 Use for React web UI work: routing, pages, components, hooks, forms, data fetching, browser storage, and browser UX.
 
 Also use:
+- `web-code-structure.md` for route/file ownership, feature folder shape,
+  import direction, and server/client code boundaries.
 - `web-react-ui.md` for route/page, container/screen, hook, `UiState`, reusable
   component, and clean-architecture implementation details.
 - `web-state-data.md` for state, cache, forms, API clients, mocks, and browser persistence.
+- `web-design-system.md` for web tokens, primitives, component variants,
+  styling ownership, and visual adoption/migration.
 - `web-accessibility-i18n.md` for text, focus, keyboard, dialogs, responsive copy, and localization.
 - `web-security.md` for auth, browser storage, tokens, redirects, embeds, uploads, and client-visible config.
 - product-pattern docs for auth, invite, billing, entitlement, or tenant work.
@@ -29,6 +33,20 @@ Route/Page -> Feature -> Component -> Hook -> Service/Client
 - Service/Client owns HTTP, SDK, storage, and DTO conversion boundaries.
 - Split containers that wire state/effects from screens/components that render
   explicit `UiState` and callbacks.
+
+## Web Structure Defaults
+
+- Keep framework route files thin. They compose metadata, layout, route
+  parameters, server/client boundaries, and feature containers.
+- Keep workflow behavior in feature-local containers, hooks, model, policy,
+  mapper, and client modules before promoting it to shared code.
+- Keep screens render-only where practical: explicit state in, callbacks out.
+- Keep design-system primitives policy-free and importable without feature data,
+  routers, analytics, or API clients.
+- Keep server-only modules, secrets, SDK clients, database access, and trusted
+  mutations out of client components.
+- Use a shared module only when the caller contract is stable. Otherwise keep
+  code local to the route or feature.
 
 ## React State Placement
 

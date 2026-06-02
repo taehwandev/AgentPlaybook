@@ -12,8 +12,10 @@ frontend tests.
 
 For architecture choice, also read `../../common/architecture-design.md`. For
 data ownership, cache, forms, mocks, and browser persistence, also read
-`web-state-data.md`. For reusable UI extraction, also read
-`../../common/reusable-code-design.md` and `../../common/design-system.md`.
+`web-state-data.md`. For route/file layout and import direction, also read
+`web-code-structure.md`. For reusable UI extraction and design-system work,
+also read `../../common/reusable-code-design.md`,
+`../../common/design-system.md`, and `web-design-system.md`.
 
 ## React Layers
 
@@ -50,6 +52,37 @@ Choose the smallest track that protects the real risk:
 Do not create a global store, use case layer, repository folder, or generic hook
 only for ceremony. Add a layer when it isolates a real state owner, product
 rule, side effect, or test boundary.
+
+## React Runtime Boundaries
+
+Use React APIs for their intended ownership:
+
+- Render derives UI from props and state. Do not store derived values in state
+  unless there is a sync or transition reason.
+- Effects synchronize with external systems: subscriptions, browser APIs,
+  timers, network boundaries not owned by a framework query layer, focus, media,
+  or imperative integrations. Effects need dependencies and cleanup.
+- Memoization is a performance or identity tool, not a correctness tool. Do not
+  rely on `useMemo` or `useCallback` to hide mutable state or missing
+  dependencies.
+- Context is for stable cross-tree state or dependency boundaries. Do not add a
+  provider for one route's temporary modal, tab, or draft state.
+- Reducers or state machines are for eventful workflows with explicit
+  transitions, not for simple field state.
+- Error boundaries, suspense/loading boundaries, and route `loading`/`error`
+  files should match the user-visible state they represent.
+- Keys should identify stable list items. Do not use array index keys when item
+  identity, local state, animation, or reorder behavior matters.
+
+For frameworks with server/client components or server actions:
+
+- Keep secrets, database access, server SDK clients, and trusted mutations in
+  server boundaries.
+- Pass serializable display data into client components.
+- Isolate interactive client components instead of marking a whole page
+  client-only.
+- Treat hydration warnings as real bugs unless the repo has a documented,
+  narrow exception.
 
 ## Feature Folder Shape
 
