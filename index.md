@@ -101,6 +101,12 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Flutter platform integration: `platforms/flutter/flutter-platform-integration.md`
 - Flutter security: `platforms/flutter/flutter-security.md`
 - Flutter review: `platforms/flutter/flutter-review.md`
+- Swift architecture: `platforms/swift/swift-architecture.md`
+- Swift package/target/file structure:
+  `platforms/swift/swift-code-structure.md`
+- Swift design system, tokens, primitives, component variants, and previews:
+  `platforms/swift/swift-design-system.md`
+- Swift review: `platforms/swift/swift-review.md`
 - iOS architecture: `platforms/ios/ios-architecture.md`
 - iOS target/package structure:
   `platforms/ios/ios-module-structure.md`
@@ -112,9 +118,13 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - iOS security: `platforms/ios/ios-security.md`
 - iOS review: `platforms/ios/ios-review.md`
 - Web/React architecture: `platforms/web/web-architecture.md`
+- Web file/feature structure and import boundaries:
+  `platforms/web/web-code-structure.md`
 - Web/React UI implementation, container/screen split, hooks, UiState:
   `platforms/web/web-react-ui.md`
 - Web/React state/data: `platforms/web/web-state-data.md`
+- Web design system, tokens, primitives, component variants, and styling:
+  `platforms/web/web-design-system.md`
 - Web accessibility/i18n: `platforms/web/web-accessibility-i18n.md`
 - Web security: `platforms/web/web-security.md`
 - Web review: `platforms/web/web-review.md`
@@ -126,6 +136,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Application architecture: `platforms/application/application-architecture.md`
 - Application command/UI implementation:
   `platforms/application/application-command-ui.md`
+- Application React desktop renderer structure:
+  `platforms/application/application-react-desktop.md`
 - Application system integration: `platforms/application/application-system-integration.md`
 - Application security: `platforms/application/application-security.md`
 - Application review: `platforms/application/application-review.md`
@@ -336,6 +348,15 @@ repositories, storage, or async effects, load
 plugins, permissions, lifecycle, isolates, desktop, mobile, or web target
 behavior, load `platforms/flutter/flutter-platform-integration.md`.
 
+For Swift or Apple-platform work, load
+`platforms/swift/swift-architecture.md`. For Swift Package Manager layout,
+Xcode targets, package products, public APIs, access control, target
+membership, resources, or file ownership, also load
+`platforms/swift/swift-code-structure.md`. For SwiftUI, UIKit, or AppKit
+design-system tokens, styles, primitives, reusable controls, variants, previews,
+or visual QA, load `platforms/swift/swift-design-system.md`. For Swift review,
+load `platforms/swift/swift-review.md`.
+
 For iOS targets, local Swift packages, package exports, access control, feature
 contracts, or target membership work, load
 `platforms/ios/ios-module-structure.md` before implementation.
@@ -360,6 +381,17 @@ launch, load the application system/security cards.
 For desktop/application UI, commands, windows, panels, shortcuts, menu bar/tray,
 background tasks, or renderer bridges, load
 `platforms/application/application-command-ui.md`.
+
+For React-based desktop app work, such as Tauri, Electron, WebView, or a native
+shell with an embedded React renderer, load
+`platforms/application/application-react-desktop.md` together with the matching
+application command/system/security cards and the relevant web React structure
+cards.
+
+For macOS Swift apps, combine the Swift cards with the Application cards:
+Swift owns package, state, design-system, and architecture boundaries;
+Application owns window/panel/menu bar/tray commands, OS resources, IPC,
+privileged APIs, packaging, signing, and updates.
 
 For server API, GraphQL, RPC, webhook, route handler, validation, use case,
 repository, response shape, or API error work, load
