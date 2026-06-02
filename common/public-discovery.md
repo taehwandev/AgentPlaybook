@@ -75,6 +75,29 @@ Google Search visibility. If another agentic browser, partner, or internal
 consumer needs a machine-readable file, document that consumer and verification
 path; do not present it as required Google SEO work.
 
+## Resource And Font Loading Claims
+
+When a discovery or AI-search report makes a page-experience, font-loading, or
+third-party-resource claim, verify the real implementation path before writing
+the claim.
+
+- Distinguish framework font optimization, local/self-hosted font files, global
+  CSS imports, client-injected stylesheets, server-only image generation fetches,
+  and runtime browser network requests.
+- Do not say "no external font requests" merely because a project uses
+  `next/font`, a bundler plugin, or local fallback stacks. Also inspect CSS
+  `@import`, `<link rel="stylesheet">`, dynamic DOM stylesheet insertion, icon
+  font loaders, OG image generators, and route-specific components.
+- Separate global page-load requests from feature-specific requests. A diagram,
+  editor, map, chart, checkout, or preview route may load an external stylesheet
+  even when the root layout does not.
+- Separate browser performance risk from server-side generation dependencies.
+  Server-only font fetches for OG/social images are still external dependencies,
+  but they do not block the normal browser render path.
+- If a report mentions Core Web Vitals, PageSpeed, render blocking, or
+  async/defer behavior, back it with a tool result, route snapshot, network
+  trace, or framework build output. Otherwise describe it as code inspection.
+
 ## Rules
 
 - Only include resources that are meant to be discoverable by unauthenticated
@@ -134,6 +157,8 @@ path; do not present it as required Google SEO work.
 - Does structured data describe what an unauthenticated reader can actually see?
 - Are locale alternates, canonical URLs, redirects, and short links mutually
   consistent?
+- Are font and third-party-resource claims backed by actual code or network
+  evidence, including route-specific and server-only resource paths?
 
 ## Verification
 
@@ -149,6 +174,8 @@ Verify public discovery as output data:
   scripts or private client state
 - structured data validates and matches visible public content
 - Open Graph previews use the intended public image fallback chain
+- font and third-party-resource claims distinguish self-hosted, build-time,
+  global runtime, route-specific runtime, and server-only fetches
 - Search Console, Rich Results Test, PageSpeed Insights, framework metadata
   output, or local route snapshots are used when those tools are practical for
   the change
