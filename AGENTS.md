@@ -15,6 +15,20 @@ shared operating habits, review criteria, architecture principles, and platform
 guidance. Repo-local instructions remain the source of truth for project paths,
 commands, naming, domain rules, and product-specific policy.
 
+## Shared Guidance Boundary
+
+Write AgentPlaybook guidance as a reusable common baseline, not as the operating
+model of one product, service, vendor, customer, team, or repository. A rule
+belongs in this shared library only when it remains correct after removing
+service names, product policy, local paths, command names, account names,
+environment names, API names, and domain vocabulary.
+
+When a lesson comes from a specific service, generalize only the recurring risk,
+decision rule, load condition, and verification question. Keep service-specific
+workflows, permissions, role matrices, provider setup, deployment details, API
+shapes, and product policy in the target repo's local instructions or in an
+explicitly scoped platform or product-pattern document.
+
 ## Language Policy
 
 Write shared agent library documents in English. This includes `AGENTS.md`,
