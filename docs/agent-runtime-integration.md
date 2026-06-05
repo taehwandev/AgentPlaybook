@@ -160,8 +160,7 @@ Claude:
 - Tell Claude the exact AgentPlaybook root path or a repo-pinned submodule path.
 - AgentPlaybook command permissions belong in the user-level
   `~/.claude/settings.json`, not repo-local `.claude/settings.json`, because
-  `workflow.py`, `agent-preflight.py`, and `agent-finish-check.py` are shared
-  across projects.
+  the AgentPlaybook `scripts/*.py` entrypoints are shared across projects.
 
 Antigravity:
 

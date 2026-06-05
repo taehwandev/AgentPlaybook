@@ -60,12 +60,12 @@ user-level runtime config, then run:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 
-This setup is global by design. It allows only the AgentPlaybook Python
-entrypoints needed by the workflow router and evidence wrappers:
-scripts/workflow.py, scripts/agent-preflight.py, and
-scripts/agent-finish-check.py. It must not broadly allow `python3`.
-For Claude Code, update `~/.claude/settings.json`. For AGY/Antigravity, support
-both `~/.gemini/config/config.json` and
+This setup is global by design. It allows only the current AgentPlaybook Python
+entrypoints under `<AGENTPLAYBOOK_ROOT>/scripts/*.py` by exact path and
+suffix-aware runtime matcher. It must not broadly allow `python3`.
+For Codex, update `~/.codex/rules/default.rules`. For Claude Code, update
+`~/.claude/settings.json`. For AGY/Antigravity, support both
+`~/.gemini/config/config.json` and
 `~/.gemini/antigravity-cli/settings.json`; hooks remain in
 `~/.gemini/config/hooks.json`.
 
@@ -183,8 +183,9 @@ runtime config and then run:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 
-Keep the permission allowlist narrow: allow only `workflow.py`,
-`agent-preflight.py`, and `agent-finish-check.py`, not broad `python3`.
+Keep the permission allowlist narrow: allow only the current AgentPlaybook
+`scripts/*.py` files by exact path and suffix-aware runtime matcher, not broad
+`python3`.
 
 Update the active user-level file for the runtime I choose:
 Codex -> ~/.codex/AGENTS.md
