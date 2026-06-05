@@ -255,6 +255,8 @@ def _codex_prefix_rule_entries() -> list[str]:
     for script in _agentplaybook_python_scripts():
         for path in _entrypoint_path_variants(script):
             entries.append(_codex_prefix_rule(["python3", path]))
+            for shell in _codex_shell_invocations():
+                entries.append(_codex_prefix_rule([*shell, f"python3 {path}"]))
     return entries
 
 
@@ -294,6 +296,15 @@ def _entrypoint_path_variants(script: Path) -> list[str]:
             _double_quote(f"${{HOME}}/{suffix}"),
         ]
     return _dedupe(variants)
+
+
+def _codex_shell_invocations() -> list[list[str]]:
+    return [
+        ["/bin/zsh", "-lc"],
+        ["zsh", "-lc"],
+        ["/bin/bash", "-lc"],
+        ["bash", "-lc"],
+    ]
 
 
 def _add_permission_command_entries(entries: list[str], prefix: str, command: str) -> None:

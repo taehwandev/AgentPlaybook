@@ -63,8 +63,11 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 This setup is global by design. It allows only the current AgentPlaybook Python
 entrypoints under `<AGENTPLAYBOOK_ROOT>/scripts/*.py` by exact path and
 suffix-aware runtime matcher. It must not broadly allow `python3`.
-For Codex, update `~/.codex/rules/default.rules`. For Claude Code, update
-`~/.claude/settings.json`. For AGY/Antigravity, support both
+For Codex, update `~/.codex/rules/default.rules` with both direct `python3`
+argv prefixes and narrow shell `-lc` command prefixes for the same script
+paths, so quoted `$HOME` script invocations with long trailing arguments do not
+prompt again. For Claude Code, update `~/.claude/settings.json`. For
+AGY/Antigravity, support both
 `~/.gemini/config/config.json` and
 `~/.gemini/antigravity-cli/settings.json`; hooks remain in
 `~/.gemini/config/hooks.json`.
