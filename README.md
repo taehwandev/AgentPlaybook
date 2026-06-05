@@ -166,6 +166,7 @@ Shared AgentPlaybook guidance:
 ${AGENTPLAYBOOK_HOME}/AGENTS.md
 ${AGENTPLAYBOOK_HOME}/index.md
 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py
+${AGENTPLAYBOOK_HOME}/scripts/setup-agent-hooks.py
 ${AGENTPLAYBOOK_HOME}/scripts/agent-preflight.py
 ${AGENTPLAYBOOK_HOME}/scripts/agent-finish-check.py
 
@@ -395,6 +396,13 @@ bridge file or a pasted prompt.
   to update user-level runtime bridges such as `~/.codex/AGENTS.md`,
   `~/.claude/CLAUDE.md`, `~/.antigravity`, `~/.antigravitycli`, or
   `~/.antigravity-ide`.
+- To avoid repeated prompts for AgentPlaybook's required Python wrappers, run
+  `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check`, then run
+  `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py` after approval if
+  user-level hooks or permissions are missing. This writes global runtime
+  config only for the AgentPlaybook entrypoints `workflow.py`,
+  `agent-preflight.py`, and `agent-finish-check.py`; it does not broadly allow
+  `python3`.
 - For runtime-specific setup rules, read
   [docs/agent-runtime-integration.md](docs/agent-runtime-integration.md).
 

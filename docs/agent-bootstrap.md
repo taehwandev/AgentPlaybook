@@ -186,6 +186,34 @@ After installing or selecting a root, run:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 ```
 
+Then check runtime hooks and permission allowlists:
+
+```bash
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
+```
+
+If the check reports missing hooks or permissions, ask for approval before
+writing user-level runtime config, then run:
+
+```bash
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
+```
+
+The setup is global because the workflow router and evidence wrappers are shared
+across target repos. It must allow only these AgentPlaybook Python entrypoints,
+not broad `python3` execution:
+
+```text
+scripts/workflow.py
+scripts/agent-preflight.py
+scripts/agent-finish-check.py
+```
+
+Claude Code permissions belong in `~/.claude/settings.json`. AGY/Antigravity
+permissions may live in `~/.gemini/config/config.json` or the legacy
+`~/.gemini/antigravity-cli/settings.json`; AGY hooks stay in
+`~/.gemini/config/hooks.json`.
+
 ## Connect The Target Repo
 
 1. Find the canonical repo-local instruction file. Prefer `AGENTS.md` when the
@@ -229,6 +257,8 @@ Before reporting success:
 
 - The selected AgentPlaybook root exists.
 - `AGENTS.md` and `index.md` exist under that root.
+- `setup-agent-hooks.py --check` either passed or missing user-level hooks or
+  permissions were installed after approval.
 - The VibeGuard gate ran with the selected AgentPlaybook root as the rule
   source.
 - Multi-step work has preflight and finish-check evidence when the wrapper

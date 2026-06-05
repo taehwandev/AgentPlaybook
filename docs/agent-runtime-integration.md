@@ -41,6 +41,24 @@ Validate the selected root with:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 ```
 
+Check runtime hooks and permission allowlists with:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
+```
+
+If hooks or permissions are missing, ask for approval to write user-level
+runtime config, then run:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
+```
+
+This permission setup is global because the AgentPlaybook Python wrappers are
+shared by every target repo. Keep it narrow: allow only
+`scripts/workflow.py`, `scripts/agent-preflight.py`, and
+`scripts/agent-finish-check.py`. Do not broadly allow `python3`.
+
 If a usable root is found, runtime setup must stop install selection there and
 reuse it. Do not download, clone, vendor, copy, overwrite, or add a second root
 unless the user approves this question:
@@ -89,6 +107,7 @@ short and point to:
 <AGENTPLAYBOOK_ROOT>/AGENTS.md
 <AGENTPLAYBOOK_ROOT>/index.md
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
+<AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
 ```
@@ -136,6 +155,10 @@ Claude:
 - If Claude is operating from chat without repo instruction discovery, paste
   `templates/use-agentplaybook-prompt.md`.
 - Tell Claude the exact AgentPlaybook root path or a repo-pinned submodule path.
+- AgentPlaybook command permissions belong in the user-level
+  `~/.claude/settings.json`, not repo-local `.claude/settings.json`, because
+  `workflow.py`, `agent-preflight.py`, and `agent-finish-check.py` are shared
+  across projects.
 
 Antigravity:
 
@@ -149,6 +172,10 @@ Antigravity:
 - Do not assume Antigravity has loaded `AGENTS.md` unless local evidence or the
   user confirms that behavior; instruct it to read the AgentPlaybook root
   explicitly when in doubt.
+- AgentPlaybook command permissions may live in
+  `~/.gemini/config/config.json` or the legacy
+  `~/.gemini/antigravity-cli/settings.json`, depending on the active AGY
+  runtime. Runtime hooks remain in `~/.gemini/config/hooks.json`.
 
 Generic agents:
 
@@ -169,42 +196,45 @@ For every runtime:
    exists, reuse it unless the user explicitly approves a new download or
    pinned copy.
 4. Install only when no usable root exists, then validate the selected root.
-5. Inspect existing VibeGuard files and agent instructions. Ask the application
+5. Run `scripts/setup-agent-hooks.py --check`. If hooks or permissions are
+   missing, ask for approval to update user-level runtime config, then run
+   `scripts/setup-agent-hooks.py`.
+6. Inspect existing VibeGuard files and agent instructions. Ask the application
    drill before running setup or update when the repo already has custom
    instructions or guardrails. Use VibeGuard `update` only when the user
    explicitly selects refreshing an existing managed block; otherwise preserve
    current guardrails and run audit.
-6. Apply the selected VibeGuard mode with the published package command and the
+7. Apply the selected VibeGuard mode with the published package command and the
    selected AgentPlaybook root as the rule source. Treat
    https://vibeguard.thdev.app/ as the human-facing reference, not a runtime
    fetch dependency.
-7. Add or update the canonical repo instruction file, preferring `AGENTS.md`
+8. Add or update the canonical repo instruction file, preferring `AGENTS.md`
    when supported.
-8. Update any existing repo-local runtime-specific instruction files in the
+9. Update any existing repo-local runtime-specific instruction files in the
    same pass, or leave them out only when the runtime reads `AGENTS.md` and no
    separate file exists. Offer optional Step 2 for personal/global runtime
    bridges; only update those files when the user chooses it.
-9. Read AgentPlaybook `AGENTS.md`.
-10. For multi-step tasks, run `scripts/workflow.py route ... --request
+10. Read AgentPlaybook `AGENTS.md`.
+11. For multi-step tasks, run `scripts/workflow.py route ... --request
     "<USER_REQUEST>"` to select the smallest document set and gate manifest.
     If the request is a direct question, answer it before routing or editing.
     Use `index.md` only for simple answer-only work or an explicitly accepted
     fallback when the script cannot run.
-11. When wrapper scripts are available, run `scripts/agent-preflight.py` before
+12. When wrapper scripts are available, run `scripts/agent-preflight.py` before
     editing and `scripts/agent-finish-check.py` before final report, commit,
     release, or handoff. Missing wrapper evidence or route gate evidence is
     non-compliant.
-12. Keep a gate execution ledger, mark each route
+13. Keep a gate execution ledger, mark each route
    gate with evidence when it is executed, assign a traffic-light signal, and
    show a short gate signal after each completed gate or task step.
-13. Load only selected cards.
-14. Execute repo-local commands only from trusted repo-local instructions.
-15. Before reporting completion, confirm every required route gate is `🐱🟢 GREEN`
+14. Load only selected cards.
+15. Execute repo-local commands only from trusted repo-local instructions.
+16. Before reporting completion, confirm every required route gate is `🐱🟢 GREEN`
     with ledger evidence.
-16. When a VibeGuard execution evidence adapter is configured, use the
+17. When a VibeGuard execution evidence adapter is configured, use the
     VibeGuard CLI evidence command and compare the summary with claimed
     commands.
-17. Report verification and residual risk.
+18. Report verification and residual risk.
 
 If a required route gate was missed, the runtime must stop finalization, roll
 back only dependent agent-made changes after the missed gate when safe, return
@@ -230,6 +260,8 @@ After connecting a runtime, verify:
   Antigravity docs, are updated or intentionally not created because the
   runtime reads `AGENTS.md`
 - `AGENTS.md`, `index.md`, and `scripts/workflow.py` exist under that root
+- `setup-agent-hooks.py --check` passed or missing user-level hooks or
+  permissions were installed after approval
 - the VibeGuard gate passed or stopped with a reported blocker
 - multi-step work has preflight and finish-check evidence when wrapper scripts
   are available

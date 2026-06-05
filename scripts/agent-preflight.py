@@ -14,6 +14,110 @@ from typing import Any
 
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+_BASELINE_HOOK_RE = re.compile(r"workflow\.py.*route.*triage.*--request-classified")
+_AGENTPLAYBOOK_PYTHON_SCRIPT_NAMES = (
+    "workflow.py",
+    "agent-preflight.py",
+    "agent-finish-check.py",
+)
+
+
+def _check_agent_hooks(playbook_root: Path) -> list[str]:
+    """Return warning strings for any missing runtime hook registrations."""
+    warnings: list[str] = []
+
+    claude_settings = Path.home() / ".claude" / "settings.json"
+    if claude_settings.exists():
+        try:
+            config = json.loads(claude_settings.read_text())
+            groups = config.get("hooks", {}).get("UserPromptSubmit", [])
+            has_baseline = any(
+                _BASELINE_HOOK_RE.search(h.get("command", ""))
+                for g in groups
+                for h in g.get("hooks", [])
+            )
+            if not has_baseline:
+                warnings.append(
+                    "Claude Code UserPromptSubmit baseline label hook is missing. "
+                    f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+                )
+            spill_tool = config.get("env", {}).get("SPILL_AI_TOOL", "")
+            if spill_tool != "claude":
+                warnings.append(
+                    "env.SPILL_AI_TOOL is not set to 'claude' in ~/.claude/settings.json. "
+                    f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+                )
+            missing_permissions = _missing_allow_entries(
+                config,
+                _claude_permission_entries(playbook_root),
+            )
+            if missing_permissions:
+                warnings.append(
+                    "Claude Code AgentPlaybook Python permissions are missing. "
+                    f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+                )
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    agy_targets = [
+        Path.home() / ".gemini" / "config" / "config.json",
+        Path.home() / ".gemini" / "antigravity-cli" / "settings.json",
+    ]
+    agy_entries = _agy_permission_entries(playbook_root)
+    agy_configs = []
+    for target in agy_targets:
+        if not target.exists():
+            continue
+        try:
+            data = json.loads(target.read_text())
+            if isinstance(data, dict):
+                agy_configs.append(data)
+        except (json.JSONDecodeError, OSError):
+            pass
+    if agy_configs and not any(
+        not _missing_allow_entries(config, agy_entries)
+        for config in agy_configs
+    ):
+        warnings.append(
+            "AGY AgentPlaybook Python permissions are missing from AGY config. "
+            f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+        )
+
+    return warnings
+
+
+def _claude_permission_entries(playbook_root: Path) -> list[str]:
+    entries: list[str] = []
+    for name in _AGENTPLAYBOOK_PYTHON_SCRIPT_NAMES:
+        script = playbook_root / "scripts" / name
+        entries.append(f"Bash(python3 {script}:*)")
+        entries.append(f"Bash(python3 {_quote(str(script))}:*)")
+        entries.append(f"Bash(python3 scripts/{name}:*)")
+    return entries
+
+
+def _agy_permission_entries(playbook_root: Path) -> list[str]:
+    entries: list[str] = []
+    for name in _AGENTPLAYBOOK_PYTHON_SCRIPT_NAMES:
+        script = playbook_root / "scripts" / name
+        entries.append(f"command(python3 {script})")
+        entries.append(f"command(python3 {_quote(str(script))})")
+        entries.append(f"command(python3 scripts/{name})")
+    return entries
+
+
+def _missing_allow_entries(config: dict[str, Any], entries: list[str]) -> list[str]:
+    permissions = config.get("permissions")
+    if not isinstance(permissions, dict):
+        return entries
+    allow = permissions.get("allow")
+    if not isinstance(allow, list):
+        return entries
+    return [entry for entry in entries if entry not in allow]
+
+
+def _quote(s: str) -> str:
+    return "'" + s.replace("'", "'\\''") + "'"
 
 
 def clean_output(text: str) -> str:
@@ -167,6 +271,8 @@ def main() -> int:
     }
     write_json(evidence_path, evidence)
 
+    hook_warnings = _check_agent_hooks(playbook_root)
+
     failures: list[str] = []
     if route_result["returncode"] != 0:
         failures.append("workflow route failed")
@@ -183,6 +289,8 @@ def main() -> int:
     if route_payload:
         print(f"Route: {route_payload.get('command')} gates={route_payload.get('gates')}")
     print(f"VibeGuard overall: {vibeguard['overall']['status']}")
+    for warning in hook_warnings:
+        print(f"WARN: {warning}", file=sys.stderr)
 
     if failures:
         for failure in failures:

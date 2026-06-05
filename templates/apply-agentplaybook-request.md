@@ -51,6 +51,24 @@ scripts/workflow.py. Validate it with:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 
+Check user-level runtime hooks and permission allowlists:
+
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
+
+If the check reports missing hooks or permissions, ask for approval to update
+user-level runtime config, then run:
+
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
+
+This setup is global by design. It allows only the AgentPlaybook Python
+entrypoints needed by the workflow router and evidence wrappers:
+scripts/workflow.py, scripts/agent-preflight.py, and
+scripts/agent-finish-check.py. It must not broadly allow `python3`.
+For Claude Code, update `~/.claude/settings.json`. For AGY/Antigravity, support
+both `~/.gemini/config/config.json` and
+`~/.gemini/antigravity-cli/settings.json`; hooks remain in
+`~/.gemini/config/hooks.json`.
+
 VibeGuard is required. After selecting the AgentPlaybook root, apply VibeGuard
 with the selected AgentPlaybook root as the rule source.
 
@@ -155,6 +173,18 @@ Optional Step 2 - Register a user-level runtime bridge on this machine.
 Use this only if I choose the optional setup for better future agent behavior.
 Preserve existing personal instructions. Add or update a short managed block; do
 not replace unrelated user content.
+
+Also run the AgentPlaybook runtime setup check:
+
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
+
+If hooks or permissions are missing, ask for approval to update user-level
+runtime config and then run:
+
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
+
+Keep the permission allowlist narrow: allow only `workflow.py`,
+`agent-preflight.py`, and `agent-finish-check.py`, not broad `python3`.
 
 Update the active user-level file for the runtime I choose:
 Codex -> ~/.codex/AGENTS.md
