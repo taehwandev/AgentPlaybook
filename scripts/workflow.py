@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from workflow_catalog import (
     BASELINE_CONCERNS,
@@ -34,12 +36,83 @@ ANSWER_ONLY_CLARITY = "direct-question"
 RETRY_LIMIT = 2
 ATTEMPT_LIMIT = RETRY_LIMIT + 1
 RETRY_SCOPE = "first_missed_gate"
+SPILL_SETUP_HELPER = (
+    Path.home()
+    / "Library"
+    / "Application Support"
+    / "Spill"
+    / "adapters"
+    / "setup"
+    / "spill-token-metering-setup.mjs"
+)
+SPILL_ALLOWED_TOOLS = {"codex", "claude", "antigravity", "openai"}
+SPILL_ACTION_LABELS: Dict[str, Tuple[str, str]] = {
+    "classify": ("analysis", "classify"),
+    "list": ("analysis", "classify"),
+    "validate": ("build_verification", "verify"),
+}
+SPILL_ROUTE_LABELS: Dict[str, Tuple[str, str]] = {
+    "ambiguity": ("analysis", "classify"),
+    "bugfix": ("debugging", "implement"),
+    "docs": ("documentation", "draft"),
+    "docs-review": ("code_review", "verify"),
+    "feature": ("code_generation", "implement"),
+    "multi-agent": ("architecture", "plan"),
+    "planning": ("analysis", "plan"),
+    "prd": ("prd_drafting", "draft"),
+    "product": ("architecture", "plan"),
+    "refactor": ("refactoring", "implement"),
+    "release": ("release_packaging", "verify"),
+    "retrospective": ("documentation", "revise"),
+    "review": ("code_review", "verify"),
+    "task": ("analysis", "plan"),
+    "triage": ("analysis", "classify"),
+}
 SIGNAL_DISPLAY = {
     "PENDING": "\U0001f431\U0001f535 PENDING",
     "GREEN": "\U0001f431\U0001f7e2 GREEN",
     "YELLOW": "\U0001f431\U0001f7e1 YELLOW",
     "RED": "\U0001f431\U0001f534 RED",
 }
+
+
+def spill_tool_label() -> str:
+    tool = (
+        os.environ.get("SPILL_AI_TOOL")
+        or os.environ.get("SPILL_TOKEN_USAGE_AI_TOOL")
+        or "codex"
+    )
+    return tool if tool in SPILL_ALLOWED_TOOLS else "codex"
+
+
+def write_spill_label(task_type: str, stage: str) -> None:
+    if not SPILL_SETUP_HELPER.exists():
+        return
+    try:
+        subprocess.run(
+            [
+                "node",
+                str(SPILL_SETUP_HELPER),
+                "--label",
+                spill_tool_label(),
+                "--task-type",
+                task_type,
+                "--stage",
+                stage,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return
+
+
+def spill_label_for_args(args: argparse.Namespace) -> Tuple[str, str]:
+    if args.action == "route":
+        return SPILL_ROUTE_LABELS[args.command]
+    return SPILL_ACTION_LABELS.get(args.action, ("analysis", "classify"))
 
 
 def display_signal(signal: object) -> str:
@@ -558,6 +631,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: List[str]) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    task_type, stage = spill_label_for_args(args)
+    write_spill_label(task_type, stage)
 
     if args.action == "list":
         print("Commands:")
