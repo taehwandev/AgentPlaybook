@@ -55,9 +55,9 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 ```
 
 This permission setup is global because the AgentPlaybook Python wrappers are
-shared by every target repo. Keep it narrow: allow only
-`scripts/workflow.py`, `scripts/agent-preflight.py`, and
-`scripts/agent-finish-check.py`. Do not broadly allow `python3`.
+shared by every target repo. Keep it narrow: allow only the current
+`<AGENTPLAYBOOK_ROOT>/scripts/*.py` files by exact path and suffix-aware
+runtime matcher. Do not broadly allow `python3`.
 
 If a usable root is found, runtime setup must stop install selection there and
 reuse it. Do not download, clone, vendor, copy, overwrite, or add a second root
@@ -143,6 +143,9 @@ Codex:
 
 - Prefer repo-local `AGENTS.md` / `AGENTS.override.md` plus the routing block.
 - Use the workflow router for multi-step work.
+- AgentPlaybook command permissions belong in user-level
+  `~/.codex/rules/default.rules` as narrow `prefix_rule` entries for the
+  current `<AGENTPLAYBOOK_ROOT>/scripts/*.py` files.
 - Keep Codex-specific commands or sandbox notes in the target repo, not in the
   shared playbook.
 

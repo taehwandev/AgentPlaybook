@@ -400,9 +400,8 @@ bridge file or a pasted prompt.
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check`, then run
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py` after approval if
   user-level hooks or permissions are missing. This writes global runtime
-  config only for the AgentPlaybook entrypoints `workflow.py`,
-  `agent-preflight.py`, and `agent-finish-check.py`; it does not broadly allow
-  `python3`.
+  config only for the current `<AGENTPLAYBOOK_ROOT>/scripts/*.py` files by
+  exact path; it does not broadly allow `python3`.
 - For runtime-specific setup rules, read
   [docs/agent-runtime-integration.md](docs/agent-runtime-integration.md).
 

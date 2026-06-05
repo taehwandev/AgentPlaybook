@@ -23,12 +23,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW_SCRIPT = ROOT / "scripts" / "workflow.py"
-AGENTPLAYBOOK_PYTHON_SCRIPTS = (
-    ROOT / "scripts" / "workflow.py",
-    ROOT / "scripts" / "agent-preflight.py",
-    ROOT / "scripts" / "agent-finish-check.py",
-)
+SCRIPTS_DIR = ROOT / "scripts"
+WORKFLOW_SCRIPT = SCRIPTS_DIR / "workflow.py"
 
 _BASELINE_COMMAND_RE = re.compile(
     r"workflow\.py.*route.*triage.*--request-classified"
@@ -183,12 +179,11 @@ def _set_zshenv(dry_run: bool) -> str:
 # Codex
 
 def _configure_codex(dry_run: bool) -> list[dict]:
-    # Codex uses hooks.json with a Stop hook (session import).
-    # A pre-session label hook can be registered via the shell wrapper
-    # pattern: SPILL_AI_TOOL=codex workflow.py route triage in codex's
-    # pre-invocation hook when that feature is available.
-    # For now, ensure SPILL_AI_TOOL=codex is in the environment.
     results = []
+    target = Path.home() / ".codex" / "rules" / "default.rules"
+    status = _merge_codex_prefix_rules(target, _codex_prefix_rule_entries(), dry_run)
+    results.append({"tool": "codex", "hook": "rules.AgentPlaybookPython", "status": status, "path": str(target)})
+
     status = _set_codex_env_zshenv(dry_run)
     results.append({"tool": "codex", "hook": "zshenv.SPILL_AI_TOOL_CODEX", "status": status, "path": str(Path.home() / ".zshenv")})
     return results
@@ -241,20 +236,105 @@ def _configure_agy(dry_run: bool) -> list[dict]:
 
 def _claude_permission_entries() -> list[str]:
     entries: list[str] = []
-    for script in AGENTPLAYBOOK_PYTHON_SCRIPTS:
-        entries.append(f"Bash(python3 {script}:*)")
-        entries.append(f"Bash(python3 {_quote(str(script))}:*)")
-        entries.append(f"Bash(python3 scripts/{script.name}:*)")
+    for script in _agentplaybook_python_scripts():
+        for command in _python_entrypoint_commands(script, "claude"):
+            _add_permission_command_entries(entries, "Bash", command)
     return entries
 
 
 def _agy_permission_entries() -> list[str]:
     entries: list[str] = []
-    for script in AGENTPLAYBOOK_PYTHON_SCRIPTS:
-        entries.append(f"command(python3 {script})")
-        entries.append(f"command(python3 {_quote(str(script))})")
-        entries.append(f"command(python3 scripts/{script.name})")
+    for script in _agentplaybook_python_scripts():
+        for command in _python_entrypoint_commands(script, "antigravity"):
+            _add_permission_command_entries(entries, "command", command)
     return entries
+
+
+def _codex_prefix_rule_entries() -> list[str]:
+    entries: list[str] = []
+    for script in _agentplaybook_python_scripts():
+        for path in _entrypoint_path_variants(script):
+            entries.append(_codex_prefix_rule(["python3", path]))
+    return entries
+
+
+def _agentplaybook_python_scripts() -> list[Path]:
+    return sorted(SCRIPTS_DIR.glob("*.py"))
+
+
+def _python_entrypoint_commands(script: Path, tool: str) -> list[str]:
+    commands: list[str] = []
+    env_prefixes = (
+        "",
+        f"SPILL_AI_TOOL={tool} ",
+        f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
+    )
+    for path in _entrypoint_path_variants(script):
+        for prefix in env_prefixes:
+            commands.append(f"{prefix}python3 {path}")
+    return commands
+
+
+def _entrypoint_path_variants(script: Path) -> list[str]:
+    raw = str(script)
+    variants = [
+        raw,
+        _quote(raw),
+        _double_quote(raw),
+        str(Path("scripts") / script.name),
+    ]
+    home = str(Path.home())
+    if raw.startswith(home + os.sep):
+        suffix = raw[len(home) + 1:]
+        variants += [
+            f"~/{suffix}",
+            f"$HOME/{suffix}",
+            _double_quote(f"$HOME/{suffix}"),
+            f"${{HOME}}/{suffix}",
+            _double_quote(f"${{HOME}}/{suffix}"),
+        ]
+    return _dedupe(variants)
+
+
+def _add_permission_command_entries(entries: list[str], prefix: str, command: str) -> None:
+    # Include both common wildcard spellings because Claude Code and AGY have
+    # used different permission matchers across versions.
+    entries.append(f"{prefix}({command})")
+    entries.append(f"{prefix}({command}:*)")
+    entries.append(f"{prefix}({command} *)")
+
+
+def _codex_prefix_rule(pattern: list[str]) -> str:
+    encoded = ", ".join(json.dumps(item) for item in pattern)
+    return f"prefix_rule(pattern=[{encoded}], decision=\"allow\")"
+
+
+def _merge_codex_prefix_rules(target: Path, entries: list[str], dry_run: bool) -> str:
+    text = target.read_text() if target.exists() else ""
+    missing = [entry for entry in entries if entry not in text]
+    if not missing:
+        return "ok"
+    if dry_run:
+        return "missing"
+
+    block = "\n".join([
+        "# agentplaybook-hooks:begin",
+        "# Managed by AgentPlaybook setup. Keep narrow; do not replace with broad python3 rules.",
+        *entries,
+        "# agentplaybook-hooks:end",
+        "",
+    ])
+    pattern = re.compile(
+        r"# agentplaybook-hooks:begin[\s\S]*?# agentplaybook-hooks:end\n?",
+        re.MULTILINE,
+    )
+    if pattern.search(text):
+        updated = pattern.sub(block, text)
+    else:
+        updated = f"{text}{'' if not text or text.endswith(chr(10)) else chr(10)}{block}"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(updated)
+    return "installed"
 
 
 def _merge_permissions_allow(target: Path, entries: list[str], dry_run: bool) -> str:
@@ -295,6 +375,21 @@ def _write_json(path: Path, data: dict) -> None:
 
 def _quote(s: str) -> str:
     return "'" + s.replace("'", "'\\''") + "'"
+
+
+def _double_quote(s: str) -> str:
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
 
 
 def _print_results(results: list[dict], dry_run: bool) -> None:

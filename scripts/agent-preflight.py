@@ -15,16 +15,25 @@ from typing import Any
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 _BASELINE_HOOK_RE = re.compile(r"workflow\.py.*route.*triage.*--request-classified")
-_AGENTPLAYBOOK_PYTHON_SCRIPT_NAMES = (
-    "workflow.py",
-    "agent-preflight.py",
-    "agent-finish-check.py",
-)
-
 
 def _check_agent_hooks(playbook_root: Path) -> list[str]:
     """Return warning strings for any missing runtime hook registrations."""
     warnings: list[str] = []
+
+    codex_rules = Path.home() / ".codex" / "rules" / "default.rules"
+    if codex_rules.exists():
+        try:
+            missing_permissions = _missing_text_entries(
+                codex_rules.read_text(),
+                _codex_prefix_rule_entries(playbook_root),
+            )
+            if missing_permissions:
+                warnings.append(
+                    "Codex AgentPlaybook Python prefix rules are missing. "
+                    f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+                )
+        except OSError:
+            pass
 
     claude_settings = Path.home() / ".claude" / "settings.json"
     if claude_settings.exists():
@@ -88,22 +97,75 @@ def _check_agent_hooks(playbook_root: Path) -> list[str]:
 
 def _claude_permission_entries(playbook_root: Path) -> list[str]:
     entries: list[str] = []
-    for name in _AGENTPLAYBOOK_PYTHON_SCRIPT_NAMES:
-        script = playbook_root / "scripts" / name
-        entries.append(f"Bash(python3 {script}:*)")
-        entries.append(f"Bash(python3 {_quote(str(script))}:*)")
-        entries.append(f"Bash(python3 scripts/{name}:*)")
+    for script in _agentplaybook_python_scripts(playbook_root):
+        for command in _python_entrypoint_commands(script, "claude"):
+            _add_permission_command_entries(entries, "Bash", command)
     return entries
 
 
 def _agy_permission_entries(playbook_root: Path) -> list[str]:
     entries: list[str] = []
-    for name in _AGENTPLAYBOOK_PYTHON_SCRIPT_NAMES:
-        script = playbook_root / "scripts" / name
-        entries.append(f"command(python3 {script})")
-        entries.append(f"command(python3 {_quote(str(script))})")
-        entries.append(f"command(python3 scripts/{name})")
+    for script in _agentplaybook_python_scripts(playbook_root):
+        for command in _python_entrypoint_commands(script, "antigravity"):
+            _add_permission_command_entries(entries, "command", command)
     return entries
+
+
+def _codex_prefix_rule_entries(playbook_root: Path) -> list[str]:
+    entries: list[str] = []
+    for script in _agentplaybook_python_scripts(playbook_root):
+        for path in _entrypoint_path_variants(script):
+            entries.append(_codex_prefix_rule(["python3", path]))
+    return entries
+
+
+def _agentplaybook_python_scripts(playbook_root: Path) -> list[Path]:
+    return sorted((playbook_root / "scripts").glob("*.py"))
+
+
+def _python_entrypoint_commands(script: Path, tool: str) -> list[str]:
+    commands: list[str] = []
+    env_prefixes = (
+        "",
+        f"SPILL_AI_TOOL={tool} ",
+        f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
+    )
+    for path in _entrypoint_path_variants(script):
+        for prefix in env_prefixes:
+            commands.append(f"{prefix}python3 {path}")
+    return commands
+
+
+def _entrypoint_path_variants(script: Path) -> list[str]:
+    raw = str(script)
+    variants = [
+        raw,
+        _quote(raw),
+        _double_quote(raw),
+        str(Path("scripts") / script.name),
+    ]
+    home = str(Path.home())
+    if raw.startswith(home + "/"):
+        suffix = raw[len(home) + 1:]
+        variants += [
+            f"~/{suffix}",
+            f"$HOME/{suffix}",
+            _double_quote(f"$HOME/{suffix}"),
+            f"${{HOME}}/{suffix}",
+            _double_quote(f"${{HOME}}/{suffix}"),
+        ]
+    return _dedupe(variants)
+
+
+def _add_permission_command_entries(entries: list[str], prefix: str, command: str) -> None:
+    entries.append(f"{prefix}({command})")
+    entries.append(f"{prefix}({command}:*)")
+    entries.append(f"{prefix}({command} *)")
+
+
+def _codex_prefix_rule(pattern: list[str]) -> str:
+    encoded = ", ".join(json.dumps(item) for item in pattern)
+    return f"prefix_rule(pattern=[{encoded}], decision=\"allow\")"
 
 
 def _missing_allow_entries(config: dict[str, Any], entries: list[str]) -> list[str]:
@@ -116,8 +178,27 @@ def _missing_allow_entries(config: dict[str, Any], entries: list[str]) -> list[s
     return [entry for entry in entries if entry not in allow]
 
 
+def _missing_text_entries(text: str, entries: list[str]) -> list[str]:
+    return [entry for entry in entries if entry not in text]
+
+
 def _quote(s: str) -> str:
     return "'" + s.replace("'", "'\\''") + "'"
+
+
+def _double_quote(s: str) -> str:
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
 
 
 def clean_output(text: str) -> str:

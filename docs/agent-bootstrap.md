@@ -200,13 +200,11 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 ```
 
 The setup is global because the workflow router and evidence wrappers are shared
-across target repos. It must allow only these AgentPlaybook Python entrypoints,
-not broad `python3` execution:
+across target repos. It must allow only the current AgentPlaybook Python
+entrypoints by exact path, not broad `python3` execution:
 
 ```text
-scripts/workflow.py
-scripts/agent-preflight.py
-scripts/agent-finish-check.py
+<AGENTPLAYBOOK_ROOT>/scripts/*.py
 ```
 
 Claude Code permissions belong in `~/.claude/settings.json`. AGY/Antigravity
