@@ -97,6 +97,14 @@ rule, transaction, side effect, or test boundary.
 - Keep retryability explicit for clients when useful.
 - Never return stack traces, provider credentials, SQL, secrets, or internal
   provider payloads to callers.
+- When clients need shared failure UX, the API may return presentation hints
+  such as inline, toast/banner, alert/dialog, full-page, retry metadata, action
+  label key, and deep link or route intent. Keep these as stable enum fields and
+  allowlisted actions, not server-provided UI components, raw HTML, executable
+  commands, or client-specific class names.
+- Document the fallback when a client does not support a presentation hint.
+  Clients still own platform rendering, localization, accessibility behavior,
+  and whether a deep-link action is valid in the current screen.
 
 ## Tests
 

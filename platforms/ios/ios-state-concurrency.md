@@ -28,6 +28,26 @@ target ownership, also use `ios-module-structure.md`.
 - Persisted state defines migration, corruption, and app-upgrade behavior.
 - Keychain, files, notifications, permissions, and persistence stay behind adapters.
 
+## Async API Errors
+
+For `async throws` repository or client calls, do not make `Result<Success,
+Failure>` or a custom `success/failure` response enum the default shape only to
+re-wrap thrown errors. Let successful async calls return the decoded value or an
+internal response type, and throw typed transport, protocol, or domain errors
+for failure.
+
+Network adapters should hide `URLSession`, provider SDK, and transport-library
+details by normalizing only the small response boundary the app owns, such as
+status, selected headers, body, safe server error code, retry metadata, and
+correlation id. ViewModels, stores, reducers, or coordinators catch those typed
+errors and map them into `UiState`, alert/sheet/navigation state, or one-off
+effects.
+
+If a server error envelope carries presentation hints such as inline, banner,
+alert, full-page, retry, or a deep-link action, treat them as stable contract
+hints. The iOS state owner decides how to render supported hints in SwiftUI or
+UIKit and defines a safe fallback for unsupported hints.
+
 ## Check
 
 - Can stale async results update the UI?

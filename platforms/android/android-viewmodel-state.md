@@ -222,6 +222,16 @@ Implementation rules:
   product contract.
 - Convert repository/domain errors into typed UI messages or state. Do not pass
   raw exceptions to Compose.
+- For `suspend` API calls, do not make sealed `Success/Failure` network results
+  the default shape only to re-wrap exceptions. Let successful suspend calls
+  return the value, normalize library-specific HTTP responses at the network or
+  API boundary, and throw typed transport/protocol/domain exceptions for failure.
+  The ViewModel or reducer should catch those typed failures and map them to
+  screen state or one-off effects.
+- If the server returns presentation hints such as toast/banner, alert/dialog,
+  full-page error, retry metadata, or a deep-link action, treat them as an API
+  contract hint. The ViewModel maps supported hints into Compose state/effects;
+  the feature UI should not parse raw server envelopes or transport responses.
 - Put required content data inside the `Content` state, or use another explicit
   state shape when stale content can coexist with refresh/error. Avoid nullable
   payloads that contradict the status.

@@ -32,6 +32,41 @@ raw exception / transport failure
 - User-visible messages explain what happened and what the user can do next.
 - Logs and metrics support debugging without leaking sensitive data.
 
+## Async API Boundary
+
+For async HTTP/API clients, prefer the language's normal success/failure
+mechanism before inventing a result wrapper for every call:
+
+```text
+success -> return decoded value or normalized response
+failure -> throw/raise a typed transport, protocol, or domain error
+```
+
+Use a `Result`, sealed `Success/Failure`, or equivalent response wrapper only
+when failure is an expected value that most callers must compose, store, merge,
+or partially render. Do not wrap every suspend/async API response in
+`Success/Failure` only to re-express exceptions; it pushes unwrapping and
+`when`/`switch` boilerplate into every caller.
+
+Network adapters should normalize library-specific values only far enough to
+hide the transport library:
+
+```text
+SDK/HTTP library response -> internal HttpResponse
+SDK/transport exception -> typed transport exception/error
+non-2xx response -> API/protocol exception/error with safe response metadata
+```
+
+Keep `OkHttp`, `Retrofit`, `Ktor`, `URLSession`, `fetch`, provider SDK
+exceptions, raw response handles, and framework-specific cancellation details
+behind the boundary that owns that library. Preserve status, headers needed for
+policy, safe server error code, request/correlation id, retry metadata, and the
+cause type where useful.
+
+State owners such as ViewModels, reducers, stores, coordinators, or server
+actions should catch typed failures and decide the user-visible state or effect
+for the current workflow.
+
 ## Typed Shape
 
 Prefer typed errors, result objects, or sealed failure models with fields such as:
@@ -98,6 +133,32 @@ silent best-effort fallback
 
 Silent fallback is acceptable only when the feature still satisfies the user goal
 and diagnostics exist for unexpected failure.
+
+## Server-Driven Presentation Hints
+
+When several clients share one server API, the server may include stable,
+client-safe presentation and recovery hints in an error envelope, such as:
+
+```text
+code
+message key or safe fallback message
+presentation hint: inline, toast/banner, alert/dialog, full page
+action label key
+deep link or route intent
+retryable / retry-after
+request or correlation id
+```
+
+Treat these as a contract, not as arbitrary UI commands. The client still owns
+the final mapping to platform controls, accessibility behavior, navigation
+rules, localization, and whether the hint is appropriate in the current screen.
+Use enums, message keys, deep links, route intents, and allowlisted actions
+instead of server-provided component names, executable commands, raw HTML, or
+client-specific class names.
+
+Document which errors may carry presentation hints, which clients must honor
+them, what the fallback is when a client does not support a hint, and whether the
+action is safe to retry or can duplicate a side effect.
 
 ## Review Checklist
 
