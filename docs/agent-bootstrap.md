@@ -212,6 +212,12 @@ permissions may live in `~/.gemini/config/config.json` or the legacy
 `~/.gemini/antigravity-cli/settings.json`; AGY hooks stay in
 `~/.gemini/config/hooks.json`.
 
+AgentPlaybook must not install token-usage event hooks. Spill token metering is
+optional and owned by the separate Spill installer. When the local Spill setup
+helper is present, AgentPlaybook may wire safe workflow label hooks; when it is
+absent, setup should remove only AgentPlaybook-managed Spill label hooks/env and
+leave normal AgentPlaybook routing intact.
+
 ## Connect The Target Repo
 
 1. Find the canonical repo-local instruction file. Prefer `AGENTS.md` when the

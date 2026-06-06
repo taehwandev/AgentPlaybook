@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -16,9 +17,26 @@ from typing import Any
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 _BASELINE_HOOK_RE = re.compile(r"workflow\.py.*route.*triage.*--request-classified")
 
+
+DEFAULT_SPILL_SETUP_HELPER = (
+    Path.home()
+    / "Library/Application Support/Spill/adapters/setup/spill-token-metering-setup.mjs"
+)
+
+
+def _spill_setup_helper_path() -> Path:
+    override = os.environ.get("AGENTPLAYBOOK_SPILL_HELPER_PATH", "")
+    return Path(override) if override else DEFAULT_SPILL_SETUP_HELPER
+
+
+def _has_spill_setup_helper() -> bool:
+    return _spill_setup_helper_path().is_file()
+
+
 def _check_agent_hooks(playbook_root: Path) -> list[str]:
     """Return warning strings for any missing runtime hook registrations."""
     warnings: list[str] = []
+    spill_available = _has_spill_setup_helper()
 
     codex_rules = Path.home() / ".codex" / "rules" / "default.rules"
     if codex_rules.exists():
@@ -39,26 +57,28 @@ def _check_agent_hooks(playbook_root: Path) -> list[str]:
     if claude_settings.exists():
         try:
             config = json.loads(claude_settings.read_text())
-            groups = config.get("hooks", {}).get("UserPromptSubmit", [])
-            has_baseline = any(
-                _BASELINE_HOOK_RE.search(h.get("command", ""))
-                for g in groups
-                for h in g.get("hooks", [])
-            )
-            if not has_baseline:
-                warnings.append(
-                    "Claude Code UserPromptSubmit baseline label hook is missing. "
-                    f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+            if spill_available:
+                groups = config.get("hooks", {}).get("UserPromptSubmit", [])
+                has_baseline = any(
+                    _BASELINE_HOOK_RE.search(h.get("command", ""))
+                    and "SPILL_AI_TOOL=claude" in h.get("command", "")
+                    for g in groups
+                    for h in g.get("hooks", [])
                 )
-            spill_tool = config.get("env", {}).get("SPILL_AI_TOOL", "")
-            if spill_tool != "claude":
-                warnings.append(
-                    "env.SPILL_AI_TOOL is not set to 'claude' in ~/.claude/settings.json. "
-                    f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
-                )
+                if not has_baseline:
+                    warnings.append(
+                        "Claude Code UserPromptSubmit Spill workflow label hook is missing. "
+                        f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+                    )
+                spill_tool = config.get("env", {}).get("SPILL_AI_TOOL", "")
+                if spill_tool != "claude":
+                    warnings.append(
+                        "env.SPILL_AI_TOOL is not set to 'claude' in ~/.claude/settings.json. "
+                        f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+                    )
             missing_permissions = _missing_allow_entries(
                 config,
-                _claude_permission_entries(playbook_root),
+                _claude_permission_entries(playbook_root, spill_available=spill_available),
             )
             if missing_permissions:
                 warnings.append(
@@ -72,7 +92,7 @@ def _check_agent_hooks(playbook_root: Path) -> list[str]:
         Path.home() / ".gemini" / "config" / "config.json",
         Path.home() / ".gemini" / "antigravity-cli" / "settings.json",
     ]
-    agy_entries = _agy_permission_entries(playbook_root)
+    agy_entries = _agy_permission_entries(playbook_root, spill_available=spill_available)
     agy_configs = []
     for target in agy_targets:
         if not target.exists():
@@ -95,18 +115,18 @@ def _check_agent_hooks(playbook_root: Path) -> list[str]:
     return warnings
 
 
-def _claude_permission_entries(playbook_root: Path) -> list[str]:
+def _claude_permission_entries(playbook_root: Path, *, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
     for script in _agentplaybook_python_scripts(playbook_root):
-        for command in _python_entrypoint_commands(script, "claude"):
+        for command in _python_entrypoint_commands(script, "claude", include_spill_env=spill_available):
             _add_permission_command_entries(entries, "Bash", command)
     return entries
 
 
-def _agy_permission_entries(playbook_root: Path) -> list[str]:
+def _agy_permission_entries(playbook_root: Path, *, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
     for script in _agentplaybook_python_scripts(playbook_root):
-        for command in _python_entrypoint_commands(script, "antigravity"):
+        for command in _python_entrypoint_commands(script, "antigravity", include_spill_env=spill_available):
             _add_permission_command_entries(entries, "command", command)
     return entries
 
@@ -123,13 +143,14 @@ def _agentplaybook_python_scripts(playbook_root: Path) -> list[Path]:
     return sorted((playbook_root / "scripts").glob("*.py"))
 
 
-def _python_entrypoint_commands(script: Path, tool: str) -> list[str]:
+def _python_entrypoint_commands(script: Path, tool: str, *, include_spill_env: bool = True) -> list[str]:
     commands: list[str] = []
-    env_prefixes = (
-        "",
-        f"SPILL_AI_TOOL={tool} ",
-        f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
-    )
+    env_prefixes = ("",)
+    if include_spill_env:
+        env_prefixes += (
+            f"SPILL_AI_TOOL={tool} ",
+            f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
+        )
     for path in _entrypoint_path_variants(script):
         for prefix in env_prefixes:
             commands.append(f"{prefix}python3 {path}")

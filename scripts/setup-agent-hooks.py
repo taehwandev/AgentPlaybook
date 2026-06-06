@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Configure AI runtime hooks and permissions for AgentPlaybook.
 
-Run once after cloning AgentPlaybook to register the UserPromptSubmit
-baseline label hook for each detected AI runtime (Claude Code, Codex)
-and allow the AgentPlaybook Python entrypoints in local agent runtimes.
-Re-running is safe; existing hooks and permissions are deduplicated.
+Run once after cloning AgentPlaybook to allow the AgentPlaybook Python
+entrypoints in local agent runtimes. When the optional local Spill helper is
+installed, this also wires AgentPlaybook's workflow label bridge. Re-running is
+safe; existing hooks and permissions are deduplicated.
 
 Usage:
     python3 scripts/setup-agent-hooks.py
@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
@@ -24,6 +25,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = ROOT / "scripts"
 WORKFLOW_SCRIPT = SCRIPTS_DIR / "workflow.py"
+DEFAULT_SPILL_SETUP_HELPER = (
+    Path.home()
+    / "Library/Application Support/Spill/adapters/setup/spill-token-metering-setup.mjs"
+)
 
 _BASELINE_COMMAND_RE = re.compile(
     r"workflow\.py.*route.*triage.*--request-classified"
@@ -90,6 +95,15 @@ def _has_agy() -> bool:
     )
 
 
+def _spill_setup_helper_path() -> Path:
+    override = os.environ.get("AGENTPLAYBOOK_SPILL_HELPER_PATH", "")
+    return Path(override) if override else DEFAULT_SPILL_SETUP_HELPER
+
+
+def _has_spill_setup_helper() -> bool:
+    return _spill_setup_helper_path().is_file()
+
+
 # Claude Code
 
 def _configure_claude(dry_run: bool) -> list[dict]:
@@ -98,27 +112,28 @@ def _configure_claude(dry_run: bool) -> list[dict]:
         f"SPILL_AI_TOOL=claude python3 {_quote(str(WORKFLOW_SCRIPT))}"
         " route triage --request-classified"
     )
+    spill_available = _has_spill_setup_helper()
     results = []
 
-    # UserPromptSubmit baseline label hook
-    status = _merge_claude_user_prompt_submit(target, baseline_cmd, dry_run)
-    results.append({"tool": "claude", "hook": "UserPromptSubmit_baseline", "status": status, "path": str(target)})
+    if spill_available:
+        status = _merge_claude_user_prompt_submit(target, baseline_cmd, dry_run)
+    else:
+        status = _remove_claude_user_prompt_submit(target, dry_run)
+    results.append({"tool": "claude", "hook": "UserPromptSubmit_spill_bridge", "status": status, "path": str(target)})
 
+    cleanup_entries = _claude_legacy_permission_entries()
+    if not spill_available:
+        cleanup_entries += _claude_permission_entries(spill_available=True)
     status = _merge_permissions_allow(
         target,
-        _claude_permission_entries(),
+        _claude_permission_entries(spill_available=spill_available),
         dry_run,
-        cleanup_entries=_claude_legacy_permission_entries(),
+        cleanup_entries=cleanup_entries,
     )
     results.append({"tool": "claude", "hook": "permissions.AgentPlaybookPython", "status": status, "path": str(target)})
 
-    # SPILL_AI_TOOL env in settings
-    status = _set_claude_env(target, dry_run)
+    status = _set_claude_env(target, dry_run) if spill_available else _remove_claude_env(target, dry_run)
     results.append({"tool": "claude", "hook": "env.SPILL_AI_TOOL", "status": status, "path": str(target)})
-
-    # ~/.zshenv fallback
-    status = _set_zshenv(dry_run)
-    results.append({"tool": "claude", "hook": "zshenv.SPILL_AI_TOOL", "status": status, "path": str(Path.home() / ".zshenv")})
 
     return results
 
@@ -131,7 +146,7 @@ def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) 
     # Check if already present
     for group in groups:
         for hook in group.get("hooks", []):
-            if _BASELINE_COMMAND_RE.search(hook.get("command", "")):
+            if _is_managed_claude_spill_bridge_command(hook.get("command", "")):
                 return "ok"
 
     if dry_run:
@@ -140,7 +155,7 @@ def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) 
     cleaned = [
         g for g in groups
         if not any(
-            _BASELINE_COMMAND_RE.search(h.get("command", ""))
+            _is_managed_claude_spill_bridge_command(h.get("command", ""))
             for h in g.get("hooks", [])
         )
     ]
@@ -152,6 +167,47 @@ def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) 
     config["hooks"] = hooks
     _write_json(target, config)
     return "installed"
+
+
+def _remove_claude_user_prompt_submit(target: Path, dry_run: bool) -> str:
+    config = _read_json(target)
+    hooks = config.get("hooks", {})
+    groups: list = hooks.get("UserPromptSubmit", [])
+    changed = False
+    cleaned_groups = []
+
+    for group in groups:
+        group_hooks = group.get("hooks", [])
+        if not isinstance(group_hooks, list):
+            cleaned_groups.append(group)
+            continue
+        filtered_hooks = [
+            hook for hook in group_hooks
+            if not _is_managed_claude_spill_bridge_command(hook.get("command", ""))
+        ]
+        if len(filtered_hooks) != len(group_hooks):
+            changed = True
+        if filtered_hooks:
+            updated_group = dict(group)
+            updated_group["hooks"] = filtered_hooks
+            cleaned_groups.append(updated_group)
+
+    if not changed:
+        return "ok"
+    if dry_run:
+        return "would_remove"
+
+    hooks["UserPromptSubmit"] = cleaned_groups
+    config["hooks"] = hooks
+    _write_json(target, config)
+    return "removed"
+
+
+def _is_managed_claude_spill_bridge_command(command: str) -> bool:
+    return bool(
+        _BASELINE_COMMAND_RE.search(command)
+        and "SPILL_AI_TOOL=claude" in command
+    )
 
 
 def _set_claude_env(target: Path, dry_run: bool) -> str:
@@ -168,16 +224,30 @@ def _set_claude_env(target: Path, dry_run: bool) -> str:
     return "installed"
 
 
-def _set_zshenv(dry_run: bool) -> str:
-    zshenv = Path.home() / ".zshenv"
-    text = zshenv.read_text() if zshenv.exists() else ""
-    if "SPILL_AI_TOOL" in text:
+def _remove_claude_env(target: Path, dry_run: bool) -> str:
+    config = _read_json(target)
+    env = config.get("env", {})
+    if not isinstance(env, dict):
+        return "ok"
+
+    changed = False
+    for key, expected in (
+        ("SPILL_AI_TOOL", "claude"),
+        ("SPILL_TOKEN_USAGE_AI_TOOL", "claude"),
+    ):
+        if env.get(key) == expected:
+            env.pop(key)
+            changed = True
+    if not changed:
         return "ok"
     if dry_run:
-        return "missing"
-    with open(zshenv, "a") as f:
-        f.write("\nexport SPILL_AI_TOOL=claude\n")
-    return "installed"
+        return "would_remove"
+    if env:
+        config["env"] = env
+    else:
+        config.pop("env", None)
+    _write_json(target, config)
+    return "removed"
 
 
 # Codex
@@ -188,28 +258,18 @@ def _configure_codex(dry_run: bool) -> list[dict]:
     status = _merge_codex_prefix_rules(target, _codex_prefix_rule_entries(), dry_run)
     results.append({"tool": "codex", "hook": "rules.AgentPlaybookPython", "status": status, "path": str(target)})
 
-    status = _set_codex_env_zshenv(dry_run)
-    results.append({"tool": "codex", "hook": "zshenv.SPILL_AI_TOOL_CODEX", "status": status, "path": str(Path.home() / ".zshenv")})
     return results
-
-
-def _set_codex_env_zshenv(dry_run: bool) -> str:
-    # Codex reads SPILL_AI_TOOL from its shell env.
-    # Already handled by the global SPILL_AI_TOOL if running claude-only,
-    # but Codex needs its own value when both run simultaneously.
-    # Skip if already set by Spill setup.mjs.
-    zshenv = Path.home() / ".zshenv"
-    text = zshenv.read_text() if zshenv.exists() else ""
-    if "SPILL_AI_TOOL" in text:
-        return "ok (covered by existing SPILL_AI_TOOL entry)"
-    return "ok (codex uses system SPILL_AI_TOOL)"
 
 
 # Antigravity / AGY
 
 def _configure_agy(dry_run: bool) -> list[dict]:
     results = []
-    entries = _agy_permission_entries()
+    spill_available = _has_spill_setup_helper()
+    entries = _agy_permission_entries(spill_available=spill_available)
+    cleanup_entries = _agy_legacy_permission_entries()
+    if not spill_available:
+        cleanup_entries += _agy_permission_entries(spill_available=True)
     targets = [
         Path.home() / ".gemini" / "antigravity-cli" / "settings.json",
         Path.home() / ".gemini" / "config" / "config.json",
@@ -220,7 +280,7 @@ def _configure_agy(dry_run: bool) -> list[dict]:
             target,
             entries,
             dry_run,
-            cleanup_entries=_agy_legacy_permission_entries(),
+            cleanup_entries=cleanup_entries,
         )
         results.append({
             "tool": "agy",
@@ -243,10 +303,10 @@ def _configure_agy(dry_run: bool) -> list[dict]:
 
 # helpers
 
-def _claude_permission_entries() -> list[str]:
+def _claude_permission_entries(*, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
     for script in _agentplaybook_python_scripts():
-        for command in _python_entrypoint_commands(script, "claude"):
+        for command in _python_entrypoint_commands(script, "claude", include_spill_env=spill_available):
             _add_permission_command_entries(entries, "Bash", command)
     return entries
 
@@ -259,10 +319,10 @@ def _claude_legacy_permission_entries() -> list[str]:
     return entries
 
 
-def _agy_permission_entries() -> list[str]:
+def _agy_permission_entries(*, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
     for script in _agentplaybook_python_scripts():
-        for command in _python_entrypoint_commands(script, "antigravity"):
+        for command in _python_entrypoint_commands(script, "antigravity", include_spill_env=spill_available):
             _add_permission_command_entries(entries, "command", command)
     return entries
 
@@ -287,13 +347,20 @@ def _agentplaybook_python_scripts() -> list[Path]:
     return sorted(SCRIPTS_DIR.glob("*.py"))
 
 
-def _python_entrypoint_commands(script: Path, tool: str, *, include_legacy: bool = False) -> list[str]:
+def _python_entrypoint_commands(
+    script: Path,
+    tool: str,
+    *,
+    include_legacy: bool = False,
+    include_spill_env: bool = True,
+) -> list[str]:
     commands: list[str] = []
-    env_prefixes = (
-        "",
-        f"SPILL_AI_TOOL={tool} ",
-        f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
-    )
+    env_prefixes = ("",)
+    if include_spill_env:
+        env_prefixes += (
+            f"SPILL_AI_TOOL={tool} ",
+            f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
+        )
     path_variants = (
         _legacy_entrypoint_path_variants(script)
         if include_legacy
@@ -440,6 +507,10 @@ def _merge_permissions_allow(
     if not missing and not stale:
         return "ok"
     if dry_run:
+        if stale and not missing:
+            return "would_remove"
+        if stale:
+            return "would_update"
         return "missing"
 
     cleaned = [entry for entry in allow if entry not in stale]
@@ -489,7 +560,19 @@ def _print_results(results: list[dict], dry_run: bool) -> None:
         marker = (
             "OK"
             if r["status"].startswith("ok")
-            else ("INSTALLED" if r["status"] == "installed" else "MISSING")
+            else (
+                "INSTALLED"
+                if r["status"] == "installed"
+                else (
+                    "REMOVED"
+                    if r["status"] == "removed"
+                    else (
+                        "WOULD REMOVE"
+                        if r["status"] == "would_remove"
+                        else ("WOULD UPDATE" if r["status"] == "would_update" else "MISSING")
+                    )
+                )
+            )
         )
         print(f"{prefix}{marker} {r['tool']} / {r['hook']}: {r['status']} ({r['path']})")
 

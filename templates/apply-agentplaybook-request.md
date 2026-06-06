@@ -74,6 +74,12 @@ AGY/Antigravity, support both
 `~/.gemini/antigravity-cli/settings.json`; hooks remain in
 `~/.gemini/config/hooks.json`.
 
+Do not install token-usage event hooks from AgentPlaybook. Spill token metering
+is optional and belongs to the separate Spill installer. If the local Spill
+setup helper exists, AgentPlaybook setup may add a safe workflow label bridge.
+If the helper is absent, remove only AgentPlaybook-managed Spill label hooks/env
+and keep the normal AgentPlaybook Python wrapper permissions.
+
 VibeGuard is required. After selecting the AgentPlaybook root, apply VibeGuard
 with the selected AgentPlaybook root as the rule source.
 

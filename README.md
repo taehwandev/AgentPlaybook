@@ -407,6 +407,11 @@ bridge file or a pasted prompt.
   or shell `-lc` strings. With the script path as a literal argv item, changing
   trailing evidence such as repeated `--gate` values does not create a new
   permission prompt.
+- Spill token metering is optional and separate. AgentPlaybook does not install
+  token-usage event hooks. If the local Spill setup helper is present,
+  `setup-agent-hooks.py` may wire a safe workflow label bridge; if the helper is
+  absent, it removes only AgentPlaybook-managed Spill label hooks/env and leaves
+  AgentPlaybook routing and evidence wrappers working normally.
 - For runtime-specific setup rules, read
   [docs/agent-runtime-integration.md](docs/agent-runtime-integration.md).
 

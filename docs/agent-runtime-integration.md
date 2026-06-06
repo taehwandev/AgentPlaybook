@@ -62,6 +62,14 @@ When executing AgentPlaybook wrapper commands from an agent runtime, replace
 `<AGENTPLAYBOOK_ROOT>` with the resolved absolute path. Do not leave `$HOME`,
 `${HOME}`, `~`, or a relative path in the executable command.
 
+Spill token metering is an optional local bridge, not an AgentPlaybook
+dependency. AgentPlaybook setup does not install token-usage event hooks; those
+belong to the Spill installer. If the local Spill setup helper exists,
+`setup-agent-hooks.py` may add AgentPlaybook-managed safe workflow label hooks
+and runtime env for that bridge. If the helper is absent, the setup removes
+only those AgentPlaybook-managed Spill label hooks/env and keeps the Python
+wrapper permissions installed.
+
 If a usable root is found, runtime setup must stop install selection there and
 reuse it. Do not download, clone, vendor, copy, overwrite, or add a second root
 unless the user approves this question:
