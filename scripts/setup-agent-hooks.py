@@ -255,8 +255,6 @@ def _codex_prefix_rule_entries() -> list[str]:
     for script in _agentplaybook_python_scripts():
         for path in _entrypoint_path_variants(script):
             entries.append(_codex_prefix_rule(["python3", path]))
-            for shell in _codex_shell_invocations():
-                entries.append(_codex_prefix_rule([*shell, f"python3 {path}"]))
     return entries
 
 
@@ -298,15 +296,6 @@ def _entrypoint_path_variants(script: Path) -> list[str]:
     return _dedupe(variants)
 
 
-def _codex_shell_invocations() -> list[list[str]]:
-    return [
-        ["/bin/zsh", "-lc"],
-        ["zsh", "-lc"],
-        ["/bin/bash", "-lc"],
-        ["bash", "-lc"],
-    ]
-
-
 def _add_permission_command_entries(entries: list[str], prefix: str, command: str) -> None:
     # Include both common wildcard spellings because Claude Code and AGY have
     # used different permission matchers across versions.
@@ -322,12 +311,6 @@ def _codex_prefix_rule(pattern: list[str]) -> str:
 
 def _merge_codex_prefix_rules(target: Path, entries: list[str], dry_run: bool) -> str:
     text = target.read_text() if target.exists() else ""
-    missing = [entry for entry in entries if entry not in text]
-    if not missing:
-        return "ok"
-    if dry_run:
-        return "missing"
-
     block = "\n".join([
         "# agentplaybook-hooks:begin",
         "# Managed by AgentPlaybook setup. Keep narrow; do not replace with broad python3 rules.",
@@ -339,9 +322,19 @@ def _merge_codex_prefix_rules(target: Path, entries: list[str], dry_run: bool) -
         r"# agentplaybook-hooks:begin[\s\S]*?# agentplaybook-hooks:end\n?",
         re.MULTILINE,
     )
-    if pattern.search(text):
+    match = pattern.search(text)
+    if match:
+        if match.group(0) == block:
+            return "ok"
+        if dry_run:
+            return "missing"
         updated = pattern.sub(block, text)
     else:
+        missing = [entry for entry in entries if entry not in text]
+        if not missing:
+            return "ok"
+        if dry_run:
+            return "missing"
         updated = f"{text}{'' if not text or text.endswith(chr(10)) else chr(10)}{block}"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(updated)

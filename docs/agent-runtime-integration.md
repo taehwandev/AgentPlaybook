@@ -146,11 +146,12 @@ Codex:
 - AgentPlaybook command permissions belong in user-level
   `~/.codex/rules/default.rules` as narrow `prefix_rule` entries for the
   current `<AGENTPLAYBOOK_ROOT>/scripts/*.py` files.
-- Generate both direct `python3 <script>` argv prefixes and narrow shell `-lc`
-  command prefixes for those same scripts. Codex can preserve a quoted `$HOME`
-  script path in the approval prompt, and the shell-prefix form keeps long
-  trailing workflow arguments such as repeated `--gate` values from prompting
-  again.
+- Generate direct `python3 <script>` argv prefixes for those same scripts,
+  including absolute, relative, and quoted `$HOME` path variants. Agents should
+  invoke these wrappers as direct argv commands, not through shell `-lc`
+  strings; once the script path is a separate argv item, long trailing workflow
+  arguments such as repeated `--gate` values are suffix-matched by the runtime
+  policy and should not prompt again.
 - Keep Codex-specific commands or sandbox notes in the target repo, not in the
   shared playbook.
 
