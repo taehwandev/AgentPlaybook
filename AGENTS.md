@@ -145,6 +145,12 @@ For multi-step tasks, use the executable wrappers when they are available. Befor
 editing, reviewing, committing, or reporting completion, create preflight
 evidence with the current target project and selected AgentPlaybook rule source:
 
+When executing wrapper commands from an agent runtime, replace
+`<AGENTPLAYBOOK_ROOT>` with the resolved absolute path first. Do not leave
+`$HOME`, `${HOME}`, `~`, or a relative path in the executable command; those
+forms can bypass narrow permission-prefix matching and cause repeated approval
+prompts.
+
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```

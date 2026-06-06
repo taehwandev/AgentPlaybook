@@ -54,6 +54,10 @@ npx --yes @taehwandev/vibeguard audit . --rules .
 
 작업 전:
 
+에이전트 런타임에서 실행할 때는 `${AGENTPLAYBOOK_HOME}`을 먼저 실제 절대 경로로
+치환하세요. 승인 민감 명령에는 `$HOME`, `${HOME}`, `~`, 상대 경로를 남기지
+않습니다.
+
 ```bash
 python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-preflight.py" \
   --project . \

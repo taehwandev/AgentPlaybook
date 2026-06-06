@@ -100,7 +100,10 @@ Rules:
 14. Ask only blocker questions. Prefer concrete options with tradeoffs and a
    recommended default.
 15. Before finishing, confirm every required route gate is `🐱🟢 GREEN` with ledger
-    evidence. When available, run:
+    evidence. Before executing wrapper commands, replace
+    `<AGENTPLAYBOOK_ROOT>` with the resolved absolute path; do not leave
+    `$HOME`, `${HOME}`, `~`, or a relative path in the executable command. When
+    available, run:
     python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
     Missing wrapper evidence or missing route gate evidence is non-compliant.
     If `--request-classified` is used, include `--classification-evidence`.

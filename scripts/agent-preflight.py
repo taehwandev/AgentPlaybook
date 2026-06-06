@@ -142,18 +142,7 @@ def _entrypoint_path_variants(script: Path) -> list[str]:
         raw,
         _quote(raw),
         _double_quote(raw),
-        str(Path("scripts") / script.name),
     ]
-    home = str(Path.home())
-    if raw.startswith(home + "/"):
-        suffix = raw[len(home) + 1:]
-        variants += [
-            f"~/{suffix}",
-            f"$HOME/{suffix}",
-            _double_quote(f"$HOME/{suffix}"),
-            f"${{HOME}}/{suffix}",
-            _double_quote(f"${{HOME}}/{suffix}"),
-        ]
     return _dedupe(variants)
 
 

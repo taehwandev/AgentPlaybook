@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import shutil
 import sys
@@ -105,7 +104,12 @@ def _configure_claude(dry_run: bool) -> list[dict]:
     status = _merge_claude_user_prompt_submit(target, baseline_cmd, dry_run)
     results.append({"tool": "claude", "hook": "UserPromptSubmit_baseline", "status": status, "path": str(target)})
 
-    status = _merge_permissions_allow(target, _claude_permission_entries(), dry_run)
+    status = _merge_permissions_allow(
+        target,
+        _claude_permission_entries(),
+        dry_run,
+        cleanup_entries=_claude_legacy_permission_entries(),
+    )
     results.append({"tool": "claude", "hook": "permissions.AgentPlaybookPython", "status": status, "path": str(target)})
 
     # SPILL_AI_TOOL env in settings
@@ -212,7 +216,12 @@ def _configure_agy(dry_run: bool) -> list[dict]:
     ]
 
     for target in targets:
-        status = _merge_permissions_allow(target, entries, dry_run)
+        status = _merge_permissions_allow(
+            target,
+            entries,
+            dry_run,
+            cleanup_entries=_agy_legacy_permission_entries(),
+        )
         results.append({
             "tool": "agy",
             "hook": "permissions.AgentPlaybookPython",
@@ -242,10 +251,26 @@ def _claude_permission_entries() -> list[str]:
     return entries
 
 
+def _claude_legacy_permission_entries() -> list[str]:
+    entries: list[str] = []
+    for script in _agentplaybook_python_scripts():
+        for command in _python_entrypoint_commands(script, "claude", include_legacy=True):
+            _add_permission_command_entries(entries, "Bash", command)
+    return entries
+
+
 def _agy_permission_entries() -> list[str]:
     entries: list[str] = []
     for script in _agentplaybook_python_scripts():
         for command in _python_entrypoint_commands(script, "antigravity"):
+            _add_permission_command_entries(entries, "command", command)
+    return entries
+
+
+def _agy_legacy_permission_entries() -> list[str]:
+    entries: list[str] = []
+    for script in _agentplaybook_python_scripts():
+        for command in _python_entrypoint_commands(script, "antigravity", include_legacy=True):
             _add_permission_command_entries(entries, "command", command)
     return entries
 
@@ -262,14 +287,19 @@ def _agentplaybook_python_scripts() -> list[Path]:
     return sorted(SCRIPTS_DIR.glob("*.py"))
 
 
-def _python_entrypoint_commands(script: Path, tool: str) -> list[str]:
+def _python_entrypoint_commands(script: Path, tool: str, *, include_legacy: bool = False) -> list[str]:
     commands: list[str] = []
     env_prefixes = (
         "",
         f"SPILL_AI_TOOL={tool} ",
         f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
     )
-    for path in _entrypoint_path_variants(script):
+    path_variants = (
+        _legacy_entrypoint_path_variants(script)
+        if include_legacy
+        else _entrypoint_path_variants(script)
+    )
+    for path in path_variants:
         for prefix in env_prefixes:
             commands.append(f"{prefix}python3 {path}")
     return commands
@@ -281,10 +311,18 @@ def _entrypoint_path_variants(script: Path) -> list[str]:
         raw,
         _quote(raw),
         _double_quote(raw),
+    ]
+    return _dedupe(variants)
+
+
+def _legacy_entrypoint_path_variants(script: Path) -> list[str]:
+    raw = str(script)
+    variants = [
+        *_entrypoint_path_variants(script),
         str(Path("scripts") / script.name),
     ]
     home = str(Path.home())
-    if raw.startswith(home + os.sep):
+    if raw.startswith(home + "/"):
         suffix = raw[len(home) + 1:]
         variants += [
             f"~/{suffix}",
@@ -311,6 +349,7 @@ def _codex_prefix_rule(pattern: list[str]) -> str:
 
 def _merge_codex_prefix_rules(target: Path, entries: list[str], dry_run: bool) -> str:
     text = target.read_text() if target.exists() else ""
+    text, removed_legacy_shell_rules = _remove_legacy_codex_shell_rules(text)
     block = "\n".join([
         "# agentplaybook-hooks:begin",
         "# Managed by AgentPlaybook setup. Keep narrow; do not replace with broad python3 rules.",
@@ -325,23 +364,64 @@ def _merge_codex_prefix_rules(target: Path, entries: list[str], dry_run: bool) -
     match = pattern.search(text)
     if match:
         if match.group(0) == block:
+            if removed_legacy_shell_rules:
+                if dry_run:
+                    return "missing"
+                target.write_text(text)
+                return "installed"
             return "ok"
         if dry_run:
             return "missing"
         updated = pattern.sub(block, text)
     else:
         missing = [entry for entry in entries if entry not in text]
-        if not missing:
+        if not missing and not removed_legacy_shell_rules:
             return "ok"
         if dry_run:
             return "missing"
-        updated = f"{text}{'' if not text or text.endswith(chr(10)) else chr(10)}{block}"
+        if missing:
+            updated = f"{text}{'' if not text or text.endswith(chr(10)) else chr(10)}{block}"
+        else:
+            updated = text
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(updated)
     return "installed"
 
 
-def _merge_permissions_allow(target: Path, entries: list[str], dry_run: bool) -> str:
+def _remove_legacy_codex_shell_rules(text: str) -> tuple[str, bool]:
+    lines = text.splitlines(keepends=True)
+    kept: list[str] = []
+    removed = False
+    for line in lines:
+        if _is_legacy_codex_agentplaybook_shell_rule(line):
+            removed = True
+            continue
+        kept.append(line)
+    return "".join(kept), removed
+
+
+def _is_legacy_codex_agentplaybook_shell_rule(line: str) -> bool:
+    if not line.startswith("prefix_rule(pattern=["):
+        return False
+    if '"-lc"' not in line:
+        return False
+    if not any(
+        shell in line
+        for shell in ('"/bin/zsh"', '"zsh"', '"/bin/bash"', '"bash"')
+    ):
+        return False
+    if "python3 " not in line or "AgentPlaybook/scripts/" not in line:
+        return False
+    return True
+
+
+def _merge_permissions_allow(
+    target: Path,
+    entries: list[str],
+    dry_run: bool,
+    *,
+    cleanup_entries: list[str] | None = None,
+) -> str:
     config = _read_json(target)
     permissions = config.get("permissions")
     if not isinstance(permissions, dict):
@@ -350,13 +430,20 @@ def _merge_permissions_allow(target: Path, entries: list[str], dry_run: bool) ->
     if not isinstance(allow, list):
         allow = []
 
+    cleanup_set = set(cleanup_entries or [])
+    entry_set = set(entries)
+    stale = [
+        entry for entry in allow
+        if entry in cleanup_set and entry not in entry_set
+    ]
     missing = [entry for entry in entries if entry not in allow]
-    if not missing:
+    if not missing and not stale:
         return "ok"
     if dry_run:
         return "missing"
 
-    permissions["allow"] = allow + missing
+    cleaned = [entry for entry in allow if entry not in stale]
+    permissions["allow"] = cleaned + missing
     config["permissions"] = permissions
     _write_json(target, config)
     return "installed"

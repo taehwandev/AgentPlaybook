@@ -64,11 +64,12 @@ This setup is global by design. It allows only the current AgentPlaybook Python
 entrypoints under `<AGENTPLAYBOOK_ROOT>/scripts/*.py` by exact path and
 suffix-aware runtime matcher. It must not broadly allow `python3`.
 For Codex, update `~/.codex/rules/default.rules` with direct `python3 <script>`
-argv prefixes for the same script paths, including quoted `$HOME` path
-variants. Do not use shell `-lc` wrappers for AgentPlaybook Python wrappers:
-when the whole command is one shell string, long trailing workflow arguments
-such as repeated `--gate` values cannot be narrowly suffix-matched. For Claude
-Code, update `~/.claude/settings.json`. For AGY/Antigravity, support both
+argv prefixes for the same scripts using resolved absolute paths only. Do not
+use `$HOME`, `${HOME}`, `~`, relative paths, or shell `-lc` wrappers for
+AgentPlaybook Python wrappers: those forms can be treated as shell expansion or
+a single shell string before the runtime permission matcher sees the trusted
+script path. For Claude Code, update `~/.claude/settings.json`. For
+AGY/Antigravity, support both
 `~/.gemini/config/config.json` and
 `~/.gemini/antigravity-cli/settings.json`; hooks remain in
 `~/.gemini/config/hooks.json`.
@@ -149,6 +150,10 @@ missed or lacks evidence and must use missed-gate recovery.
 
 When the wrapper scripts are available, run preflight before editing, reviewing,
 committing, or reporting completion:
+
+Before executing wrapper commands, replace `<AGENTPLAYBOOK_ROOT>` with the
+resolved absolute path; do not leave `$HOME`, `${HOME}`, `~`, or a relative path
+in the executable command.
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project . --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
 

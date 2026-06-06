@@ -401,10 +401,12 @@ bridge file or a pasted prompt.
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py` after approval if
   user-level hooks or permissions are missing. This writes global runtime
   config only for the current `<AGENTPLAYBOOK_ROOT>/scripts/*.py` files by
-  exact direct `python3 <script>` entrypoint; it does not broadly allow
-  `python3`. Agents should invoke these wrappers as direct argv commands, not
-  through shell `-lc` strings, so changing trailing evidence such as repeated
-  `--gate` values does not create a new permission prompt.
+  exact absolute-path `python3 <script>` entrypoint; it does not broadly allow
+  `python3`. Agents should invoke these wrappers as direct argv commands using
+  the resolved absolute AgentPlaybook path, not `$HOME`, `~`, relative paths,
+  or shell `-lc` strings. With the script path as a literal argv item, changing
+  trailing evidence such as repeated `--gate` values does not create a new
+  permission prompt.
 - For runtime-specific setup rules, read
   [docs/agent-runtime-integration.md](docs/agent-runtime-integration.md).
 
@@ -492,6 +494,10 @@ the whole route is not restarted.
 For stronger enforcement, agents should use the wrapper scripts that turn the
 route, VibeGuard checks, git status, validation, and gate ledger into local JSON
 evidence.
+
+When an agent runtime executes these wrapper commands, resolve
+`${AGENTPLAYBOOK_HOME}` to the absolute path first. Do not leave `$HOME`,
+`${HOME}`, `~`, or a relative path in approval-sensitive executable commands.
 
 Before multi-step edits:
 

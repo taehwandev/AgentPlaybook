@@ -58,6 +58,9 @@ This permission setup is global because the AgentPlaybook Python wrappers are
 shared by every target repo. Keep it narrow: allow only the current
 `<AGENTPLAYBOOK_ROOT>/scripts/*.py` files by exact path and suffix-aware
 runtime matcher. Do not broadly allow `python3`.
+When executing AgentPlaybook wrapper commands from an agent runtime, replace
+`<AGENTPLAYBOOK_ROOT>` with the resolved absolute path. Do not leave `$HOME`,
+`${HOME}`, `~`, or a relative path in the executable command.
 
 If a usable root is found, runtime setup must stop install selection there and
 reuse it. Do not download, clone, vendor, copy, overwrite, or add a second root
@@ -146,12 +149,12 @@ Codex:
 - AgentPlaybook command permissions belong in user-level
   `~/.codex/rules/default.rules` as narrow `prefix_rule` entries for the
   current `<AGENTPLAYBOOK_ROOT>/scripts/*.py` files.
-- Generate direct `python3 <script>` argv prefixes for those same scripts,
-  including absolute, relative, and quoted `$HOME` path variants. Agents should
-  invoke these wrappers as direct argv commands, not through shell `-lc`
-  strings; once the script path is a separate argv item, long trailing workflow
-  arguments such as repeated `--gate` values are suffix-matched by the runtime
-  policy and should not prompt again.
+- Generate direct `python3 <script>` argv prefixes for those same scripts using
+  resolved absolute paths only. Agents should invoke these wrappers as direct
+  argv commands, not through `$HOME`, `${HOME}`, `~`, relative paths, or shell
+  `-lc` strings; once the absolute script path is a separate argv item, long
+  trailing workflow arguments such as repeated `--gate` values are
+  suffix-matched by the runtime policy and should not prompt again.
 - Keep Codex-specific commands or sandbox notes in the target repo, not in the
   shared playbook.
 

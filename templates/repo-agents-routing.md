@@ -65,7 +65,10 @@ reviewing, committing, or reporting completion, and run `agent-finish-check.py`
 before final report, commit, release, or handoff. Pass evidence for every route
 gate to the finish check. The wrappers write local evidence under
 `.agentplaybook/`; this directory is runtime evidence and should usually be
-gitignored. Missing wrapper evidence or missing route gate evidence is
+gitignored. When executing wrapper commands from an agent runtime, resolve
+`<AGENTPLAYBOOK_ROOT>` to an absolute path first; do not leave `$HOME`,
+`${HOME}`, `~`, or a relative path in the executable command. Missing wrapper
+evidence or missing route gate evidence is
 non-compliant even when the final files look correct. VibeGuard 🐱🟡 YELLOW /
 `Needs review` must be reported explicitly and can pass the finish check only
 with an `--allow-vibeguard-review` reason. `--request-classified` must include
