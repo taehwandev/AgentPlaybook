@@ -23,8 +23,9 @@ AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
 CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
 Do not rely on implicit runtime discovery: Codex-style agents must explicitly
 read the current project's AGENTS.md or AGENTS.override.md, Claude must
-explicitly read CLAUDE.md when present, and Antigravity or generic agents must
-explicitly read the project instruction document they are configured to load.
+explicitly read CLAUDE.md when present, Antigravity agents must explicitly read
+the current project's AGENTS.md, and generic agents must explicitly read the
+project instruction document they are configured to load.
 Do not claim the file was read unless you actually opened it.
 
 Use an existing local AgentPlaybook install if one is available. Check an
@@ -205,17 +206,16 @@ Keep the permission allowlist narrow: allow only the current AgentPlaybook
 Update the active user-level file for the runtime I choose:
 Codex -> ~/.codex/AGENTS.md
 Claude -> ~/.claude/CLAUDE.md
-Antigravity CLI -> ~/.antigravitycli/AGENTS.md
-Antigravity SDK/IDE -> check ~/.antigravity and ~/.antigravity-ide for the
-instruction file the active runtime loads.
+Antigravity -> ~/.antigravity/AGENTS.md
+Antigravity SDK/IDE variants -> check ~/.antigravity-ide for the instruction
+file the active runtime loads.
 
 The bridge must force this behavior:
 - Start every task by identifying the current project root.
 - Before project work, open the project-root instruction file for the active runtime.
 - Codex reads AGENTS.md / AGENTS.override.md.
 - Claude reads CLAUDE.md.
-- Antigravity reads its project instruction document, .antigravitycli,
-  .agents/README.md, or AGENTS.md.
+- Antigravity reads AGENTS.md.
 - Do not claim an instruction file was read unless you actually opened it.
 - If I ask a direct question, answer it before routing, editing, or running commands.
 - If I ask how to start app, product, or feature work, include PRD -> ARD ->

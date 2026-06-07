@@ -24,11 +24,11 @@ Shared AgentPlaybook library:
 Use repo-local instructions first. Explicitly read the current target project's
 instruction file for this runtime before using AgentPlaybook: Codex-style agents
 read `AGENTS.md` / `AGENTS.override.md`, Claude reads `CLAUDE.md` when present,
-Codex-specific setups read `CODEX.md` when present, and Antigravity or generic
-agents read their configured project instruction document or `.agents/README.md`
-when used. If this block is being installed into a personal or global runtime
-instructions file, it must still tell the runtime to read the current project's
-local instruction files first.
+Codex-specific setups read `CODEX.md` when present, Antigravity reads
+`AGENTS.md`, and generic agents read their configured project instruction
+document or `.agents/README.md` when used. If this block is being installed into
+a personal or global runtime instructions file, it must still tell the runtime
+to read the current project's local instruction files first.
 Use the shared index only to select the smallest relevant document set.
 VibeGuard is required before documentation, code, config, dependency, data,
 deployment, or credential changes. Apply the current VibeGuard package command

@@ -311,8 +311,7 @@ flow instead of copying the whole library:
    or global runtime instruction files when the user chooses that option. The
    bridge must explicitly tell the runtime to read the current target project's
    local instructions first: Codex-style agents read `AGENTS.md`, Claude reads
-   `CLAUDE.md`, and Antigravity reads its configured project instruction
-   document.
+   `CLAUDE.md`, and Antigravity reads `AGENTS.md`.
 13. For follow-up work, run `workflow.py classify` when request clarity is
    uncertain, then `workflow.py route ... --request "<USER_REQUEST>"` and
    follow the gate ledger. Answer direct questions before routing.
@@ -337,8 +336,8 @@ AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
 CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
 Do not rely on implicit runtime discovery. Codex-style agents should explicitly
 read the current project's AGENTS.md / AGENTS.override.md, Claude should read
-CLAUDE.md when present, and Antigravity should read its configured project
-instruction document before AgentPlaybook.
+CLAUDE.md when present, and Antigravity should read the current project's
+AGENTS.md before AgentPlaybook.
 
 Then use AgentPlaybook:
 <AGENTPLAYBOOK_ROOT>/AGENTS.md
@@ -377,9 +376,9 @@ A shorter reusable prompt lives in
 
 ## Use With Codex, Claude, And Antigravity
 
-AgentPlaybook is not tied to one runtime. Codex may discover `AGENTS.md`
-directly, while Claude, Antigravity, or generic agents may need a repo-local
-bridge file or a pasted prompt.
+AgentPlaybook is not tied to one runtime. Codex and Antigravity may discover
+`AGENTS.md` directly, while Claude or generic agents may need a repo-local bridge
+file or a pasted prompt.
 
 - For long-lived repo setup, add the routing block from
   [templates/repo-agents-routing.md](templates/repo-agents-routing.md) to the

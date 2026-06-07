@@ -33,9 +33,10 @@ Rules:
    CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
    Do not rely on implicit runtime discovery. If you are Codex-style, explicitly
    read the current project's AGENTS.md or AGENTS.override.md; if you are
-   Claude, explicitly read CLAUDE.md when present; if you are Antigravity or
-   another runtime, explicitly read the project instruction document that
-   runtime is configured to load.
+   Claude, explicitly read CLAUDE.md when present; if you are Antigravity,
+   explicitly read the current project's AGENTS.md; if you are another runtime,
+   explicitly read the project instruction document that runtime is configured
+   to load.
 2. Do not assume this runtime automatically loaded AgentPlaybook. Explicitly
    read <AGENTPLAYBOOK_ROOT>/AGENTS.md and <AGENTPLAYBOOK_ROOT>/index.md.
 3. Do not copy the whole AgentPlaybook library into this repo. Link only the

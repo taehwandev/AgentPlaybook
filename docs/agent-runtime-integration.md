@@ -87,9 +87,9 @@ instruction file each agent runtime reads:
 - Codex-style runtimes: `AGENTS.md` or `AGENTS.override.md`.
 - Claude-style runtimes: `CLAUDE.md`.
 - Codex-specific local docs: `CODEX.md` when the repo already uses it.
-- Antigravity or generic agents: the project instruction file the runtime
-  actually reads, or `.agents/README.md` when the repo uses a shared agent
-  folder.
+- Antigravity: `AGENTS.md`.
+- Generic agents: the project instruction file the runtime actually reads, or
+  `.agents/README.md` when the repo uses a shared agent folder.
 - Personal or global runtime docs: treat these as optional Step 2 bridge work.
   Update them only when the user chooses the stronger future-behavior setup.
   Examples include `~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`,
@@ -107,9 +107,9 @@ project's own instructions first. Do not rely on implicit discovery. State the
 runtime-specific entrypoint directly: Codex-style agents should read the current
 project's `AGENTS.md` / `AGENTS.override.md`, Claude should read the current
 project's `CLAUDE.md` when present, Codex-specific setups should read `CODEX.md`
-when present, and Antigravity should read the Antigravity/project instruction
-surface it is configured to load. Then tell the agent to follow AgentPlaybook as
-shared guidance only after those local instructions.
+when present, and Antigravity should read the current project's `AGENTS.md`.
+Then tell the agent to follow AgentPlaybook as shared guidance only after those
+local instructions.
 
 Use `templates/repo-agents-routing.md` as the source block. Keep the block
 short and point to:
@@ -181,13 +181,13 @@ Claude:
 
 Antigravity:
 
-- Use the project instruction surface that Antigravity actually reads.
-- If Antigravity CLI reads `AGENTS.md` in the target repo, use `AGENTS.md` and
-  do not create an extra Antigravity-specific file.
+- Use `AGENTS.md` as the project instruction surface that Antigravity reads.
+- Do not create an extra Antigravity-specific file only to duplicate guidance
+  already available from `AGENTS.md`.
 - If Antigravity-specific docs already exist, update their pointer in the same
   pass as the canonical instruction file.
-- If that surface is unclear, paste `templates/use-agentplaybook-prompt.md` at
-  the start of the task.
+- If local evidence shows a different active instruction surface, stop and ask
+  before adding duplicate guidance.
 - Do not assume Antigravity has loaded `AGENTS.md` unless local evidence or the
   user confirms that behavior; instruct it to read the AgentPlaybook root
   explicitly when in doubt.
