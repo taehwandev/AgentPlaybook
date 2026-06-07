@@ -143,6 +143,32 @@ COMMANDS: Dict[str, Profile] = {
 }
 
 
+SPILL_ACTION_LABELS: Dict[str, Tuple[str, str]] = {
+    "classify": ("analysis", "classify"),
+    "list": ("analysis", "classify"),
+    "validate": ("build_verification", "verify"),
+}
+
+
+SPILL_ROUTE_LABELS: Dict[str, Tuple[str, str]] = {
+    "ambiguity": ("analysis", "classify"),
+    "bugfix": ("debugging", "implement"),
+    "docs": ("documentation", "draft"),
+    "docs-review": ("code_review", "verify"),
+    "feature": ("code_generation", "implement"),
+    "multi-agent": ("architecture", "plan"),
+    "planning": ("analysis", "plan"),
+    "prd": ("prd_drafting", "draft"),
+    "product": ("architecture", "plan"),
+    "refactor": ("refactoring", "implement"),
+    "release": ("release_packaging", "verify"),
+    "retrospective": ("documentation", "revise"),
+    "review": ("code_review", "verify"),
+    "task": ("analysis", "plan"),
+    "triage": ("analysis", "classify"),
+}
+
+
 PLATFORMS: Dict[str, Tuple[str, ...]] = {
     "android": (
         "platforms/android/android-architecture.md",

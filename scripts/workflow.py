@@ -25,6 +25,8 @@ from workflow_catalog import (
     PLATFORM_CONCERNS,
     PLATFORMS,
     REQUEST_CONCERN_HINTS,
+    SPILL_ACTION_LABELS,
+    SPILL_ROUTE_LABELS,
 )
 
 
@@ -46,28 +48,8 @@ SPILL_SETUP_HELPER = (
     / "spill-token-metering-setup.mjs"
 )
 SPILL_ALLOWED_TOOLS = {"codex", "claude", "antigravity", "openai"}
-SPILL_ACTION_LABELS: Dict[str, Tuple[str, str]] = {
-    "classify": ("analysis", "classify"),
-    "list": ("analysis", "classify"),
-    "validate": ("build_verification", "verify"),
-}
-SPILL_ROUTE_LABELS: Dict[str, Tuple[str, str]] = {
-    "ambiguity": ("analysis", "classify"),
-    "bugfix": ("debugging", "implement"),
-    "docs": ("documentation", "draft"),
-    "docs-review": ("code_review", "verify"),
-    "feature": ("code_generation", "implement"),
-    "multi-agent": ("architecture", "plan"),
-    "planning": ("analysis", "plan"),
-    "prd": ("prd_drafting", "draft"),
-    "product": ("architecture", "plan"),
-    "refactor": ("refactoring", "implement"),
-    "release": ("release_packaging", "verify"),
-    "retrospective": ("documentation", "revise"),
-    "review": ("code_review", "verify"),
-    "task": ("analysis", "plan"),
-    "triage": ("analysis", "classify"),
-}
+SAFE_WORKFLOW_SLUG_RE = re.compile(r"^[a-z][a-z0-9_]{1,40}$")
+REQUIRED_SPILL_ACTION_LABELS = {"classify", "list", "validate"}
 SIGNAL_DISPLAY = {
     "PENDING": "\U0001f431\U0001f535 PENDING",
     "GREEN": "\U0001f431\U0001f7e2 GREEN",
@@ -492,6 +474,7 @@ def print_markdown(route: Dict[str, object]) -> None:
 
 def validate_route_contracts() -> List[str]:
     failures: List[str] = []
+    failures.extend(validate_spill_label_contracts())
 
     for command, profile in COMMANDS.items():
         route = resolve_docs(command, None, [], request_classified=True)
@@ -523,6 +506,33 @@ def validate_route_contracts() -> List[str]:
                 failures.append(f"{command}: initial ledger signal for `{gate}` must be PENDING")
             if item["evidence"] != "":
                 failures.append(f"{command}: initial ledger evidence for `{gate}` must be empty")
+
+    return failures
+
+
+def validate_spill_label_contracts() -> List[str]:
+    failures: List[str] = []
+    command_names = set(COMMANDS)
+    route_label_names = set(SPILL_ROUTE_LABELS)
+
+    for command in sorted(command_names - route_label_names):
+        failures.append(f"{command}: missing Spill workflow route label")
+    for command in sorted(route_label_names - command_names):
+        failures.append(f"{command}: Spill workflow route label has no matching command")
+
+    action_label_names = set(SPILL_ACTION_LABELS)
+    for action in sorted(REQUIRED_SPILL_ACTION_LABELS - action_label_names):
+        failures.append(f"{action}: missing Spill workflow action label")
+
+    for name, labels in sorted({**SPILL_ACTION_LABELS, **SPILL_ROUTE_LABELS}.items()):
+        if not isinstance(labels, tuple) or len(labels) != 2:
+            failures.append(f"{name}: Spill label must be a (task_type, stage) tuple")
+            continue
+        task_type, stage = labels
+        if not SAFE_WORKFLOW_SLUG_RE.match(task_type):
+            failures.append(f"{name}: invalid Spill task_type label `{task_type}`")
+        if not SAFE_WORKFLOW_SLUG_RE.match(stage):
+            failures.append(f"{name}: invalid Spill stage label `{stage}`")
 
     return failures
 
