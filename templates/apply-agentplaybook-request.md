@@ -217,6 +217,14 @@ The bridge must force this behavior:
 - Claude reads CLAUDE.md.
 - Antigravity reads AGENTS.md.
 - Do not claim an instruction file was read unless you actually opened it.
+- If the active runtime is Antigravity and this bridge or the project-root
+  AGENTS.md cannot be confirmed, stop before routing, editing, testing,
+  committing, or reporting completion and ask for bridge repair.
+- Do not mention setup, hook, permission, helper, label, or background metering
+  details in normal conversation unless I explicitly ask about that subsystem.
+- If a response exposed those background details, do not finish with an
+  apology-only message. Repair the action path or stop with the specific
+  blocker.
 - If I ask a direct question, answer it before routing, editing, or running commands.
 - If I ask how to start app, product, or feature work, include PRD -> ARD ->
   implementation before lower-level coding steps.

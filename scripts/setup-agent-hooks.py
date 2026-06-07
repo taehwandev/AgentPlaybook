@@ -33,6 +33,15 @@ DEFAULT_SPILL_SETUP_HELPER = (
 _BASELINE_COMMAND_RE = re.compile(
     r"workflow\.py.*route.*triage.*--request-classified"
 )
+AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
+AGY_RUNTIME_BRIDGE_BEGIN = "<!-- agentplaybook-runtime-bridge:start -->"
+AGY_RUNTIME_BRIDGE_END = "<!-- agentplaybook-runtime-bridge:end -->"
+AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = [
+    "Antigravity reads AGENTS.md",
+    "Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
+    "Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
+    "If this bridge or the project-root AGENTS.md cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
+]
 
 
 def main() -> None:
@@ -265,6 +274,14 @@ def _configure_codex(dry_run: bool) -> list[dict]:
 
 def _configure_agy(dry_run: bool) -> list[dict]:
     results = []
+    status = _merge_agy_runtime_bridge(AGY_RUNTIME_BRIDGE_PATH, dry_run)
+    results.append({
+        "tool": "agy",
+        "hook": "runtime_bridge.AGENTS",
+        "status": status,
+        "path": str(AGY_RUNTIME_BRIDGE_PATH),
+    })
+
     spill_available = _has_spill_setup_helper()
     entries = _agy_permission_entries(spill_available=spill_available)
     cleanup_entries = _agy_legacy_permission_entries()
@@ -302,6 +319,59 @@ def _configure_agy(dry_run: bool) -> list[dict]:
 
 
 # helpers
+
+def _merge_agy_runtime_bridge(target: Path, dry_run: bool) -> str:
+    text = target.read_text() if target.exists() else ""
+    block = _agy_runtime_bridge_block()
+    pattern = re.compile(
+        re.escape(AGY_RUNTIME_BRIDGE_BEGIN)
+        + r"[\s\S]*?"
+        + re.escape(AGY_RUNTIME_BRIDGE_END)
+        + r"\n?",
+        re.MULTILINE,
+    )
+    match = pattern.search(text)
+    if match:
+        if match.group(0) == block:
+            return "ok"
+        if dry_run:
+            return "missing"
+        updated = pattern.sub(block, text)
+    else:
+        missing = [phrase for phrase in AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES if phrase not in text]
+        if not missing:
+            return "ok"
+        if dry_run:
+            return "missing"
+        separator = "" if not text or text.endswith("\n") else "\n"
+        updated = f"{text}{separator}{block}"
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(updated)
+    return "installed"
+
+
+def _agy_runtime_bridge_block() -> str:
+    return "\n".join([
+        AGY_RUNTIME_BRIDGE_BEGIN,
+        "## AgentPlaybook Runtime Bridge",
+        "",
+        "Apply this bridge before project work in Antigravity/AGY sessions.",
+        "",
+        f"- Shared AgentPlaybook root: `{ROOT}`",
+        "- Start every task by identifying the current project root.",
+        "- Before project work, open the project-root instruction file for the active runtime.",
+        "- Antigravity reads AGENTS.md.",
+        "- Read project-root instructions before AgentPlaybook shared guidance.",
+        "- For multi-step work, run AgentPlaybook preflight before edits and finish-check before final report, commit, release, or handoff.",
+        "- If this bridge or the project-root AGENTS.md cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
+        "- Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
+        "- Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
+        "- If a response exposed those background details, do not answer with an apology-only message; continue by repairing the action path or stopping with the specific blocker.",
+        AGY_RUNTIME_BRIDGE_END,
+        "",
+    ])
+
 
 def _claude_permission_entries(*, spill_available: bool = True) -> list[str]:
     entries: list[str] = []

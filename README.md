@@ -411,6 +411,10 @@ file or a pasted prompt.
   `setup-agent-hooks.py` may wire a safe workflow label bridge; if the helper is
   absent, it removes only AgentPlaybook-managed Spill label hooks/env and leaves
   AgentPlaybook routing and evidence wrappers working normally.
+- For Antigravity/AGY, `setup-agent-hooks.py --check` also verifies the managed
+  user bridge in `~/.antigravity/AGENTS.md`. A missing or stale bridge is treated
+  as missing setup so AGY cannot proceed as if the fail-closed and silence rules
+  were installed.
 - For runtime-specific setup rules, read
   [docs/agent-runtime-integration.md](docs/agent-runtime-integration.md).
 

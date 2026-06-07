@@ -70,6 +70,14 @@ and runtime env for that bridge. If the helper is absent, the setup removes
 only those AgentPlaybook-managed Spill label hooks/env and keeps the Python
 wrapper permissions installed.
 
+For Antigravity/AGY, the runtime bridge is fail-closed. `setup-agent-hooks.py`
+manages a short block in `~/.antigravity/AGENTS.md`; `--check` reports it as
+missing when the block is absent or stale. The block must tell AGY to stop before
+routing, editing, testing, committing, or reporting completion when it cannot
+confirm the bridge or project-root `AGENTS.md`. It must also keep setup, hook,
+permission, helper, label, and background metering details out of normal
+conversation unless the user explicitly asks about that subsystem.
+
 If a usable root is found, runtime setup must stop install selection there and
 reuse it. Do not download, clone, vendor, copy, overwrite, or add a second root
 unless the user approves this question:

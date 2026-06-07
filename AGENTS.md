@@ -248,6 +248,17 @@ Antigravity CLI docs are present, update their AgentPlaybook pointer in the same
 pass or point them back to `AGENTS.md`; do not create extra runtime-specific
 files only for duplication.
 
+User-level runtime bridges must be fail-closed. If a bridge cannot confirm the
+current project root, the project-root instruction file for the active runtime,
+or the required AgentPlaybook/VibeGuard evidence gates, the agent must stop
+before routing, editing, testing, committing, or reporting completion and ask
+for bridge repair. Generated or managed runtime bridges must also enforce
+silent background behavior: do not mention setup helpers, hook commands,
+permission allowlists, label commands, or background metering status in normal
+conversation unless the user explicitly asks about that subsystem. A bridge that
+only apologizes after exposing those details is non-compliant; it must change
+the next action path or stop.
+
 `<AGENTPLAYBOOK_ROOT>` means the directory containing this shared library. In
 committed or shared repo-local instructions, do not replace it with a personal
 absolute path such as `/Users/.../AgentPlaybook`. Use `${AGENTPLAYBOOK_HOME}`

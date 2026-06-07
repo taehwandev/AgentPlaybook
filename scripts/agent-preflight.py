@@ -16,6 +16,13 @@ from typing import Any
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 _BASELINE_HOOK_RE = re.compile(r"workflow\.py.*route.*triage.*--request-classified")
+AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
+AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = [
+    "Antigravity reads AGENTS.md",
+    "Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
+    "Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
+    "If this bridge or the project-root AGENTS.md cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
+]
 
 
 DEFAULT_SPILL_SETUP_HELPER = (
@@ -33,9 +40,10 @@ def _has_spill_setup_helper() -> bool:
     return _spill_setup_helper_path().is_file()
 
 
-def _check_agent_hooks(playbook_root: Path) -> list[str]:
-    """Return warning strings for any missing runtime hook registrations."""
+def _check_agent_hooks(playbook_root: Path) -> tuple[list[str], list[str]]:
+    """Return warning and failure strings for missing runtime registrations."""
     warnings: list[str] = []
+    failures: list[str] = []
     spill_available = _has_spill_setup_helper()
 
     codex_rules = Path.home() / ".codex" / "rules" / "default.rules"
@@ -112,7 +120,40 @@ def _check_agent_hooks(playbook_root: Path) -> list[str]:
             f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
         )
 
-    return warnings
+    agy_bridge_issue = _agy_runtime_bridge_issue(playbook_root)
+    if agy_bridge_issue and _active_runtime_label() == "antigravity":
+        failures.append(agy_bridge_issue)
+    elif agy_bridge_issue and agy_configs:
+        warnings.append(agy_bridge_issue)
+
+    return warnings, failures
+
+
+def _active_runtime_label() -> str:
+    for key in ("AGENTPLAYBOOK_AI_TOOL", "SPILL_AI_TOOL", "SPILL_TOKEN_USAGE_AI_TOOL"):
+        value = os.environ.get(key, "").strip().lower()
+        if value in {"agy", "antigravity"}:
+            return "antigravity"
+        if value in {"codex", "claude", "openai"}:
+            return value
+    return ""
+
+
+def _agy_runtime_bridge_issue(playbook_root: Path) -> str:
+    try:
+        text = AGY_RUNTIME_BRIDGE_PATH.read_text()
+    except OSError:
+        return (
+            "AGY runtime bridge is missing required fail-closed instructions at "
+            f"{AGY_RUNTIME_BRIDGE_PATH}. Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+        )
+    missing = [phrase for phrase in AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES if phrase not in text]
+    if not missing:
+        return ""
+    return (
+        "AGY runtime bridge is missing required fail-closed instructions at "
+        f"{AGY_RUNTIME_BRIDGE_PATH}. Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+    )
 
 
 def _claude_permission_entries(playbook_root: Path, *, spill_available: bool = True) -> list[str]:
@@ -316,6 +357,27 @@ def main() -> int:
         else project / ".agentplaybook" / "preflight.json"
     )
 
+    early_bridge_failure = ""
+    if _active_runtime_label() == "antigravity":
+        early_bridge_failure = _agy_runtime_bridge_issue(playbook_root)
+    if early_bridge_failure:
+        evidence = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "playbook_root": str(playbook_root),
+            "project": str(project),
+            "rules": str(rules),
+            "request_intake": {
+                "request": args.request or "",
+                "request_classified": args.request_classified,
+                "classification_evidence": args.classification_evidence or "",
+            },
+            "early_runtime_bridge_failure": early_bridge_failure,
+        }
+        write_json(evidence_path, evidence)
+        print(f"Preflight evidence: {evidence_path}")
+        print(f"FAIL: {early_bridge_failure}", file=sys.stderr)
+        return 1
+
     route_result = run_command(route_command(args, playbook_root), project)
     route_payload: dict[str, Any] | None = None
     route_parse_error = ""
@@ -362,7 +424,7 @@ def main() -> int:
     }
     write_json(evidence_path, evidence)
 
-    hook_warnings = _check_agent_hooks(playbook_root)
+    hook_warnings, hook_failures = _check_agent_hooks(playbook_root)
 
     failures: list[str] = []
     if route_result["returncode"] != 0:
@@ -375,6 +437,7 @@ def main() -> int:
         failures.append("git status failed")
     if vibeguard["returncode"] != 0:
         failures.append("VibeGuard audit failed")
+    failures.extend(hook_failures)
 
     print(f"Preflight evidence: {evidence_path}")
     if route_payload:

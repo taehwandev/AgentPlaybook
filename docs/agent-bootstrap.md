@@ -218,6 +218,14 @@ helper is present, AgentPlaybook may wire safe workflow label hooks; when it is
 absent, setup should remove only AgentPlaybook-managed Spill label hooks/env and
 leave normal AgentPlaybook routing intact.
 
+For AGY/Antigravity, setup must also manage the user-level bridge in
+`~/.antigravity/AGENTS.md`. The bridge is fail-closed: if AGY cannot confirm the
+bridge or the project-root `AGENTS.md`, it must stop before routing, editing,
+testing, committing, or reporting completion and ask for bridge repair. The
+bridge must not mention setup, hook, permission, helper, label, or background
+metering details in normal conversation unless the user explicitly asks about
+that subsystem.
+
 ## Connect The Target Repo
 
 1. Find the canonical repo-local instruction file. Prefer `AGENTS.md` when the

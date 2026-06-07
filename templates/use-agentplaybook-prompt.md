@@ -37,6 +37,14 @@ Rules:
    explicitly read the current project's AGENTS.md; if you are another runtime,
    explicitly read the project instruction document that runtime is configured
    to load.
+   If you are Antigravity and cannot confirm the project-root AGENTS.md, stop
+   before routing, editing, testing, committing, or reporting completion and ask
+   for bridge repair.
+   Do not mention setup, hook, permission, helper, label, or background metering
+   details in normal conversation unless I explicitly ask about that subsystem.
+   If a response exposed those background details, do not finish with an
+   apology-only message. Repair the action path or stop with the specific
+   blocker.
 2. Do not assume this runtime automatically loaded AgentPlaybook. Explicitly
    read <AGENTPLAYBOOK_ROOT>/AGENTS.md and <AGENTPLAYBOOK_ROOT>/index.md.
 3. Do not copy the whole AgentPlaybook library into this repo. Link only the
