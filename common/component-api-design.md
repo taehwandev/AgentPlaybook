@@ -49,6 +49,28 @@ Make ownership explicit:
 If a component can be both controlled and uncontrolled, document the precedence
 or avoid supporting both until there is a real caller need.
 
+## View And Block Components
+
+Screen, view, section, and block components do not need to be reusable across
+features to be valuable. Their first responsibility is to keep rendering
+boundaries readable and policy-free.
+
+Use a feature-local view or block when:
+
+- a screen is too large to review as one unit
+- a section has a clear visual or interaction responsibility
+- the section needs a small view model slice rather than the whole screen state
+- the section emits a few user intents but does not own data fetching or
+  product policy
+
+Keep the block local when its copy, route decisions, permissions, tenant rules,
+billing rules, analytics names, or data shape are specific to one workflow.
+
+Promote a block into a reusable component only when the caller contract is
+stable: at least two real callers exist or a design-system contract is intended,
+the caller still owns product policy, and the API can be expressed without
+caller-specific booleans or nullable feature flags.
+
 ## Naming
 
 - Name the component by its reusable role: `SearchField`, `MetricTile`,

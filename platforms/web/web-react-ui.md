@@ -31,7 +31,8 @@ Route/Page -> Feature Container -> Screen/View -> Section Component
 - Feature container owns one user workflow and wires server state, form state,
   permission checks, and mutations.
 - Screen/view renders the whole workflow from explicit state and callbacks.
-- Section components receive only the state and callbacks they need.
+- Section or block components render a coherent area of a screen. They receive
+  only the view model slice and callbacks needed for that area.
 - Feature components may know display models but not raw DTOs, API clients,
   routers, storage, or analytics dispatch.
 - Design-system primitives own visual and interaction contracts, not product
@@ -93,6 +94,9 @@ features/members/
   routes/MemberSettingsPage.tsx     URL and route boundary
   MemberSettingsContainer.tsx       data, permissions, mutations
   MemberSettingsScreen.tsx          pure screen rendering
+  blocks/
+    MemberListBlock.tsx             screen section, no data fetching
+    InviteMemberBlock.tsx           screen section, callbacks out
   components/                       feature-local components
   model/
     memberSettingsTypes.ts          UiState, actions, display models
@@ -165,6 +169,36 @@ Screens should:
   and permission policy evaluation.
 - Keep local state only for presentation details such as menu open, dialog open,
   focus, draft text before commit, selected tab, hover, or transient animation.
+
+## Section And Block Components
+
+Use blocks to make large screens reviewable without creating a new product
+boundary. A block is a named section of one screen, such as a summary strip,
+filter bar, settings group, empty state area, table region, or side panel.
+
+Blocks should:
+
+- Render one coherent section from an explicit view model slice.
+- Emit user intent through callbacks such as `onRetry`, `onSelect`, or
+  `onOpenSettings`.
+- Own only transient presentation state that is local to that section.
+- Stay feature-local when the copy, layout, or policy is specific to one
+  workflow.
+- Use design-system primitives or feature components for repeated controls.
+
+Blocks should not:
+
+- Fetch data, read browser storage, mutate routes, or evaluate permissions.
+- Import raw DTOs, API clients, repositories, analytics dispatchers, or server
+  modules.
+- Become shared components merely because a screen is long.
+- Hide product policy behind props such as `mode`, `source`, `isAdmin`,
+  `isBilling`, or caller-specific variants.
+
+Promote a block to a reusable component only when there are at least two real
+callers or a stable design-system contract, the caller still owns copy and
+policy, and the component can be previewed or tested without the feature
+container.
 
 Leaf components should receive the smallest data shape they need. Do not pass a
 whole `UiState` into a button, row, badge, or card when a smaller model works.

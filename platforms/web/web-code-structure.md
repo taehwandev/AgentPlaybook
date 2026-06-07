@@ -28,8 +28,8 @@ Prefer feature-local structure until a real caller or design-system contract
 needs a shared boundary.
 
 ```text
-route/page -> feature container -> screen/view -> feature components
--> design-system primitives -> platform/shared utilities
+route/page -> feature container -> screen/view -> section/block components
+-> feature components -> design-system primitives -> platform/shared utilities
 ```
 
 - Route/page files own URL, route params, metadata, loader/action composition,
@@ -38,6 +38,9 @@ route/page -> feature container -> screen/view -> feature components
   state, form state, mutations, and analytics intent.
 - Screens/views render explicit state and callbacks without importing routers,
   API clients, storage, or product policy.
+- Section/block components break a screen into reviewable regions. They are
+  feature-local by default and receive only the state and callbacks for that
+  region.
 - Feature components are local by default. They may know display models for the
   feature, but not raw DTOs or transport details.
 - Design-system primitives are shared UI contracts. They do not know routes,
@@ -52,6 +55,9 @@ Adapt names to the framework, but keep ownership clear:
 features/billing/
   BillingSettingsContainer.tsx
   BillingSettingsScreen.tsx
+  blocks/
+    PlanOverviewBlock.tsx
+    PaymentMethodBlock.tsx
   components/
     PlanSummaryCard.tsx
     SeatLimitNotice.tsx
@@ -128,6 +134,8 @@ Move code upward only when the contract is stable enough:
 - `lib` or `shared`: pure helpers, formatters, mappers, and platform adapters
   with clear ownership.
 - `features/<name>`: workflow-local UI, state, policy, and data wiring.
+- `features/<name>/blocks`: screen sections that improve readability and local
+  reviewability without creating shared ownership.
 
 Before extraction, check:
 
@@ -137,6 +145,7 @@ Before extraction, check:
 - Are copy, routes, analytics, auth, tenant, billing, and product policy still
   owned by callers or feature policy modules?
 - Can the extracted unit be tested or previewed without booting the whole app?
+- Would keeping the block feature-local avoid a flag-heavy shared component?
 
 ## Refactor Recipe
 
@@ -148,11 +157,13 @@ When restructuring an oversized web feature:
 3. Extract display models and mappers before moving JSX.
 4. Split route/page composition from feature container behavior.
 5. Split screen rendering from data/effect wiring.
-6. Move feature-local components under the feature before promoting anything to
+6. Split oversized screens into feature-local blocks before promoting anything to
    shared UI.
-7. Replace repeated inline permission or billing booleans with named policy
+7. Move feature-local components under the feature before promoting anything to
+   shared UI.
+8. Replace repeated inline permission or billing booleans with named policy
    helpers.
-8. Typecheck or run focused tests after each boundary move.
+9. Typecheck or run focused tests after each boundary move.
 
 Do not mix broad moves with product behavior changes unless the behavior change
 is an explicit acceptance point.
