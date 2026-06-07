@@ -39,6 +39,37 @@ configured. Example:
 <runtime-tool> list
 ```
 
+## Runtime Usage Evidence
+
+When a local telemetry or metering tool is involved, separate setup evidence from
+usage evidence. A label/context command, permission prompt, hook configuration,
+hook process start, command log, or mock payload injection proves only setup or
+diagnostic behavior. It is not evidence that real token usage was recorded.
+
+For each supported AI runtime, local docs should name:
+
+- the primary exact usage source;
+- any fallback diagnostic or hook path;
+- why that source is reliable enough, or why another source is not;
+- the accepted proof of a real usage record, such as a queued/imported local
+  event or an exact-usage success marker;
+- the privacy boundary for what must never be inspected or stored.
+
+Prefer an active exact-usage importer over hooks when a runtime can skip hooks,
+run hooks with empty input, terminate hooks early, or omit exact token counts.
+Hooks are acceptable usage sources only when the runtime exposes exact post-turn
+usage to that hook and the adapter can normalize it without reading private
+content. If exact counts are unavailable, record no usage event and use
+diagnostics only when they can be content-free.
+
+When a product has one normalized local usage store, document runtime-specific
+sources as inputs to that store. Do not describe separate runtime sources as
+separate product databases unless the product actually reads separate databases.
+
+Never inspect prompts, responses, commands, file paths, transcripts, logs,
+diffs, source content, environment values, or secrets to reconstruct token
+usage, labels, session names, or display names.
+
 ## Discovery Pattern
 
 When local tooling matters:

@@ -21,7 +21,8 @@ or task-specific workflow to load next.
   APIs matter
 - `common/agent-editing-safety.md`
 - `common/agent-interaction.md` when a blocker question or approval is needed
-- `common/local-tools.md` when commands or local tools matter
+- `common/local-tools.md` when commands, local tools, runtime usage telemetry,
+  or metering evidence matter
 - `common/tool-failure-recovery.md` when a command fails
 - `common/verification-policy.md` when the task has a checkable result
 - `index.md` to select only task-specific cards
@@ -36,7 +37,8 @@ or task-specific workflow to load next.
 3. Stack discovery: inspect manifests, lockfiles, wrappers, and repo scripts
    before choosing commands or framework-specific APIs.
 4. Risk scan: mark touched surfaces such as secrets, external state, auth,
-   billing, data, release, generated files, dependencies, or local tools.
+   billing, data, release, generated files, dependencies, local tools, runtime
+   bridges, or usage metering evidence.
 5. Route: for multi-step tasks, run `scripts/workflow.py route ... --request
    "<USER_REQUEST>"` before manually choosing workflow cards. Use `index.md`
    only for simple answer-only work or an explicitly accepted fallback when the
@@ -49,7 +51,9 @@ or task-specific workflow to load next.
 8. Decide: make a reasonable assumption when safe; ask only when ambiguity
    changes result or risk.
 9. Act: execute the scoped work with periodic progress updates for long tasks.
-10. Verify: collect evidence with the narrowest reliable command or manual check.
+10. Verify: collect evidence with the narrowest reliable command or manual
+    check. For usage telemetry, distinguish setup, label, hook, and diagnostic
+    evidence from exact queued/imported usage event evidence.
 11. Recover: when a command fails, diagnose stdout/stderr and make the smallest
     correction before retrying.
 12. Ledger check: before finalizing, compare required gates against executed

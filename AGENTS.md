@@ -255,9 +255,15 @@ before routing, editing, testing, committing, or reporting completion and ask
 for bridge repair. Generated or managed runtime bridges must also enforce
 silent background behavior: do not mention setup helpers, hook commands,
 permission allowlists, label commands, or background metering status in normal
-conversation unless the user explicitly asks about that subsystem. A bridge that
-only apologizes after exposing those details is non-compliant; it must change
-the next action path or stop.
+conversation unless the user explicitly asks about that subsystem. Runtime
+bridges must distinguish setup or diagnostic evidence from usage evidence: a
+label command, permission prompt, hook configuration, hook process start, command
+log, or mock payload is not proof that real token usage was recorded. When exact
+runtime usage is unavailable, the compliant action is to skip usage event
+creation or record content-free diagnostics according to the local product
+contract, not to estimate or infer from private content. A bridge that only
+apologizes after exposing those details is non-compliant; it must change the
+next action path or stop.
 
 `<AGENTPLAYBOOK_ROOT>` means the directory containing this shared library. In
 committed or shared repo-local instructions, do not replace it with a personal
