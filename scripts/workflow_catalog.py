@@ -40,6 +40,17 @@ COMMANDS: Dict[str, Profile] = {
         gates=("orient", "scope", "act", "verify", "report"),
         notes=("Use for general multi-step agent work.",),
     ),
+    "workflow-setup": Profile(
+        docs=(
+            "workflows/agent-task-lifecycle.md",
+            "common/tool-failure-recovery.md",
+        ),
+        gates=("orient", "install or repair", "runtime label handoff", "verify", "handoff"),
+        notes=(
+            "Use when the task changes local agent prompts, runtime hooks, "
+            "workflow label bridges, or metering setup.",
+        ),
+    ),
     "product": Profile(
         docs=(
             "workflows/scripted-agent-workflow.md",
@@ -166,6 +177,7 @@ SPILL_ROUTE_LABELS: Dict[str, Tuple[str, str]] = {
     "review": ("code_review", "verify"),
     "task": ("analysis", "plan"),
     "triage": ("analysis", "classify"),
+    "workflow-setup": ("workflow_setup", "implement"),
 }
 
 
