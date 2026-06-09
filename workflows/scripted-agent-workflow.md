@@ -73,6 +73,7 @@ Current command profiles:
 - `review`
 - `task`
 - `triage`
+- `workflow-setup`
 
 Current platform values:
 
@@ -316,6 +317,8 @@ summary.
 
 The current script exposes these stable command profiles:
 
+- `triage`: request clarity, effort routing, and blocker-question drill.
+- `workflow-setup`: local agent prompt, hook, workflow label bridge, or metering setup.
 - `docs-review`: documentation review with wiki/doc-maintenance checks.
 - `task`: general multi-step agent work.
 - `ambiguity`: classify blockers, researchable unknowns, assumptions, and

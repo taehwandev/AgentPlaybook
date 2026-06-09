@@ -29,6 +29,40 @@ DEFAULT_SPILL_SETUP_HELPER = (
     Path.home()
     / "Library/Application Support/Spill/adapters/setup/spill-token-metering-setup.mjs"
 )
+SPILL_ALLOWED_TOOLS = {"codex", "claude", "antigravity", "openai"}
+
+
+def spill_tool_label() -> str:
+    tool = (
+        os.environ.get("SPILL_AI_TOOL")
+        or os.environ.get("SPILL_TOKEN_USAGE_AI_TOOL")
+        or "codex"
+    ).strip().lower()
+    return tool if tool in SPILL_ALLOWED_TOOLS else "codex"
+
+
+def write_spill_label(task_type: str, stage: str) -> None:
+    if not _has_spill_setup_helper():
+        return
+    try:
+        subprocess.run(
+            [
+                "node",
+                str(_spill_setup_helper_path()),
+                "--label",
+                spill_tool_label(),
+                "--task-type",
+                task_type,
+                "--stage",
+                stage,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return
 
 
 def _spill_setup_helper_path() -> Path:
@@ -318,6 +352,7 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    write_spill_label("analysis", "classify")
     playbook_root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(
         description="Run route, git status, and VibeGuard before agent work."
