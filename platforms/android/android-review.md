@@ -11,6 +11,9 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 ## Review
 
 - Check Compose state hoisting, ViewModel ownership, Flow collection, and lifecycle safety.
+- Check platform or heavy resource ownership: listeners, receivers, WebView,
+  media players, bitmaps, file handles, and foreground notifications should
+  have a matching cleanup path on dispose, failure, cancellation, and owner end.
 - Check ViewModel, `UiState`, Flow, repository, and one-off event boundaries
   against `android-viewmodel-state.md` when state/data changed.
 - Check Compose-observed `UiState` and UI display models for truthful
@@ -19,6 +22,11 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 - Check advanced stability opt-ins such as strong skipping configuration,
   stability configuration files, compiler metrics, and `@NonSkippableComposable`
   annotations for measured need and documented contracts.
+- Check performance changes for the actual bottleneck category: Compose
+  recomposition, main-thread work, startup, duplicate network calls, cache
+  freshness, media/WebView cost, dependency size, or build-time cost. Do not
+  accept broad refactors, dependency additions, or framework migrations as
+  performance fixes without reproduction or measurement evidence.
 - Check stateful holder vs stateless screen/component boundaries.
 - Check module/package boundaries against `android-module-structure.md` when new
   modules, package moves, API contracts, build logic, or repository splits are
@@ -44,6 +52,9 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 - Screenshot: Paparazzi or screenshot tests if the repo uses them.
 - Flow: Turbine or equivalent for stream behavior when configured.
 - Performance: Macrobenchmark or baseline profile for startup and critical flows when configured.
+- Runtime performance: trace, log timing, profiler, or focused manual evidence
+  for main-thread IO, bitmap/JSON work, duplicate calls, cache invalidation, or
+  media/WebView loading when those paths changed.
 - Compose stability: compiler metrics, Layout Inspector recomposition counts, or
   a focused before/after manual inspection when the repo already uses those
   tools or the change targets recomposition.

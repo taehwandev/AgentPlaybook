@@ -91,6 +91,86 @@ Rules:
   or route callback for navigation, snackbar, permission launch, external
   activity, and file/share actions.
 
+## Feature Actions, Feedback, And I18n Text
+
+Feature events should stay feature-owned. Do not create one global action type
+for unrelated screens, and do not make a reusable feedback model carry a generic
+action payload. Actions are UI intents/events, similar to reducer or React-style
+actions: clicks, retries, dismissals, item selections, and form changes are
+modeled as feature-specific sealed values.
+
+```kotlin
+sealed interface InboxAction {
+    data object Refresh : InboxAction
+    data object RetryLoadClick : InboxAction
+    data object DismissFeedbackClick : InboxAction
+    data class MessageClick(val item: InboxMessageItem) : InboxAction
+}
+```
+
+In Compose, pass one dispatch function down from the stateful route to the
+stateless screen or components. The screen emits actions; the ViewModel handles
+them:
+
+```kotlin
+@HiltViewModel
+class InboxViewModel @Inject constructor() : ViewModel() {
+    fun send(action: InboxAction) {
+        when (action) {
+            InboxAction.Refresh -> refresh()
+            InboxAction.RetryLoadClick -> retryLoad()
+            InboxAction.DismissFeedbackClick -> dismissFeedback()
+            is InboxAction.MessageClick -> openMessage(action.item)
+        }
+    }
+}
+
+@Composable
+fun InboxRoute(viewModel: InboxViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    InboxScreen(
+        state = state,
+        onAction = viewModel::send,
+    )
+}
+
+@Composable
+private fun InboxScreen(
+    state: InboxUiState,
+    onAction: (InboxAction) -> Unit,
+) {
+    InboxMessageList(
+        items = state.messages,
+        onMessageClick = { item -> onAction(InboxAction.MessageClick(item)) },
+        onRetryClick = { onAction(InboxAction.RetryLoadClick) },
+    )
+}
+```
+
+Keep user-visible text localizable at the UI/resource boundary. ViewModels may
+emit Android string resource ids, such as `R.string.retry`, as stable message
+keys when the repo uses that convention. They should not resolve those ids with
+`Context`, `Resources`, `getString()`, or `stringResource`, and should not
+hardcode user-visible copy. The Route, Activity, Fragment, or Composable
+renderer resolves message keys into localized platform resources. Safe server
+fallback messages may be carried as values only when the app's error policy
+allows them.
+
+Keep feature-owned copy in the module that owns the screen, and promote only
+repeated generic copy to a design-system or app-ui resource owner. A dedicated
+resources module is optional, not a default; naming prefixes, review rules, and
+translation export can provide centralized management without turning one
+resource module into a catch-all dependency.
+
+Toast-like effects are poor retry surfaces because they cannot reliably own
+actions. Use snackbar, banner, dialog, alert, or full-page error effects when
+the user needs retry, dismiss, confirm/cancel, or an alternative action.
+Feedback buttons are UI triggers; they should dispatch the relevant feature
+action through `onAction(InboxAction.RetryLoadClick)` or `viewModel.send(...)`
+instead of becoming part of the action model itself. The renderer should not run
+business logic directly.
+
 ## UiState Stability Contract
 
 For Compose-observed state, make stability an explicit contract instead of an
@@ -228,6 +308,13 @@ Implementation rules:
   API boundary, and throw typed transport/protocol/domain exceptions for failure.
   The ViewModel or reducer should catch those typed failures and map them to
   screen state or one-off effects.
+- When a Retrofit or HTTP stack exposes raw response handles, prefer a
+  `CallAdapter`, client interceptor, or API boundary adapter that centralizes
+  success, non-2xx, empty body, body conversion failure, network failure, and
+  cancellation handling. Do not spread the same response parsing and exception
+  wrapping across every repository method.
+- Preserve cancellation semantics. Cancellation should escape as cancellation,
+  not become a generic user-visible failure or retryable network error.
 - If the server returns presentation hints such as toast/banner, alert/dialog,
   full-page error, retry metadata, or a deep-link action, treat them as an API
   contract hint. The ViewModel maps supported hints into Compose state/effects;

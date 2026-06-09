@@ -175,6 +175,9 @@ contracts are visible in the function signature:
   often than its inputs and can reduce real recomposition work.
 - Use `rememberUpdatedState` for callbacks or values captured by long-lived
   `LaunchedEffect`, `DisposableEffect`, or animation callbacks.
+- Register listeners, receivers, observers, and platform callbacks from an
+  effect with a matching dispose path. Do not create heavy platform resources
+  from a composable body without a clear owner and release point.
 - Defer high-frequency state reads as far down the tree as practical. Prefer a
   lambda or lambda-based modifier when a parent only needs to pass a changing
   value to a child and should not recompose for every frame.
@@ -263,6 +266,14 @@ recomposition or performance issue:
 - Use `@NonSkippableComposable` or equivalent opt-outs only when a composable has
   a deliberate side-effect or measurement contract that must run even with
   unchanged inputs, and document the reason near the call or component.
+- Do not change compiler stability policy, add stability configuration, or move
+  state across component boundaries without measurement or a concrete
+  recomposition/jank reproduction.
+- Do not use suspected performance as the reason to migrate a View screen to
+  Compose, or a Compose screen back to View. Treat framework migration as a
+  separate architecture task with its own evidence.
+- Do not call feature-specific state, copy, routing, analytics, or permission
+  policy a performance optimization by hiding it inside a shared component.
 
 ## Architecture Tracks
 

@@ -22,6 +22,9 @@ package ownership, also use `android-module-structure.md`.
 - Separate one-off events from persistent state.
 - Repository owns data source coordination and error mapping.
 - Room, DataStore, files, permissions, notifications stay behind adapters.
+- Platform or heavy resources created by ViewModels, repositories, workers, or
+  adapters need an owner and cleanup path for success, failure, cancellation,
+  logout, account switch, or permission revoke when relevant.
 - Inject dispatchers or schedulers for coroutine tests.
 - Use lifecycle-aware collection for UI-observed Flow.
 - Version persisted data that can survive app upgrades.
@@ -31,6 +34,9 @@ package ownership, also use `android-module-structure.md`.
 - Repository `api` modules expose interfaces and stable entities only.
 - Repository implementation modules own Retrofit APIs, Room DAOs, DataStore,
   files, SDK clients, request/response DTOs, cache records, and mappers.
+- HTTP client response handles, error-body parsing, conversion failures, and
+  transport exceptions should be normalized at the API or data-source boundary
+  instead of repeated in every feature or ViewModel.
 - Feature modules depend on repository APIs or domain use cases, not repository
   implementation packages.
 - Map DTO/cache/database models into repository entities before data crosses the
