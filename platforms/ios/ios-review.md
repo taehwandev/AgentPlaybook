@@ -8,6 +8,19 @@ type: ai-generated
 
 Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow review.
 
+## Findings Priority
+
+1. User-visible crash, data loss, permission bypass, credential exposure,
+   insecure WebView/deep link, or release-signing risk.
+2. Broken navigation, state ownership, async cancellation, target membership, or
+   package/public API contract.
+3. Missing tests or visual checks for changed ViewModel, coordinator, screen,
+   adapter, permission, or release surface.
+4. Accessibility, Dynamic Type, localization, focus, keyboard, or small-screen
+   regression.
+5. Maintainability, package layout, preview/fixture ownership, or duplicated
+   platform adapter risk.
+
 ## Review
 
 - Check Swift package, architecture, design-system, and target boundaries
@@ -32,6 +45,20 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
 - Review Universal Links, URL schemes, entitlements, WebView bridges, ATS
   exceptions, and release signing when security surfaces change.
 
+## Do Not Approve When
+
+- View, view controller, or coordinator code owns API, persistence, keychain,
+  file, notification, permission, or SDK calls directly instead of using an
+  adapter or state owner.
+- UI state can represent contradictory loading, content, empty, error,
+  permission, offline, disabled, or submitted states.
+- Async tasks, delegates, timers, notifications, Combine subscriptions, or
+  platform handles can outlive the owning screen, command, or app lifecycle.
+- Feature modules leak DTOs, persistence rows, SDK objects, app-route
+  implementation types, or broad `public` APIs without a caller contract.
+- Entitlements, URL schemes, Universal Links, WebViews, app extensions, signing,
+  or release config changed without security and release verification.
+
 ## Tools
 
 - Static: Swift compiler, SwiftLint if configured.
@@ -50,3 +77,16 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
 - Dynamic Type, small screens, and VoiceOver labels are considered.
 - Release configuration does not expose debug endpoints, secrets, or broad
   entitlements.
+
+## Output
+
+Lead with concrete findings and identify the target, screen, or package
+boundary:
+
+```text
+Findings:
+- [High] platforms/ios/... - issue, impact, affected boundary, required verification
+```
+
+If no findings remain, say so and list unchecked target, permission, accessibility,
+or release surfaces.

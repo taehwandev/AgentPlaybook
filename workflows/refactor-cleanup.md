@@ -35,6 +35,22 @@ ownership, deletion, or maintainability.
 6. Verify behavior with the nearest existing check or a focused smoke path.
 7. Report the preserved behavior, structural change, unchanged contracts, verification, and any follow-up left separate.
 
+## Verification
+
+Refactor verification proves preserved behavior, not only formatting:
+
+- nearest unit, component, route, reducer, ViewModel, hook, command, or service
+  test for the moved or extracted behavior
+- compile/typecheck/build when public exports, package membership, imports, or
+  module boundaries changed
+- contract, fixture, generated-client, migration, or cache-key check when public
+  shape changed intentionally
+- manual smoke path only when automated coverage is absent, with the preserved
+  behavior stated explicitly
+
+If behavior changed, split or report that portion as a behavior change rather
+than a pure refactor.
+
 ## Stop If
 
 - The refactor needs product behavior changes to make sense.

@@ -6,13 +6,9 @@ type: human-reviewed-needed
 
 # Server API Implementation
 
-Use when creating, changing, moving, or reviewing HTTP handlers, GraphQL
-resolvers, RPC methods, webhooks, service methods, repositories, API validation,
-tenant boundaries, or response contracts.
+Use when creating, changing, moving, or reviewing HTTP handlers, GraphQL resolvers, RPC methods, webhooks, service methods, repositories, API validation, tenant boundaries, or response contracts.
 
-For database transactions, migrations, queues, schedules, and webhooks, also
-read `server-data-jobs.md`. For auth, tenant isolation, input, SSRF, rate
-limits, and secrets, also read `server-security.md`.
+For database transactions, migrations, queues, schedules, and webhooks, also read `server-data-jobs.md`. For auth, tenant isolation, input, SSRF, rate limits, and secrets, also read `server-security.md`.
 
 ## API Layers
 
@@ -23,17 +19,13 @@ Route/Resolver -> Request DTO/Validator -> Use Case/Service
 -> Repository/Client -> Database/External System
 ```
 
-- Route/resolver owns transport concerns: params, body, headers, status codes,
-  response shape, and framework middleware.
+- Route/resolver owns transport concerns: params, body, headers, status codes, response shape, and framework middleware.
 - Validator owns parsing, normalization, allowlists, and safe defaults.
-- Use case/service owns product rules, authz decisions, idempotency, and
-  side-effect orchestration.
+- Use case/service owns product rules, authz decisions, idempotency, and side-effect orchestration.
 - Repository owns persistence queries and transaction boundaries.
-- Client owns external API calls, retries, timeout, error mapping, and provider
-  DTO conversion.
+- Client owns external API calls, retries, timeout, error mapping, and provider DTO conversion.
 
-Do not put validation, permission checks, database queries, external calls, and
-response shaping all inside one handler.
+Do not put validation, permission checks, database queries, external calls, and response shaping all inside one handler.
 
 ## Handler Contract
 
@@ -50,15 +42,11 @@ Every endpoint should identify:
 
 ## Request Validation
 
-- Validate path params, query params, body, headers, file metadata, and webhook
-  payload before product logic.
-- Normalize emails, slugs, ids, dates, currencies, locale, pagination, sort, and
-  filter values at the boundary.
+- Validate path params, query params, body, headers, file metadata, and webhook payload before product logic.
+- Normalize emails, slugs, ids, dates, currencies, locale, pagination, sort, and filter values at the boundary.
 - Use explicit field allowlists to prevent mass assignment.
-- Keep server-owned fields such as role, tenant id, billing status, owner id,
-  createdBy, quota, and audit fields out of client-controlled writes.
-- Bound pagination, search, includes, sort, filter, batch size, upload size, and
-  timeout.
+- Keep server-owned fields such as role, tenant id, billing status, owner id, createdBy, quota, and audit fields out of client-controlled writes.
+- Bound pagination, search, includes, sort, filter, batch size, upload size, and timeout.
 - Treat malformed input as a typed, user-safe error, not an internal exception.
 
 ## Use Case Rule
@@ -67,59 +55,38 @@ Use cases should:
 
 - Receive typed input and actor/context, not raw request objects.
 - Recheck auth, permission, tenant, entitlement, and resource existence.
-- Own transaction and idempotency decisions when multiple writes or side effects
-  are involved.
+- Own transaction and idempotency decisions when multiple writes or side effects are involved.
 - Return typed result or domain error that route code maps to response shape.
 - Trigger side effects through named ports/clients so tests can isolate them.
 
-Avoid use cases that only forward to one repository method without enforcing a
-rule, transaction, side effect, or test boundary.
+Avoid use cases that only forward to one repository method without enforcing a rule, transaction, side effect, or test boundary.
 
 ## Repository And Query Rule
 
-- Tenant filters should be required by construction, not optional call-site
-  details.
-- Use parameterized queries, safe ORM APIs, and explicit include/sort/filter
-  allowlists.
-- Keep database entities out of public API responses unless they are already the
-  documented API contract.
-- Model uniqueness, constraints, foreign keys, and soft-delete behavior in the
-  repository or schema boundary.
-- Define transaction isolation, retry, rollback, and forward-fix behavior for
-  multi-write invariants.
+- Tenant filters should be required by construction, not optional call-site details.
+- Use parameterized queries, safe ORM APIs, and explicit include/sort/filter allowlists.
+- Keep database entities out of public API responses unless they are already the documented API contract.
+- Model uniqueness, constraints, foreign keys, and soft-delete behavior in the repository or schema boundary.
+- Define transaction isolation, retry, rollback, and forward-fix behavior for multi-write invariants.
 
 ## Response And Error Shape
 
 - Map domain errors to stable response codes and payloads.
-- Avoid leaking whether private users, tenants, resources, invites, tokens, or
-  billing accounts exist unless product policy allows it.
+- Avoid leaking whether private users, tenants, resources, invites, tokens, or billing accounts exist unless product policy allows it.
 - Include correlation id or request id where the repo standard supports it.
 - Keep retryability explicit for clients when useful.
-- Never return stack traces, provider credentials, SQL, secrets, or internal
-  provider payloads to callers.
-- When clients need shared failure UX, the API may return presentation hints
-  such as inline, toast/banner, alert/dialog, full-page, retry metadata, action
-  label key, and deep link or route intent. Keep these as stable enum fields and
-  allowlisted actions, not server-provided UI components, raw HTML, executable
-  commands, or client-specific class names.
-- Document the fallback when a client does not support a presentation hint.
-  Clients still own platform rendering, localization, accessibility behavior,
-  and whether a deep-link action is valid in the current screen.
+- Never return stack traces, provider credentials, SQL, secrets, or internal provider payloads to callers.
+- When clients need shared failure UX, the API may return presentation hints such as inline, toast/banner, alert/dialog, full-page, retry metadata, action label key, and deep link or route intent. Keep these as stable enum fields and allowlisted actions, not server-provided UI components, raw HTML, executable commands, or client-specific class names.
+- Document the fallback when a client does not support a presentation hint. Clients still own platform rendering, localization, accessibility behavior, and whether a deep-link action is valid in the current screen.
 
 ## Tests
 
 Choose the closest checks configured in the repo:
 
-- Handler/route tests for request parsing, validation, response shape, and
-  status codes.
-- Use case tests for permission, tenant, entitlement, idempotency, and product
-  rules.
-- Repository tests for query constraints, transactions, migrations, uniqueness,
-  soft delete, and cross-tenant isolation.
+- Handler/route tests for request parsing, validation, response shape, and status codes.
+- Use case tests for permission, tenant, entitlement, idempotency, and product rules.
+- Repository tests for query constraints, transactions, migrations, uniqueness, soft delete, and cross-tenant isolation.
 - Contract tests or generated-client checks for public API changes.
-- Security tests for unauthenticated, forbidden, cross-tenant, mass assignment,
-  injection-shaped input, rate limit, malformed payload, and secret/log leaks.
+- Security tests for unauthenticated, forbidden, cross-tenant, mass assignment, injection-shaped input, rate limit, malformed payload, and secret/log leaks.
 
-Review the final diff for optional tenant filters, client-controlled server
-fields, raw request objects in use cases, database entities in responses,
-duplicated permission logic, and side effects outside idempotent boundaries.
+Review the final diff for optional tenant filters, client-controlled server fields, raw request objects in use cases, database entities in responses, duplicated permission logic, and side effects outside idempotent boundaries.

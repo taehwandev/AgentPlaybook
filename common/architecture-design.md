@@ -8,9 +8,12 @@ type: ai-generated
 
 Use when planning architecture for a feature, module, service, or app surface.
 
-For module/file ownership and `api`/`impl` split decisions, also use
+For architecture track selection, also use `architecture-selection.md`. For
+module/file ownership and `api`/`impl` split decisions, also use
 `code-structure-ownership.md`. For state owner design, also use
-`state-modeling.md`.
+`state-modeling.md`. For failure contracts, also use `error-modeling.md`. For
+external, persisted, generated, cached, platform, or user-provided values, also
+use `defensive-boundaries.md`.
 
 ## Method
 
@@ -22,8 +25,10 @@ Design from change pressure, not diagrams. First identify what changes together,
 2. Identify state owners and data sources.
 3. Separate UI, domain, data, platform, and integration responsibilities.
 4. Mark risky boundaries: auth, tenant, billing, persistence, sync, jobs, external APIs.
-5. Pick the smallest architecture that keeps those risks visible.
-6. Define verification before implementation.
+5. Identify contracts that callers compile against, persist, send over the
+   network, cache, generate, or expose publicly.
+6. Pick the smallest architecture that keeps those risks visible.
+7. Define verification before implementation.
 
 ## Rules
 
@@ -32,6 +37,25 @@ Design from change pressure, not diagrams. First identify what changes together,
 - Use adapters for platform and external systems.
 - Avoid architecture that requires touching many unrelated files for one product change.
 - Record tradeoffs when choosing speed over structure or structure over simplicity.
+
+## Decision Frame
+
+Every non-trivial architecture design should name these owners before
+implementation:
+
+| Decision | Owner To Name |
+| --- | --- |
+| Visible state | screen, route, ViewModel, hook, store, reducer, controller, or command owner |
+| Durable state | database, file, cache, settings, server, sync engine, or external system |
+| Product rules | domain policy, use case, service, reducer, permission policy, or server contract |
+| External data | validator, mapper, DTO boundary, generated client, adapter, or repository |
+| Side effects | command, effect handler, repository/client, background job, platform adapter, or shell bridge |
+| Failure handling | typed boundary error, domain failure, UI state, response envelope, log/metric/audit owner |
+| Public contract | route, API, event, DTO, schema, deep link, command, package export, or plugin contract |
+| Verification | unit, component, contract, integration, migration, smoke, screenshot, or manual scenario |
+
+If an owner cannot be named, keep the work local or clarify the behavior before
+adding another layer.
 
 ## Implementation Tracks
 
@@ -55,6 +79,10 @@ one of these benefits:
 - a platform/external API is isolated behind an adapter
 - a risky contract gets one place for validation and error handling
 - a reusable caller contract is clearer than local duplication
+
+Avoid boundaries that only rename a call, hide an obvious branch, or force every
+caller through flags, nullable options, global state, service locators, or
+framework-specific plumbing.
 
 ## State Model
 
@@ -90,6 +118,38 @@ UI -> State Owner -> Use Case / Domain Policy -> Repository Interface
 Stop if a "clean" layer only forwards one method without adding ownership,
 testing value, or risk isolation. Keep that work local until pressure appears.
 
+## Contract And Boundary Integrity
+
+For any architecture that crosses files, packages, modules, services, or apps:
+
+- Keep public contracts smaller and more stable than implementations.
+- Keep DTOs, database rows, SDK objects, file records, shell output, and raw
+  platform payloads out of UI and domain code unless they are the documented
+  contract.
+- Normalize external values at the boundary before product logic sees them.
+- Preserve dependency direction with imports, target membership, package
+  visibility, or lint rules where the repo supports them.
+- Keep compatibility notes for routes, APIs, events, schemas, persisted fields,
+  cache keys, generated clients, package exports, and plugin contracts.
+- Plan removal conditions for temporary shims, duplicate paths, or migration
+  adapters.
+
+Architecture is not complete until the boundary can be verified. Pick checks
+that exercise the owner, not only the file that changed.
+
 ## Output
 
-For non-trivial work, leave a short decision note: chosen shape, rejected alternative, risk, verification.
+For non-trivial work, leave a short decision note:
+
+```text
+behavior:
+chosen shape:
+state owner:
+data/platform boundary:
+failure boundary:
+public contracts touched:
+rejected alternative:
+risk:
+verification:
+rollback or removal plan when needed:
+```

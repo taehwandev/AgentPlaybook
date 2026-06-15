@@ -29,6 +29,19 @@ provider webhooks, quota, seats, cache invalidation, and tests, also use
 - Billing management permission is separate from normal admin/editor permission.
 - Invoices, taxes, and payment method details usually belong to a billing provider boundary.
 
+## Do Not
+
+- Do not use client-visible plan names, local cache, or UI state as the trusted
+  source of entitlement.
+- Do not mix billing management permission with normal workspace admin,
+  editor, or owner checks unless product policy says they are equivalent.
+- Do not let downgraded, cancelled, payment-failed, trial-ended, over-quota, or
+  revoked states fall through to generic success or generic permission denied.
+- Do not perform billing-provider mutations, webhook handling, quota increments,
+  or seat changes without idempotency and retry behavior.
+- Do not expose provider payloads, payment method details, invoice internals, or
+  billing account existence beyond the documented product contract.
+
 ## Check
 
 - Who can view billing, change plan, manage seats, or download invoices?
@@ -39,4 +52,7 @@ provider webhooks, quota, seats, cache invalidation, and tests, also use
 
 ## Tests
 
-Cover entitlement on/off, quota exceeded, downgrade, revoked billing manager, stale entitlement cache, and provider webhook retry.
+Cover entitlement on/off, quota exceeded, downgrade, payment failure, cancelled
+subscription, trial end, revoked billing manager, stale entitlement cache,
+provider webhook retry, duplicate webhook delivery, and seat/usage race
+conditions when applicable.

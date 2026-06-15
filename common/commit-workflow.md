@@ -8,6 +8,14 @@ type: ai-generated
 
 Use before creating commits, regardless of git client, IDE, CLI, or AI tool.
 
+## Read
+
+- Repo-local commit, branch, signing, and generated-file rules.
+- Current `git status --short --untracked-files=all`.
+- Final diff for every file to be committed.
+- Verification output for the changed boundary.
+- Remote and repository visibility before pushing or publishing.
+
 ## Commit Unit
 
 - One commit should carry one reviewable intent.
@@ -16,6 +24,17 @@ Use before creating commits, regardless of git client, IDE, CLI, or AI tool.
 - If a commit needs a long explanation, consider splitting it first.
 - Use `common/change-size-policy.md` when a diff is broad or hard to review.
 - Use `common/generated-files-policy.md` when generated files, lockfiles, or snapshots changed.
+
+## Decision Rule
+
+Commit only a unit that can be reviewed, tested, reverted, and explained as one
+purpose. If the diff contains independent behavior, refactor, generated,
+dependency, config, release, or documentation changes, split unless the pieces
+cannot build, migrate, or make sense independently.
+
+When a broad commit is necessary, record why it cannot split, which files are
+mechanical versus behavioral, what verification covers the risky parts, and how
+to rollback or forward-fix.
 
 ## Before Commit
 
@@ -26,6 +45,18 @@ Use before creating commits, regardless of git client, IDE, CLI, or AI tool.
 - Do not include secrets, local paths, debug logs, or temporary artifacts.
 - Call out API contract, migration, release, accessibility, or security impact
   when the commit touches those surfaces.
+
+## Stage Deliberately
+
+- Stage only files that belong to the commit purpose.
+- Keep user-owned unrelated changes out of the commit unless the user explicitly
+  asked to include them.
+- Review staged diff, not only working tree diff.
+- If generated files or lockfiles are included, explain the source command or
+  reason they changed.
+- If the commit crosses public contracts, migrations, release config, signing,
+  credentials, billing, permissions, or data, confirm verification and rollback
+  notes before committing.
 
 ## Message
 
@@ -43,6 +74,29 @@ Verified:
 
 Keep the subject about behavior or structure, not effort. Mention migrations, breaking changes, security impact, and follow-up work explicitly.
 
+## Do Not
+
+- Do not commit secrets, local env files, debug logs, personal paths, private
+  prompts, credentials, signing material, or unreviewed generated output.
+- Do not hide failed or skipped verification in the message.
+- Do not create a broad "cleanup" commit when the diff contains independent
+  behavior, refactor, dependency, generated, or release changes that can split.
+- Do not rewrite history, amend, tag, push, or publish unless the user requested
+  that external state change.
+
+## Verification
+
+Before committing, verify:
+
+- staged diff contains only the intended files and no unrelated user-owned work
+- nearest behavior, contract, build, lint, format, or manual smoke check ran, or
+  the skip reason and residual risk are explicit
+- VibeGuard or repo-local safety gate passed when required
+- generated files, lockfiles, snapshots, migrations, release config, or
+  dependency changes have source command or rationale
+- public contract, persistence, security, billing, permission, release, or
+  migration changes have compatibility and rollback notes when applicable
+
 ## Common Types
 
 - `feat`: user-facing capability or product behavior
@@ -56,3 +110,9 @@ Keep the subject about behavior or structure, not effort. Mention migrations, br
 - `security`: security hardening, secret handling, auth, or permission fix
 
 Repo-local commit types win when they differ.
+
+## Handoff
+
+Report the commit SHA when a commit was created. If no commit was created,
+report the files intentionally left staged or unstaged, verification status, and
+any reason the diff should be split before commit.

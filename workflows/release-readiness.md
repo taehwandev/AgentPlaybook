@@ -35,6 +35,24 @@ signing, or handing off release-sensitive work.
 7. Confirm post-release smoke, logs, monitoring, or health checks can detect
    failure.
 
+## Verification
+
+Release evidence should cover the artifact that will actually ship:
+
+- source revision, version, tag, build number, package id, artifact name, and
+  release channel agree
+- build/package/sign/notarize/publish dry run or release command completed for
+  the intended target
+- migration, backfill, seed, generated artifact, or config change has rollback
+  or forward-fix evidence
+- secrets, env injection, callback URLs, app ids, domains, permissions, and
+  signing material are supplied through the intended deployment mechanism
+- smoke, health check, logs, metrics, crash reporting, or rollback monitor can
+  detect the primary failure modes
+
+Do not treat a local typecheck or formatter as release evidence when packaging,
+deployment, signing, migration, or external configuration changed.
+
 ## Stop If
 
 - The release artifact or target environment is unclear.

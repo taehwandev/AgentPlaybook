@@ -46,6 +46,17 @@ Keep files simple, but keep responsibilities named.
 - One-off effects such as navigation, toast, focus, file download, permission
   prompts, and external launch should not be mixed with persistent UI state.
 
+## Do Not
+
+- Do not let UI own raw API clients, database rows, SDK objects, filesystem
+  handles, shell calls, or platform permission payloads.
+- Do not add state, domain, repository, or adapter layers that only forward one
+  method and add no rule, mapping, test boundary, or risk isolation.
+- Do not keep the same source of truth in UI state, cache, persistence, and
+  server state without naming invalidation and conflict behavior.
+- Do not hide product policy in reusable components, generic helpers, or shared
+  data modules.
+
 ## Check
 
 - Who owns this state?
@@ -53,3 +64,15 @@ Keep files simple, but keep responsibilities named.
 - Where are failure and permission states handled?
 - What is the smallest useful test boundary?
 - Which layer owns side effects and cancellation?
+
+## Verification
+
+Verify the owner, not only the changed file:
+
+- state owner transition test for loading, content, empty, error, permission,
+  retry, refresh, and one-off effects when reachable
+- mapper or adapter test for external, persisted, cached, or platform values
+- contract or integration check when API, route, storage, event, or public
+  package behavior changed
+- UI or manual smoke path only after the state/data/side-effect boundary is
+  covered or explicitly reported as residual risk

@@ -29,9 +29,33 @@ Route/Handler -> Use Case/Service -> Repository/Client -> Database/External Syst
 - Use idempotency for retries, payments, webhooks, and background jobs.
 - Log operational detail without leaking secrets or personal data.
 
+## Do Not
+
+- Do not trust client-provided tenant, role, owner, billing, quota, visibility,
+  audit, or server-owned fields.
+- Do not let route handlers own validation, authorization, product rules,
+  transactions, external calls, response shaping, and logging in one block.
+- Do not expose database rows, provider payloads, stack traces, raw SQL,
+  credentials, or private existence signals as public API responses.
+- Do not make tenant filters, permission checks, idempotency keys, or transaction
+  boundaries optional call-site conventions.
+- Do not add a service or repository layer that only renames one call without
+  adding validation, transaction ownership, mapping, retry policy, or tests.
+
 ## Refactor Signals
 
 - Route handler owns validation, permission, DB, and side effects.
 - Tenant filter is optional or repeated manually.
 - External API errors leak directly to clients.
 - Background job retry behavior is unclear.
+
+## Verification
+
+- route/resolver test for request parsing, auth, permission, tenant, status, and
+  response/error shape
+- use case/service test for product rule, idempotency, transaction, retry, and
+  side-effect orchestration
+- repository/client test for query constraints, mapping, external errors,
+  timeouts, and safe retry metadata
+- migration/backfill check for reversibility, locks, partial failure, rollback,
+  and forward-fix path when persisted data changed

@@ -28,6 +28,19 @@ server enforcement, cache invalidation, and tests, also use
 - Prefer action permissions over role-name checks.
 - Recheck permissions after role change, org switch, invite accept, logout.
 
+## Do Not
+
+- Do not treat hidden UI controls as authorization.
+- Do not trust role, tenant, owner, entitlement, or permission values supplied by
+  client-controlled storage, request bodies, local cache, or browser state.
+- Do not scatter raw role-name checks through UI or services when action
+  permissions would describe the protected command.
+- Do not cache permissions across logout, tenant switch, membership revoke,
+  role change, invite accept, plan change, or session refresh without
+  invalidation.
+- Do not leak whether private users, tenants, resources, invites, or billing
+  objects exist unless product policy explicitly allows it.
+
 ## Check
 
 - Is this enforced on server and represented in UI?

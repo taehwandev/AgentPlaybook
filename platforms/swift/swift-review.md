@@ -10,6 +10,19 @@ Use for reviewing Swift app, package, architecture, module, SwiftUI/UIKit/AppKit
 UI, state, concurrency, design-system, platform adapter, or Apple target
 changes.
 
+## Findings Priority
+
+1. Crash, data loss, credential exposure, entitlement/signing risk, insecure
+   URL/WebView/file access, or release-blocking target issue.
+2. Actor isolation, cancellation, stale-result, package boundary, public API, or
+   target membership bug.
+3. Missing tests or build evidence for changed package, target, state owner,
+   adapter, UI flow, or release surface.
+4. Accessibility, Dynamic Type, localization, focus, keyboard, layout, or visual
+   state regression.
+5. Maintainability, access control, resource ownership, preview/fixture, or
+   design-system contract issue.
+
 ## Review
 
 - Check architecture boundaries against `swift-architecture.md` when state,
@@ -35,6 +48,21 @@ changes.
 - Review platform security surfaces such as Keychain, URL schemes, Universal
   Links, entitlements, WebViews, file access, Accessibility, signing,
   notarization, app extensions, and release builds when touched.
+
+## Do Not Approve When
+
+- UI or app lifecycle code directly owns API, persistence, keychain, file,
+  notification, permission, SDK, or shell/platform work that belongs behind an
+  adapter or state owner.
+- Async work, delegates, notifications, timers, Combine subscriptions, tasks, or
+  OS handles can outlive the owning command, screen, target, or app lifecycle.
+- Domain, contract, or shared packages import SwiftUI, UIKit, AppKit, DTOs,
+  persistence rows, SDK objects, app routes, or implementation modules without a
+  documented caller contract.
+- Public access modifiers, package products, target membership, resources, or
+  generated files changed without compatibility and build evidence.
+- Release configuration exposes debug endpoints, broad entitlements, secrets,
+  local paths, private diagnostics, or unsigned/unnotarized artifacts.
 
 ## Tools
 
@@ -88,3 +116,16 @@ changes.
   compact panels, or window resizing do not break changed UI.
 - Release configuration does not expose debug endpoints, broad entitlements,
   secrets, local file paths, or private diagnostics.
+
+## Output
+
+Lead with concrete findings and identify the affected target, package, screen,
+or platform boundary:
+
+```text
+Findings:
+- [High] platforms/swift/... - issue, impact, affected boundary, required verification
+```
+
+If no findings remain, say so and list unchecked package, target, concurrency,
+accessibility, security, or release surfaces.

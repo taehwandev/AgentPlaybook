@@ -40,6 +40,22 @@ production-like failure.
 9. Report reproduction, root cause, changed behavior, observability impact,
    verification, and remaining risk.
 
+## Verification
+
+A bug fix needs evidence for both the original failure and the protected
+boundary:
+
+- before/after failing test, command, log signal, or manual path when practical
+- regression test for the failing input, state transition, platform event, or
+  contract
+- boundary cases for missing, malformed, stale, duplicated, cancelled, lower
+  bound, upper bound, permission-denied, or unavailable values when relevant
+- nearby integration or manual smoke when the failure crossed API, persistence,
+  cache, auth, platform, release, or background-work boundaries
+
+Do not call the fix verified only because the observed symptom disappeared once.
+Name the root cause and the check that would fail if the bug returned.
+
 ## Stop If
 
 - The failure cannot be reproduced and no reliable evidence points to a cause.

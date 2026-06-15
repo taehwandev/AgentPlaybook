@@ -19,6 +19,25 @@ or safer execution than guessing.
   evidence is insufficient.
 - Do not invent tool availability. Check it.
 
+## Decision Rule
+
+Use a local tool when it answers a concrete question better than reading prose or
+guessing:
+
+- stack discovery: manifests, lockfiles, wrappers, versions, and configured
+  scripts
+- verification: tests, build, typecheck, lint, formatter, smoke, audit, or
+  evidence commands
+- repository state: git status, diff, branch, remote, changed files, and
+  untracked files
+- platform state: simulator/device/runtime lists, package tools, signing,
+  local server status, or app health checks
+- usage/telemetry status: only through approved read-only local status helpers
+
+Prefer read-only checks first. Use mutating, network, destructive, deployment,
+publish, credential, or external-state tools only when the task requires them
+and approval or repo-local policy allows them.
+
 ## Agent And AI CLIs
 
 Tool aliases, preferred agent CLIs, model providers, and usage telemetry tools
@@ -102,3 +121,14 @@ When local tools affect the result, report:
 - success or failure
 - important limitation, such as missing auth, stale cache, or unavailable quota
   data
+
+## Verification
+
+Tool evidence is valid only when the command actually ran and its output proves
+the claim being made. Do not claim a build, test, audit, usage import, or smoke
+check passed from setup logs, config shape, permission prompts, stale cache, or
+mock payloads.
+
+If a tool cannot run, report the command, failure type, likely cause, and the
+residual risk. Do not silently replace a failed high-risk check with a weaker
+tool unless the weaker check is explicitly reported as partial evidence.

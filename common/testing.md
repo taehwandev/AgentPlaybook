@@ -6,7 +6,20 @@ type: ai-generated
 
 # Testing Principles
 
+Use when choosing, adding, reviewing, or reporting tests, fixtures, snapshots,
+manual smoke checks, or verification evidence.
+
 Test behavior users or other code depend on.
+
+## Decision Rule
+
+Choose the smallest test that can fail for the behavior being changed. Broaden
+only when the risk crosses a boundary that the smaller test cannot see.
+
+Do not add a test only because a file changed. Add or update a test when the
+change affects a product rule, public contract, state transition, mapper,
+permission, persistence, cache, platform adapter, release behavior, or known
+regression.
 
 ## Prioritize
 
@@ -34,6 +47,19 @@ Test behavior users or other code depend on.
 - UI tests by visible text, role, label, and interaction.
 - E2E only for high-value cross-boundary flows.
 
+## Match Test To Boundary
+
+| Changed boundary | Preferred evidence |
+| --- | --- |
+| Pure function, mapper, parser, formatter, policy | Unit test with normal, missing, invalid, boundary, and duplicate cases |
+| State owner, reducer, ViewModel, hook, store | Transition test for action -> state/effect, including failure and retry |
+| UI component or screen | Component/UI test, preview, screenshot, or manual path for visible states and user intent |
+| API route, DTO, event, webhook, generated client | Contract or request/response test plus affected caller check |
+| Persistence, cache, migration, sync | Read/write/update/delete, stale data, invalidation, rollback, or compatibility check |
+| Permission, auth, tenant, billing, privacy | Allowed and denied paths, stale/revoked state, and boundary enforcement |
+| Platform, filesystem, shell, browser, SDK, background work | Adapter test, fake integration, lifecycle/cancellation check, or manual smoke path |
+| Release, package, signing, deployment | Dry run, build/package check, staging/manual smoke, or rollback note |
+
 ## Isolation
 
 - Mock at external boundaries: network, database, filesystem, clock, random,
@@ -45,6 +71,21 @@ Test behavior users or other code depend on.
 - Test permission, tenant, billing, migration, and generated-client contracts at
   the boundary where they can actually fail.
 
+## Do Not
+
+- Do not replace a missing high-risk test with a formatter, typecheck, or
+  snapshot update.
+- Do not snapshot broad output when a focused assertion would explain the
+  behavior.
+- Do not mock the unit under test so deeply that the product rule cannot fail.
+- Do not add fixtures copied from private production data.
+- Do not mark behavior verified when only mocked, placeholder, or happy-path
+  behavior ran.
+
 ## Report
+
+For automated checks, report command, result, and what boundary it proved. For
+manual checks, report scenario, environment, action, expected result, and
+observed result.
 
 If a test cannot run, state the command skipped, why, and residual risk.

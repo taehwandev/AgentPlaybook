@@ -43,6 +43,21 @@ Examples:
   answer-only, but the answer must front-load PRD -> ARD -> implementation. If
   the user asks to proceed, use the `product` route, not `feature`.
 
+## Decision Rule
+
+The selected route must protect the highest-risk part of the request, not the
+last word the user used. If a request includes both a simple edit and auth,
+data, billing, release, migration, external state, or architecture risk, route
+for the risky surface.
+
+Use `direct-question` only until the question is answered. If the same turn also
+contains an actionable request, continue with the appropriate route after the
+answer and keep the answer as request-intake evidence.
+
+Do not downgrade effort only because a task names one file. If that file is a
+composition point, public contract, migration, release config, app shell, or
+security boundary, inspect the owner boundary and escalate.
+
 ## Effort Profiles
 
 Use runtime-specific model or reasoning controls only when the runtime supports
@@ -122,6 +137,19 @@ Escalate from `quick` to `standard` or `deep` when:
 - user-facing behavior, acceptance criteria, or verification is unclear
 - a command failure repeats after one focused correction
 - a safety or VibeGuard gate reports a blocker
+
+## Verification
+
+Intake is verified when the route and effort explain:
+
+- why the request is answer-only, exact, scoped, vague, broad, or risky
+- which repo-local or AgentPlaybook documents must be read before work
+- which gate or question drill blocks implementation, if any
+- which verification surface will prove the request when work is complete
+
+When a scripted route is used, the route output and wrapper preflight evidence
+are the intake record. When no route is needed, keep the classification implicit
+unless it affects scope, safety, or user expectations.
 
 ## Report
 

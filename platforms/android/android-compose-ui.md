@@ -45,8 +45,13 @@ Stateful composables:
 
 - End with `Route`, `Host`, or another repo-local holder suffix when possible.
 - Collect `StateFlow` with lifecycle-aware APIs.
-- Own `LaunchedEffect` for one-off effects such as navigation, snackbar, focus,
-  permission launch, or external activity launch.
+- Own lifecycle-aware effects for one-off commands such as navigation,
+  snackbar, focus, permission launch, or external activity launch.
+- Prefer `LifecycleEventEffect` for a single lifecycle callback,
+  `LifecycleStartEffect` for `ON_START`/`ON_STOP` work with cleanup, and
+  `LifecycleResumeEffect` for `ON_RESUME`/`ON_PAUSE` work with cleanup. Use
+  `LaunchedEffect` when the coroutine is tied only to composition lifetime and
+  does not need a lifecycle start/stop boundary.
 - Translate platform results into ViewModel actions or route events.
 - Delegate rendering to a stateless screen/content composable.
 
@@ -81,15 +86,21 @@ fun ProfileRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                ProfileEffect.NavigateBack -> onBack()
-                is ProfileEffect.OpenEditor -> onOpenEditor(effect.id)
-                is ProfileEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message.text)
+    LifecycleStartEffect(viewModel) {
+        val collectJob = this.lifecycleScope.launch {
+            viewModel.effects.collect { effect ->
+                when (effect) {
+                    ProfileEffect.NavigateBack -> onBack()
+                    is ProfileEffect.OpenEditor -> onOpenEditor(effect.id)
+                    is ProfileEffect.ShowSnackbar -> {
+                        snackbarHostState.showSnackbar(effect.message.text)
+                    }
                 }
             }
+        }
+
+        onStopOrDispose {
+            collectJob.cancel()
         }
     }
 
@@ -174,7 +185,12 @@ contracts are visible in the function signature:
 - Use `derivedStateOf` only when a derived value is expensive or changes less
   often than its inputs and can reduce real recomposition work.
 - Use `rememberUpdatedState` for callbacks or values captured by long-lived
-  `LaunchedEffect`, `DisposableEffect`, or animation callbacks.
+  `LaunchedEffect`, `LifecycleEventEffect`, `LifecycleStartEffect`,
+  `LifecycleResumeEffect`, `DisposableEffect`, or animation callbacks.
+- Use `DisposableEffect` for external listeners, receivers, observers, or
+  platform callbacks that need explicit registration and cleanup. Prefer
+  lifecycle-compose effects when the cleanup is tied to `ON_STOP` or
+  `ON_PAUSE`.
 - Register listeners, receivers, observers, and platform callbacks from an
   effect with a matching dispose path. Do not create heavy platform resources
   from a composable body without a clear owner and release point.

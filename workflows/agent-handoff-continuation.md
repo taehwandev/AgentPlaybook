@@ -35,6 +35,21 @@ Maintain enough state for another agent or future turn to continue:
 5. If handing off, write a concise state summary with verification and residual risk.
 6. If blocked, state the blocker, what was tried, and exactly what input or external change is needed.
 
+## Handoff Evidence
+
+A useful handoff includes:
+
+- active objective and whether it is still aligned with the newest request
+- gate ledger state when a scripted route was used
+- files changed, files inspected, files intentionally left alone, and known
+  unrelated user-owned changes
+- commands run with pass/fail/skip result and what each proved
+- blockers, assumptions, decisions made, and decisions still needed
+- next smallest safe step and which document/card should govern it
+
+Do not hand off with only a narrative summary when verification, changed files,
+or gate status are known.
+
 ## Stop If
 
 - The newest user request changes the objective.

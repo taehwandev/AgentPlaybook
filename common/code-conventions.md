@@ -62,12 +62,17 @@ and retry/recovery behavior, use `common/error-modeling.md`.
 
 These are review signals, not universal failure thresholds:
 
+- A normal function, method, component, hook, handler, or script step should
+  usually fit in one review pass; about 40 to 80 lines is a useful pressure
+  range for orchestration code.
 - A function or component over about 150 lines often has more than one responsibility.
 - A source file over about 400 lines often needs clearer sections or extraction.
 
 Split only when it improves ownership, testability, or review. Do not create
 extra files just to satisfy a line count.
-For diff-size and split decisions, use `common/change-size-policy.md`.
+For function, file, class, package, module, CSS, and shared-code split criteria,
+use `common/code-structure-ownership.md`. For diff-size and split decisions, use
+`common/change-size-policy.md`.
 
 ## Check
 

@@ -38,6 +38,22 @@ return here only for the ARD-scoped code slice.
 7. Run the side-effect audit from `workflows/development-cycle.md`.
 8. Report what changed, how it was verified, and any residual risk.
 
+## Verification
+
+Use the acceptance criteria and changed boundary to choose evidence:
+
+- state or reducer test when user intent changes visible state
+- component/UI/screenshot/manual path when visual or interaction behavior changes
+- contract test, generated-client check, or caller compile when route/API/DTO
+  behavior changes
+- persistence/cache/sync check when durable state changes
+- permission/auth/billing denied-path check when protected behavior changes
+- platform adapter, lifecycle, cancellation, or cleanup check when OS/runtime
+  integration changes
+
+Do not report a feature complete when only happy-path rendering, mocked data, or
+formatter/typecheck evidence ran for behavior that can fail at runtime.
+
 ## Stop If
 
 - The requirement has multiple incompatible interpretations.

@@ -48,6 +48,25 @@ runtime-facing integration guide whose facts can age independently.
 - Link to source docs instead of copying long policies from another page.
 - Keep examples small and current enough to copy safely.
 
+## Actionability
+
+A durable agent-facing page should make the next action hard to miss:
+
+- For a policy page, state the decision rule and what action is blocked.
+- For a workflow page, state entry criteria, ordered gates, stop conditions, and
+  completion evidence.
+- For a platform page, state ownership boundaries, forbidden dependency leaks,
+  state/error/data expectations, and target-specific verification.
+- For a review page, state severity priority, concrete checks, evidence gaps,
+  and output shape.
+- For a reference page, state which facts are canonical, which are examples, and
+  when the page must be refreshed.
+
+Avoid pages that only describe ideals. Each page should include at least one of:
+`Steps`, `Decision Rule`, `Do Not`, `Stop If`, `Review Checklist`,
+`Verification`, `Tests`, or `Output`, using the heading that best matches the
+page's purpose.
+
 ## Retrieval Rules
 
 - Use literal names for APIs, commands, files, routes, events, and products when

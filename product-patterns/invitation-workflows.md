@@ -27,6 +27,20 @@ create -> notify -> accept -> link/create account -> join tenant -> assign role
 - Revalidate tenant, role, token, and inviter policy at accept time.
 - Refresh session and permissions after accept.
 
+## Do Not
+
+- Do not accept an invite only because the token shape is valid; recheck tenant,
+  invite status, expiration, revocation, target email, role assignability, and
+  current membership.
+- Do not let the inviter assign roles or permissions broader than their current
+  authority unless an explicit owner/system policy allows it.
+- Do not reveal whether private users, tenants, emails, or memberships exist
+  through different error copy unless product policy allows it.
+- Do not reuse invite tokens after accept, revoke, expiration, email change, or
+  tenant deletion.
+- Do not update membership without refreshing session, permission caches, open
+  tabs, and audit state when immediate enforcement is expected.
+
 ## UI States
 
 - success
@@ -39,3 +53,10 @@ create -> notify -> accept -> link/create account -> join tenant -> assign role
 ## Audit
 
 Record create, resend, revoke, accept with actor, tenant, target email, and role.
+
+## Tests
+
+Cover create, resend, revoke, expire, accept existing-user, accept new-user,
+wrong email, wrong tenant, duplicate invite, already-member, role-not-assignable,
+revoked inviter permission, stale session, token replay, and audit record paths
+when applicable.

@@ -31,6 +31,32 @@ Use when creating, reviewing, or restructuring docs, guides, specs, READMEs, age
  9. Verify examples, links, file paths, commands, and metadata where practical.
 10. Report what changed, what was verified, and any stale or missing source material.
 
+## Minimum Card Maturity
+
+Do not leave an AgentPlaybook card as a rough summary when it is meant to guide
+agent behavior. A useful shared card should answer these questions directly:
+
+- When to load it: the triggering task, file type, platform, workflow, or risk.
+- What to inspect first: repo-local rules, source files, contracts, examples,
+  manifests, commands, or related cards.
+- Decision rule: when to keep work local, when to escalate, and what tradeoff
+  justifies the heavier path.
+- Do not / stop signals: mistakes that should block implementation, review,
+  release, or handoff.
+- Verification: the smallest evidence that proves the changed boundary, plus
+  broader checks for higher-risk surfaces.
+- Report contract: what the final response, PR, commit, or handoff must say
+  when that card governed the work.
+
+For short review cards, include at least findings priority, review checks,
+verification focus, and output shape. For platform implementation cards, include
+ownership boundaries, forbidden leaks, state/error/data handling, and target
+verification. For workflow cards, include entry criteria, steps, stop signals,
+and completion evidence.
+
+If a card cannot answer these questions yet, mark the gap explicitly instead of
+padding with generic advice.
+
 ## Promote Local Lessons
 
 Move a local lesson into shared docs only when it remains useful after removing project names, service names, vendor names, account or environment names, local paths, command names, product policy, domain vocabulary, and platform-specific API names.

@@ -16,6 +16,111 @@ The default choice is local or single-module code. Split only when the split
 protects a real caller-facing boundary, extension point, dependency edge, or
 ownership line.
 
+## Unit Size And Split Criteria
+
+Use code size as review pressure, not an automatic split command. Long code is
+acceptable when it has one owner, one reason to change, and a clear verification
+path. Short code still needs extraction when it mixes owners, side effects, or
+contracts.
+
+Apply the same criteria to web, mobile, desktop, server, scripts, CSS, styles,
+tests, and generated-adjacent glue:
+
+- Functions, methods, components, hooks, reducers, handlers, jobs, and scripts
+  should be small enough to scan in one pass. About 40 to 80 lines is a normal
+  review budget for orchestration code; over about 150 lines needs an explicit
+  reason to stay together or a split plan.
+- Source files should have one primary owner and one responsibility cluster.
+  Over about 400 lines needs a responsibility map before adding more behavior;
+  over about 700 lines should not keep growing without a boundary decision.
+- CSS and style files follow the same ownership rule. Do not group tokens,
+  primitives, component variants, page layout overrides, and one-off fixes in
+  one file only because they are all styles.
+- Packages, folders, namespaces, targets, or modules are ownership boundaries,
+  not storage bins. Create them only when they make allowed imports, dependency
+  direction, tests, or review ownership clearer.
+
+### Function Or Block Split
+
+Split a function, component, hook, reducer, handler, job, style block, or script
+step when one of these is true:
+
+- The unit combines multiple responsibilities such as parse, validate,
+  authorize, fetch, cache, map, render, mutate, log, navigate, or persist.
+- Branches describe different business cases, UI states, data sources, platform
+  capabilities, or failure modes that can be named and tested separately.
+- A pure calculation can be separated from IO, time, randomness, process state,
+  global state, framework calls, or platform calls.
+- The same rule, mapper, formatter, selector, style pattern, or error handling
+  repeats in more than one real caller.
+- A test, preview, fixture, or smoke path cannot exercise the behavior without
+  booting unrelated systems.
+- The best name for the unit contains "and", "or", "with", "misc", "common",
+  "helper", or a caller-specific mode flag.
+
+Keep the code local when the extracted helper would only rename an obvious line,
+hide a necessary branch, require many caller-specific parameters, or have no
+stable responsibility name.
+
+### File Or Class Creation
+
+Create a new source file, class file, CSS file, style module, or test fixture
+when most of these are true:
+
+- The new unit has a clear owner and can be named by responsibility, not by a
+  vague bucket such as `utils`, `helpers`, `common`, or `misc`.
+- It has a stable input/output, state, side-effect, rendering, styling, or
+  contract surface.
+- It can be tested, previewed, mocked, or reviewed without reading the whole
+  caller.
+- It isolates a real boundary: domain policy, state model, mapper, adapter,
+  platform API, component contract, style primitive, fixture, or integration
+  edge.
+- The caller becomes smaller without losing the product policy, route decision,
+  permission check, copy ownership, analytics ownership, or error ownership it
+  should keep.
+
+Do not create a new file or class only because a file is getting long. First map
+the responsibilities, callers, state owners, side effects, and nearest checks.
+If the new unit has one caller and no real boundary, prefer file-private or
+package/internal code.
+
+### Package Or Folder Creation
+
+Create a new package, folder, namespace, target, or module when it protects an
+import or ownership rule:
+
+- Multiple files share one owner and are expected to evolve together.
+- Callers should import a stable contract without seeing implementation details.
+- A platform, SDK, database, filesystem, network, browser, shell, or paid
+  dependency must stay behind an adapter boundary.
+- Tests need a smaller unit than the app shell, server process, route tree, or
+  renderer to verify behavior.
+- The split prevents circular dependencies, broad manifest churn, or unrelated
+  owners editing the same area.
+
+Keep the current package when the proposed folder would contain one or two
+small unstable files, duplicate an architecture diagram without enforcing an
+import rule, or become a grab bag for unrelated helpers.
+
+### Shared Code Promotion
+
+Promote code to `common`, `shared`, `core`, a design-system package, or a public
+package only when the caller contract is stable:
+
+- At least two real callers or one explicit platform/public contract need it.
+- Product copy, routing, permissions, analytics, tenant rules, billing rules,
+  and workflow decisions remain in the caller.
+- Inputs, outputs, errors, loading states, side effects, and customization points
+  are explicit.
+- The shared unit can change internally without forcing caller behavior changes.
+- Tests, examples, previews, fixtures, or compatibility notes cover the shared
+  contract.
+
+Do not promote code only to reduce apparent duplication. Duplication is cheaper
+than a shared API that needs flags, nullable options, hidden globals, or
+caller-specific branches.
+
 ## Ownership Levels
 
 Choose the lowest level that gives the code a clear owner:

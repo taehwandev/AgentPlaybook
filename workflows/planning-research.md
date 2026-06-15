@@ -26,6 +26,19 @@ plan, assess risk, or prepare a recommendation before editing code.
 5. Prefer the smallest reversible plan that proves the goal.
 6. Report recommended path, rejected alternatives, risks, and next concrete step.
 
+## Evidence
+
+Planning output should distinguish:
+
+- observed local facts from repo files, docs, tests, commands, or source code
+- external facts that were verified with current sources
+- assumptions that need user or owner confirmation
+- options rejected and the concrete tradeoff behind each rejection
+- verification that would prove the recommended path during implementation
+
+Do not present an implementation plan as settled architecture when the relevant
+code, contracts, product policy, or external facts were not inspected.
+
 ## Stop If
 
 - The plan would require product, legal, billing, security, or release policy that is not present.
