@@ -21,6 +21,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 HOOK_RETRY_LIMIT = 1
+REVIEW_CHANGED_PATH_LIMIT = 25
 
 
 def clean_output(text: str) -> str:
@@ -86,6 +87,12 @@ def print_status(name: str, success: bool, details: list[str]) -> None:
         print(f"- {detail}")
 
 
+def git_status(project: Path) -> tuple[dict[str, Any], list[str]]:
+    result = run_command(["git", "status", "--short", "--untracked-files=all"], project)
+    lines = [line for line in result["stdout"].splitlines() if line.strip()]
+    return result, lines
+
+
 def start_hook(args: argparse.Namespace) -> int:
     command = [
         sys.executable,
@@ -136,6 +143,18 @@ def review_hook(args: argparse.Namespace) -> int:
     if not docs_evidence:
         failures.append("docs freshness evidence is required")
 
+    status_before, status_before_lines = git_status(args.project)
+    checks["git_status_before"] = status_before
+    checks["changed_path_count"] = len(status_before_lines)
+    checks["changed_path_limit"] = args.max_changed_paths
+    if status_before["returncode"] != 0:
+        failures.append("git status failed")
+    elif len(status_before_lines) > args.max_changed_paths:
+        failures.append(
+            f"review scope has {len(status_before_lines)} changed paths; "
+            f"limit is {args.max_changed_paths}; split the change or run a smaller review scope"
+        )
+
     diff_check = run_command(["git", "diff", "--check"], args.project)
     checks["diff_check"] = diff_check
     if diff_check["returncode"] != 0:
@@ -158,14 +177,18 @@ def review_hook(args: argparse.Namespace) -> int:
     elif vibeguard["overall"] != "Ready":
         failures.append(f"VibeGuard overall is {vibeguard['overall']}")
 
-    changed = run_command(["git", "status", "--short", "--untracked-files=all"], args.project)
-    checks["git_status"] = changed
-    if changed["returncode"] != 0:
+    status_after, status_after_lines = git_status(args.project)
+    checks["git_status_after"] = status_after
+    if status_after["returncode"] != 0:
         failures.append("git status failed")
+    elif status_after_lines != status_before_lines:
+        failures.append("review hook changed the worktree; review hooks must stay read-only")
 
     details = failures or [
         "code review evidence recorded",
         "docs freshness evidence recorded",
+        "review scope guard passed",
+        "review hook left worktree unchanged",
         "diff whitespace check passed",
         "workflow validation passed",
         "VibeGuard audit passed",
@@ -279,6 +302,13 @@ def retry_attempt(value: str) -> int:
     return attempt
 
 
+def non_negative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("value must be non-negative")
+    return parsed
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run essential AgentPlaybook hooks.")
     parser.add_argument("hook", choices=("start", "review", "finish"))
@@ -314,6 +344,12 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument(
         "--docs-freshness-evidence",
         help="short evidence that affected docs were updated or intentionally unchanged",
+    )
+    review.add_argument(
+        "--max-changed-paths",
+        type=non_negative_int,
+        default=REVIEW_CHANGED_PATH_LIMIT,
+        help="fail review when the changed path count is above this limit",
     )
 
     finish = parser.add_argument_group("finish hook")

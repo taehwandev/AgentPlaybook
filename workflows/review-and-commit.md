@@ -38,7 +38,8 @@ Before handoff or commit, confirm:
 
 - every required scripted workflow gate is `🐱🟢 SUCCESS`
 - VibeGuard or the repo-local safety gate passed when required
-- Review Hook passed with code review evidence and docs freshness evidence
+- Review Hook passed with code review evidence and docs freshness evidence, and
+  it did not mutate the worktree or hide broad fixes inside the hook
 - the nearest behavior, contract, build, or manual smoke check ran or the skip
   reason and residual risk are explicit
 - `git diff --check` or repo formatter/lint covered whitespace or formatting
@@ -56,6 +57,10 @@ remaining risk, and any intentionally unstaged or unrelated user-owned changes.
 ## Stop If
 
 - The diff includes unrelated feature, refactor, generated, dependency, or release changes that can be split.
+- The Review Hook reports that the changed path count is too broad for one
+  review pass.
+- The review requires a fix larger than the current scoped task; start a
+  separate routed task instead of folding the update into review.
 - Required verification failed and the failure is not understood.
 - Secrets, local config, signing material, or private data appear in the diff.
 - The commit message would need to hide uncertainty about product behavior,

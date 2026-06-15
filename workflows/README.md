@@ -78,6 +78,14 @@ Failure handling is also binary:
 Use the same public states for route gate signals and hook status:
 `🐱🟢 SUCCESS` and `🐱🔴 FAIL`. Do not report any third state.
 
+Hooks are gates, not update engines. A hook must not run formatters, autofix,
+code generation, dependency install/update, migration, broad cleanup, broad
+refactor, VibeGuard `--fix`, or any command whose purpose is to change project
+files. If a hook discovers that a large fix, migration, or rewrite is needed, it
+must return `FAIL` with the smallest actionable reason. The agent then starts a
+separate scoped task through the normal route instead of letting the hook apply
+the update.
+
 - `Start Hook`: run before work that needs routing or evidence. It records
   request classification, route, git status, and pre-work VibeGuard evidence.
   Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.
@@ -85,7 +93,10 @@ Use the same public states for route gate signals and hook status:
   and before finish. It must record code review evidence and docs freshness
   evidence, then run local diff hygiene, workflow validation, and VibeGuard
   audit. Architecture, security, dependency, release, and test concerns are
-  reviewed here as evidence, not as separate hooks.
+  reviewed here as evidence, not as separate hooks. The review hook is read-only:
+  it fails if its checks change the worktree. It also fails by default when the
+  changed path count is too broad for one review pass, so the work must be split
+  before retrying.
   Use
   `python3 scripts/agent-hook.py review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>"`.
 - `Finish Hook`: run before final report, commit, release, or handoff. It

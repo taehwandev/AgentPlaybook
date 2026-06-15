@@ -79,6 +79,23 @@ or summary only when it helps the handoff.
 - Treat documentation freshness as part of the review, not as a separate
   follow-up hook.
 
+## Hook Scope
+
+When review is enforced through `scripts/agent-hook.py review`, treat the hook
+as a read-only gate:
+
+- Do not let the hook run fixers, formatters, generated-code updates,
+  dependency updates, migrations, broad cleanup, broad refactors, or VibeGuard
+  `--fix`.
+- Do not let the hook apply documentation updates, code review fixes, or
+  structure rewrites. It records whether those decisions were already handled or
+  should fail.
+- If the diff is too broad to review confidently in one pass, fail the hook and
+  split the work before retrying.
+- If the review finds a required fix, report the smallest actionable failure and
+  run the normal workflow for that fix. Do not hide the fix inside the hook.
+- If a hook command changes the worktree, treat that as a hook failure.
+
 ## Format
 
 ```text
