@@ -35,7 +35,7 @@ MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 FRONTMATTER_REQUIRED_KEYS = ("keyflow_id:", "status:", "type:")
 QUESTION_ROUTE_COMMANDS = {"triage", "ambiguity"}
 ANSWER_ONLY_CLARITY = "direct-question"
-RETRY_LIMIT = 2
+RETRY_LIMIT = 1
 ATTEMPT_LIMIT = RETRY_LIMIT + 1
 RETRY_SCOPE = "first_missed_gate"
 SPILL_SETUP_HELPER = (
@@ -451,8 +451,9 @@ def print_markdown(route: Dict[str, object]) -> None:
     print()
     print("If any required gate is not executed, stop finalization, return to the")
     print("first missed gate only, roll back only dependent agent-made changes when")
-    print("safe, and run `workflows/retrospective-learning.md`. The missed gate gets")
-    print("up to two recovery retries; do not restart the whole route.")
+    print("safe, then request one recovery retry for the missed gate only.")
+    print("If that retry misses the gate again, run `workflows/retrospective-learning.md`;")
+    print("do not restart the whole route.")
     if route["notes"]:
         print()
         print("## Notes")

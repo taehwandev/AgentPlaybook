@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -308,6 +309,21 @@ def run_command(command: list[str], cwd: Path) -> dict[str, Any]:
     }
 
 
+def vibeguard_command(project: Path, rules: Path) -> list[str]:
+    binary = shutil.which("vibeguard")
+    if binary:
+        return [binary, "audit", str(project), "--rules", str(rules)]
+    return [
+        "npx",
+        "--yes",
+        "@taehwandev/vibeguard",
+        "audit",
+        str(project),
+        "--rules",
+        str(rules),
+    ]
+
+
 def parse_overall(output: str) -> dict[str, str]:
     for raw_line in clean_output(output).splitlines():
         line = raw_line.strip()
@@ -426,18 +442,7 @@ def main() -> int:
         ["git", "status", "--short", "--untracked-files=all"],
         project,
     )
-    vibeguard = run_command(
-        [
-            "npx",
-            "--yes",
-            "@taehwandev/vibeguard",
-            "audit",
-            str(project),
-            "--rules",
-            str(rules),
-        ],
-        project,
-    )
+    vibeguard = run_command(vibeguard_command(project, rules), project)
     vibeguard_output = vibeguard["stdout"] + "\n" + vibeguard["stderr"]
     vibeguard["overall"] = parse_overall(vibeguard_output)
 

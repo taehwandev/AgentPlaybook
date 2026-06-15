@@ -27,6 +27,74 @@ Discover available scripted commands with:
 python3 scripts/workflow.py list
 ```
 
+## Decision Rule
+
+Use the smallest workflow that covers the actual risk:
+
+- answer-only or one-file low-risk work may use the core operating cards only
+- multi-step implementation uses `development-cycle.md`
+- product or architecture delivery that still needs PRD/ARD uses
+  `product-architecture-delivery.md`
+- review, commit, release, migration, or handoff work uses the matching
+  dedicated workflow before reporting completion
+
+Do not use a lower-risk workflow to skip required product, architecture,
+security, release, VibeGuard, or verification gates.
+
+## Completion Evidence
+
+A workflow is complete only when:
+
+- the scripted route gates are executed and recorded when a route was used
+- repo-local instructions and relevant common/platform cards were read
+- the final diff or artifact was inspected against the request
+- the smallest reliable verification ran, or the skip reason and residual risk
+  are explicit
+- handoff reports changed files, commands, results, blockers, and remaining risk
+
+## Essential Hooks
+
+Start with only three agent hooks. Do not add separate PRD, ARD, docs freshness,
+architecture, security, dependency, test, or release hooks unless a repeated
+blocking failure proves that the check cannot live inside one of these three.
+Those concerns belong in route gates, review criteria, or finish evidence first.
+
+Each hook has a binary public state. The first output line must be one of:
+
+```text
+SUCCESS <hook>
+FAIL <hook>
+```
+
+Additional lines may explain the reason, but callers should gate only on the
+exit code and the first state token. Do not introduce warning, pending, review,
+yellow, or partial-success hook states.
+
+Failure handling is also binary:
+
+- first `FAIL`: request exactly one retry for the same hook and failed scope
+- second `FAIL` for that hook/scope: stop and run
+  `workflows/retrospective-learning.md`
+
+Do not use route traffic-light gate signals as hook states. The gate ledger may
+show progress with pending/executed/blocked/missed signals, but hook retry and
+retrospective decisions must come only from `SUCCESS` or `FAIL`.
+
+- `Start Hook`: run before work that needs routing or evidence. It records
+  request classification, route, git status, and pre-work VibeGuard evidence.
+  Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.
+- `Review Hook`: the primary hook. Run it immediately after meaningful edits
+  and before finish. It must record code review evidence and docs freshness
+  evidence, then run local diff hygiene, workflow validation, and VibeGuard
+  audit. Architecture, security, dependency, release, and test concerns are
+  reviewed here as evidence, not as separate hooks.
+  Use
+  `python3 scripts/agent-hook.py review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>"`.
+- `Finish Hook`: run before final report, commit, release, or handoff. It
+  verifies the required route gate evidence, final validation, diff hygiene,
+  and final VibeGuard state. Use `--gate "<gate>=<evidence>"` for each required
+  gate from the start evidence.
+
 ## Current Workflows
 
 - `agent-task-lifecycle.md`: route any agent task from intake to report.

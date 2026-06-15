@@ -16,8 +16,22 @@ instructions, and any project or product guidance.
 2. Security, privacy, permission bug
 3. Data loss, auth, billing risk
 4. Missing or weak tests
-5. Maintainability
-6. Style
+5. Missing or stale source-of-truth documentation
+6. Maintainability
+7. Style
+
+## Read
+
+- User request, acceptance criteria, PRD/ARD, issue, or commit message.
+- Repo-local instructions and any matching AgentPlaybook platform/product cards.
+- Final diff, including generated files, lockfiles, fixtures, snapshots, and
+  config.
+- Verification output or evidence gaps.
+- Affected source-of-truth docs, runbooks, API references, architecture notes,
+  and agent instructions when behavior, commands, contracts, setup, or
+  ownership changed.
+- Nearby ownership boundaries, public contracts, state owners, and side effects
+  when the diff crosses them.
 
 ## Check
 
@@ -29,8 +43,30 @@ instructions, and any project or product guidance.
 - Are API, DTO, route, event, webhook, or fixture contracts still compatible?
 - Do user-facing UI changes preserve accessibility, localization, long text, and error states?
 - Are release, deployment, migration, or rollback risks documented when affected?
+- Did behavior, setup, commands, contracts, architecture, or ownership change in
+  a way that requires docs to be updated or explicitly left unchanged with a
+  reason?
 - Does it follow local patterns?
 - Is the diff wider than needed?
+
+## Findings Criteria
+
+Report a finding when a reviewer would reasonably ask for a code or test change
+before approval:
+
+- The behavior can fail for a real user, caller, platform target, or external
+  system.
+- The change violates an ownership, dependency, public contract, security,
+  privacy, data, billing, release, accessibility, or persistence boundary.
+- Verification is missing for a changed high-risk boundary.
+- The change leaves stale documentation, runbooks, agent instructions, API
+  references, or architecture notes that a future implementer would reasonably
+  follow.
+- The diff mixes unrelated work enough to hide risk or block rollback.
+
+Do not report preference-only style notes as findings unless they violate
+repo-local rules or obscure correctness. Put optional cleanup in open questions
+or summary only when it helps the handoff.
 
 ## Review Stance
 
@@ -39,6 +75,9 @@ instructions, and any project or product guidance.
 - Do not rewrite unrelated code during review.
 - Separate blockers from optional improvements.
 - Prefer concrete file/line findings over broad advice.
+- If no issue is found, say that directly and still name unverified surfaces.
+- Treat documentation freshness as part of the review, not as a separate
+  follow-up hook.
 
 ## Format
 
@@ -53,4 +92,13 @@ Summary:
 - ...
 ```
 
-If no findings, say so and mention remaining test gaps.
+Severity:
+
+- `Critical`: data loss, auth bypass, secret exposure, destructive external
+  state, release blocker, or crash on a primary path.
+- `High`: user-visible regression, permission/billing/privacy bug, broken public
+  contract, unsafe migration, or missing high-risk verification.
+- `Medium`: edge-case behavior bug, maintainability risk that will likely cause
+  defects, or weak but not blocking verification.
+- `Low`: small correctness, clarity, or follow-up issue that should not block
+  the main change alone.

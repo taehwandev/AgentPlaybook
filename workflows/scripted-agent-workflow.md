@@ -189,9 +189,9 @@ The route output is the command manifest for the agent:
 - `gate_ledger`: mark and show each gate as executed when it completes.
 - `signal`: traffic-light state for each gate: `PENDING`, `GREEN`, `YELLOW`, or
   `RED`.
-- `attempt_limit`: original execution plus up to two retries for the missed gate.
+- `attempt_limit`: original execution plus one retry for the missed gate.
 - `retry_limit`: maximum recovery retries for the missed gate; this should be
-  `2`.
+  `1`.
 - `retry_scope`: where recovery resumes; this should be `first_missed_gate`.
 - `notes`: apply these routing hints before choosing commands or edits.
 - `missing`: stop if this is not empty; fix the playbook reference first.
@@ -204,7 +204,7 @@ same fields for wrappers, launchers, or CI checks.
 For every scripted route, maintain a gate ledger while working:
 
 ```text
-Attempt for this gate: 1/3
+Attempt for this gate: 1/2
 - gate: ...
   signal: PENDING | GREEN | YELLOW | RED
   status: pending | executed | blocked | missed
@@ -303,15 +303,14 @@ If the agent missed any required gate:
 3. Resume at the first missed gate only; do not restart the whole route.
 4. Roll back only dependent agent-made changes after the missed gate when safe.
    Preserve pre-existing user changes and ask before destructive cleanup.
-5. Re-execute the missed gate up to two times, then refresh any downstream gate
+5. Re-execute the missed gate one time, then refresh any downstream gate
    evidence that depended on work after the missed gate.
-6. Run `workflows/retrospective-learning.md` because at least one gate was
-   missed.
+6. If the single retry fails, run `workflows/retrospective-learning.md` before
+   any handoff, commit, release, or completion report.
 
-The missed gate gets up to two recovery retries: original execution plus two
-recovery passes. If the second recovery pass misses that gate again, stop and
-report the blocker, the missed gate, the rollback status, and the retrospective
-summary.
+The missed gate gets one recovery retry: original execution plus one recovery
+pass. If that recovery pass misses the gate again, stop and report the blocker,
+the missed gate, the rollback status, and the retrospective summary.
 
 ## Command Profiles
 
