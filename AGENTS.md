@@ -138,6 +138,13 @@ follow the missed gate recovery rule instead of finalizing. See
 `workflows/scripted-agent-workflow.md` for the full consumption rules.
 Use the cat signal badges in human-visible reports so misses are hard to skim
 past: `🐱🔵 PENDING`, `🐱🟢 GREEN`, `🐱🟡 YELLOW`, and `🐱🔴 RED`.
+These traffic-light badges are workflow gate ledger signals only. They are not
+agent status or hook status. Agent hooks must expose only `SUCCESS` or `FAIL`.
+On the first `FAIL`, request exactly one retry for the same hook and failed
+scope. On the second `FAIL` for that hook/scope, stop and run
+`workflows/retrospective-learning.md` before handoff, commit, release, or a
+completion report. Do not introduce warning, pending, yellow, review, or
+partial-success hook states.
 
 ## Required Executable Evidence Gate
 
@@ -187,7 +194,8 @@ passes `--allow-vibeguard-review "<reason>"`. `🐱🔴 RED`, command failure, o
 missing VibeGuard output remains a blocker.
 Human-visible finish-check output must include the cat signal badges; the
 machine-readable JSON keeps the stable `PENDING`, `GREEN`, `YELLOW`, and `RED`
-values.
+values. Those values remain gate evidence signals only; hook retry and
+retrospective decisions are based on `SUCCESS` or `FAIL`.
 
 ## Supporting Documents
 
