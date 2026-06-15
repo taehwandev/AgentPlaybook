@@ -44,8 +44,8 @@ or task-specific workflow to load next.
    only for simple answer-only work or an explicitly accepted fallback when the
    script cannot run.
 6. Gate ledger: create a ledger for every route gate, mark each gate when it is
-   executed, and show a short traffic-light gate signal after each completed
-   gate or task step.
+   executed, and show a short `SUCCESS` or `FAIL` gate signal after each
+   completed or failed gate or task step.
 7. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
 8. Decide: make a reasonable assumption when safe; ask only when ambiguity
@@ -57,9 +57,9 @@ or task-specific workflow to load next.
 11. Recover: when a command fails, diagnose stdout/stderr and make the smallest
     correction before retrying.
 12. Ledger check: before finalizing, compare required gates against executed
-    evidence and traffic-light state. Completion requires every required gate to
-    be `🐱🟢 GREEN`. If any required gate is missing, `🐱🟡 YELLOW`, or
-    `🐱🔴 RED`, follow the corresponding pause or missed-gate recovery rule in
+    evidence and `SUCCESS`/`FAIL` state. Completion requires every required gate
+    to be `🐱🟢 SUCCESS`. If any required gate is missing, blocked, failed, or
+    lacks evidence, report `🐱🔴 FAIL` and follow missed-gate recovery in
     `workflows/scripted-agent-workflow.md`.
 13. Review: inspect the final diff, output, or artifact against the request and
     risks.

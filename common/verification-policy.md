@@ -90,16 +90,14 @@ When a scripted route was used, every route gate must have evidence before the
 work is reported complete. If a required gate was not executed, follow missed
 gate recovery instead of reporting completion.
 
-Traffic-light gate status is part of verification:
+Gate status is part of verification and has only two public states:
 
-- `🐱🔵 PENDING`: not reached yet.
-- `🐱🟢 GREEN`: executed with evidence.
-- `🐱🟡 YELLOW`: blocked or paused; completion cannot be claimed.
-- `🐱🔴 RED`: missed or missing evidence after the gate should have run; follow
-  missed-gate recovery.
+- `🐱🟢 SUCCESS`: executed with evidence.
+- `🐱🔴 FAIL`: missed, blocked, failed, or missing evidence after the gate should
+  have run; follow missed-gate recovery.
 
 Before final report, commit, release, or handoff, every required gate must be
-`🐱🟢 GREEN`.
+`🐱🟢 SUCCESS`.
 
 Manual evidence should be specific:
 

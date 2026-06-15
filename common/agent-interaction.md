@@ -92,17 +92,16 @@ For long-running work, report what context was gathered, what changed in the
 plan, and what verification remains. Keep updates short and evidence-based.
 
 When a scripted workflow route is used, show a gate signal after each completed
-gate or task step:
+or failed gate or task step:
 
 ```text
-Gate signal: 🐱🟢 GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
+Gate signal: 🐱🟢 SUCCESS | gate: <gate> | evidence: <evidence> | next: <next gate>
 ```
 
-Use `🐱🔵 PENDING` when the gate has not been reached, `🐱🟢 GREEN` only when the
-gate was executed and has evidence, `🐱🟡 YELLOW` when the gate is blocked or
-paused, and `🐱🔴 RED` when the gate was missed or lacks evidence after it
-should have run. Do not wait until the final response to reveal that a required
-gate was skipped.
+Use only `🐱🟢 SUCCESS` and `🐱🔴 FAIL` in human-visible reports. Do not report a
+third gate state. Gates that have not been reached should simply be absent from
+progress reports. If a gate is blocked, missed, or lacks evidence when it should
+have run, report `🐱🔴 FAIL` immediately and follow missed-gate recovery.
 
 ## Handoff
 

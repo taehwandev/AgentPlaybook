@@ -187,8 +187,7 @@ The route output is the command manifest for the agent:
   provided.
 - `gates`: use these as the task checklist and report against them.
 - `gate_ledger`: mark and show each gate as executed when it completes.
-- `signal`: traffic-light state for each gate: `PENDING`, `GREEN`, `YELLOW`, or
-  `RED`.
+- `signal`: public state for completed or failed gates: `SUCCESS` or `FAIL`.
 - `attempt_limit`: original execution plus one retry for the missed gate.
 - `retry_limit`: maximum recovery retries for the missed gate; this should be
   `1`.
@@ -206,48 +205,45 @@ For every scripted route, maintain a gate ledger while working:
 ```text
 Attempt for this gate: 1/2
 - gate: ...
-  signal: PENDING | GREEN | YELLOW | RED
-  status: pending | executed | blocked | missed
+  signal: SUCCESS | FAIL
+  status: executed | failed | missed
   evidence: command, file, diff, note, or manual check
 ```
 
-Do not wait until the final response to reconstruct the ledger from memory. Mark
-and show each gate when it is executed.
+Do not wait until the final response to reconstruct the ledger from memory.
+Report a gate only when it succeeds or fails. Do not emit a public third state.
 
-## Gate Traffic Lights
+## Gate Signals
 
-The traffic light is part of the workflow gate ledger, not a separate report.
-Check it at two points:
+Gate signals are part of the workflow gate ledger, not a separate report. Check
+them at two points:
 
 1. Immediately after each gate or task step completes.
 2. Before final report, commit, release, or handoff.
 
 Use these meanings:
 
-- `🐱🔵 PENDING`: the gate has not been reached yet.
-- `🐱🟢 GREEN`: the gate was executed and has evidence.
-- `🐱🟡 YELLOW`: the gate is blocked, paused, or waiting for approval; do not report
-  completion.
-- `🐱🔴 RED`: the gate was missed or has no evidence after it should have run; follow
-  missed-gate recovery.
+- `🐱🟢 SUCCESS`: the gate was executed and has evidence.
+- `🐱🔴 FAIL`: the gate was missed, blocked, failed, or has no evidence after it
+  should have run; follow missed-gate recovery.
 
 After each completed gate or task step, emit a short progress signal in the
 active conversation or handoff record:
 
 ```text
-Gate signal: 🐱🟢 GREEN | gate: <gate> | evidence: <command, file, diff, note, or manual check> | next: <next gate>
+Gate signal: 🐱🟢 SUCCESS | gate: <gate> | evidence: <command, file, diff, note, or manual check> | next: <next gate>
 ```
 
 Keep the signal short. It exists so humans and later agents can notice missed
-gates immediately instead of discovering them only in the final report.
-Use the cat signal badge in human-visible text. Keep the plain signal value
-inside machine-readable fields so automation can still parse the ledger.
+gates immediately instead of discovering them only in the final report. Use only
+`🐱🟢 SUCCESS` or `🐱🔴 FAIL` in human-visible text. Keep the plain `SUCCESS` or
+`FAIL` value inside machine-readable fields so automation can still parse the
+ledger.
 
 Before finalizing, compare the route's `gates` with the ledger:
 
 - Every required gate must be marked `executed` with evidence.
-- Every required gate must be `🐱🟢 GREEN` before completion is reported.
-- `🐱🟡 YELLOW` can pause or hand off work, but it cannot be called complete.
+- Every required gate must be `🐱🟢 SUCCESS` before completion is reported.
 - If any required gate is missing, do not continue finalization.
 - Treat a missing gate as an execution error even when the final code or docs
   look correct.
@@ -282,17 +278,16 @@ It also writes `gate_signals`, `missed_gates`, and
 `retrospective_required`. If the route classification or stored request text
 requires a question drill, the finish check must receive drill evidence through
 a gate such as `question drill if needed=<evidence>` or
-`ask blockers=<evidence>`. Missing drill evidence is a `🐱🔴 RED` signal and
+`ask blockers=<evidence>`. Missing drill evidence is a `🐱🔴 FAIL` signal and
 blocks completion until missed-gate recovery and retrospective learning run.
-Human-visible wrapper output uses `🐱🔵 PENDING`, `🐱🟢 GREEN`,
-`🐱🟡 YELLOW`, and `🐱🔴 RED` so skipped gates stand out.
+Human-visible wrapper output uses only `🐱🟢 SUCCESS` and `🐱🔴 FAIL`.
 
 Treat missing wrapper evidence as non-compliant. If the wrappers are unavailable,
 the agent must still run the same underlying checks manually and report the
-fallback explicitly. VibeGuard `🐱🟡 YELLOW` / `Needs review` cannot be called
-complete unless the state is reported and an explicit
-`--allow-vibeguard-review` reason is recorded. Command failure, `🐱🔴 RED`,
-missing route evidence, or missing VibeGuard output remains a blocker.
+fallback explicitly. VibeGuard `Needs review` cannot be called complete unless
+the state is reported and an explicit `--allow-vibeguard-review` reason is
+recorded. Command failure, `🐱🔴 FAIL`, missing route evidence, or missing
+VibeGuard output remains a blocker.
 
 ## Missed Gate Recovery
 
@@ -397,7 +392,7 @@ Verified:
 - ...task-specific checks...
 
 Gate ledger:
-- signal: GREEN / gate: ... / evidence: ...
+- signal: SUCCESS / gate: ... / evidence: ...
 ```
 
 ## Stop If

@@ -130,21 +130,17 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
 The route output contains `request_classification`, `docs`, `gates`,
 `gate_ledger`, `attempt_limit`, `retry_limit`, `retry_scope`, `notes`, and
 `missing`. Read
-listed documents in order, follow the gates as the task checklist, keep the gate
-ledger current while working, show a short traffic-light gate signal after each
-completed gate or task step, and stop if `missing` is not empty. Completion
-requires every required gate to be `🐱🟢 GREEN`. If a required gate is missed,
-follow the missed gate recovery rule instead of finalizing. See
-`workflows/scripted-agent-workflow.md` for the full consumption rules.
-Use the cat signal badges in human-visible reports so misses are hard to skim
-past: `🐱🔵 PENDING`, `🐱🟢 GREEN`, `🐱🟡 YELLOW`, and `🐱🔴 RED`.
-These traffic-light badges are workflow gate ledger signals only. They are not
-agent status or hook status. Agent hooks must expose only `SUCCESS` or `FAIL`.
-On the first `FAIL`, request exactly one retry for the same hook and failed
-scope. On the second `FAIL` for that hook/scope, stop and run
-`workflows/retrospective-learning.md` before handoff, commit, release, or a
-completion report. Do not introduce warning, pending, yellow, review, or
-partial-success hook states.
+listed documents in order, follow the gates as the task checklist, and stop if
+`missing` is not empty. Public gate and hook signals must use only
+`🐱🟢 SUCCESS` or `🐱🔴 FAIL`. Do not introduce any third state in human-visible
+reports or machine-readable hook status. Completion requires every required
+gate to be `🐱🟢 SUCCESS`. If a
+required gate fails or lacks evidence, report `🐱🔴 FAIL`, follow missed-gate
+recovery, and do not finalize. On the first `FAIL`, request exactly one retry
+for the same hook or gate scope. On the second `FAIL` for that scope, stop and
+run `workflows/retrospective-learning.md` before handoff, commit, release, or a
+completion report. See `workflows/scripted-agent-workflow.md` for the full
+consumption rules.
 
 ## Required Executable Evidence Gate
 
@@ -179,7 +175,7 @@ correct. `agent-preflight.py --request-classified` must include
 If route classification or stored request text says `question_drill: true` or
 explicitly asks for a question drill, `agent-finish-check.py` must receive
 question-drill gate evidence such as `question drill if needed=<evidence>` or
-`ask blockers=<evidence>`. Missing drill evidence is a `🐱🔴 RED` gate and sets
+`ask blockers=<evidence>`. Missing drill evidence is `🐱🔴 FAIL` and sets
 `retrospective_required: true`.
 
 If the wrappers are unavailable, the fallback is still strict: run the
@@ -188,14 +184,12 @@ work, VibeGuard again before finishing, and report each required gate with
 concrete evidence. Do not claim wrapper evidence exists unless the wrapper was
 actually run.
 
-VibeGuard `🐱🟡 YELLOW` / `Needs review` is not completion. The finish check may be
-allowed to pass only when the agent explicitly reports the review state and
-passes `--allow-vibeguard-review "<reason>"`. `🐱🔴 RED`, command failure, or
-missing VibeGuard output remains a blocker.
-Human-visible finish-check output must include the cat signal badges; the
-machine-readable JSON keeps the stable `PENDING`, `GREEN`, `YELLOW`, and `RED`
-values. Those values remain gate evidence signals only; hook retry and
-retrospective decisions are based on `SUCCESS` or `FAIL`.
+VibeGuard `Needs review` is not completion unless the agent explicitly reports
+the review state and passes `--allow-vibeguard-review "<reason>"`. `🐱🔴 FAIL`,
+command failure, or missing VibeGuard output remains a blocker.
+Human-visible finish-check output must include only `🐱🟢 SUCCESS` and
+`🐱🔴 FAIL`; the machine-readable JSON keeps the same stable `SUCCESS` and
+`FAIL` values.
 
 ## Supporting Documents
 

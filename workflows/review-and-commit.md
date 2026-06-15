@@ -36,7 +36,7 @@ Use after implementation, before handing off or committing.
 
 Before handoff or commit, confirm:
 
-- every required scripted workflow gate is `🐱🟢 GREEN`
+- every required scripted workflow gate is `🐱🟢 SUCCESS`
 - VibeGuard or the repo-local safety gate passed when required
 - Review Hook passed with code review evidence and docs freshness evidence
 - the nearest behavior, contract, build, or manual smoke check ran or the skip

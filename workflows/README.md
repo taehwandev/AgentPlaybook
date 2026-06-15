@@ -67,8 +67,7 @@ FAIL <hook>
 ```
 
 Additional lines may explain the reason, but callers should gate only on the
-exit code and the first state token. Do not introduce warning, pending, review,
-yellow, or partial-success hook states.
+exit code and the first state token. Do not introduce any third hook state.
 
 Failure handling is also binary:
 
@@ -76,9 +75,8 @@ Failure handling is also binary:
 - second `FAIL` for that hook/scope: stop and run
   `workflows/retrospective-learning.md`
 
-Do not use route traffic-light gate signals as hook states. The gate ledger may
-show progress with pending/executed/blocked/missed signals, but hook retry and
-retrospective decisions must come only from `SUCCESS` or `FAIL`.
+Use the same public states for route gate signals and hook status:
+`🐱🟢 SUCCESS` and `🐱🔴 FAIL`. Do not report any third state.
 
 - `Start Hook`: run before work that needs routing or evidence. It records
   request classification, route, git status, and pre-work VibeGuard evidence.

@@ -31,10 +31,8 @@ QUESTION_DRILL_EVIDENCE_GATES = (
     "clarification drill",
 )
 SIGNAL_DISPLAY = {
-    "PENDING": "\U0001f431\U0001f535 PENDING",
-    "GREEN": "\U0001f431\U0001f7e2 GREEN",
-    "YELLOW": "\U0001f431\U0001f7e1 YELLOW",
-    "RED": "\U0001f431\U0001f534 RED",
+    "SUCCESS": "\U0001f431\U0001f7e2 SUCCESS",
+    "FAIL": "\U0001f431\U0001f534 FAIL",
 }
 
 
@@ -192,10 +190,10 @@ def main() -> int:
     for gate in required_gates:
         evidence = gate_evidence.get(gate, "")
         if evidence:
-            add_gate_signal(gate_signals, "GREEN", gate, "executed", evidence)
+            add_gate_signal(gate_signals, "SUCCESS", gate, "executed", evidence)
         else:
             append_unique(missed_gates, gate)
-            add_gate_signal(gate_signals, "RED", gate, "missed", "missing evidence")
+            add_gate_signal(gate_signals, "FAIL", gate, "missed", "missing evidence")
 
     if missed_gates:
         failures.append("missing required gate evidence: " + ", ".join(missed_gates))
@@ -204,7 +202,7 @@ def main() -> int:
         append_unique(missed_gates, "request intake")
         add_gate_signal(
             gate_signals,
-            "RED",
+            "FAIL",
             "request intake",
             "missed",
             "--request-classified used without classification evidence",
@@ -230,7 +228,7 @@ def main() -> int:
     if question_drill_required and question_drill_evidence_gate:
         add_gate_signal(
             gate_signals,
-            "GREEN",
+            "SUCCESS",
             "question drill",
             "executed",
             f"{question_drill_evidence_gate}: {gate_evidence[question_drill_evidence_gate]}",
@@ -239,7 +237,7 @@ def main() -> int:
         append_unique(missed_gates, "question drill")
         add_gate_signal(
             gate_signals,
-            "RED",
+            "FAIL",
             "question drill",
             "missed",
             "request classification required a question drill but no drill evidence was provided",
@@ -267,24 +265,24 @@ def main() -> int:
     vibeguard["overall"] = parse_overall(vibeguard_output)
 
     if validate["returncode"] != 0:
-        add_gate_signal(gate_signals, "RED", "workflow validate", "failed", "non-zero exit")
+        add_gate_signal(gate_signals, "FAIL", "workflow validate", "failed", "non-zero exit")
         failures.append("workflow validate failed")
     else:
-        add_gate_signal(gate_signals, "GREEN", "workflow validate", "executed", "exit 0")
+        add_gate_signal(gate_signals, "SUCCESS", "workflow validate", "executed", "exit 0")
     if diff_check["returncode"] != 0:
-        add_gate_signal(gate_signals, "RED", "diff check", "failed", "non-zero exit")
+        add_gate_signal(gate_signals, "FAIL", "diff check", "failed", "non-zero exit")
         failures.append("git diff --check failed")
     else:
-        add_gate_signal(gate_signals, "GREEN", "diff check", "executed", "exit 0")
+        add_gate_signal(gate_signals, "SUCCESS", "diff check", "executed", "exit 0")
     if vibeguard["returncode"] != 0:
-        add_gate_signal(gate_signals, "RED", "VibeGuard", "failed", "non-zero exit")
+        add_gate_signal(gate_signals, "FAIL", "VibeGuard", "failed", "non-zero exit")
         failures.append("final VibeGuard audit failed")
 
     overall = vibeguard["overall"]["status"]
     if vibeguard["returncode"] != 0:
         pass
     elif overall != "Ready" and not args.allow_vibeguard_review:
-        add_gate_signal(gate_signals, "RED", "VibeGuard", "blocked", overall)
+        add_gate_signal(gate_signals, "FAIL", "VibeGuard", "blocked", overall)
         failures.append(
             "final VibeGuard is not Ready; report the state and pass "
             "--allow-vibeguard-review with a reason if the review is acceptable"
@@ -292,13 +290,13 @@ def main() -> int:
     elif overall != "Ready":
         add_gate_signal(
             gate_signals,
-            "YELLOW",
+            "SUCCESS",
             "VibeGuard",
             "review accepted",
             args.allow_vibeguard_review or overall,
         )
     else:
-        add_gate_signal(gate_signals, "GREEN", "VibeGuard", "executed", overall)
+        add_gate_signal(gate_signals, "SUCCESS", "VibeGuard", "executed", overall)
 
     retrospective_required = bool(missed_gates)
     if retrospective_required:

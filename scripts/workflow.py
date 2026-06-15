@@ -51,10 +51,8 @@ SPILL_ALLOWED_TOOLS = {"codex", "claude", "antigravity", "openai"}
 SAFE_WORKFLOW_SLUG_RE = re.compile(r"^[a-z][a-z0-9_]{1,40}$")
 REQUIRED_SPILL_ACTION_LABELS = {"classify", "list", "validate"}
 SIGNAL_DISPLAY = {
-    "PENDING": "\U0001f431\U0001f535 PENDING",
-    "GREEN": "\U0001f431\U0001f7e2 GREEN",
-    "YELLOW": "\U0001f431\U0001f7e1 YELLOW",
-    "RED": "\U0001f431\U0001f534 RED",
+    "SUCCESS": "\U0001f431\U0001f7e2 SUCCESS",
+    "FAIL": "\U0001f431\U0001f534 FAIL",
 }
 
 
@@ -387,8 +385,8 @@ def resolve_docs(
         "gate_ledger": [
             {
                 "gate": gate,
-                "status": "pending",
-                "signal": "PENDING",
+                "status": "not_started",
+                "signal": "",
                 "evidence": "",
             }
             for gate in gates
@@ -421,7 +419,7 @@ def print_markdown(route: Dict[str, object]) -> None:
     elif route["request_classified"]:
         print("## Request Classification")
         print("- Caller asserted the current request was already classified or answered before this route.")
-        print("- Record that evidence before marking `request intake` GREEN.")
+        print("- Record that evidence before reporting `request intake` SUCCESS.")
         print()
     print("## Read In Order")
     for doc in route["docs"]:
@@ -436,18 +434,17 @@ def print_markdown(route: Dict[str, object]) -> None:
     print(f"Recovery retry limit: `{RETRY_LIMIT}`")
     print(f"Retry scope: `{RETRY_SCOPE}`")
     print()
-    print("Mark and show every gate as it completes:")
+    print("Report gates only when they complete or fail:")
     for item in route["gate_ledger"]:
-        print(f"- [{display_signal(item['signal'])}] `{item['gate']}` - evidence: ...")
+        print(f"- `{item['gate']}` - evidence: ...")
     print()
     print("Progress signal format:")
-    print("`Gate signal: \U0001f431\U0001f7e2 GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>`")
+    print("`Gate signal: \U0001f431\U0001f7e2 SUCCESS | gate: <gate> | evidence: <evidence> | next: <next gate>`")
     print()
-    print("Signal legend: \U0001f431\U0001f535 PENDING not reached, \U0001f431\U0001f7e2 GREEN executed,")
-    print("\U0001f431\U0001f7e1 YELLOW blocked or review needed, \U0001f431\U0001f534 RED missed.")
-    print("Completion check: every required gate must be \U0001f431\U0001f7e2 GREEN before final")
-    print("report, commit, release, or handoff. \U0001f431\U0001f7e1 YELLOW means blocked or")
-    print("paused. \U0001f431\U0001f534 RED means missed and triggers missed-gate recovery.")
+    print("Signal legend: \U0001f431\U0001f7e2 SUCCESS executed with evidence,")
+    print("\U0001f431\U0001f534 FAIL missing, blocked, or failed.")
+    print("Completion check: every required gate must be \U0001f431\U0001f7e2 SUCCESS before final")
+    print("report, commit, release, or handoff. \U0001f431\U0001f534 FAIL triggers missed-gate recovery.")
     print()
     print("If any required gate is not executed, stop finalization, return to the")
     print("first missed gate only, roll back only dependent agent-made changes when")
@@ -501,10 +498,10 @@ def validate_route_contracts() -> List[str]:
         for gate, item in zip(route["gates"], ledger):
             if item["gate"] != gate:
                 failures.append(f"{command}: ledger gate `{item['gate']}` does not match `{gate}`")
-            if item["status"] != "pending":
-                failures.append(f"{command}: initial ledger status for `{gate}` must be pending")
-            if item["signal"] != "PENDING":
-                failures.append(f"{command}: initial ledger signal for `{gate}` must be PENDING")
+            if item["status"] != "not_started":
+                failures.append(f"{command}: initial ledger status for `{gate}` must be not_started")
+            if item["signal"] != "":
+                failures.append(f"{command}: initial ledger signal for `{gate}` must be empty")
             if item["evidence"] != "":
                 failures.append(f"{command}: initial ledger evidence for `{gate}` must be empty")
 
