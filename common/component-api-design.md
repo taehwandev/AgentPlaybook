@@ -28,6 +28,10 @@ Avoid:
 - Components that fetch data, decide navigation, log analytics, enforce product permissions, and render UI at the same time.
 - Hidden global config reads or environment-dependent behavior.
 - Copying a whole screen state into a leaf component when a smaller model works.
+- Creating reusable-looking components, hooks, callbacks, or helpers for one
+  caller when there is no stable second use or explicit design-system contract.
+- Moving feature-specific product policy into a component only to reduce the
+  caller's line count.
 
 ## Controlled State
 
@@ -54,6 +58,10 @@ Keep the block local when its copy, route decisions, permissions, tenant rules, 
 
 Promote a block into a reusable component only when the caller contract is stable: at least two real callers exist or a design-system contract is intended, the caller still owns product policy, and the API can be expressed without caller-specific booleans or nullable feature flags.
 
+Do not skip the feature-local block step. If the only problem is that one screen
+or function is too large, split it into named local sections first. Promote to a
+shared component only after the reusable role and caller contract are clear.
+
 ## Naming
 
 - Name the component by its reusable role: `SearchField`, `MetricTile`, `PlacePreviewSheet`.
@@ -77,7 +85,9 @@ Those decisions stay in the caller, state holder, domain policy, or integration 
 
 ## Examples And States
 
-Every reusable component should have at least one example, preview, fixture, or focused test covering the common state. Add edge examples when affected:
+Every reusable component must have at least one example, preview, fixture, story,
+snapshot, or focused test covering the common state when the repo supports one.
+Add edge examples when affected:
 
 - loading and disabled
 - empty and error

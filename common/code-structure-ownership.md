@@ -40,6 +40,30 @@ tests, and generated-adjacent glue:
   not storage bins. Create them only when they make allowed imports, dependency
   direction, tests, or review ownership clearer.
 
+## Non-Negotiable Structure Stops
+
+Do not continue implementation when any of these are true:
+
+- The new change would add another unrelated responsibility to a file that
+  already owns routing, rendering, state, data access, styling, and side effects.
+- A single function, component, hook, handler, job, reducer, or script step would
+  own more than one of these concerns: parse, validate, authorize, fetch, cache,
+  map, render, mutate, persist, log, navigate, schedule, retry, or recover.
+- The code needs separate tests, fixtures, previews, or manual checks for
+  separate branches, but those branches are still hidden inside one unit.
+- The proposed new file is a grab bag named `utils`, `helpers`, `common`,
+  `misc`, `shared`, `manager`, or `service` without a precise owner and
+  contract.
+- The proposed function exists only to move an obvious line elsewhere, or it
+  needs caller-specific flags to be useful.
+- The split would create many tiny files with no stable owner, no testable
+  contract, and no review benefit.
+
+When a stop signal appears, make the smallest ownership split before adding more
+behavior. The split can be file-private, package/internal, feature-local, or a
+new source file; choose the lowest level that makes responsibility, dependency
+direction, and verification obvious.
+
 ### Function Or Block Split
 
 Split a function, component, hook, reducer, handler, job, style block, or script

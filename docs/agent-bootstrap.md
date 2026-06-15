@@ -252,14 +252,14 @@ that subsystem.
 11. For multi-step setup or migration work, run
    `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route ... --request
    "<USER_REQUEST>"` before editing, keep the workflow route gate ledger,
-   and verify every required gate is `🐱🟢 GREEN` with evidence before reporting
-   success.
+   and verify every required gate is `🐱🟢 SUCCESS` with evidence before
+   reporting success.
 12. When wrapper scripts are available, run
    `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py ...` before edits
    and `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py ...` before
    final report, commit, release, or handoff. Missing wrapper evidence or gate
-   evidence is non-compliant. Human-visible status should use `🐱🔵 PENDING`,
-   `🐱🟢 GREEN`, `🐱🟡 YELLOW`, and `🐱🔴 RED` badges.
+   evidence is non-compliant. Human-visible status should use only
+   `🐱🟢 SUCCESS` and `🐱🔴 FAIL` badges. Do not report any third gate state.
 
 Use `templates/repo-agents-routing.md` as the routing block source.
 

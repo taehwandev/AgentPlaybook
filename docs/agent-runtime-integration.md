@@ -251,13 +251,13 @@ For every runtime:
     editing and `scripts/agent-finish-check.py` before final report, commit,
     release, or handoff. Missing wrapper evidence or route gate evidence is
     non-compliant.
-13. Keep a gate execution ledger, mark each route
-   gate with evidence when it is executed, assign a traffic-light signal, and
-   show a short gate signal after each completed gate or task step.
+13. Keep a gate execution ledger, mark each route gate with evidence when it is
+   executed or fails, assign only `🐱🟢 SUCCESS` or `🐱🔴 FAIL`, and show a
+   short gate signal after each completed or failed gate or task step.
 14. Load only selected cards.
 15. Execute repo-local commands only from trusted repo-local instructions.
-16. Before reporting completion, confirm every required route gate is `🐱🟢 GREEN`
-    with ledger evidence.
+16. Before reporting completion, confirm every required route gate is
+    `🐱🟢 SUCCESS` with ledger evidence.
 17. When a VibeGuard execution evidence adapter is configured, use the
     VibeGuard CLI evidence command and compare the summary with claimed
     commands.
@@ -266,16 +266,16 @@ For every runtime:
 If a required route gate was missed, the runtime must stop finalization, roll
 back only dependent agent-made changes after the missed gate when safe, return
 to the first missed gate only, and run the retrospective workflow. The missed
-gate gets up to two recovery retries; the whole route is not restarted.
+gate gets one recovery retry; the whole route is not restarted.
 
-Traffic-light signals are checked inside the workflow:
+Human-visible signals are checked inside the workflow:
 
-- `🐱🔵 PENDING`: not reached yet.
-- `🐱🟢 GREEN`: executed with evidence; the gate can be counted as complete.
-- `🐱🟡 YELLOW`: blocked or paused; the task can be handed off but not called
-  complete.
-- `🐱🔴 RED`: missed or missing evidence after the gate should have run; run
-  missed-gate recovery.
+- `🐱🟢 SUCCESS`: executed with evidence; the gate can be counted as complete.
+- `🐱🔴 FAIL`: blocked, failed, missed, or missing evidence after the gate should
+  have run; run missed-gate recovery.
+
+Do not report any third gate state. Gates that have not been reached are simply
+absent from progress reports.
 
 ## Verification
 

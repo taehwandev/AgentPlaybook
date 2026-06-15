@@ -356,12 +356,12 @@ starting project work.
 When the wrapper scripts exist, run `agent-preflight.py` before editing and
 `agent-finish-check.py` before final report, commit, release, or handoff. Missing
 wrapper evidence or missing route gate evidence is non-compliant.
-After each completed gate or task step, show:
-Gate signal: 🐱🟢 GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
+After each completed or failed gate or task step, show:
+Gate signal: 🐱🟢 SUCCESS | gate: <gate> | evidence: <evidence> | next: <next gate>
 
-Completion requires every required gate to be 🐱🟢 GREEN. 🐱🔵 PENDING means
-not reached, 🐱🟡 YELLOW means blocked or paused, and 🐱🔴 RED means the gate
-was missed or lacks evidence and must use missed-gate recovery.
+Completion requires every required gate to be 🐱🟢 SUCCESS. 🐱🔴 FAIL means the
+gate was blocked, failed, missed, or lacks evidence and must use missed-gate
+recovery. Do not report any third gate state.
 
 For PRD-only work:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
@@ -487,15 +487,15 @@ If the workflow router cannot run, the agent must stop and report the blocker or
 ask whether to continue with an `index.md` fallback. The route output contains
 `docs`, `gates`, `gate_ledger`, `attempt_limit`, `retry_limit`,
 `retry_scope`, `notes`, and `missing`. Agents should read the listed docs in
-order, use gates as the task checklist, mark each gate with evidence while
-working, and show a short traffic-light gate signal after each completed gate or
-task step. Stop if any document is listed under `missing`. Completion requires
-every required gate to be `🐱🟢 GREEN`. `🐱🔵 PENDING` means not reached,
-`🐱🟡 YELLOW` means blocked or paused, and `🐱🔴 RED` means missed or missing
-evidence and triggers missed-gate recovery: stop finalization, return to the
-first missed gate only, roll back dependent agent-made changes when safe, and
-run the retrospective workflow. The missed gate gets up to two recovery retries;
-the whole route is not restarted.
+order, use gates as the task checklist, mark each completed or failed gate with
+evidence while working, and show a short gate signal after each completed or
+failed gate or task step. Stop if any document is listed under `missing`.
+Completion requires every required gate to be `🐱🟢 SUCCESS`. `🐱🔴 FAIL` means
+blocked, failed, missed, or missing evidence and triggers missed-gate recovery:
+stop finalization, return to the first missed gate only, roll back dependent
+agent-made changes when safe, and run the retrospective workflow. The missed
+gate gets one recovery retry; the whole route is not restarted. Do not report
+any third gate state.
 
 ## Executable Evidence Gate
 
@@ -536,18 +536,18 @@ The scripts write to `.agentplaybook/preflight.json` and
 `.agentplaybook/finish.json`. That directory is local runtime evidence and
 should usually be gitignored. Missing wrapper evidence or missing route gate
 evidence is non-compliant even if the resulting code or docs look correct.
-Human-visible gate reports use cat signal badges so failures are harder to miss:
-`🐱🔵 PENDING`, `🐱🟢 GREEN`, `🐱🟡 YELLOW`, and `🐱🔴 RED`. The JSON evidence
-keeps the plain signal values for automation.
+Human-visible gate reports use only two cat signal badges so failures are hard
+to miss: `🐱🟢 SUCCESS` and `🐱🔴 FAIL`. The JSON evidence keeps the plain signal
+values for automation.
 When `--request-classified` is used, pass `--classification-evidence`; otherwise
 request intake is treated as skipped. If route classification or stored request
 text asks for a question drill, the finish check must receive drill evidence
 such as `question drill if needed=<evidence>` or `ask blockers=<evidence>`.
 
-If final VibeGuard is `🐱🟡 YELLOW` / `Needs review`, the agent must report that
-state and pass `--allow-vibeguard-review "<reason>"` only when the review state
-is acceptable. A failed VibeGuard command, `🐱🔴 RED`, missing route evidence,
-or missing VibeGuard output remains a blocker.
+If final VibeGuard is `Needs review`, the agent must report that state and pass
+`--allow-vibeguard-review "<reason>"` only when the review state is acceptable.
+A failed VibeGuard command, `🐱🔴 FAIL`, missing route evidence, or missing
+VibeGuard output remains a blocker.
 
 ## Structure
 

@@ -156,6 +156,12 @@ When introducing or expanding a web design system:
 Do not rewrite a whole app for visual consistency unless the user asked for a
 design-system migration and the acceptance criteria include rollout scope.
 
+Do not merge a reusable web primitive or composed component without a story,
+fixture, preview route, component test, visual snapshot, or Playwright screenshot
+when the repo has any practical way to produce one. The preview must be
+deterministic and cover the states affected by the change; it must not fetch
+real data, depend on current time, or require credentials.
+
 ## Verification
 
 Choose the strongest practical evidence:

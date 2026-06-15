@@ -22,6 +22,19 @@ Use before coding. These rules reduce common LLM mistakes. Bias toward caution o
 - No single-use abstraction.
 - If the solution feels much larger than the problem, simplify.
 
+## Do Not Pack Everything Together
+
+- Do not solve implementation speed by dumping unrelated code into one file.
+- Do not write one large function, component, hook, handler, job, or script step
+  that owns parsing, validation, IO, state changes, rendering, and recovery.
+- Do not add new behavior to an oversized unit without first naming the
+  responsibility being added and choosing the nearest useful split.
+- Do not create helper functions or files that are not reusable, testable, or
+  reviewable. A helper must have a clear responsibility; otherwise keep the
+  logic inline or file-private.
+- Do not create generic architecture folders before the code has a real owner,
+  caller contract, or dependency boundary.
+
 ## Change Surgically
 
 - Touch only lines tied to the request.

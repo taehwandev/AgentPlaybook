@@ -51,6 +51,28 @@ and retry/recovery behavior, use `common/error-modeling.md`.
 - Keep user-facing copy out of low-level logic when the repo has i18n or copy ownership.
 - Comments should explain why, risk, contract, or non-obvious constraints. Do not narrate obvious code.
 
+## Do Not Ship Monoliths
+
+These are stop signals for new or changed code:
+
+- Do not put a feature, screen, endpoint, job, script, style surface, and helper
+  set into one file because it is faster.
+- Do not put parse, validate, authorize, fetch, map, render, mutate, persist,
+  navigate, log, and error handling into one function or component.
+- Do not add a second responsibility to an already large function, component,
+  class, hook, service, or source file. Split the new responsibility first or
+  keep it in a named local unit with a clear owner.
+- Do not create `utils`, `helpers`, `common`, `misc`, or `shared` buckets for
+  unrelated behavior. A new file must be named by responsibility and owner.
+- Do not write reusable-looking functions, classes, hooks, components, or
+  packages when there is no stable reuse contract. Keep one-off logic local, or
+  split it into file-private named units only when that improves review,
+  testing, or ownership.
+- Do not hide product policy behind boolean flags, nullable option bags, or
+  caller-specific modes just to reuse one function or component.
+- Do not split code into extra files only to satisfy a line count. Split by
+  owner, side effect, state model, contract, platform boundary, or test seam.
+
 ## Formatting
 
 - Run the repo formatter or lint fix when configured.

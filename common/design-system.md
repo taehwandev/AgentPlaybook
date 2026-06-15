@@ -21,6 +21,13 @@ Build a design system as product infrastructure, not decoration. Start from
 repeated product needs, then extract stable primitives. Do not create generic
 components before real usage proves the contract.
 
+For UI work, do not bypass the design system. If a repo already has tokens,
+primitives, component variants, previews, or stories, use or extend them before
+adding one-off styling in a screen. If no design-system layer exists and the
+task creates a reusable control, repeated visual rule, or new app/screen
+surface, create the smallest useful design-system layer first: semantic tokens,
+one primitive, and an example or preview when the platform supports it.
+
 ## Layers
 
 ```text
@@ -68,6 +75,26 @@ Use the lowest layer that owns the decision:
   at least two credible call sites or a foundational primitive need, examples or
   previews, and migration guidance for old usage.
 
+## Do Not
+
+- Do not add raw colors, fonts, spacing, radii, shadows, motion, z-index, or
+  component variants in a repeated UI surface when an existing token, primitive,
+  or component can express the need.
+- Do not create a screen-only "design-system" component that embeds product
+  copy, routing, analytics names, permission policy, billing rules, repository
+  calls, or feature DTOs.
+- Do not create reusable-looking components, hooks, style helpers, or functions
+  without a stable caller contract. A design-system API must be reusable by a
+  second caller or be a foundational primitive.
+- Do not use boolean flags or nullable option bags to force unrelated product
+  variants through one component. Split the component, keep it feature-local, or
+  model the state explicitly.
+- Do not replace multiple UI surfaces with a new primitive until the primitive
+  has examples, previews, fixtures, stories, snapshots, or focused tests for the
+  affected states.
+- Do not leave a design-system change without adoption guidance when it replaces
+  an existing pattern.
+
 ## Token Modeling
 
 Prefer semantic tokens that describe role and state:
@@ -101,6 +128,27 @@ A reusable component API should define:
 If the component needs a repository, route, whole screen state, feature-specific
 DTO, or many caller flags, it is probably a product pattern or feature-local
 component, not a design-system primitive.
+
+## Previews And Examples
+
+Every new or meaningfully changed token set, primitive, composed component, or
+product pattern needs an example, preview, story, fixture, snapshot, or focused
+test when the repo supports one.
+
+Cover the states affected by the change:
+
+- default, hover/pressed/focused, disabled, loading, error, empty, selected,
+  expanded, destructive, and read-only when applicable
+- light, dark, high-contrast, reduced-motion, density, and platform appearance
+  variants when supported
+- long localized text, missing icons/media, constrained containers, and small
+  screens
+- permission denied, unavailable, offline, or read-only states when the
+  component displays product or platform capability
+
+Do not use examples or previews that call network, persistence, credentials,
+user-specific files, current time, randomness, or device-only services. Use
+fixtures and deterministic state.
 
 ## Check
 

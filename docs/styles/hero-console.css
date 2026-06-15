@@ -92,16 +92,8 @@ h1 {
   line-height: 1;
 }
 
-.signal-chip.pending {
-  border-color: rgba(var(--cyan-rgb), 0.32);
-}
-
 .signal-chip.green {
   border-color: rgba(var(--green-rgb), 0.36);
-}
-
-.signal-chip.yellow {
-  border-color: rgba(245, 158, 11, 0.4);
 }
 
 .signal-chip.red {
@@ -420,4 +412,3 @@ pre::-webkit-scrollbar-thumb {
 pre::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
-

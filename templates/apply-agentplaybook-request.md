@@ -147,13 +147,13 @@ implementation gates before lower-level coding steps. If the task proceeds into
 code, use the `product` route unless an existing PRD/ARD or repo-local
 instruction makes the slice clearly trivial. If the workflow router cannot run,
 stop and report the blocker before continuing. Show a gate signal after each
-completed gate or task step:
+completed or failed gate or task step:
 
-Gate signal: 🐱🟢 GREEN | gate: <gate> | evidence: <evidence> | next: <next gate>
+Gate signal: 🐱🟢 SUCCESS | gate: <gate> | evidence: <evidence> | next: <next gate>
 
-Completion requires every required gate to be 🐱🟢 GREEN. 🐱🔵 PENDING means not
-reached, 🐱🟡 YELLOW means blocked or paused, and 🐱🔴 RED means the gate was
-missed or lacks evidence and must use missed-gate recovery.
+Completion requires every required gate to be 🐱🟢 SUCCESS. 🐱🔴 FAIL means the
+gate was blocked, failed, missed, or lacks evidence and must use missed-gate
+recovery. Do not report any third gate state.
 
 When the wrapper scripts are available, run preflight before editing, reviewing,
 committing, or reporting completion:
@@ -171,10 +171,10 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project . --rules <
 
 The wrappers write local evidence under .agentplaybook/. Missing wrapper
 evidence or missing gate evidence is non-compliant even if the final files look
-correct. If final VibeGuard is 🐱🟡 YELLOW / Needs review, report it explicitly
-and pass --allow-vibeguard-review with a reason only when that review state is
+correct. If final VibeGuard is Needs review, report it explicitly and pass
+--allow-vibeguard-review with a reason only when that review state is
 acceptable. If --request-classified is used, include classification evidence. If
-the request asks for a question drill, missing drill evidence is 🐱🔴 RED.
+the request asks for a question drill, missing drill evidence is 🐱🔴 FAIL.
 
 After connecting it, verify that the referenced AgentPlaybook AGENTS.md and
 index.md files exist, confirm the VibeGuard gate is passing, then continue with
