@@ -63,6 +63,33 @@ Avoid reusable APIs that accept repositories, activities, routers, request
 objects, raw environment variables, or feature-specific DTOs unless that is the
 documented owner boundary.
 
+## Cross-Platform Reuse
+
+Reusable code that may apply across apps or platforms must separate the stable
+capability from the platform runtime that executes it:
+
+- Put pure contracts, value types, typed errors, route/event descriptions,
+  mappers, policies, and deterministic helpers in the shared/core layer.
+- Put Android, iOS, web, server, desktop, Compose, SwiftUI, React, browser,
+  filesystem, process, SDK, and database details behind platform adapters.
+- Keep UI runtime commonization separate from pure core contracts. A helper that
+  needs a UI lifecycle, toast host, alert presenter, Activity launcher, browser
+  window, or platform navigation stack belongs in the platform app/UI boundary.
+- Prefer suspend APIs, typed commands, callbacks, ports, or small interfaces for
+  side-effect ownership. Do not store caller-owned coroutine scopes,
+  lifecycle owners, controllers, routers, or platform contexts in generic
+  shared code unless that is the explicit adapter contract.
+- Provide fixtures, recording fakes, assertion subjects, and contract tests that
+  depend on the API surface only. Test support is part of the reusable contract,
+  not a reason to import production implementation modules.
+- Use narrow value types for important identifiers and policy inputs when the
+  language supports them. Avoid passing primitive strings or maps through a
+  shared API when the meaning carries a product or security invariant.
+
+Do not promote code to a common package if the shared API still needs
+caller-specific flags, product copy, route decisions, analytics labels,
+permission policy, billing rules, or platform-specific fallback branches.
+
 ## Ownership Boundaries
 
 - `core`, `common`, `shared`, or package-level modules own reusable contracts,

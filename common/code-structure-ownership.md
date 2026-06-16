@@ -163,6 +163,41 @@ Keep the current package when the proposed folder would contain one or two
 small unstable files, duplicate an architecture diagram without enforcing an
 import rule, or become a grab bag for unrelated helpers.
 
+### Package Boundary Note
+
+Before creating or moving a package, folder, namespace, target, or module, write
+a short boundary note in the implementation plan, task doc, PR description, or
+review summary. The note must name:
+
+- the owner and single responsibility of the new boundary
+- allowed imports and explicitly forbidden imports
+- the caller-facing exports, if any
+- the callers or tests that benefit from the boundary
+- the focused verification command or import-direction check
+
+A new package is justified only when the boundary changes ownership,
+dependency direction, review scope, testing scope, or replaceability. It is not
+justified by "one file per type", "this architecture usually has folders", or
+"the package looks cleaner".
+
+For `api`, `impl`, and `assertions` layouts, split by contract surface and
+consumer need, not by mechanical file count:
+
+- `api` can group route contracts, events, commands, models, provider
+  contracts, and small value types together while they share one import rule.
+  Add subpackages only when consumers should import one contract surface without
+  the others.
+- `impl` can group route mapping, rendering, registration, adapters, mappers,
+  and state holders by behavior owner. Do not mirror every `api` file with an
+  `impl` package unless the implementation dependency differs.
+- `assertions` should split fixtures, builders, recording fakes, subjects,
+  matchers, and contract tests by testing role. Do not create a package only to
+  mirror each production type.
+
+If the package boundary note cannot explain the allowed imports and who
+benefits, keep the code in the existing package and split only files or
+file-private helpers as needed.
+
 ### Module-Level SOLID / ISP
 
 Treat a module's public exports as an interface. Module-level ISP means callers
@@ -219,6 +254,31 @@ package only when the caller contract is stable:
 Do not promote code only to reduce apparent duplication. Duplication is cheaper
 than a shared API that needs flags, nullable options, hidden globals, or
 caller-specific branches.
+
+### Cross-Platform Commonization Gate
+
+Promote code into a shared, core, common, multiplatform, or SDK-like boundary
+only when the reusable contract is semantic rather than platform-shaped:
+
+- Public names describe the domain or reusable capability, not one platform,
+  framework, screen, or first caller.
+- Platform objects stay behind adapters: `Activity`, `Context`, `Intent`,
+  `NavController`, `View`, `Composable`, `UIViewController`, `URLSession`,
+  browser globals, process APIs, database handles, and SDK clients do not leak
+  into pure shared contracts.
+- Side effects are explicit through suspend functions, commands, callbacks,
+  ports, or adapters. Shared code should not hide lifecycle, thread, scheduler,
+  filesystem, network, billing, credential, or analytics ownership.
+- Runtime UI helpers live in a platform app/UI boundary. Pure core modules own
+  models, policies, value types, ports, mappers, and route/event contracts.
+- Assertions, fixtures, and fakes compile against the shared API contract, not
+  the production implementation.
+- Feature copy, route policy, analytics policy, permission prompts, and
+  repository orchestration remain in the app or feature owner.
+
+Cross-platform commonization fails when a common package exists only to avoid
+duplication but still needs platform flags, nullable platform knobs, global
+state, or caller-specific branches.
 
 ## Ownership Levels
 
