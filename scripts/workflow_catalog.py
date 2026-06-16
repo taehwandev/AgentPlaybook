@@ -157,6 +157,7 @@ COMMANDS: Dict[str, Profile] = {
 SPILL_ACTION_LABELS: Dict[str, Tuple[str, str]] = {
     "classify": ("analysis", "classify"),
     "list": ("analysis", "classify"),
+    "query": ("analysis", "classify"),
     "validate": ("build_verification", "verify"),
 }
 

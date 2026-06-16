@@ -129,6 +129,18 @@ Discover valid commands, platforms, and concerns with:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
 ```
 
+When the right document is not obvious from `index.md`, search by keyword:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py query <keyword> [<keyword> ...]
+```
+
+The query command ranks all playbook documents by relevance and returns the top
+matches with one-line descriptions. It works tool-agnostically and requires no
+external dependencies. Use it instead of reading all of `index.md` when the
+concern is narrow or the document name is unknown. Then load only the matched
+documents relevant to the task.
+
 The route output contains `request_classification`, `docs`, `gates`,
 `gate_ledger`, `attempt_limit`, `retry_limit`, `retry_scope`, `notes`, and
 `missing`. Read
