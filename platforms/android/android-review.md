@@ -31,6 +31,13 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 - Check module/package boundaries against `android-module-structure.md` when new
   modules, package moves, API contracts, build logic, or repository splits are
   touched.
+- Reject package/module splits that lack a boundary note naming owner, allowed
+  imports, forbidden imports, callers, and focused verification. A package split
+  that only creates one folder per type, mirrors a reference app, or moves files
+  without changing dependency direction is structure churn, not architecture.
+- For `api` / `impl` / `assertions`, verify that `api` exposes caller-facing
+  contracts only, `impl` owns execution details, and `assertions` depends on
+  `api` rather than production `impl` by default.
 - Check design-system ownership when shared UI changes: tokens, wrappers,
   defaults, and accessibility contracts belong there; product copy, routes,
   analytics, permissions, fake data, and repository calls do not.
@@ -42,6 +49,13 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 - Confirm secrets and user data are not logged.
 - Check WorkManager, foreground service, notification, and retry behavior when background work is touched.
 - Review exported components, deep links, WebView bridges, PendingIntent mutability, and cleartext traffic when security surfaces change.
+- When the change touches AGP, R8, Perfetto, XML-to-Compose migration,
+  adaptive layouts, edge-to-edge, Compose Styles, CameraX, Credential Manager,
+  Play Billing, Play Engage, Wear, XR/Glimmer, or AppFunctions, confirm the
+  source-specific Android skill guidance from
+  `android-external-skill-source-coverage.md` and
+  `android-module-structure.md` was applied before accepting the
+  implementation.
 
 ## Tools
 
@@ -58,6 +72,11 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 - Compose stability: compiler metrics, Layout Inspector recomposition counts, or
   a focused before/after manual inspection when the repo already uses those
   tools or the change targets recomposition.
+- Compose performance: prefer release or benchmark variant, R8 enabled, and
+  physical-device evidence for frame time, scroll, jank, startup, or baseline
+  profile claims. Debug/emulator evidence must be labeled diagnostic only.
+- Perfetto: schema-backed SQL, metrics-first trace review, `utid`/`upid`, and
+  chain-of-evidence notes for root-cause claims.
 
 ## UI Test Focus
 
@@ -69,6 +88,17 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 - High-frequency state reads are deferred to the smallest composable or
   lambda-based modifier that needs them, and composable bodies do not perform
   backwards writes to state they just read.
+- Flow values are collected lifecycle-aware at the route/holder boundary; raw
+  `Flow<T>` is not passed through leaf composable parameters.
+- Side effects use the smallest lifecycle-correct API and are keyed by semantic
+  inputs rather than broad `UiState` objects or stale `Unit` keys.
+- Custom modifiers prefer `Modifier.Node` for new code, and `Modifier.composed`
+  has a compatibility reason when introduced.
+- Lazy item animations use stable keys; heterogeneous lazy lists provide
+  `contentType`; expensive item allocations are not repeated inside item
+  lambdas without measurement.
+- Optional slots do not reserve space when absent, and reusable component APIs
+  keep product policy, route decisions, and analytics in the caller.
 - Permission denied and retry flows are covered.
 - Rotation, process death, or lifecycle changes do not lose critical state.
 - Background jobs do not duplicate side effects after retry or process death.
