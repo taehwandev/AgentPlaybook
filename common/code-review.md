@@ -92,6 +92,14 @@ as a read-only gate:
   should fail.
 - If the diff is too broad to review confidently in one pass, fail the hook and
   split the work before retrying.
+- Check changed source files for file size and function, component, hook,
+  handler, script-step, or style-block size. A source file over the hard limit
+  fails the hook. A source file over the review-pressure threshold requires
+  explicit structure-review evidence before approval.
+- Check large units against responsibility splits, not only line count. A unit
+  that mixes parse, validate, fetch, map, render, mutate, persist, log, navigate,
+  retry, or recovery concerns should fail even when it is still under the
+  numeric limit.
 - If the review finds a required fix, report the smallest actionable failure and
   run the normal workflow for that fix. Do not hide the fix inside the hook.
 - If a hook command changes the worktree, treat that as a hook failure.

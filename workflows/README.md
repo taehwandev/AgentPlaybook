@@ -91,14 +91,16 @@ the update.
   Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.
 - `Review Hook`: the primary hook. Run it immediately after meaningful edits
   and before finish. It must record code review evidence and docs freshness
-  evidence, then run local diff hygiene, workflow validation, and VibeGuard
-  audit. Architecture, security, dependency, release, and test concerns are
-  reviewed here as evidence, not as separate hooks. The review hook is read-only:
-  it fails if its checks change the worktree. It also fails by default when the
-  changed path count is too broad for one review pass, so the work must be split
-  before retrying.
+  evidence, then run structural review, local diff hygiene, workflow validation,
+  and VibeGuard audit. The structural review checks changed source files for
+  oversized files and oversized functions, components, hooks, handlers, script
+  steps, or style blocks. Architecture, security, dependency, release, and test
+  concerns are reviewed here as evidence, not as separate hooks. The review hook
+  is read-only: it fails if its checks change the worktree. It also fails by
+  default when the changed path count is too broad for one review pass, so the
+  work must be split before retrying.
   Use
-  `python3 scripts/agent-hook.py review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>"`.
+  `python3 scripts/agent-hook.py review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
 - `Finish Hook`: run before final report, commit, release, or handoff. It
   verifies the required route gate evidence, final validation, diff hygiene,
   and final VibeGuard state. Use `--gate "<gate>=<evidence>"` for each required

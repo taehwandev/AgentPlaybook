@@ -17,6 +17,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_review_structure import (
+    REVIEW_FUNCTION_LINE_LIMIT,
+    REVIEW_SOURCE_FILE_LINE_LIMIT,
+    structure_review,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
@@ -136,8 +142,10 @@ def review_hook(args: argparse.Namespace) -> int:
 
     review_evidence = (args.code_review_evidence or "").strip()
     docs_evidence = (args.docs_freshness_evidence or "").strip()
+    structure_evidence = (args.structure_review_evidence or "").strip()
     checks["code_review_evidence"] = review_evidence
     checks["docs_freshness_evidence"] = docs_evidence
+    checks["structure_review_evidence"] = structure_evidence
     if not review_evidence:
         failures.append("code review evidence is required")
     if not docs_evidence:
@@ -154,6 +162,20 @@ def review_hook(args: argparse.Namespace) -> int:
             f"review scope has {len(status_before_lines)} changed paths; "
             f"limit is {args.max_changed_paths}; split the change or run a smaller review scope"
         )
+
+    structure = structure_review(
+        args.project,
+        args.max_source_file_lines,
+        args.max_function_lines,
+        run_command,
+    )
+    checks["structure_review"] = structure
+    failures.extend(f"structure review: {failure}" for failure in structure["failures"])
+    if structure["warnings"] and not structure_evidence:
+        warning_summary = "; ".join(structure["warnings"][:5])
+        if len(structure["warnings"]) > 5:
+            warning_summary += "; ..."
+        failures.append(f"structure review evidence is required: {warning_summary}")
 
     diff_check = run_command(["git", "diff", "--check"], args.project)
     checks["diff_check"] = diff_check
@@ -187,6 +209,7 @@ def review_hook(args: argparse.Namespace) -> int:
     details = failures or [
         "code review evidence recorded",
         "docs freshness evidence recorded",
+        f"structure review passed for {structure['checked_path_count']} source file(s)",
         "review scope guard passed",
         "review hook left worktree unchanged",
         "diff whitespace check passed",
@@ -346,10 +369,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="short evidence that affected docs were updated or intentionally unchanged",
     )
     review.add_argument(
+        "--structure-review-evidence",
+        help="short evidence that file/function size and responsibility splits were reviewed",
+    )
+    review.add_argument(
         "--max-changed-paths",
         type=non_negative_int,
         default=REVIEW_CHANGED_PATH_LIMIT,
         help="fail review when the changed path count is above this limit",
+    )
+    review.add_argument(
+        "--max-source-file-lines",
+        type=non_negative_int,
+        default=REVIEW_SOURCE_FILE_LINE_LIMIT,
+        help="fail review when a changed source file is above this line count",
+    )
+    review.add_argument(
+        "--max-function-lines",
+        type=non_negative_int,
+        default=REVIEW_FUNCTION_LINE_LIMIT,
+        help="fail review when a changed function, class, component, or style block is above this line count",
     )
 
     finish = parser.add_argument_group("finish hook")
