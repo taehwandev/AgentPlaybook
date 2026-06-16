@@ -85,6 +85,24 @@ For frameworks with server/client components or server actions:
 - Treat hydration warnings as real bugs unless the repo has a documented,
   narrow exception.
 
+For Next.js App Router specifically:
+
+- A file marked `'use client'` must not export an async component. Fetch data in
+  a Server Component, route handler, query layer, or explicit client effect
+  boundary and pass state into the client component.
+- Server-to-client props must be plain, browser-safe display data. Convert
+  `Date` to strings, `Map` and `Set` to arrays or objects, class instances to
+  plain objects, and never pass server request objects, clients, or raw records.
+- Server Actions are the narrow exception for passing callable functions from a
+  server boundary into client UI. Treat every other function prop across the
+  server/client boundary as invalid.
+- Wrap client hooks that force client rendering, such as `useSearchParams()` or
+  dynamic-route `usePathname()`, in the Suspense boundary required by the
+  framework version.
+- Put route-level loading, error, not-found, unauthorized, and forbidden states
+  in framework boundary files when those files are the nearest user-visible
+  state owner.
+
 ## Feature Folder Shape
 
 A feature can use:

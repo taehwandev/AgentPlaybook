@@ -35,6 +35,9 @@ changes.
   controls changed.
 - Confirm views/controllers render explicit state and send intent instead of
   owning API, persistence, credential, permission, or platform calls.
+- For SwiftUI changes, confirm simple Model-View, local `@State`, environment,
+  and `.task` were considered before adding ViewModels, protocols, stores, use
+  cases, packages, or routers.
 - Confirm `UiState` or equivalent state models represent loading, content,
   empty, error, permission denied, offline/unavailable, disabled, submitting,
   success, and stale states when reachable.
@@ -63,6 +66,9 @@ changes.
   generated files changed without compatibility and build evidence.
 - Release configuration exposes debug endpoints, broad entitlements, secrets,
   local paths, private diagnostics, or unsigned/unnotarized artifacts.
+- SwiftUI code uses deprecated navigation, unstable list identity, heavy work in
+  `body`, `AnyView` as a convenience wrapper, hidden `@AppStorage` inside
+  `@Observable`, or manual `Task` lifetimes without an owner.
 
 ## Tools
 

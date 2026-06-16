@@ -53,6 +53,24 @@ implementations.
 - Wrap API, persistence, keychain, file, notification, permission APIs.
 - Keep DTOs out of Views when they carry transport details.
 
+## SwiftUI Navigation Rules
+
+- Use `NavigationStack` or `NavigationSplitView` for modern SwiftUI navigation;
+  do not add new `NavigationView` code.
+- Store lightweight `Hashable` route values, stable identifiers, or typed route
+  enums in navigation state. Do not store view instances in `NavigationPath`.
+- Give each tab its own `NavigationStack` and path. A shared path across tabs
+  creates cross-tab back-stack bugs.
+- Centralize route-to-destination mapping at the route, coordinator, or router
+  boundary when navigation becomes more than one local push.
+- Use `.sheet(item:)` when sheet state represents a selected model or
+  destination. Let the sheet own its dismiss action when possible.
+- Use `NavigationSplitView` for standard iPad or Mac sidebar-detail layouts.
+  Use a manual split only when the product needs nonstandard columns.
+- Centralize deep-link parsing and validation in the router or coordinator.
+  Prefer Universal Links for public links and keep custom URL schemes scoped to
+  app-owned use cases.
+
 ## Refactor Signals
 
 - SwiftUI body owns side effects and business rules.

@@ -54,6 +54,24 @@ become browser-visible data. Treat them as the same boundary.
   server action is callable from the browser and must not return raw trusted
   records.
 
+## Next.js Data Pattern
+
+When Next.js App Router is the framework:
+
+- Use Server Components for internal reads that can run on the server without a
+  browser round trip.
+- Use Server Actions for UI-originated mutations. Keep returned values small,
+  serializable, and public.
+- Use Route Handlers for external clients, third-party webhooks, REST-style
+  contracts, public endpoints, file or stream endpoints, and cacheable GET
+  semantics.
+- Do not use Server Actions as the default read path from client components.
+  They are POST-based mutation boundaries and do not provide normal GET cache
+  behavior.
+- When a client component needs initial data, prefer passing a public display
+  model from the server. Use client-side fetch only when browser-owned state,
+  polling, live updates, or an existing query/cache layer requires it.
+
 ## API And Mutation State
 
 - Client requests send user intent and stable resource identifiers. The server

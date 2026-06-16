@@ -28,6 +28,8 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
 - Check View/ViewModel ownership, navigation state, async task lifetime, and cancellation.
 - Check SwiftUI route/screen/section boundaries against
   `ios-swiftui-ui.md` when SwiftUI screens changed.
+- For SwiftUI changes, check whether simple Model-View would be enough before
+  approving a new ViewModel, store, protocol, or use-case layer.
 - Check UIKit coordinator/view-controller/ViewModel/list/form boundaries
   against `ios-uikit-ui.md` when UIKit screens changed.
 - Check target/package boundaries against `ios-module-structure.md` when new
@@ -39,6 +41,11 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
 - Confirm `UiState` represents loading, content, empty, error, permission
   denied, offline, disabled, and submitted states when applicable.
 - Verify main actor boundaries for UI updates.
+- Verify `@Observable` ownership wrappers, `.task` usage, stable list IDs,
+  Dynamic Type, VoiceOver labels, and SwiftUI previews when SwiftUI views
+  changed.
+- Verify `NavigationStack`, per-tab paths, `.sheet(item:)`, centralized router
+  mapping, and validated deep-link handling when navigation changed.
 - Ensure API, persistence, keychain, file, notification, and permission APIs are wrapped.
 - Check loading, empty, error, permission-denied, and offline states.
 - Confirm sensitive data is not stored in plain UserDefaults or logs.
@@ -52,8 +59,14 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
   adapter or state owner.
 - UI state can represent contradictory loading, content, empty, error,
   permission, offline, disabled, or submitted states.
+- A new ViewModel, protocol, use case, package, or router is added only for
+  ceremony and does not isolate state, navigation, side effects, product rules,
+  or tests.
 - Async tasks, delegates, timers, notifications, Combine subscriptions, or
   platform handles can outlive the owning screen, command, or app lifecycle.
+- SwiftUI navigation uses `NavigationView`, stores views in navigation state,
+  shares one path across independent tabs, or parses deep links in multiple
+  unvalidated places.
 - Feature modules leak DTOs, persistence rows, SDK objects, app-route
   implementation types, or broad `public` APIs without a caller contract.
 - Entitlements, URL schemes, Universal Links, WebViews, app extensions, signing,

@@ -63,6 +63,21 @@ Do not add use cases, protocols, reducers, packages, or factories only for
 ceremony. Add a boundary when it protects a real caller contract, side effect,
 test boundary, or dependency edge.
 
+## SwiftUI State Default
+
+For modern SwiftUI targets, start with Model-View before adding MVVM ceremony:
+
+- Keep simple screens as small views with local `@State`, environment-provided
+  services, explicit `UiState`, and `.task` or `.onChange` orchestration.
+- Promote to a `@MainActor` observable model, ViewModel, store, reducer, or use
+  case only when loading, mutation, navigation, permissions, cancellation,
+  reuse, or product rules need a named owner and tests.
+- Use `@Observable` for shared SwiftUI state on iOS 17 and newer when repo
+  deployment targets allow it. Keep legacy `ObservableObject` for older targets
+  or existing architecture that already depends on it.
+- Treat ViewModel as one possible state-owner name, not a mandatory file for
+  every view.
+
 ## Swift Ownership Rules
 
 - Keep SwiftUI, UIKit, AppKit, DTOs, persistence rows, and SDK types out of

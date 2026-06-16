@@ -43,6 +43,26 @@ Use for React/web UI, browser behavior, and frontend PR review.
 - Memoization is used for performance or identity, not to compensate for
   missing state ownership or effect dependencies.
 
+## Next.js App Router Checks
+
+- App Router special files stay role-sized and do not absorb full feature
+  implementations.
+- Internal reads use Server Components where practical; UI mutations use Server
+  Actions; Route Handlers are reserved for external/public HTTP contracts,
+  webhooks, REST endpoints, streams, uploads, or GET cache semantics.
+- Client components are not async components, and server-to-client props are
+  serializable public display models.
+- `params`, `searchParams`, `cookies()`, and `headers()` follow the installed
+  Next.js version's async API contract.
+- `redirect`, `permanentRedirect`, `notFound`, `forbidden`, and `unauthorized`
+  are not swallowed by broad error handling.
+- Edge runtime is used only with an explicit latency or deployment need and
+  compatible dependencies.
+- `useSearchParams()` and dynamic-route `usePathname()` have the Suspense
+  boundary required by the framework version.
+- `next/image`, `next/font`, metadata, scripts, cache/revalidation, and
+  self-hosting behavior are checked when those files or public routes change.
+
 ## Structure Checks
 
 - Framework route files are thin composition boundaries, not oversized feature

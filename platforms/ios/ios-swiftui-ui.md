@@ -54,9 +54,16 @@ Choose the smallest track that makes ownership and testing clear:
 Do not add use cases, repositories, reducers, or protocols only for ceremony.
 Add them when they isolate a real product rule, side effect, or test boundary.
 
+For modern SwiftUI, simple screens can stay Model-View: a small view owns
+presentation `@State`, reads services or shared models from the environment,
+models reachable states explicitly, and uses `.task` for lifecycle-bound async
+work. Add a ViewModel or store when the screen needs reusable state ownership,
+complex transitions, cancellation, navigation output, product rules, or focused
+tests. Do not create a ViewModel only because a view file exists.
+
 ## ViewModel Rule
 
-View models should:
+View models or observable state owners should:
 
 - Be `@MainActor` when they publish UI state.
 - Own screen-level `UiState`, user actions, async task coordination, and
@@ -150,8 +157,18 @@ struct ProfileScreen: View {
   tab selection, text-field drafts before commit, and animation flags.
 - Use `@Binding` only when the parent owns the value and two-way editing is the
   intended contract.
-- Use environment values for framework-level concerns, not hidden business
-  dependencies.
+- For `@Observable`, use `@State` when the view owns the object, plain `let`
+  when the view only reads it, `@Bindable` when two-way bindings are needed, and
+  `@Environment(Type.self)` for scoped shared observable state.
+- Use environment values for framework-level UI concerns and deliberately scoped
+  dependencies. Do not turn the environment into a hidden global business
+  service locator.
+- Keep heavy filtering, sorting, formatting, or data shaping out of `body`.
+  Move it to a computed property, mapper, state owner, or model.
+- Prefer `@ViewBuilder`, `Group`, generics, or small subviews over `AnyView`.
+  Use type erasure only for a real public API or storage boundary.
+- Omit hard-coded stack `spacing:` unless the value is intentional. Let platform
+  defaults handle adaptive spacing when they fit the design.
 
 ## Navigation And Effects
 
@@ -160,6 +177,8 @@ struct ProfileScreen: View {
   or coordinator boundaries.
 - Keep `.task` and `.onAppear` idempotent. They should call a ViewModel intent
   rather than embedding fetch logic.
+- Prefer `.task` for lifecycle-bound async loading and `.task(id:)` for work
+  that should restart when an input changes.
 - Ensure async work cancels on disappear, logout, account switch, permission
   changes, or task replacement when those events matter.
 - Suppress stale async results when a newer request has replaced the old one.

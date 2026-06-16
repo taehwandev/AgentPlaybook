@@ -48,6 +48,32 @@ Route/Page -> Feature -> Component -> Hook -> Service/Client
 - Use a shared module only when the caller contract is stable. Otherwise keep
   code local to the route or feature.
 
+## Next.js App Router Defaults
+
+When the repo uses Next.js App Router, keep the framework-specific choices
+explicit:
+
+- Prefer Server Components for internal server-side reads. Do not add an API
+  route only to let a page read data that can be fetched safely on the server.
+- Use Server Actions for UI-triggered mutations and form submissions. Use Route
+  Handlers for external HTTP contracts, public or mobile APIs, webhooks, and
+  cacheable GET semantics.
+- Keep `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`,
+  `not-found.tsx`, `route.ts`, and parallel route fallbacks as composition or
+  boundary files, not feature implementations.
+- Default to the Node.js runtime. Add Edge runtime only when there is a real
+  edge-latency requirement and every dependency is Edge-compatible.
+- Follow the repo's installed Next.js version for async request APIs. In Next.js
+  15 and newer, `params`, `searchParams`, `cookies()`, and `headers()` are
+  async boundaries and must be awaited or consumed with the supported React
+  pattern.
+- Treat `redirect`, `permanentRedirect`, `notFound`, `forbidden`, and
+  `unauthorized` as framework control flow. Do not swallow them in broad
+  `catch` blocks.
+- Avoid server data waterfalls. Start independent reads in parallel, stream
+  independent regions with Suspense, or use a preload pattern when the repo
+  already has one.
+
 ## React State Placement
 
 - Local UI state: modal open, menu open, selection, draft input.

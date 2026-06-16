@@ -82,6 +82,28 @@ app/account/billing/error.tsx
 
 Keep those files thin. They should compose the feature, not become the feature.
 
+## Next.js App Router File Conventions
+
+When a Next.js App Router app is in scope:
+
+- Keep special route files role-sized: `page.tsx` renders a route segment,
+  `layout.tsx` composes shared shell, `loading.tsx` owns loading UI,
+  `error.tsx` owns the segment error boundary, `not-found.tsx` owns not-found
+  UI, `route.ts` owns HTTP endpoints, and `default.tsx` owns parallel-route
+  fallback UI.
+- Do not put a `route.ts` and `page.tsx` in the same route segment. If the app
+  needs both a page and an API, choose distinct route paths such as `/users` and
+  `/api/users`.
+- Use route groups, private folders, parallel routes, and intercepting routes
+  only when they protect real layout, navigation, modal, or ownership pressure.
+  Add `default.tsx` fallbacks for parallel routes that can be reached by hard
+  refresh or unmatched navigation.
+- Keep version-specific file names aligned with the installed framework. Next.js
+  14 and 15 use `middleware.ts`; Next.js 16 and newer use `proxy.ts` with the
+  same matcher-style boundary.
+- Keep route handler files free of React hooks, React DOM rendering, browser
+  APIs, and JSX ownership. They are server HTTP boundaries, not hidden pages.
+
 ## Import Direction
 
 Use repo-local aliases and folder names first, but protect these dependency

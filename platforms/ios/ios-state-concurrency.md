@@ -17,7 +17,8 @@ target ownership, also use `ios-module-structure.md`.
 ## Defaults
 
 - View owns only local presentation state.
-- ViewModel or observable state owns loading, empty, error, and permission states.
+- View, observable model, ViewModel, store, or reducer owns loading, empty,
+  error, and permission states according to the chosen architecture track.
 - Prefer typed state models or enums over scattered booleans and nullable data
   when states are mutually exclusive.
 - Navigation state is modeled, not hidden in side effects.
@@ -27,6 +28,25 @@ target ownership, also use `ios-module-structure.md`.
   and permission changes.
 - Persisted state defines migration, corruption, and app-upgrade behavior.
 - Keychain, files, notifications, permissions, and persistence stay behind adapters.
+
+## SwiftUI Observation And Task Rules
+
+- UI-bound `@Observable` classes must be `@MainActor` unless the repo has a
+  stronger actor model and proves UI updates cross actors safely.
+- Use `@State` when a view owns an observable object or value. Use `let` for
+  read-only observable inputs, `@Bindable` for two-way bindings, and
+  `@Environment(Type.self)` for scoped shared observable state.
+- Keep `@AppStorage` in views or wrap `UserDefaults` explicitly inside the
+  observable owner. Do not hide `@AppStorage` inside an `@Observable` class and
+  expect observation to refresh views.
+- Prefer `.task` for async loading because SwiftUI cancels it with the view
+  lifecycle. Use `.task(id:)` when a dependency should restart the work.
+- Create manual `Task` values in `onAppear` only when the owner stores and
+  cancels the task explicitly. `Task {}` in a synchronous button or menu action
+  is acceptable when the action immediately hands off to an async owner.
+- Large lists and grids need stable `Identifiable` IDs and lazy containers when
+  the collection is not trivially small. Do not use array indices as identity
+  when reordering, animation, selection, or local row state matters.
 
 ## Async API Errors
 
