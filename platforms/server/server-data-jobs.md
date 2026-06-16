@@ -33,6 +33,20 @@ Use when touching database, migrations, transactions, queues, webhooks, or backg
 - What compensates partial success after an external side effect?
 - What observes stuck, delayed, duplicated, or dead-lettered work?
 
+## Do Not
+
+- Do not rely on callers to remember tenant, permission, soft-delete, or
+  entitlement filters for protected reads and writes.
+- Do not ship non-idempotent webhooks, queues, scheduled jobs, or background
+  workers when retry, duplicate delivery, or overlapping runs are possible.
+- Do not run migrations, backfills, destructive updates, or schema changes
+  without lock behavior, old/new app compatibility, rollback or forward-fix
+  notes, and focused verification.
+- Do not perform external side effects inside a transaction without an outbox,
+  idempotency key, compensation, or reconciliation path.
+- Do not log raw payloads, secrets, personal data, auth headers, webhook
+  signatures, or database connection details while debugging jobs.
+
 ## Tests
 
 Cover transaction rollback, idempotent retry, duplicate webhook delivery, job

@@ -124,6 +124,46 @@ Use names that match the abstraction level:
 If the name needs a caller name plus many options, the boundary is probably too
 generic or too early.
 
+Reusable names must describe the capability a caller imports, not the place
+where the code was first extracted. Avoid umbrella names such as `common`,
+`shared`, `core`, `app`, `runtime`, `base`, `manager`, `helper`, or "feedback"
+unless the repo has already defined that word as a capability family and the
+public exports are still narrow.
+
+When a shared module owns user-visible presentation side effects, name the
+capability directly. For example, a module that renders toast, snackbar,
+dialog, alert, or error presentation contracts should use a notice, alert,
+message, error, permission, or equivalent repo-local capability name instead of
+a vague reaction word. If the module also owns network error normalization,
+route execution, or Activity lifecycle setup, split those capabilities before
+making the module reusable.
+
+Do not call an inheritance or template boundary "base" unless the boundary owns
+a narrow lifecycle contract with clear extension points. A reusable base should
+not become the place where routing policy, feature registration, repositories,
+analytics, permission prompts, error copy, and visual components accumulate.
+
+## Reuse Stop Signals
+
+Stop promotion to a shared package, module, source set, or public API when any
+of these are true:
+
+- The only argument is "other projects might reuse this later."
+- The proposed module name describes a bucket rather than a capability.
+- Pure contracts, platform runtime, visual primitives, app-shell wiring,
+  feature policy, and test assertions would ship from one export surface.
+- Callers must import Activity, controller, browser, router, repository, SDK, or
+  DI details just to use a value type, fixture, assertion, route key, or command.
+- A shared "base" type would require most callers to override no-op hooks,
+  pass flags, or inherit behavior they do not need.
+- A shared notice/error/alert surface would also own transport retry, repository
+  orchestration, route policy, or screen-specific recovery copy.
+- Test support would depend on production implementation modules by default.
+
+Choose a smaller boundary first: pure contract, platform adapter, runtime host,
+design-system primitive, feature-local holder, or assertion helper. Revisit the
+shared boundary only after the import rule and caller contract are obvious.
+
 ## Anti-Patterns
 
 - Extracting a generic helper before the second real use exists.
@@ -135,6 +175,12 @@ generic or too early.
 - Creating a package that re-exports unrelated helpers as a grab bag.
 - Sharing a fat interface, context, hook return object, or service API that
   forces callers or tests to provide unrelated no-op behavior.
+- Naming a reusable module after a broad bucket when the actual capability is a
+  route, notice, alert, permission, environment, launcher, adapter, fixture, or
+  assertion contract.
+- Putting app runtime setup, base lifecycle templates, platform launchers,
+  design-system components, network errors, and feature policies behind one
+  "core app" style import.
 - Hiding breaking behavior changes behind a reuse refactor.
 
 ## Verification

@@ -50,3 +50,19 @@ also use `flutter-project-structure.md`.
 - Do persistence and cache changes handle versioning, migration, logout, and
   permission changes?
 - Are target-specific unsupported paths visible instead of silently ignored?
+
+## Do Not
+
+- Do not put repository calls, plugin handles, route decisions, file pickers,
+  permission prompts, dialogs, snackbars, or one-off navigation inside
+  persistent view state.
+- Do not expose mutable collections, database rows, platform-channel maps, DTOs,
+  or plugin models as app/domain state unless the repo owns that public
+  contract.
+- Do not let streams, timers, isolates, subscriptions, or in-flight futures keep
+  running after route disposal, provider invalidation, logout, or account
+  switch.
+- Do not collapse loading, refreshing, empty, offline, permission denied,
+  unsupported target, and error states into nullable data plus a boolean.
+- Do not introduce a second state-management tool or package-local state style
+  only for one feature without a repo-level migration decision.

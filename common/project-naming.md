@@ -71,6 +71,33 @@ Env prefix: SHELLCREW
 - Keep sample names and placeholders clearly fake; do not imply a real product,
   domain, or provider account.
 
+## Module And Package Names
+
+For source modules, packages, namespaces, targets, crates, or import aliases, a
+name should answer: "what capability can a caller import from here?"
+
+Do not use broad bucket names such as `common`, `shared`, `core`, `app`,
+`core-app`, `runtime`, `base`, `manager`, `helper`, `service`, `platform`, or
+"feedback" as a new boundary name unless the repo already defines that word as
+a stable capability family. Even then, the next package level or exported names
+must make the concrete capability obvious.
+
+Prefer capability names over origin names:
+
+- Use route, navigation, launcher, deeplink, or adapter names for route
+  contracts and execution helpers.
+- Use notice, alert, dialog, snackbar, toast, message, error, permission, or the
+  repo's equivalent term for user-visible presentation effects.
+- Use environment, lifecycle, activity, shell, runtime host, or platform adapter
+  names for app-runtime setup instead of a generic "base" bucket.
+- Use fixture, fake, recorder, subject, matcher, or assertion names for testing
+  support instead of one broad testing file.
+
+Do not preserve a vague name just because the code compiles. If callers cannot
+predict allowed imports from the name, add a boundary note or rename before the
+surface spreads. For published package names, keep compatibility aliases or a
+migration path instead of a silent breaking rename.
+
 ## Check
 
 - Is this name user-facing branding or a machine identifier?
@@ -80,3 +107,7 @@ Env prefix: SHELLCREW
   together?
 - Will changing this name break imports, install paths, deep links, callbacks,
   update channels, logs, dashboards, or support docs?
+- Can a new caller infer the module's allowed imports and forbidden imports from
+  the name?
+- Is any broad bucket word backed by a repo-local capability definition and a
+  clear public export surface?

@@ -57,6 +57,22 @@ asset hosts, and release-channel config.
 - Does release configuration avoid debug endpoints, broad ATS exceptions, and
   embedded private credentials?
 
+## Do Not
+
+- Do not put credentials, refresh tokens, OAuth client secrets, signing
+  material, private API tokens, or service-role keys in app bundles, assets,
+  Info.plist files, generated config, or build settings.
+- Do not store sensitive user data in UserDefaults, plain plist files, caches,
+  screenshots, crash payloads, pasteboard, or broad app group containers unless
+  the repo records an accepted risk and protection model.
+- Do not accept Universal Links, URL schemes, files, pasteboard values,
+  extension payloads, or WebView messages without validating origin, target,
+  action, and embedded identifiers.
+- Do not keep WKWebView bridges broad, stringly typed, or available to
+  third-party/untrusted content.
+- Do not ship debug ATS exceptions, debug API origins, entitlement drift, broad
+  associated domains, or vague permission purpose strings in release builds.
+
 ## Tests
 
 Cover permission denied and revoked states, malformed Universal Links or URL

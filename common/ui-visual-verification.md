@@ -58,6 +58,19 @@ State what the check can and cannot prove. Geometry does not prove contrast or
 copy quality. A screenshot does not prove that the command executed. A visible
 button does not prove that the trusted boundary behind it was reached.
 
+## Do Not Accept
+
+- Do not treat a build, typecheck, or unit test as proof that a UI is readable,
+  reachable, responsive, or accessible.
+- Do not verify only the happy path when the changed surface has loading,
+  empty, disabled, error, permission, offline, or long-text states.
+- Do not approve a UI change from a cropped screenshot that hides the command
+  entry point, overflow area, modal/sheet boundary, or next section.
+- Do not ignore keyboard, focus, screen-reader labels, hit target, reduced
+  motion, or high-contrast behavior when the change touches interaction.
+- Do not claim visual verification when the assets, icons, fonts, or remote
+  data failed to load in the checked environment.
+
 ## Report
 
 Name the scenario, environment, action, expected result, observed result, and

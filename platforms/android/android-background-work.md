@@ -25,6 +25,21 @@ Use when Android work touches WorkManager, foreground services, alarms, push not
 - What happens across rotation, process death, logout, account switch, and network loss?
 - Are notifications clear, permission-aware, and not leaking private content?
 
+## Do Not
+
+- Do not start durable background work directly from a Composable, View, or
+  screen callback without a worker/use-case boundary and duplicate policy.
+- Do not use a foreground service for polling, sync, or upload work that can be
+  modeled as deferrable WorkManager work.
+- Do not enqueue jobs that can run twice without idempotency keys, unique work,
+  dedupe state, or server-side duplicate handling.
+- Do not store raw credentials, private payloads, or personal data in worker
+  input, notifications, progress rows, or logs unless the repo has an accepted
+  secure-storage design.
+- Do not ignore notification permission, Doze, battery saver, metered network,
+  app standby, logout, or account switch because the happy path worker test
+  passes.
+
 ## Tests
 
 Cover worker success, retryable failure, permanent failure, cancellation, duplicate enqueue policy, and auth/session changes during work when applicable.

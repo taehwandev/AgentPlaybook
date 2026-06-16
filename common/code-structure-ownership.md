@@ -105,6 +105,39 @@ Barrel or index files are allowed only as narrow compatibility surfaces. They
 must not hide a grab bag of unrelated route, schema, event, UI, data, platform,
 and testing exports behind one convenient import.
 
+### Capability Naming And Boundary Inference
+
+Names are part of the architecture contract. A future agent or maintainer should
+be able to infer the owner, allowed imports, and reusable capability from the
+module, package, namespace, target, or folder name before opening every file.
+
+Do not create or keep a broad boundary named `app`, `core-app`, `core-ui`,
+`runtime`, `base`, `common`, `shared`, `platform`, `manager`, `helper`,
+`service`, `utils`, or a similarly vague word unless the repo already defines
+that name as a stable capability family and the next package level makes the
+capability precise.
+
+Do not name a reusable module after:
+
+- the first app, feature, screen, or caller that happened to need it
+- the current implementation surface when the reusable capability is narrower
+- a broad user reaction such as "feedback" when the code actually owns notices,
+  toasts, snackbars, dialogs, alerts, error presentation, permission prompts, or
+  another concrete capability
+- an inheritance shape such as "base" when the boundary really owns lifecycle
+  setup, routing handoff, environment creation, or platform adapters
+
+Before adding, keeping, or renaming a broad boundary, write the boundary note in
+terms of the concrete capability. If the note cannot say what callers may import
+without using words such as "misc", "common things", "app stuff", "shared
+helpers", or "feedback", the name is not ready.
+
+Keep pure contracts, platform runtimes, app-shell orchestration, design-system
+primitives, test assertions, and feature policy in separate boundaries unless
+one explicit owner and import rule covers them all. A module that mixes Activity
+templates, route execution, notification/toast rendering, visual tokens,
+repositories, and product policy is a catch-all module even when it compiles.
+
 ## Non-Negotiable Structure Stops
 
 Do not continue implementation when any of these are true:
@@ -117,8 +150,10 @@ Do not continue implementation when any of these are true:
 - The code needs separate tests, fixtures, previews, or manual checks for
   separate branches, but those branches are still hidden inside one unit.
 - The proposed new file is a grab bag named `utils`, `helpers`, `common`,
-  `misc`, `shared`, `manager`, or `service` without a precise owner and
-  contract.
+  `misc`, `shared`, `manager`, `service`, `base`, `runtime`, `app`, or
+  `platform` without a precise owner and contract.
+- The proposed module, package, or folder name does not tell a caller what it
+  can import, what it must not import, and which capability owns the code.
 - The proposed function exists only to move an obvious line elsewhere, or it
   needs caller-specific flags to be useful.
 - The split would create many tiny files with no stable owner, no testable
@@ -490,7 +525,8 @@ testing/ or fixture/  test doubles, samples, deterministic fixtures
 ```
 
 Use the repo's existing names first. Do not rename established packages unless
-the rename itself is the task.
+the rename itself is the task. Existing names still need review when a new
+caller cannot infer the capability without reading implementation files.
 
 ## Boundary Rules
 
@@ -511,6 +547,10 @@ the rename itself is the task.
 - Can the contract be tested without the implementation?
 - Will a future implementation swap require changing callers?
 - Are package names stable enough to keep?
+- Can a new caller infer the boundary from the module/package name without
+  opening implementation files?
+- Did any broad name such as `app`, `common`, `shared`, `base`, `runtime`,
+  `manager`, `helper`, or "feedback" pass a concrete capability note?
 
 ## Verification
 

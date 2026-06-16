@@ -54,6 +54,11 @@ ownership boundaries, forbidden leaks, state/error/data handling, and target
 verification. For workflow cards, include entry criteria, steps, stop signals,
 and completion evidence.
 
+Prefer an explicit `Do Not`, `Stop If`, `Do Not Approve When`, or equivalent
+section when the card guides implementation or review. Do not hide blocking
+mistakes only inside positive "Rules" prose; agents follow negative constraints
+more reliably when the forbidden action is named directly.
+
 If a card cannot answer these questions yet, mark the gap explicitly instead of
 padding with generic advice.
 

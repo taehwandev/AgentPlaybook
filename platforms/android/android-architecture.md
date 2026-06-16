@@ -47,16 +47,35 @@ build-logic                  convention plugins and shared build settings
 
 Keep the `app` module thin. Put reusable visual primitives in the design system, pure business data in model/domain, source coordination in data, and screen orchestration in feature implementations. Skip `api` modules, use cases, or repository splits until another module, test boundary, platform dependency, or replaceable implementation needs the contract.
 
+Do not copy this baseline as literal module names. It is a shape for ownership
+and dependency direction. If a repo's `app`, `core-app`, `core-ui`, `runtime`,
+or `base` name is too broad for a caller to infer the capability, either split
+the capability into a precise module or keep a precise package/export boundary
+under the existing module.
+
 Use `core-app` when shared code needs Android or Compose runtime APIs but should
-remain feature-policy free. Good candidates are feedback hosts, permission
-adapters, ActivityRoute launch adapters, reusable WebView runtime, resources,
-and app-shell helpers. Keep feature copy, product route policy, analytics
-policy, repositories, and screen-specific state in the app or feature owner.
+remain feature-policy free. Good candidates are notice or alert hosts,
+permission adapters, ActivityRoute launch adapters, reusable WebView runtime,
+resources, and app-shell helpers. Keep feature copy, product route policy,
+analytics policy, repositories, and screen-specific state in the app or feature
+owner.
+
+Do not put reusable Compose Activity templates, route execution, deep-link
+handoff, notice/toast/dialog rendering, permission launchers, reusable WebView
+runtime, design-system components, repositories, and feature policy into one
+`core-app` or `app` bucket. A shared app-runtime module still needs package
+boundaries named by capability, such as activity, route, notice, permission,
+environment, or platform adapter.
 
 Do not modernize old Android bases by recreating broad `BaseActivity`,
 `BaseFragment`, or universal `BaseViewModel` hierarchies. Prefer small
 Compose-first runtime contracts such as app environment, app root, route
-coordinator, feedback host, permission host, and platform adapter interfaces.
+coordinator, notice host, permission host, and platform adapter interfaces.
+A Compose `BaseActivity` is acceptable only when it owns a narrow lifecycle
+template such as `enableEdgeToEdge`, content installation, intent/deep-link
+handoff, environment access, and extension hooks. It must not own product route
+registration, feature screen mapping, repositories, ViewModel construction,
+analytics policy, or screen-specific UI state.
 
 ## Navigation 3 Advanced Deep Links
 
@@ -94,6 +113,11 @@ Rules:
 - Keep AndroidX Navigation types out of pure router API modules until the app
   intentionally adopts Navigation 3 as the execution engine. Put the bridge in
   the app, app-shell, or Android-specific router boundary.
+- Keep the Activity/base layer responsible for receiving intents and forwarding
+  normalized deep-link requests. Keep route planning and synthetic back-stack
+  construction in the route coordinator or app-shell runtime. Keep product
+  route eligibility and feature entry mapping in app or feature owners.
+  Do not hide all three responsibilities in a `BaseActivity`.
 
 ## Feature Slice Baseline
 

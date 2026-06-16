@@ -166,7 +166,11 @@ When executing wrapper commands from an agent runtime, replace
 `<AGENTPLAYBOOK_ROOT>` with the resolved absolute path first. Do not leave
 `$HOME`, `${HOME}`, `~`, or a relative path in the executable command; those
 forms can bypass narrow permission-prefix matching and cause repeated approval
-prompts.
+prompts. Always register and request command permissions using the parameter-free
+script path prefix (e.g., `python3 /absolute/path/to/script.py` or `node /absolute/path/to/script.mjs`)
+instead of the full command with changing arguments. If a permission is saved
+with arguments, any change to those arguments (e.g., different project paths or
+options) will fail prefix matching and trigger repeated prompts.
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]

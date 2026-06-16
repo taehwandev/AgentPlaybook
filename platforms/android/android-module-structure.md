@@ -105,7 +105,7 @@ families:
 | `app` | Application class, build types/flavors, app-level DI graph, startup, top-level navigation wiring. | Feature implementation, repository implementation details, shared UI primitives. |
 | `build-logic` | Convention plugins, common Android/Kotlin/Compose/test settings, dependency bundles. | Product behavior or runtime code. |
 | `core` | Pure Kotlin or implementation-neutral contracts such as models, domain interfaces, route contracts, network contracts, dispatchers, resource-provider contracts, and test-support contracts. | Android/Compose runtime, feature product policy, or screen-specific UI. |
-| `core-ui` / `core-app` | Android/Compose app-runtime commonization such as design system, resources, permission helpers, ActivityRoute launch adapters, WebView runtime, feedback hosts, toast/dialog rendering, and app UI infrastructure. | Feature-specific copy, route policy, analytics policy, or repository calls. |
+| `core-ui` / `core-app` / `core-runtime` | Android/Compose app-runtime commonization such as design system, resources, permission helpers, ActivityRoute launch adapters, WebView runtime, notice or alert hosts, toast/dialog rendering, and app UI infrastructure. | Feature-specific copy, route policy, analytics policy, or repository calls. |
 | `data` / `core-data` | Repository contracts, repository implementations, local/remote data sources, DTO mapping, DataStore/Room/cache ownership. | Compose UI, navigation decisions, screen state. |
 | `domain` | Optional use cases and product policies reused across screens or risky enough to test independently. | Pass-through wrappers around one repository call. |
 | `feature-api` | Navigation contracts, public entrypoints, route data, events, small caller-facing models. | Screens, ViewModels, repository implementations, DI bindings with heavy dependencies. |
@@ -116,6 +116,34 @@ families:
 If the repo already uses convention plugins, apply the nearest plugin instead of
 copying dependency blocks by hand. If no convention exists, update or add one
 only when at least two modules will share the same setup.
+
+## Android Boundary Naming Stops
+
+Module family names are examples, not required names. Do not keep `app`,
+`core-app`, `core-ui`, `core-runtime`, `base`, `runtime`, `common`, `shared`, or
+"feedback" as a broad Android bucket unless the repo's package layout and
+public exports make the concrete capability clear.
+
+Stop and rename or split when any of these happen:
+
+- A caller cannot tell whether a module provides route contracts, route
+  execution, Activity launchers, deep-link parsing, notice rendering,
+  permissions, WebView runtime, design-system components, or base lifecycle
+  setup.
+- Pure Kotlin contracts and Android/Compose runtime APIs live in the same
+  stable import surface.
+- A notice/toast/snackbar/dialog/alert/error surface is hidden behind a vague
+  "feedback" module name.
+- A `BaseActivity` or `BaseViewModel` becomes the place for product route
+  registration, feature screen mapping, repository calls, analytics, permission
+  policy, network error copy, and visual component ownership.
+- Test fixtures, fakes, assertion subjects, and Activity or repository
+  recorders are exported from one catch-all testing file.
+
+Accept broad module names only when the next level is precise. For example, an
+existing `core-app` module may contain capability packages such as `activity`,
+`route`, `notice`, `permission`, `environment`, `webview`, or `launcher`, but it
+must not make all of them available through one grab-bag import.
 
 ## Convention Plugin Shape
 
@@ -220,16 +248,24 @@ Choose a `core-app` module when:
 
 - the shared code needs Android or Compose runtime APIs
 - the code is app-shell infrastructure reused by several features, such as
-  feedback hosts, permission adapters, ActivityRoute launching, WebView runtime,
-  resources, or app-level composition helpers
+  notice or alert hosts, permission adapters, ActivityRoute launching, WebView
+  runtime, resources, or app-level composition helpers
 - the caller-facing API can stay free of feature copy, product route policy,
   analytics policy, repository calls, and screen-specific state
 
 Keep pure contracts in `core`; move Android/Compose runtime commonization to
-`core-app` or `core-ui` only when a real shared app-runtime boundary exists.
+`core-app`, `core-ui`, or a repo-specific runtime module only when a real
+shared app-runtime boundary exists.
 Avoid broad `BaseActivity`, `BaseFragment`, or universal `BaseViewModel`
 hierarchies. Prefer small contracts such as app environment, route coordinator,
-feedback host, permission host, and platform adapter interfaces.
+notice host, permission host, and platform adapter interfaces.
+
+A reusable Compose Activity base may own only the narrow Activity template:
+edge-to-edge setup, content installation, lifecycle-aware intent/deep-link
+handoff, environment access, and explicit extension hooks. Keep product route
+registration, Navigation 3 entry-provider assembly, feature screen mapping,
+ViewModel creation, repository calls, analytics, and screen state outside that
+base.
 
 ## Dependency Direction
 
@@ -432,6 +468,11 @@ source document list lives in `android-external-skill-source-coverage.md`.
   repository internals?
 - Are design-system modules free of product routes, analytics, permissions, and
   repository calls?
+- Can a new feature import only the capability it needs, or does it have to
+  depend on a broad `core-app`, `common`, `base`, `runtime`, or "feedback"
+  bucket?
+- Is any reusable `BaseActivity` limited to Activity template work instead of
+  owning product routing, DI, repositories, ViewModel creation, or screen state?
 - Did the change update convention plugins instead of duplicating Gradle setup
   across modules?
 - Are previews, ViewModel tests, repository tests, or import-direction checks

@@ -53,6 +53,22 @@ modules, source-set changes, platform actuals, or target app integration.
   framework export, package identifiers, config injection, and target smoke
   paths when release surfaces changed?
 
+## Do Not Approve When
+
+- `commonMain` imports Android, JVM, iOS, desktop, native, Compose runtime, or
+  generated platform APIs without an `expect`/`actual`, adapter, or source-set
+  boundary.
+- An `actual` implementation changes semantics, returns platform-specific
+  success for unsupported behavior, or hides unsupported targets instead of
+  typed failure.
+- Presentation modules import database entities, network DTOs, generated
+  clients, SDK types, platform APIs, or data implementation packages.
+- Shared state, Flow, coroutine, callback, or native resource work lacks
+  cancellation and lifecycle cleanup for every affected target.
+- Gradle, version catalog, framework export, signing, package id, or release
+  config changes are mixed with product behavior or lack affected-target
+  verification.
+
 ## Output
 
 Lead with concrete findings:

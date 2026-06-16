@@ -35,6 +35,21 @@ platform channels, plugins, target setup, or mobile/desktop/web behavior.
 - Was analyzer/test/build/golden/integration verification run for the affected
   package or target, or is the skipped evidence clearly explained?
 
+## Do Not Approve When
+
+- Widgets own business rules, repository calls, plugin handles, timers,
+  streams, isolates, or navigation policy that belongs to a state owner,
+  service, or router.
+- Unsupported platform paths are silently ignored or hidden behind a success
+  state.
+- Controllers, focus nodes, animation controllers, subscriptions, isolates, or
+  plugin callbacks can outlive their owner.
+- Platform channels, native callbacks, WebViews, files, permissions, or deep
+  links are untyped, unvalidated, or exposed directly to UI code.
+- The diff changes state, packages, plugins, build targets, or platform
+  implementations without analyzer/test/build evidence for the affected target
+  or an explicit residual-risk note.
+
 ## Output
 
 Lead with concrete findings:

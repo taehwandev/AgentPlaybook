@@ -28,3 +28,17 @@ For privileged APIs, IPC, shell/file access, signing, notarization, or update tr
 - Are file paths, tokens, and private data kept out of logs?
 - What permission, signing, or OS resource does this action require?
 - What cleanup happens if the app quits while the action is active?
+
+## Do Not
+
+- Do not create separate menu, shortcut, tray, toolbar, and UI code paths for
+  the same command. Route them through one command boundary.
+- Do not expose broad shell, file, clipboard, notification, updater, or OS APIs
+  directly to a renderer, WebView, plugin, or untrusted script surface.
+- Do not leave timers, event monitors, file handles, power assertions,
+  background tasks, sockets, or observers alive after stop, failure, timeout, or
+  app quit.
+- Do not log private file paths, clipboard contents, tokens, command payloads,
+  document contents, or update credentials as part of diagnostics.
+- Do not treat signing, notarization, permissions, login items, update trust,
+  or first-launch prompts as covered by a UI-only smoke check.

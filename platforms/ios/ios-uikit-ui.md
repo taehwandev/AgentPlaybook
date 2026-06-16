@@ -104,6 +104,20 @@ Rules:
 - Modals, sheets, alerts, and child coordinators need explicit ownership and
   dismissal cleanup.
 
+## Do Not
+
+- Do not let a ViewController call API clients, repositories, Keychain,
+  filesystem, permission services, analytics, billing, or tenant policy
+  directly.
+- Do not hide product rules in button handlers, delegate callbacks, cell
+  configuration, target/action methods, or diffable data-source closures.
+- Do not bind raw DTOs, database rows, or SDK models directly into cells or
+  user-facing copy.
+- Do not duplicate observers, timers, notification handlers, target actions,
+  Combine subscriptions, or async callbacks on repeated binding or cell reuse.
+- Do not let coordinators, child view controllers, modals, alerts, or
+  completion closures retain each other after dismissal.
+
 ## File Layout
 
 A UIKit feature can use:

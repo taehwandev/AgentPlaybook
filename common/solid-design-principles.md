@@ -134,6 +134,15 @@ Place the smaller contract near the caller or domain owner that defines the
 need. Do not make callers depend on an implementation-owned "everything"
 interface only because it already exists.
 
+Choose the narrowest language construct that matches the extension model. When
+the valid variants are closed and owned by the same boundary, prefer sealed
+types, enums with associated data, discriminated unions, sum types, or the
+language's equivalent over an open interface or protocol. Use an open interface
+only when external modules can reasonably add substitutable implementations.
+Do not create a generic interface for route specs, commands, UI effects, result
+states, errors, or test events when the repo actually owns the complete variant
+set and callers should handle it exhaustively.
+
 ### Dependency Inversion
 
 High-level policy should depend on stable contracts, not concrete UI,
@@ -274,6 +283,9 @@ When DDD is used, keep it SOLID:
   object, hook return type, or module export that every caller must depend on.
 - Do not split interfaces only by technical layer when callers still receive
   unrelated behavior.
+- Do not default to open interfaces or abstract base classes when a sealed type,
+  union, enum, value object, callback, or small function parameter would express
+  the contract more accurately.
 - Do not add inheritance when composition, a function parameter, or a small
   port would keep the dependency clearer.
 - Do not create layers that only forward one method and add no rule, mapping,
