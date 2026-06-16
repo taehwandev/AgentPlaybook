@@ -17,11 +17,14 @@ Use this before implementation, review, refactoring, debugging, documentation, o
  5. For multi-step tasks, run `scripts/workflow.py route ... --request "<USER_REQUEST>"` before selecting task documents, editing, reviewing, committing, or reporting completion.
  6. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
  7. Use `index.md` to load only relevant AgentPlaybook cards.
- 8. Inspect existing code, docs, tests, and local conventions.
- 9. Make the smallest change that genuinely addresses the request.
-10. Verify with the narrowest reliable command first.
-11. Confirm the route gate ledger before reporting completion.
-12. Report what changed, what was verified, and what risk remains.
+ 8. Parallelize independent read-only orientation when the runtime supports it:
+    selected document reads, file searches, stack inspection, git status, and
+    preflight evidence may run together after request intake is settled.
+ 9. Inspect existing code, docs, tests, and local conventions.
+10. Make the smallest change that genuinely addresses the request.
+11. Verify with the narrowest reliable command first.
+12. Confirm the route gate ledger before reporting completion.
+13. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -36,6 +39,13 @@ Before editing:
 - Check whether the task touches data, auth, permissions, billing, persistence, filesystem, network, release, or external state.
 - Check whether the task touches secrets, client keys, local config, logs, analytics, crash reporting, or open-source-safe setup.
 - Check for existing user changes in files you may touch.
+- After route selection, read independent route documents and run read-only
+  orientation commands in parallel when possible. Do not serialize document
+  reads unless one document determines whether another is needed.
+- `agent-preflight.py` may run in parallel with read-only orientation after the
+  request is answered or classified, but no edit, setup, update, fix, commit,
+  push, release, migration, or external-state change may start until preflight
+  succeeds.
 
 While editing:
 
@@ -44,6 +54,10 @@ While editing:
 - Preserve user-owned changes.
 - Do not expose secrets, tokens, private prompts, or credential contents.
 - Do not claim mocked, placeholder, or TODO behavior is complete.
+- For larger implementation work, split work across parallel agents only when
+  the owned files, packages, contracts, and forbidden files are explicit and do
+  not overlap. Serialize shared contracts, generated files, migrations,
+  dependency changes, release config, and architecture boundaries.
 
 Before finishing:
 

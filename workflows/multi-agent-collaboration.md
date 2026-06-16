@@ -54,6 +54,9 @@ Agents may edit in parallel only when write scopes are disjoint.
 
 Rules:
 
+- The lead agent should actively look for safe parallel slices when a task has
+  independent surfaces. Do not wait for the user to request parallel agents when
+  the split is obvious and low risk.
 - Assign each writer explicit owned files or modules.
 - Assign explicit forbidden files or modules when overlap is likely.
 - Do not assign two writers to the same file.
@@ -61,6 +64,8 @@ Rules:
   and release-config changes.
 - If one task depends on an undefined model or contract from another task,
   define the contract first or serialize the work.
+- Keep implementation briefs narrow enough that a worker can finish without
+  changing another worker's contract, route, schema, state model, or config.
 - Review and integrate parallel changes before broad verification.
 
 Good splits:
@@ -74,6 +79,23 @@ Bad splits:
 - two agents editing the same view, route, reducer, schema, or config file
 - one agent changing shared models while another consumes the unstable shape
 - broad refactors mixed with feature work across the same modules
+- multiple agents adding exports to the same package barrel, public API, design
+  system surface, generated client, migration chain, or release manifest
+
+## Lead-Agent Split Decision
+
+Before spawning or assigning parallel implementation work, the lead agent must
+name:
+
+- the stable contract that all workers can rely on
+- each worker's owned files, packages, or modules
+- each worker's forbidden files, packages, or modules
+- the integration point and who owns it
+- the focused verification for each slice and the final merged check
+
+If any of those cannot be named, keep the work serial until the boundary is
+clear. The lead agent remains responsible for integrating the result, resolving
+conflicts, and ensuring the final diff still satisfies the original request.
 
 ## Agent Briefs
 

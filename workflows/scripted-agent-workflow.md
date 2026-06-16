@@ -198,6 +198,25 @@ The route output is the command manifest for the agent:
 Markdown output is optimized for direct agent reading. JSON output exposes the
 same fields for wrappers, launchers, or CI checks.
 
+## Parallel Consumption
+
+After `route` returns a document and gate manifest, optimize for parallel
+read-only work:
+
+- Read independent route documents in parallel when the runtime supports it.
+  Do not serialize `sed`, `cat`, `rg`, `find`, stack inspection, git status, or
+  other read-only commands unless one result decides whether another command is
+  needed.
+- `agent-preflight.py` may run in parallel with read-only orientation after the
+  request has been answered or classified. Treat it as a gate dependency:
+  implementation, setup, update, fix, commit, push, release, migration, and
+  external-state changes must wait until preflight succeeds.
+- Do not parallelize commands that write the same evidence file, mutate project
+  files, stage or commit changes, install/update guardrails, run fixers, publish
+  artifacts, deploy, migrate data, or depend on one another's output.
+- If a parallel read-only command fails, classify the failure before editing.
+  Do not continue only because the other parallel commands succeeded.
+
 ## Gate Execution Ledger
 
 For every scripted route, maintain a gate ledger while working:

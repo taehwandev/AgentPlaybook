@@ -46,6 +46,25 @@ the command manifest and keep the implementation inside its listed gates.
 8. Handoff: report changed files, verification evidence, skipped checks, side
    effects considered, and residual risk.
 
+## Parallel Implementation
+
+Use parallelism to reduce waiting, not to blur ownership.
+
+- Parallelize read-only orientation after route selection: selected document
+  reads, file searches, stack discovery, git status, and preflight evidence may
+  run together when the runtime supports it.
+- Split implementation across parallel agents only when each slice has explicit
+  owned files or modules, forbidden files or modules, acceptance checks, and
+  verification commands.
+- Prefer parallel writers for disjoint surfaces such as isolated adapter code
+  and separate docs, or independent UI and domain slices after the contract is
+  stable.
+- Serialize edits to shared contracts, route schemas, migrations, generated
+  files, dependency config, package manifests, release config, architecture
+  boundaries, and any file that two agents would both touch.
+- Run integration review or the Review Hook after parallel changes are merged
+  before broad verification or handoff.
+
 ## Minimum Verification
 
 Pick the closest check to the changed boundary first:

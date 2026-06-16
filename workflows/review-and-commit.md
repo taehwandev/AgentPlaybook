@@ -24,13 +24,20 @@ Use after implementation, before handing off or committing.
 ## Steps
 
 1. Inspect the final diff, not memory of the work.
-2. Review against the user request, repo-local rules, project/product guidance,
-   platform risks, and side-effect audit questions.
+2. Use the Review Hook as the default final code-review gate when it is
+   installed and applicable. Do not duplicate a full manual code review only to
+   repeat hook checks.
 3. Confirm affected docs are updated, or record why no docs changed.
 4. Run or record the nearest useful verification.
 5. Remove only unused code created by the change.
 6. Split unrelated work before committing.
 7. Write a commit message that states intent, context, and verification.
+
+Run a targeted manual review only when the Review Hook is unavailable, fails,
+does not cover the changed surface, or the task touches high-risk behavior that
+requires human judgment beyond the hook: auth, permissions, data loss,
+migrations, billing, release, deployment, public API compatibility, or broad
+architecture changes.
 
 ## Verification
 
@@ -40,6 +47,8 @@ Before handoff or commit, confirm:
 - VibeGuard or the repo-local safety gate passed when required
 - Review Hook passed with code review evidence and docs freshness evidence, and
   it did not mutate the worktree or hide broad fixes inside the hook
+- if the Review Hook was unavailable or skipped, the final report explains the
+  replacement review evidence and residual risk
 - the nearest behavior, contract, build, or manual smoke check ran or the skip
   reason and residual risk are explicit
 - `git diff --check` or repo formatter/lint covered whitespace or formatting

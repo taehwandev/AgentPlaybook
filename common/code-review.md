@@ -95,6 +95,12 @@ or summary only when it helps the handoff.
 When review is enforced through `scripts/agent-hook.py review`, treat the hook
 as a read-only gate:
 
+- A passing Review Hook is the default final code-review evidence for ordinary
+  implementation, refactor, and documentation work. Do not run a second broad
+  manual review only to duplicate hook checks. Use targeted manual review only
+  when the hook is unavailable, fails, cannot cover the changed surface, or the
+  diff touches high-risk auth, data, billing, release, migration, or public
+  contract behavior.
 - Do not let the hook run fixers, formatters, generated-code updates,
   dependency updates, migrations, broad cleanup, broad refactors, or VibeGuard
   `--fix`.
