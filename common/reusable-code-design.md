@@ -58,6 +58,9 @@ Reusable units should prefer:
   only on the behavior it needs.
 - Stable names that describe the reusable role, not the first feature that used it.
 - Examples, previews, fixtures, or focused tests that show normal and edge states.
+- Export surfaces grouped by contract family, so callers can import routes,
+  events, schemas, DTOs, commands, adapters, fixtures, or assertions without
+  unrelated runtime dependencies.
 
 Avoid reusable APIs that accept repositories, activities, routers, request
 objects, raw environment variables, or feature-specific DTOs unless that is the
@@ -89,6 +92,11 @@ capability from the platform runtime that executes it:
 Do not promote code to a common package if the shared API still needs
 caller-specific flags, product copy, route decisions, analytics labels,
 permission policy, billing rules, or platform-specific fallback branches.
+
+Do not make a cross-platform package look reusable by exporting every contract
+family from one file or namespace. A shared package should make pure contract
+families obvious, then put platform runtimes behind adapters owned by Android,
+iOS, web, server, desktop, or the repo's equivalent platform boundary.
 
 ## Ownership Boundaries
 

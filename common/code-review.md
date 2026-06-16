@@ -112,6 +112,27 @@ as a read-only gate:
   over 400 lines fails; a file adding more than 200 lines fails; an existing
   file already over 400 lines must not grow; a function, component, hook,
   handler, script-step, or style block over 120 lines fails.
+- Enforce purpose-based file ownership, not only line count. A runtime file
+  should expose one public/exported top-level class, interface, component,
+  type, struct, enum, protocol, object, or equivalent primary contract by
+  default. Multiple public top-level types in one runtime file fail unless a
+  repo-local rule explicitly treats that file shape as a single generated,
+  sealed, or tightly coupled contract family.
+- Fail runtime files that mix top-level roles such as UI, state, data, domain,
+  platform, contract, implementation, or test-support declarations. Split by
+  purpose: screen/component code, state owner, repository/client/mapper,
+  domain policy, platform adapter, public contract, and reusable fixtures should
+  live in purpose-named files or packages.
+- Fail package or folder growth that keeps adding runtime files to a catch-all
+  package such as `utils`, `helpers`, `common`, `shared`, `misc`, `manager`, or
+  `service`, or to a package that already mixes unrelated UI/state/data/domain/
+  platform roles without an enforced boundary. A package is an ownership and
+  import boundary, not a storage bin.
+- When a change creates a new runtime package/folder or grows a package across
+  purpose roles, require structured boundary evidence before approval. The
+  hook must fail unless `--structure-review-evidence` explicitly names owner,
+  allowed imports, forbidden imports, callers or tests, and verification. A
+  vague statement such as "structure reviewed" is not enough.
 - A runtime source/style file over the review-pressure threshold requires
   explicit structure-review evidence before approval, but evidence must not
   override the hard gates.

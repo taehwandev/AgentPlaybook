@@ -121,6 +121,10 @@ reader vs writer
 query vs command
 state view vs mutation sink
 formatter vs parser
+route key vs route resolver vs route renderer
+DTO/schema vs handler vs generated client
+event contract vs event executor
+fixture vs recording fake vs assertion subject
 repository need vs raw data source
 component props vs feature policy
 platform port vs platform adapter
@@ -187,14 +191,17 @@ contract in tests or previews.
 
 ### Module Interface Segregation
 
-Module exports are interfaces. Keep them role-sized.
+Module exports are interfaces. Keep them role-sized. Apply this to every
+language's export surface: Kotlin packages, TypeScript modules and barrel files,
+Swift targets and protocols, Dart libraries, Python packages, server modules,
+CSS modules, and reusable test-support packages.
 
 Treat these as module ISP failures:
 
 - a consumer imports a whole implementation module only to use one type,
   function, route, event, or factory
-- a public barrel/export file re-exports unrelated UI, domain, data, platform,
-  test, fixture, and generated symbols
+- a public barrel/export file re-exports unrelated route, event, schema, DTO,
+  UI, domain, data, platform, test, fixture, generated, and adapter symbols
 - callers must depend on heavy SDK, database, framework, paid, optional, or
   platform packages because the module contract leaks implementation details
 - read-only consumers must import write commands, lifecycle wiring, migration

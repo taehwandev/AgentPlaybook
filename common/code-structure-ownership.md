@@ -76,6 +76,35 @@ Keep a small one-file helper only when the roles are inseparable, have one real
 caller, and can be reviewed in one pass. Once callers, responsibilities, or
 verification paths differ, split the file before adding more behavior.
 
+### Contract Family Split
+
+Apply contract-family splits across every language and platform. A Kotlin
+package, TypeScript module or barrel file, Swift target, Dart library, Python
+package, server folder, CSS module, or test-support package is still a public
+interface when another caller imports it.
+
+Do not keep unrelated caller-facing contract families in one catch-all file,
+module, namespace, or export surface. Split when the same API area starts mixing
+families such as:
+
+- routes, route events, deep-link matchers, and rendering or execution adapters
+- request/response DTOs, validation schemas, generated clients, and route
+  handlers
+- read queries, write commands, mutation policies, and background jobs
+- component props, feature policy, analytics names, and platform launchers
+- fixtures, builders, recording fakes, assertion subjects, and contract tests
+
+Use names that describe the import boundary. Examples: `route`, `event`,
+`schema`, `dto`, `command`, `query`, `adapter`, `fixture`, `assertion`,
+`activity`, `platform`, or the repo's established equivalents. Keep a single
+contract file only when it contains one small contract family, has the same
+caller set, and has one reason to change. Do not split mechanically into one
+folder per type when the caller-facing import boundary is identical.
+
+Barrel or index files are allowed only as narrow compatibility surfaces. They
+must not hide a grab bag of unrelated route, schema, event, UI, data, platform,
+and testing exports behind one convenient import.
+
 ## Non-Negotiable Structure Stops
 
 Do not continue implementation when any of these are true:
@@ -185,8 +214,9 @@ consumer need, not by mechanical file count:
 
 - `api` can group route contracts, events, commands, models, provider
   contracts, and small value types together while they share one import rule.
-  Add subpackages only when consumers should import one contract surface without
-  the others.
+  Add subpackages, source files, or export modules when consumers should import
+  one contract family, such as routes, events, schemas, DTOs, commands,
+  provider ports, activity/launcher keys, or test fixtures, without the others.
 - `impl` can group route mapping, rendering, registration, adapters, mappers,
   and state holders by behavior owner. Do not mirror every `api` file with an
   `impl` package unless the implementation dependency differs.
@@ -446,6 +476,10 @@ top-level groups include:
 ```text
 api/ or contract/     public caller-facing contracts
 impl/ or internal/    implementation details
+route/                route keys, paths, navigation commands, or link contracts
+event/                caller-emitted events and intent-like messages
+schema/ or dto/       request/response shapes, validation schemas, generated contracts
+command/ or query/    write commands and read queries when callers differ
 model/                plain values owned by this boundary
 state/                UI/application state and effects
 component/            reusable UI or interaction pieces
