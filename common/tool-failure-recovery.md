@@ -56,6 +56,18 @@ service state:
 
 ## Common Scenarios
 
+Hook failure:
+
+- Treat a hook `FAIL` as an active recovery task, not a handoff summary.
+- Read every failure detail and classify it as safe scoped fix, scope decision,
+  environment blocker, external-state risk, or broader refactor.
+- Fix safe scoped issues immediately outside the hook, preserving the hook as a
+  read-only checker.
+- Rerun the same hook once with `--retry-attempt 1` after the fix.
+- If recovery requires destructive action, credentials, external state, or a
+  broader refactor, ask before acting. If the retry fails again for the same
+  scope, run retrospective before finalizing.
+
 Lint or formatting failure:
 
 - Prefer repo-local format or lint commands.

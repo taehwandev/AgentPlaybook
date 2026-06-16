@@ -96,10 +96,20 @@ as a read-only gate:
   handler, script-step, or style-block size. A source file over the hard limit
   fails the hook. A source file over the review-pressure threshold requires
   explicit structure-review evidence before approval.
+- Apply file-size and function-size checks only to changed source/style files.
+  Markdown, MDX, prose documentation, and other docs are excluded from code-size
+  limits unless a repo-local rule explicitly treats them as executable source.
 - Check large units against responsibility splits, not only line count. A unit
   that mixes parse, validate, fetch, map, render, mutate, persist, log, navigate,
   retry, or recovery concerns should fail even when it is still under the
   numeric limit.
+- On `FAIL`, explain the failing check in detail: exact path and line when
+  available, observed size, configured threshold, why it blocks approval, and
+  the smallest safe next action.
+- Do not stop at a vague failure report. After a first `FAIL`, immediately fix
+  scoped and safe issues outside the hook, then rerun the same hook once with
+  `--retry-attempt 1`. Ask only when recovery requires a scope decision,
+  destructive action, credential change, external state, or a broader refactor.
 - If the review finds a required fix, report the smallest actionable failure and
   run the normal workflow for that fix. Do not hide the fix inside the hook.
 - If a hook command changes the worktree, treat that as a hook failure.

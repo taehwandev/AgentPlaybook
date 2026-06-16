@@ -45,6 +45,10 @@ REVIEW_SOURCE_EXTENSIONS = {
     ".vue",
 }
 REVIEW_STYLE_EXTENSIONS = {".css", ".scss", ".sass"}
+STRUCTURE_REVIEW_SCOPE_NOTE = (
+    "checks changed source/style files only; Markdown, MDX, and prose docs are excluded "
+    "from file-size and function-size limits"
+)
 REVIEW_SKIP_PARTS = {
     ".agentplaybook",
     ".git",
@@ -82,6 +86,7 @@ def structure_review(
         "max_file_lines": max_file_lines,
         "max_block_lines": max_block_lines,
         "review_warning_file_lines": REVIEW_FILE_REVIEW_WARNING_LIMIT,
+        "scope": STRUCTURE_REVIEW_SCOPE_NOTE,
         "warnings": [],
         "failures": list(discovery["command_errors"]),
         "discovery": discovery,
@@ -157,13 +162,14 @@ def check_file_size(
     line_count = len(lines)
     if line_count > max_file_lines:
         result["failures"].append(
-            f"{path} has {line_count} lines; limit is {max_file_lines}; "
-            "split the file or record an explicit boundary decision"
+            f"{path} is a changed source/style file with {line_count} lines; "
+            f"hard limit is {max_file_lines}; split by responsibility or record an explicit "
+            "boundary decision before approval"
         )
     elif line_count > REVIEW_FILE_REVIEW_WARNING_LIMIT:
         result["warnings"].append(
-            f"{path} has {line_count} lines; structure-review evidence is required "
-            "before approving more behavior"
+            f"{path} is a changed source/style file with {line_count} lines; "
+            "structure-review evidence is required before approving more behavior"
         )
 
 
@@ -241,5 +247,6 @@ def block_failure(
 ) -> str:
     return (
         f"{path}:{start_index + 1} block `{label}` spans {span} lines; "
-        f"limit is {max_block_lines}; split responsibilities before review"
+        f"limit is {max_block_lines}; split responsibilities or justify why the unit "
+        "must stay together before approval"
     )

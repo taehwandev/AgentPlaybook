@@ -94,11 +94,15 @@ the update.
   evidence, then run structural review, local diff hygiene, workflow validation,
   and VibeGuard audit. The structural review checks changed source files for
   oversized files and oversized functions, components, hooks, handlers, script
-  steps, or style blocks. Architecture, security, dependency, release, and test
+  steps, or style blocks. Markdown, MDX, and prose docs are excluded from these
+  code-size limits. Architecture, security, dependency, release, and test
   concerns are reviewed here as evidence, not as separate hooks. The review hook
-  is read-only: it fails if its checks change the worktree. It also fails by
-  default when the changed path count is too broad for one review pass, so the
-  work must be split before retrying.
+  is read-only: it fails if its checks change the worktree. On `FAIL`, it must
+  explain the exact failing check, threshold, affected path or line when
+  available, and recovery action. Fix scoped and safe failures outside the hook,
+  then rerun the same hook once with `--retry-attempt 1`; do not finalize with
+  an unresolved `FAIL`. It also fails by default when the changed path count is
+  too broad for one review pass, so the work must be split before retrying.
   Use
   `python3 scripts/agent-hook.py review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
 - `Finish Hook`: run before final report, commit, release, or handoff. It

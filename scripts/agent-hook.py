@@ -206,10 +206,11 @@ def review_hook(args: argparse.Namespace) -> int:
     elif status_after_lines != status_before_lines:
         failures.append("review hook changed the worktree; review hooks must stay read-only")
 
-    details = failures or [
+    details = review_failure_details(failures, structure) if failures else [
         "code review evidence recorded",
         "docs freshness evidence recorded",
-        f"structure review passed for {structure['checked_path_count']} source file(s)",
+        f"structure review passed for {structure['checked_path_count']} source/style file(s)",
+        f"structure scope: {structure['scope']}",
         "review scope guard passed",
         "review hook left worktree unchanged",
         "diff whitespace check passed",
@@ -224,6 +225,31 @@ def review_hook(args: argparse.Namespace) -> int:
         checks,
         args.retry_attempt,
     )
+
+
+def review_failure_details(failures: list[str], structure: dict[str, Any]) -> list[str]:
+    details = [
+        f"structure scope: {structure['scope']}",
+        f"checked source/style files: {format_checked_paths(structure.get('checked_paths', []))}",
+    ]
+    details.extend(f"failure detail: {failure}" for failure in failures)
+    details.append(
+        "required recovery: fix scoped and safe code/docs issues immediately outside the hook, "
+        "then rerun this same review hook once with --retry-attempt 1"
+    )
+    details.append(
+        "do not finalize with FAIL; ask only when recovery needs a scope decision, destructive action, "
+        "credential change, external state, or a broader refactor"
+    )
+    return details
+
+
+def format_checked_paths(paths: list[str]) -> str:
+    if not paths:
+        return "none"
+    visible = paths[:8]
+    suffix = "" if len(paths) <= len(visible) else f" ... (+{len(paths) - len(visible)} more)"
+    return ", ".join(visible) + suffix
 
 
 def finish_hook(args: argparse.Namespace) -> int:
@@ -303,7 +329,8 @@ def hook_failure_policy(success: bool, retry_attempt: int) -> tuple[dict[str, An
             "retry_limit": HOOK_RETRY_LIMIT,
             "next_action": "retry_once",
         }, [
-            "retry request: fix the failure and rerun this hook once with --retry-attempt 1",
+            "retry request: diagnose every failure, fix scoped and safe issues outside the hook, "
+            "then rerun this hook once with --retry-attempt 1",
         ]
     return {
         "retry_attempt": retry_attempt,
