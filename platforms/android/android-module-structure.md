@@ -29,7 +29,8 @@ Start with the smallest owner boundary that works:
 
 ```text
 package/private file -> feature package -> feature module -> api/impl pair
--> shared core module -> public SDK-like contract
+-> api/impl/assertions trio -> shared core or core-app module
+-> public SDK-like contract
 ```
 
 Use a single package or module unless a real caller, dependency, build,
@@ -68,14 +69,14 @@ families:
 | --- | --- | --- |
 | `app` | Application class, build types/flavors, app-level DI graph, startup, top-level navigation wiring. | Feature implementation, repository implementation details, shared UI primitives. |
 | `build-logic` | Convention plugins, common Android/Kotlin/Compose/test settings, dependency bundles. | Product behavior or runtime code. |
-| `core` | Stable platform/runtime primitives such as dispatchers, router contracts, lifecycle helpers, security adapters, resource providers, test utilities. | Feature product policy or screen-specific UI. |
-| `core-ui` / `core-app` | Design system, resources, permission helpers, network shell, toast/dialog primitives, app UI infrastructure. | Feature-specific copy, routes, analytics, or repository calls. |
+| `core` | Pure Kotlin or implementation-neutral contracts such as models, domain interfaces, route contracts, network contracts, dispatchers, resource-provider contracts, and test-support contracts. | Android/Compose runtime, feature product policy, or screen-specific UI. |
+| `core-ui` / `core-app` | Android/Compose app-runtime commonization such as design system, resources, permission helpers, ActivityRoute launch adapters, WebView runtime, feedback hosts, toast/dialog rendering, and app UI infrastructure. | Feature-specific copy, route policy, analytics policy, or repository calls. |
 | `data` / `core-data` | Repository contracts, repository implementations, local/remote data sources, DTO mapping, DataStore/Room/cache ownership. | Compose UI, navigation decisions, screen state. |
 | `domain` | Optional use cases and product policies reused across screens or risky enough to test independently. | Pass-through wrappers around one repository call. |
 | `feature-api` | Navigation contracts, public entrypoints, route data, events, small caller-facing models. | Screens, ViewModels, repository implementations, DI bindings with heavy dependencies. |
 | `feature` / `feature-impl` | Route holders, stateless screens, ViewModels, feature-local components, UI mappers, feature DI. | Shared design primitives or cross-feature data contracts. |
 | `feature-common` / `holder` | Reused product UI or workflow holders with a named owner and stable caller contract. | Dumping ground for unrelated screen fragments. |
-| `dev` / `testing` / `assertion` | Dev-only screens, fakes, assertions, fixture builders, test helpers. | Production-only behavior that callers need at runtime. |
+| `dev` / `testing` / `assertions` | Dev-only screens, reusable fakes, recording adapters, fixture builders, assertion DSLs, and contract test helpers. | Production-only behavior that callers need at runtime, or dependencies on production implementation modules by default. |
 
 If the repo already uses convention plugins, apply the nearest plugin instead of
 copying dependency blocks by hand. If no convention exists, update or add one
@@ -142,6 +143,36 @@ Choose a repository `api` plus implementation pair when:
 
 Do not create `api` modules that contain only one unused interface and no caller
 that benefits from avoiding the implementation dependency.
+
+Choose an `assertions` module or source set when:
+
+- two or more test boundaries need the same fake, fixture, recording helper, or
+  assertion DSL
+- a route, repository, adapter, or platform boundary needs reusable contract
+  tests
+- tests should compile against the stable API contract without depending on the
+  production implementation module
+- the reusable helper avoids booting the app shell, DI graph, network stack,
+  database, WebView, camera, billing, or other heavy implementation dependency
+
+Do not create an `assertions` module for one test, preview-only sample data, or
+a helper that must import production implementation code to be useful. In those
+cases, keep the helper local or put the test in the implementation module.
+
+Choose a `core-app` module when:
+
+- the shared code needs Android or Compose runtime APIs
+- the code is app-shell infrastructure reused by several features, such as
+  feedback hosts, permission adapters, ActivityRoute launching, WebView runtime,
+  resources, or app-level composition helpers
+- the caller-facing API can stay free of feature copy, product route policy,
+  analytics policy, repository calls, and screen-specific state
+
+Keep pure contracts in `core`; move Android/Compose runtime commonization to
+`core-app` or `core-ui` only when a real shared app-runtime boundary exists.
+Avoid broad `BaseActivity`, `BaseFragment`, or universal `BaseViewModel`
+hierarchies. Prefer small contracts such as app environment, route coordinator,
+feedback host, permission host, and platform adapter interfaces.
 
 ## Dependency Direction
 

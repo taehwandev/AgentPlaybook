@@ -283,6 +283,45 @@ real/fake providers, DI bindings, platform integrations
 Do not create an `api` module only to mirror architecture. If no caller can use
 the API without the implementation, the split is probably too early.
 
+### API / Impl / Assertions Trio
+
+Use an `api` / `impl` / `assertions` split when tests need reusable support
+without depending on production implementation details.
+
+An `assertions` module or source set should contain:
+
+```text
+fake implementations, recording adapters, fixture builders, assertion DSLs,
+test subjects, contract test helpers, deterministic clocks or dispatchers
+```
+
+Keep the dependency direction narrow:
+
+```text
+assertions -> api
+tests -> assertions
+impl tests -> impl plus assertions only when testing implementation behavior
+```
+
+Do not let `assertions` depend on production `impl` by default. Pulling in
+production implementation code from a reusable test-support module usually
+means the contract is not stable enough, the test belongs in the implementation
+module, or the fake should be local to one test.
+
+Create `assertions` only when at least one of these is true:
+
+- two or more test boundaries need the same fake, fixture, recording sink, or
+  assertion helper
+- a contract module needs reusable conformance tests
+- a route, repository, adapter, or platform boundary needs a deterministic
+  test double that callers can share without booting the app shell
+- the helper prevents tests from importing a heavy framework, platform, paid,
+  or production implementation dependency
+
+Keep one-off test data, previews, and test-only setup local until reuse is
+real. Use plural `assertions` for module names so paths stay consistent across
+repositories.
+
 ## Boundary Pressure Signals
 
 Split or introduce a stronger boundary when these signals repeat:

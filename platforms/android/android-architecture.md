@@ -38,12 +38,25 @@ core/designsystem            theme, semantic tokens, component wrappers, preview
 core/model                   pure Kotlin product models and ids
 core/domain                  use cases, repository contracts, product policies
 core/data                    repository implementations, DTO/cache mapping, fakes
+core-app/<area>              Android/Compose app-runtime helpers
 feature/<name>/api           route contracts, entrypoints, public events
 feature/<name>/impl          Route, ViewModel, UiState, Screen, feature components
+core/<area>/assertions       reusable fakes, fixtures, and assertion helpers
 build-logic                  convention plugins and shared build settings
 ```
 
 Keep the `app` module thin. Put reusable visual primitives in the design system, pure business data in model/domain, source coordination in data, and screen orchestration in feature implementations. Skip `api` modules, use cases, or repository splits until another module, test boundary, platform dependency, or replaceable implementation needs the contract.
+
+Use `core-app` when shared code needs Android or Compose runtime APIs but should
+remain feature-policy free. Good candidates are feedback hosts, permission
+adapters, ActivityRoute launch adapters, reusable WebView runtime, resources,
+and app-shell helpers. Keep feature copy, product route policy, analytics
+policy, repositories, and screen-specific state in the app or feature owner.
+
+Do not modernize old Android bases by recreating broad `BaseActivity`,
+`BaseFragment`, or universal `BaseViewModel` hierarchies. Prefer small
+Compose-first runtime contracts such as app environment, app root, route
+coordinator, feedback host, permission host, and platform adapter interfaces.
 
 ## Feature Slice Baseline
 
@@ -96,6 +109,8 @@ Module decision:
 - Keep the feature in one module when no caller needs a stable route or contract.
 - Add `feature-api` when navigation, holder registration, route data, or another module needs the feature contract without implementation dependencies.
 - Add repository `api`/implementation split when features need stable repository interfaces/entities but must not see DTOs, Retrofit/Room/DataStore, SDKs, or cache internals.
+- Add `assertions` modules only when reusable fakes, fixtures, recording helpers, or assertion DSLs need to compile against stable API contracts without importing production implementation modules.
+- Add `core-app` only for shared Android/Compose app-runtime helpers that are free of feature copy, route policy, analytics policy, repository calls, and screen-specific state.
 - Add shared/core modules only for stable, repeated contracts with clear ownership; do not create catch-all common modules.
 
 ## Boundary Placement
