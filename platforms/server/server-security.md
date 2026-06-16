@@ -13,6 +13,9 @@ or public endpoints.
 Also use `common/secure-development-baseline.md` and
 `common/security-privacy-review.md` for shared secret handling, authorization,
 logging, diagnostics, and open-source repository safety rules.
+Use `common/runtime-url-configuration.md` for environment-specific service
+origins, callback URLs, webhook endpoints, CORS origins, redirect hosts, and
+asset/CDN hosts.
 
 ## Rules
 
@@ -32,6 +35,10 @@ logging, diagnostics, and open-source repository safety rules.
 - Keep service keys, database URLs, signing secrets, and provider credentials in
   secret stores or ignored local config, never in responses, logs, fixtures, or
   generated clients.
+- Keep environment-specific runtime URLs in typed server config, deployment
+  config, or service discovery. Do not hard-code production/staging API origins,
+  callback URLs, webhook endpoints, CORS allowlists, redirect hosts, or asset
+  hosts in handlers, clients, jobs, or generated public artifacts.
 - Return stable error shapes without revealing whether private resources,
   accounts, invites, tenants, or tokens exist unless the product policy allows
   that disclosure.
@@ -44,6 +51,8 @@ logging, diagnostics, and open-source repository safety rules.
   constrained?
 - Can an external URL, webhook, job, upload, or import reach internal resources
   or replay side effects?
+- Are runtime URLs and credential-bearing URLs separated, validated, and supplied
+  by the target environment's config?
 - What rate limit, idempotency key, audit log, and correlation id protects this
   endpoint?
 - Do logs, errors, metrics, traces, exports, or fixtures contain secrets or

@@ -30,6 +30,9 @@ environment, verification gate, and rollback or forward-fix path.
 - Keep local, development, staging, and production configuration separate.
 - Do not hard-code environment behavior that should be injected by deployment,
   release config, or local config.
+- Use `runtime-url-configuration.md` when API origins, callback URLs, redirect
+  URIs, webhook endpoints, CORS origins, app link hosts, or asset/CDN hosts vary
+  by release environment.
 - Verify signing, credentials, package identity, bundle id, domain, callback URL,
   or app id before release when applicable.
 - Make migrations backward compatible when old and new app versions can overlap.

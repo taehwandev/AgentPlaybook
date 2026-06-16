@@ -27,6 +27,10 @@ Use for API, worker, database, auth, tenancy, migration, and integration review.
 - Check idempotency for payments, webhooks, retries, and jobs.
 - Review migrations for reversibility, backfill risk, locks, and data loss.
 - Ensure errors and logs do not leak secrets, tokens, or personal data.
+- Check API/service origins, callback URLs, webhook endpoints, CORS origins,
+  redirect hosts, and asset/CDN hosts against
+  `common/runtime-url-configuration.md` when runtime config or generated clients
+  changed.
 
 ## Do Not Approve When
 
@@ -47,6 +51,8 @@ Use for API, worker, database, auth, tenancy, migration, and integration review.
 - Unit: services, policies, validators, mappers.
 - Integration: database, cache, queue, external client fakes.
 - Contract: API request/response, OpenAPI, GraphQL schema, webhook payloads.
+- Runtime config: environment URL config validation or release smoke when
+  origins, callbacks, webhooks, CORS, redirects, or asset hosts changed.
 - Load/smoke: only for performance-sensitive or release-critical paths.
 
 ## UI/API Test Focus

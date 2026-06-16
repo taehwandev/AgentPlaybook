@@ -462,13 +462,14 @@ Supported platforms are `android`, `application`, `flutter`, `ios`, `kmp`,
 `ai-overviews`, `ai-search`, `ai-search-optimization`, `answer-engine`,
 `answer-engine-optimization`, `api`, `asset`, `assets`, `auth`, `background`,
 `billing`, `cache`, `canonical`, `channel`, `component`, `component-api`,
-`compose`, `copy`, `defensive`, `dependency`, `desktop`, `discovery`, `effort`,
-`error`, `errors`, `failure`, `generated`, `generative-ai`,
+`compose`, `config`, `copy`, `defensive`, `dependency`, `desktop`, `discovery`,
+`effort`, `error`, `errors`, `failure`, `generated`, `generative-ai`,
 `generative-ai-search`, `geo`, `intake`, `interaction`, `invite`, `llms`,
 `llms-txt`, `module`, `observability`, `open-graph`, `persistence`, `platform`,
-`prose`, `react`, `release`, `reusability`, `robots`, `security`, `seo`,
+`prose`, `react`, `release`, `reusability`, `robots`, `runtime-url`,
+`security`, `seo`,
 `sitemap`, `stack`, `state`, `structure`, `structured-data`, `swiftui`, `ui`,
-`uikit`, `voice`, `widget`, `wiki`, `worktree`, and `writing`.
+`uikit`, `url`, `voice`, `widget`, `wiki`, `worktree`, and `writing`.
 
 Use `classify` before route selection when the request may be vague or when the
 agent runtime can choose model/reasoning effort. The classifier is intentionally
@@ -482,6 +483,9 @@ keywords in the request, including SEO, AI search, AEO, GEO, AI Overviews, AI
 Mode, `llms.txt`, sitemap, robots, canonical, Open Graph, and structured data.
 Agents should still pass exact concerns when local context shows a specific
 risk.
+It also infers `runtime-url` from requests about environment-specific runtime
+URLs, API/base URLs, API origins, callback URLs, `redirect_uri`, webhook
+endpoints, CORS origins, asset hosts, and CDN origins.
 
 If the workflow router cannot run, the agent must stop and report the blocker or
 ask whether to continue with an `index.md` fallback. The route output contains

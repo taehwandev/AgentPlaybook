@@ -13,6 +13,9 @@ or protected UI actions.
 Also use `common/secure-development-baseline.md` and
 `common/security-privacy-review.md` for shared secret handling, authorization,
 logging, diagnostics, and open-source repository safety rules.
+Use `common/runtime-url-configuration.md` for environment-specific API origins,
+client/server runtime config, callback URLs, redirect URIs, CORS origins,
+WebSocket/EventSource endpoints, and asset hosts.
 
 For server state, API clients, cache, and browser persistence, also use
 `web-state-data.md`.
@@ -80,6 +83,10 @@ are all security boundaries when their output reaches browser code.
 
 - CORS wildcards are acceptable only for intentionally public unauthenticated
   resources. Credentialed or user-owned routes need an allowlist.
+- Environment-specific API origins, backend/frontend domains, callback URLs,
+  redirect hosts, WebSocket/EventSource endpoints, and asset hosts belong in the
+  framework or deployment config, not scattered `fetch`, SDK, or client
+  component literals.
 - Public CDN cache headers must only be used for data that is identical for all
   viewers. Private, follower-only, draft, admin, token-backed, live, or
   personalized data should be private/no-store or keyed by the full access
@@ -114,6 +121,8 @@ are all security boundaries when their output reaches browser code.
 - Are encrypted values, hashes, internal IDs, audit fields, and feature flags
   excluded from browser-visible payloads unless intentionally public?
 - Are redirects, embeds, uploads, rich text, and third-party scripts constrained?
+- Are runtime URLs separated into server-only and client-visible config, with
+  public config treated as public and credentials kept server-side?
 - Do cache headers match the data visibility and viewer dimensions?
 - Does logout, org switch, membership revoke, or plan downgrade clear or refresh
   browser-held state?

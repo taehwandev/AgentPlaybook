@@ -12,6 +12,9 @@ signing, entitlements, or release builds.
 
 Also use `common/secure-development-baseline.md` for shared secret handling,
 authorization, logging, diagnostics, and open-source repository safety rules.
+Use `common/runtime-url-configuration.md` for environment-specific API origins,
+Universal Link domains, URL scheme callback hosts, redirect/callback URLs,
+asset hosts, and release-channel config.
 
 ## Rules
 
@@ -21,6 +24,10 @@ authorization, logging, diagnostics, and open-source repository safety rules.
   crash payloads as visible data surfaces.
 - Keep server-only secrets out of app bundles, generated config, assets, and
   build settings.
+- Put environment-specific API origins, callback URLs, Universal Link domains,
+  URL scheme callback hosts, and asset hosts in build settings, `.xcconfig`,
+  Info.plist values, schemes, or the repo-approved config path instead of source
+  literals.
 - Restrict client keys by bundle id, team id, associated domain, API scope,
   quota, or provider-specific controls when available.
 - Treat URL schemes, Universal Links, App Clips, widgets, extensions, pasteboard,
@@ -45,6 +52,8 @@ authorization, logging, diagnostics, and open-source repository safety rules.
   and recoverable?
 - Do entitlements, associated domains, callback URLs, and bundle ids match the
   intended environment?
+- Do API origins, redirect/callback URLs, Universal Link domains, asset hosts,
+  and provider app registrations match the release channel being built?
 - Does release configuration avoid debug endpoints, broad ATS exceptions, and
   embedded private credentials?
 

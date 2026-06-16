@@ -19,6 +19,10 @@ Normalize boundary data before it reaches product logic. Prefer typed internal
 states such as `available`, `unavailable`, `permissionDenied`, `stale`, or
 `invalid` over sentinel values, magic numbers, empty strings, or string matching.
 
+For environment-specific API origins, callback URLs, redirect URIs, webhook
+endpoints, CORS origins, deep link hosts, or asset hosts, also use
+`runtime-url-configuration.md`.
+
 ## Guard
 
 - Null, missing, empty, and permission-denied values.

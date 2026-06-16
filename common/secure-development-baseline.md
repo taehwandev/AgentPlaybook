@@ -13,6 +13,11 @@ configuration, or open-source-safe setup.
 This is a common baseline. Platform-specific documents may add details, but they
 must not weaken these rules.
 
+For environment-specific API origins, callback URLs, redirect URIs, webhook
+endpoints, CORS origins, deep link hosts, or asset hosts, also use
+`runtime-url-configuration.md`. Those values are configuration and portability
+concerns unless they contain credentials or expose private infrastructure.
+
 ## Non-Negotiables
 
 1. Do not commit secrets, tokens, private keys, signing material, service-role
@@ -57,6 +62,28 @@ Examples of values that must stay out of client code:
 - signing keys and keystores
 - private API tokens
 - admin, support, or impersonation credentials
+
+Public provider identifiers such as publishable keys, Firebase public config,
+public project ids, app ids, measurement ids, and public telemetry DSNs are not
+secrets by default. Keep them in the correct environment's config, restrict them
+through provider controls when available, and do not confuse them with private
+server credentials.
+
+## Runtime URL Configuration Boundary
+
+- Treat password-bearing URLs, database connection strings, URLs containing
+  private tokens, webhook secrets, signing material, or session values as
+  credential risks.
+- Treat API origins, frontend/backend domains, redirect URIs, callback URLs,
+  OAuth callbacks, deep link hosts, webhook endpoints, CORS allowed origins, and
+  environment-specific asset hosts as runtime configuration unless they contain
+  credentials.
+- Do not hard-code environment-specific runtime URLs in source. Use the
+  platform's documented environment, deployment, flavor, scheme, build setting,
+  or config mechanism.
+- A URL with only a username, public id, public project id, app id, or public
+  telemetry DSN is not a secret by default, but it may still be the wrong
+  environment's config.
 
 ## Authorization And Tenant Boundaries
 
@@ -127,4 +154,3 @@ Examples of values that must stay out of client code:
   tested?
 - If a key is exposed, can it be restricted, rotated, and redeployed without code
   changes?
-

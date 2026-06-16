@@ -13,6 +13,9 @@ open-source-safe setup.
 
 Also use `common/secure-development-baseline.md` and
 `common/security-privacy-review.md`.
+Use `common/runtime-url-configuration.md` for environment-specific API origins,
+deep link hosts, redirect/callback URLs, WebView origins, asset hosts, and
+release-channel config.
 
 ## Rules
 
@@ -29,6 +32,9 @@ Also use `common/secure-development-baseline.md` and
   through channel methods.
 - Validate deep links, redirect URLs, WebView navigation, file picks, and share
   inputs against repo-local allowlists and product rules.
+- Put environment-specific API origins, redirect/callback URLs, deep link hosts,
+  WebView origins, and asset hosts in flavors, `--dart-define`, generated
+  config, or the repo-approved config path instead of Dart literals.
 - Keep release signing, entitlements, app identifiers, store settings, and
   platform-specific secrets in repo-local docs and ignored configuration.
 
@@ -39,6 +45,8 @@ Also use `common/secure-development-baseline.md` and
   trigger a broader native operation?
 - Are logs and crash reports safe for open-source development and production
   support?
+- Does the selected flavor or build channel use the intended API origin,
+  callback URL, deep link host, WebView origin, and asset host?
 - Does every denied permission, missing plugin, unsupported target, and secure
   storage failure have a user-safe state?
 

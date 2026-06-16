@@ -29,6 +29,11 @@ Repo-local rules decide what is committed.
 - Commit lockfile changes when dependency resolution changed intentionally.
 - Do not commit build outputs, local cache, editor state, private config, or temporary files.
 - Review generated files for secrets, endpoints, app ids, signing data, local paths, and environment-specific values before committing.
+- When generated clients, manifests, config files, or assets contain API origins,
+  callback URLs, redirect hosts, webhook endpoints, CORS origins, or asset
+  hosts, review them with `runtime-url-configuration.md`. Environment-specific
+  URLs are configuration concerns unless they contain credentials or expose
+  private infrastructure.
 - Snapshot updates require a reason tied to behavior, visual output, or accepted product change.
 
 ## When Generated Diff Is Large

@@ -12,6 +12,9 @@ For explicit UI/application/domain/cache state design, also use
 `state-modeling.md`. For file/module ownership and `api`/`impl` splits, also
 use `code-structure-ownership.md`. For failure contracts, retry/recovery, and
 user-visible failure states, also use `error-modeling.md`.
+For API origins, callback URLs, redirect URIs, webhook endpoints, CORS origins,
+deep link hosts, or asset hosts that vary by environment, also use
+`runtime-url-configuration.md`.
 
 ## Shape
 
@@ -43,6 +46,9 @@ Keep files simple, but keep responsibilities named.
 - Domain owns product rules and user actions.
 - Data layer owns API, DB, cache, file, SDK calls.
 - Platform layer owns OS permissions, lifecycle, windows, notifications.
+- Runtime configuration owns environment-specific API origins, callback URLs,
+  redirect hosts, webhook endpoints, CORS origins, and asset hosts through the
+  platform's normal config mechanism, not scattered source literals.
 - One-off effects such as navigation, toast, focus, file download, permission
   prompts, and external launch should not be mixed with persistent UI state.
 
@@ -56,6 +62,9 @@ Keep files simple, but keep responsibilities named.
   server state without naming invalidation and conflict behavior.
 - Do not hide product policy in reusable components, generic helpers, or shared
   data modules.
+- Do not hard-code production, staging, preview, development, callback,
+  redirect, webhook, CORS, or asset-host URLs in business logic, UI, generated
+  clients, or platform adapters when they change by environment.
 
 ## Check
 
@@ -64,6 +73,7 @@ Keep files simple, but keep responsibilities named.
 - Where are failure and permission states handled?
 - What is the smallest useful test boundary?
 - Which layer owns side effects and cancellation?
+- Which platform config path supplies environment-specific runtime URLs?
 
 ## Verification
 

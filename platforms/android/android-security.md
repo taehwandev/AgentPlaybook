@@ -10,6 +10,9 @@ Use when Android work touches credentials, local storage, IPC, deep links, WebVi
 
 Also use `common/secure-development-baseline.md` for shared secret handling,
 authorization, logging, diagnostics, and open-source repository safety rules.
+Use `common/runtime-url-configuration.md` for environment-specific API origins,
+deep link hosts, app link hosts, redirect/callback URLs, asset hosts, and
+release-channel config.
 
 ## Rules
 
@@ -20,6 +23,9 @@ authorization, logging, diagnostics, and open-source repository safety rules.
 - Treat `BuildConfig`, resources, manifest placeholders, assets, and generated
   config files as client-visible. They can hold restricted client keys, not
   server-only secrets.
+- Put environment-specific API origins, callback URLs, app link hosts, and asset
+  hosts in product flavors, manifest placeholders, generated resources, or the
+  repo-approved config path instead of source literals.
 - Restrict Android client keys by package name, signing certificate fingerprint,
   quota, API scope, or provider-specific controls when available.
 - Treat `Activity`, `Service`, `Receiver`, and `Provider` export settings as security boundaries.
@@ -36,6 +42,8 @@ authorization, logging, diagnostics, and open-source repository safety rules.
 - Does permission denial have a user-visible and recoverable state?
 - Are secrets excluded from logs, analytics, crash reports, notifications, and clipboard?
 - Do release builds keep signing keys, API secrets, and debug endpoints out of the client?
+- Do release builds use the intended API origin, callback URL, app link host,
+  asset host, and provider app registration for that environment?
 
 ## Tests
 

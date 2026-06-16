@@ -35,6 +35,9 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `common/asset-lifecycle.md`
 - Defensive handling for external, persisted, generated, cached, or user-provided
   values: `common/defensive-boundaries.md`
+- Environment-specific runtime URL configuration, callback URLs, CORS origins,
+  webhook endpoints, API origins, and asset hosts:
+  `common/runtime-url-configuration.md`
 - Release, deployment, packaging, rollback: `common/release-deployment.md`
 - Release version, tag, artifact, build number, and deployment id scheme:
   `common/release-versioning.md`

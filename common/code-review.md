@@ -41,6 +41,9 @@ instructions, and any project or product guidance.
 - Are client and server permission boundaries consistent?
 - Are data, privacy, billing, or tenant boundaries affected?
 - Are API, DTO, route, event, webhook, or fixture contracts still compatible?
+- Are environment-specific API origins, callback URLs, redirect URIs, deep link
+  hosts, webhook endpoints, CORS origins, and asset hosts supplied through the
+  platform's config mechanism rather than hard-coded runtime literals?
 - Do user-facing UI changes preserve accessibility, localization, long text, and error states?
 - Are release, deployment, migration, or rollback risks documented when affected?
 - Did behavior, setup, commands, contracts, architecture, or ownership change in

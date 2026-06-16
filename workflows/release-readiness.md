@@ -16,6 +16,9 @@ signing, or handing off release-sensitive work.
 - `common/verification-policy.md`
 - `common/secure-development-baseline.md`
 - `common/generated-files-policy.md`
+- `common/runtime-url-configuration.md` when runtime URLs, callback URLs,
+  redirect URIs, webhook endpoints, CORS origins, or asset hosts vary by
+  environment
 - `common/dependency-policy.md` when packages or lockfiles changed
 - matching platform security or review card from `index.md`
 

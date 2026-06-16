@@ -13,7 +13,9 @@ module/file ownership and `api`/`impl` split decisions, also use
 `code-structure-ownership.md`. For state owner design, also use
 `state-modeling.md`. For failure contracts, also use `error-modeling.md`. For
 external, persisted, generated, cached, platform, or user-provided values, also
-use `defensive-boundaries.md`.
+use `defensive-boundaries.md`. For environment-specific API origins, callback
+URLs, redirect URIs, webhook endpoints, CORS origins, deep link hosts, or asset
+hosts, also use `runtime-url-configuration.md`.
 
 ## Method
 
@@ -52,6 +54,7 @@ implementation:
 | Side effects | command, effect handler, repository/client, background job, platform adapter, or shell bridge |
 | Failure handling | typed boundary error, domain failure, UI state, response envelope, log/metric/audit owner |
 | Public contract | route, API, event, DTO, schema, deep link, command, package export, or plugin contract |
+| Runtime URL config | config module, environment variable, deployment setting, build flavor, app scheme, provider registration, or platform adapter |
 | Verification | unit, component, contract, integration, migration, smoke, screenshot, or manual scenario |
 
 If an owner cannot be named, keep the work local or clarify the behavior before

@@ -90,6 +90,9 @@ Before finishing:
 - API, DTO, route, event, webhook, or shared fixture contracts: `common/api-contract-compatibility.md`.
 - Upload, download, media, attachment, signed URL, public/private asset movement, cleanup, or embedded asset references: `common/asset-lifecycle.md`.
 - External, persisted, generated, cached, platform, or user-provided values: `common/defensive-boundaries.md`.
+- Environment-specific runtime URLs, API origins, callback URLs, redirect URIs,
+  webhook endpoints, CORS origins, or asset hosts:
+  `common/runtime-url-configuration.md`.
 - Release, deployment, packaging, signing, rollout, rollback, versioning, or tags: `common/release-deployment.md` and `common/release-versioning.md`.
 - User-facing text, forms, controls, dates, numbers, or localization: `common/accessibility-i18n.md`.
 - User-facing prose, documentation tone, release notes, marketing copy, emails, voice fidelity, or AI-writing signal cleanup: `common/human-authored-writing.md`.

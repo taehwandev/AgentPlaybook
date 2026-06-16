@@ -86,6 +86,10 @@ Use for React/web UI, browser behavior, and frontend PR review.
   responses are not sent with public cache headers.
 - CORS, redirect, upload signing, embed rendering, and revalidation endpoints are
   scoped and validated before accepting client input.
+- Environment-specific API origins, callback URLs, redirect hosts,
+  WebSocket/EventSource endpoints, CORS origins, and asset hosts are supplied
+  through framework/deployment config, with client-visible values treated as
+  public and credentials kept server-side.
 
 ## SEO And AI Search Checks
 
