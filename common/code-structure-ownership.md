@@ -51,6 +51,31 @@ opts them in:
   not storage bins. Create them only when they make allowed imports, dependency
   direction, tests, or review ownership clearer.
 
+### Responsibility-Based File Split
+
+Do not pack separate roles into one source file only because they belong to the
+same module, package, feature, or test-support area. A file should usually have
+one responsibility cluster and one reason to change.
+
+Split by role when a file starts mixing these categories:
+
+- public contracts and implementation details
+- fixtures/sample data and assertion logic
+- recording fakes/spies and matcher or subject DSLs
+- builders/factories and platform adapters
+- parsing/normalization and execution/side effects
+- route contracts, route resolution, and route rendering
+- read-only helpers and mutating commands
+
+This applies to `assertions`, `testing`, `fixtures`, and `dev` modules as much
+as production modules. Test-support code is reusable code: callers should be
+able to import a fixture, a recording fake, or an assertion subject without
+pulling unrelated helpers or production implementation dependencies.
+
+Keep a small one-file helper only when the roles are inseparable, have one real
+caller, and can be reviewed in one pass. Once callers, responsibilities, or
+verification paths differ, split the file before adding more behavior.
+
 ## Non-Negotiable Structure Stops
 
 Do not continue implementation when any of these are true:
@@ -160,6 +185,22 @@ Do not publish a module API that forces every caller to import all UI, domain,
 data, platform, fixture, generated, and implementation details. A module split
 is justified only when the narrower contract changes dependency direction,
 build coupling, testability, or ownership.
+
+### Assertions And Test-Support ISP
+
+Treat a reusable assertions module as a public testing API. Keep its exported
+roles narrow:
+
+- fixtures create stable sample inputs
+- recording fakes capture calls or events
+- subjects/matchers assert one contract surface
+- builders construct complex values without execution side effects
+- contract tests verify substitutable implementations
+
+Do not put all of these in one catch-all file or one broad fake when callers
+need only one role. A test fake that requires unrelated no-op methods or
+production implementation imports is an Interface Segregation failure, even if
+it lives outside runtime source.
 
 ### Shared Code Promotion
 

@@ -132,6 +132,13 @@ Choose a `feature-api` plus `feature` implementation pair when:
 - a fake, dev, paid/free, flavor-specific, or replaceable implementation is
   realistic
 
+For Navigation 3-style apps, keep navigation keys, route data, deep-link
+contracts, and public route events in the feature `api` module. Keep `NavEntry`,
+entry-provider builders, composable content, and screen state holders in the
+feature implementation or app-shell module. The app module assembles entry
+providers, synthetic back stacks, host/scheme policy, and Activity task-stack
+behavior.
+
 Choose a repository `api` plus implementation pair when:
 
 - feature modules need a repository interface and stable entities
@@ -158,6 +165,21 @@ Choose an `assertions` module or source set when:
 Do not create an `assertions` module for one test, preview-only sample data, or
 a helper that must import production implementation code to be useful. In those
 cases, keep the helper local or put the test in the implementation module.
+
+Inside an Android `assertions` module, split source files by testing role rather
+than by convenience:
+
+- fixtures or sample route/data keys in one focused file
+- recording fakes/spies in files named for the contract they record
+- assertion subjects or matchers in files named for the contract they assert
+- builders/factories in files named for the value they construct
+- contract tests in their own test source files
+
+Do not put every fake, fixture, route key, recorder, and assertion DSL into one
+module-level bucket file. The module is already the shared boundary; files
+inside it still need SOLID responsibility and Interface Segregation. A test
+that needs only a route fixture should not import an Activity launcher fake,
+repository recorder, WebView helper, or production implementation dependency.
 
 Choose a `core-app` module when:
 
@@ -292,6 +314,10 @@ change is necessary to make the split correct.
 - Is this package/module the lowest boundary that protects the real owner?
 - Does each `api` module have at least one caller that should avoid the
   implementation dependency?
+- Does each `assertions` module expose role-sized fixtures, fakes, recorders,
+  builders, and assertion subjects instead of one catch-all testing file?
+- Can tests import the assertion helper they need without depending on
+  production `impl` modules or unrelated platform/runtime helpers?
 - Are DTOs, SDK models, database rows, and Android framework objects kept out of
   stable feature/domain contracts?
 - Can a feature implementation depend on repository APIs without importing

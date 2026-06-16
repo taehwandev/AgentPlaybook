@@ -77,8 +77,17 @@ Before finishing:
 - Architecture: `common/architecture-selection.md`, `common/architecture-design.md`, or `common/app-architecture.md`.
 - LLM-readable wiki, knowledge-base, runbook, or durable documentation: `common/llm-wiki-documentation.md`.
 - Code conventions: `common/code-conventions.md`.
-- File/module layout, ownership, public contracts, or `api`/`impl` splits: `common/code-structure-ownership.md`.
-- Reusable code extraction or shared module/package contracts: `common/reusable-code-design.md`.
+- File/module layout, ownership, public contracts, `api`/`impl` splits, or
+  `assertions`/test-support modules: `common/code-structure-ownership.md`,
+  `common/solid-design-principles.md`, and
+  `common/reusable-code-design.md`. These cards are a bundle for boundary
+  work; do not load only one when the task changes dependency direction,
+  caller-facing contracts, reusable fakes, fixtures, recorders, or assertion
+  DSLs.
+- Reusable code extraction or shared module/package contracts:
+  `common/reusable-code-design.md`, plus `common/solid-design-principles.md`
+  when the shared API exposes callbacks, interfaces, adapters, fakes, or
+  replaceable implementations.
 - Reusable component, hook, widget, control, or caller-facing API design: `common/component-api-design.md`.
 - UI, async, reducer, store, ViewModel, hook, cache, or state-machine state design: `common/state-modeling.md`.
 - Error handling, typed failures, retry classification, or failure UX: `common/error-modeling.md`.
@@ -104,6 +113,14 @@ Before finishing:
 - Local programs, agent CLIs, or usage telemetry: `common/local-tools.md`.
 - Secrets, external state, or user-owned changes: `common/agent-editing-safety.md`, `common/secure-development-baseline.md`, and `common/security-privacy-review.md`.
 - React, iOS, Android, server, desktop, or application work: load the matching platform card from `index.md`.
+- Android Navigation 3, deep links, typed route/back-stack contracts,
+  mixed Compose/Activity routing, or route callbacks/events:
+  `platforms/android/android-architecture.md` and
+  `platforms/android/android-module-structure.md`, plus the structure/SOLID
+  bundle above when route contracts, `api`/`impl`, `assertions`, fixtures,
+  recording fakes, or assertion DSLs are added or moved. Add
+  `platforms/android/android-security.md` when exported components, app links,
+  WebView, permissions, or credentials are touched.
 
 ## Output Contract
 
