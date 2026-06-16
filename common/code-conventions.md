@@ -82,13 +82,21 @@ These are stop signals for new or changed code:
 
 ## Size Signals
 
-These are review signals, not universal failure thresholds:
+These are review signals for all code and hard gates for changed runtime
+source/style files unless repo-local policy is more specific. Tests, specs,
+mocks, fixtures, Markdown, MDX, and prose docs are exempt from hard size gates
+but still need clear ownership and reviewable structure:
 
 - A normal function, method, component, hook, handler, or script step should
   usually fit in one review pass; about 40 to 80 lines is a useful pressure
   range for orchestration code.
-- A function or component over about 150 lines often has more than one responsibility.
-- A source file over about 400 lines often needs clearer sections or extraction.
+- A runtime function, component, hook, handler, script step, or style block over
+  about 120 lines fails review by default.
+- A new runtime source/style file over about 400 lines fails review by default.
+- An existing runtime source/style file already over about 400 lines must not
+  grow; split the new responsibility first.
+- More than about 200 added lines in one runtime source/style file fails review
+  by default.
 
 Split only when it improves ownership, testability, or review. Do not create
 extra files just to satisfy a line count.

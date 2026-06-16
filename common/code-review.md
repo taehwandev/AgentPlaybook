@@ -95,13 +95,18 @@ as a read-only gate:
   should fail.
 - If the diff is too broad to review confidently in one pass, fail the hook and
   split the work before retrying.
-- Check changed source files for file size and function, component, hook,
-  handler, script-step, or style-block size. A source file over the hard limit
-  fails the hook. A source file over the review-pressure threshold requires
-  explicit structure-review evidence before approval.
-- Apply file-size and function-size checks only to changed source/style files.
-  Markdown, MDX, prose documentation, and other docs are excluded from code-size
-  limits unless a repo-local rule explicitly treats them as executable source.
+- Check changed runtime source/style files for file size, added-line budget, and
+  function, component, hook, handler, script-step, or style-block size. Test,
+  fixture, mock, spec, Markdown, MDX, prose documentation, and other docs are
+  excluded from these code-size hard gates unless a repo-local rule explicitly
+  treats them as runtime source.
+- Enforce these default hard gates for runtime source/style files: a new file
+  over 400 lines fails; a file adding more than 200 lines fails; an existing
+  file already over 400 lines must not grow; a function, component, hook,
+  handler, script-step, or style block over 120 lines fails.
+- A runtime source/style file over the review-pressure threshold requires
+  explicit structure-review evidence before approval, but evidence must not
+  override the hard gates.
 - Check large units against responsibility splits, not only line count. A unit
   that mixes parse, validate, fetch, map, render, mutate, persist, log, navigate,
   retry, or recovery concerns should fail even when it is still under the

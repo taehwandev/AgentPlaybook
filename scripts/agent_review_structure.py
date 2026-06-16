@@ -10,9 +10,10 @@ from typing import Any
 
 CommandRunner = Callable[[list[str], Path], dict[str, Any]]
 
-REVIEW_SOURCE_FILE_LINE_LIMIT = 700
-REVIEW_FILE_REVIEW_WARNING_LIMIT = 400
-REVIEW_FUNCTION_LINE_LIMIT = 150
+REVIEW_SOURCE_FILE_LINE_LIMIT = 400
+REVIEW_FILE_REVIEW_WARNING_LIMIT = 350
+REVIEW_ADDED_LINE_LIMIT = 200
+REVIEW_FUNCTION_LINE_LIMIT = 120
 REVIEW_SOURCE_EXTENSIONS = {
     ".c",
     ".cc",
@@ -46,8 +47,8 @@ REVIEW_SOURCE_EXTENSIONS = {
 }
 REVIEW_STYLE_EXTENSIONS = {".css", ".scss", ".sass"}
 STRUCTURE_REVIEW_SCOPE_NOTE = (
-    "checks changed source/style files only; Markdown, MDX, and prose docs are excluded "
-    "from file-size and function-size limits"
+    "checks changed runtime source/style files only; tests, fixtures, Markdown, MDX, "
+    "and prose docs are excluded from file-size and function-size limits"
 )
 REVIEW_SKIP_PARTS = {
     ".agentplaybook",
@@ -59,6 +60,19 @@ REVIEW_SKIP_PARTS = {
     "dist",
     "node_modules",
     "target",
+}
+TEST_PATH_PARTS = {
+    "__fixtures__",
+    "__mocks__",
+    "__tests__",
+    "fixture",
+    "fixtures",
+    "mock",
+    "mocks",
+    "spec",
+    "specs",
+    "test",
+    "tests",
 }
 PYTHON_BLOCK_RE = re.compile(r"^(\s*)(?:async\s+def|def|class)\s+([A-Za-z_]\w*)\b")
 BRACE_BLOCK_RE = re.compile(
@@ -83,8 +97,11 @@ def structure_review(
     result: dict[str, Any] = {
         "checked_paths": [str(path) for path in paths],
         "checked_path_count": len(paths),
+        "strict_checked_paths": [],
+        "test_exempt_paths": [],
         "max_file_lines": max_file_lines,
         "max_block_lines": max_block_lines,
+        "max_added_lines": REVIEW_ADDED_LINE_LIMIT,
         "review_warning_file_lines": REVIEW_FILE_REVIEW_WARNING_LIMIT,
         "scope": STRUCTURE_REVIEW_SCOPE_NOTE,
         "warnings": [],
@@ -93,6 +110,11 @@ def structure_review(
     }
 
     for relative in paths:
+        if test_exempt_path(relative):
+            result["test_exempt_paths"].append(str(relative))
+            continue
+
+        result["strict_checked_paths"].append(str(relative))
         absolute = project / relative
         try:
             lines = absolute.read_text(encoding="utf-8").splitlines()
@@ -100,7 +122,8 @@ def structure_review(
             result["warnings"].append(f"{relative} is not valid UTF-8; manual structure review required")
             continue
 
-        check_file_size(relative, lines, max_file_lines, result)
+        metadata = discovery["path_metadata"].get(str(relative), {})
+        check_file_size(relative, lines, max_file_lines, metadata, result)
         result["failures"].extend(large_block_failures(relative, lines, max_block_lines))
 
     return result
@@ -109,38 +132,81 @@ def structure_review(
 def changed_source_paths(project: Path, run_command: CommandRunner) -> tuple[dict[str, Any], list[Path]]:
     commands: dict[str, Any] = {}
     names: set[str] = set()
+    path_metadata: dict[str, dict[str, Any]] = {}
     command_errors: list[str] = []
 
     head = run_command(["git", "rev-parse", "--verify", "HEAD"], project)
     commands["rev_parse_head"] = head
     if head["returncode"] == 0:
-        diff = run_command(
-            ["git", "diff", "--name-only", "--diff-filter=ACMRTUXB", "HEAD", "--"],
-            project,
-        )
-        commands["diff_name_only"] = diff
-        if diff["returncode"] == 0:
-            names.update(line.strip() for line in diff["stdout"].splitlines() if line.strip())
-        else:
-            command_errors.append("git diff changed source discovery failed")
+        collect_head_diff(project, run_command, commands, names, path_metadata, command_errors)
     else:
         tracked = run_command(["git", "ls-files", "--cached", "--others", "--exclude-standard"], project)
         commands["ls_files_initial"] = tracked
         if tracked["returncode"] == 0:
-            names.update(line.strip() for line in tracked["stdout"].splitlines() if line.strip())
+            for line in tracked["stdout"].splitlines():
+                name = line.strip()
+                if name:
+                    record_path(names, path_metadata, name, status="A")
         else:
             command_errors.append("git ls-files changed source discovery failed")
 
     untracked = run_command(["git", "ls-files", "--others", "--exclude-standard"], project)
     commands["ls_files_untracked"] = untracked
     if untracked["returncode"] == 0:
-        names.update(line.strip() for line in untracked["stdout"].splitlines() if line.strip())
+        for line in untracked["stdout"].splitlines():
+            name = line.strip()
+            if name:
+                record_path(names, path_metadata, name, status="A", untracked=True)
     else:
         command_errors.append("git ls-files untracked source discovery failed")
 
     paths = [Path(name) for name in sorted(names)]
     checked = [path for path in paths if review_source_path(project, path)]
-    return {"commands": commands, "command_errors": command_errors}, checked
+    return {
+        "commands": commands,
+        "command_errors": command_errors,
+        "path_metadata": path_metadata,
+    }, checked
+
+
+def collect_head_diff(
+    project: Path,
+    run_command: CommandRunner,
+    commands: dict[str, Any],
+    names: set[str],
+    path_metadata: dict[str, dict[str, Any]],
+    command_errors: list[str],
+) -> None:
+    status = run_command(["git", "diff", "--name-status", "--diff-filter=ACMRTUXB", "HEAD", "--"], project)
+    commands["diff_name_status"] = status
+    if status["returncode"] == 0:
+        for line in status["stdout"].splitlines():
+            parts = line.split("\t")
+            if len(parts) >= 2:
+                record_path(names, path_metadata, parts[-1], status=parts[0][:1])
+    else:
+        command_errors.append("git diff changed source discovery failed")
+
+    numstat = run_command(["git", "diff", "--numstat", "--diff-filter=ACMRTUXB", "HEAD", "--"], project)
+    commands["diff_numstat"] = numstat
+    if numstat["returncode"] == 0:
+        for line in numstat["stdout"].splitlines():
+            parts = line.split("\t")
+            if len(parts) >= 3:
+                additions = int(parts[0]) if parts[0].isdigit() else 0
+                record_path(names, path_metadata, parts[-1], additions=additions)
+    else:
+        command_errors.append("git diff line-count discovery failed")
+
+
+def record_path(
+    names: set[str],
+    path_metadata: dict[str, dict[str, Any]],
+    name: str,
+    **updates: Any,
+) -> None:
+    names.add(name)
+    path_metadata.setdefault(name, {}).update(updates)
 
 
 def review_source_path(project: Path, path: Path) -> bool:
@@ -153,18 +219,48 @@ def review_source_path(project: Path, path: Path) -> bool:
     )
 
 
+def test_exempt_path(path: Path) -> bool:
+    lower_parts = {part.lower() for part in path.parts}
+    if lower_parts.intersection(TEST_PATH_PARTS):
+        return True
+
+    stem = path.stem
+    lower_stem = stem.lower()
+    return (
+        lower_stem.startswith(("test_", "test-"))
+        or lower_stem.endswith(("_test", "-test", ".test", "_tests", "-tests", ".tests"))
+        or lower_stem.endswith(("_spec", "-spec", ".spec", "_specs", "-specs", ".specs"))
+        or stem.endswith(("Test", "Tests", "Spec", "Specs"))
+    )
+
+
 def check_file_size(
     path: Path,
     lines: list[str],
     max_file_lines: int,
+    metadata: dict[str, Any],
     result: dict[str, Any],
 ) -> None:
     line_count = len(lines)
-    if line_count > max_file_lines:
+    status = metadata.get("status", "")
+    added_lines = metadata.get("additions")
+    if added_lines is None:
+        added_lines = line_count if status == "A" else 0
+
+    if status == "A" and line_count > max_file_lines:
         result["failures"].append(
-            f"{path} is a changed source/style file with {line_count} lines; "
-            f"hard limit is {max_file_lines}; split by responsibility or record an explicit "
-            "boundary decision before approval"
+            f"{path} is a new runtime source/style file with {line_count} lines; "
+            f"new-file hard limit is {max_file_lines}; split by responsibility before approval"
+        )
+    if added_lines > REVIEW_ADDED_LINE_LIMIT:
+        result["failures"].append(
+            f"{path} adds {added_lines} lines in one runtime source/style file; "
+            f"per-file addition limit is {REVIEW_ADDED_LINE_LIMIT}; split the change before approval"
+        )
+    if status != "A" and line_count > max_file_lines and added_lines > 0:
+        result["failures"].append(
+            f"{path} is already over {max_file_lines} lines and adds {added_lines} line(s); "
+            "do not grow oversized runtime files; extract the new responsibility first"
         )
     elif line_count > REVIEW_FILE_REVIEW_WARNING_LIMIT:
         result["warnings"].append(

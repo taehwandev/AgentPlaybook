@@ -92,17 +92,21 @@ the update.
 - `Review Hook`: the primary hook. Run it immediately after meaningful edits
   and before finish. It must record code review evidence and docs freshness
   evidence, then run structural review, local diff hygiene, workflow validation,
-  and VibeGuard audit. The structural review checks changed source files for
-  oversized files and oversized functions, components, hooks, handlers, script
-  steps, or style blocks. Markdown, MDX, and prose docs are excluded from these
-  code-size limits. Architecture, security, dependency, release, and test
-  concerns are reviewed here as evidence, not as separate hooks. The review hook
-  is read-only: it fails if its checks change the worktree. On `FAIL`, it must
-  explain the exact failing check, threshold, affected path or line when
-  available, and recovery action. Fix scoped and safe failures outside the hook,
-  then rerun the same hook once with `--retry-attempt 1`; do not finalize with
-  an unresolved `FAIL`. It also fails by default when the changed path count is
-  too broad for one review pass, so the work must be split before retrying.
+  and VibeGuard audit. The structural review checks changed runtime source/style
+  files for oversized files, excessive per-file additions, oversized functions,
+  components, hooks, handlers, script steps, or style blocks. Test, fixture,
+  mock, spec, Markdown, MDX, and prose docs are excluded from these code-size
+  hard gates. Default hard gates are: new runtime file over 400 lines, more than
+  200 added lines in one runtime file, growth in an existing runtime file
+  already over 400 lines, or a runtime block over 120 lines. Architecture,
+  security, dependency, release, and test concerns are reviewed here as
+  evidence, not as separate hooks. The review hook is read-only: it fails if its
+  checks change the worktree. On `FAIL`, it must explain the exact failing
+  check, threshold, affected path or line when available, and recovery action.
+  Fix scoped and safe failures outside the hook, then rerun the same hook once
+  with `--retry-attempt 1`; do not finalize with an unresolved `FAIL`. It also
+  fails by default when the changed path count is too broad for one review pass,
+  so the work must be split before retrying.
   Use
   `python3 scripts/agent-hook.py review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
 - `Finish Hook`: run before final report, commit, release, or handoff. It

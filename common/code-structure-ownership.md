@@ -23,16 +23,22 @@ acceptable when it has one owner, one reason to change, and a clear verification
 path. Short code still needs extraction when it mixes owners, side effects, or
 contracts.
 
-Apply the same criteria to web, mobile, desktop, server, scripts, CSS, styles,
-tests, and generated-adjacent glue:
+Apply the same ownership criteria to web, mobile, desktop, server, scripts, CSS,
+styles, tests, and generated-adjacent glue. Apply strict runtime size gates to
+production/runtime source and style files; tests, specs, mocks, fixtures, and
+docs are reviewable but exempt from the hard size gates unless a repo-local rule
+opts them in:
 
 - Functions, methods, components, hooks, reducers, handlers, jobs, and scripts
   should be small enough to scan in one pass. About 40 to 80 lines is a normal
-  review budget for orchestration code; over about 150 lines needs an explicit
-  reason to stay together or a split plan.
+  review budget for orchestration code; over about 120 lines in runtime code is
+  a hard review failure unless repo-local policy explicitly sets a different
+  limit.
 - Source files should have one primary owner and one responsibility cluster.
-  Over about 400 lines needs a responsibility map before adding more behavior;
-  over about 700 lines should not keep growing without a boundary decision.
+  A new runtime source/style file over about 400 lines fails review, and an
+  existing runtime source/style file already over about 400 lines must not grow.
+  More than about 200 added lines in one runtime file fails review because it is
+  usually a "dump it all here" signal.
 - CSS and style files follow the same ownership rule. Do not group tokens,
   primitives, component variants, page layout overrides, and one-off fixes in
   one file only because they are all styles.
