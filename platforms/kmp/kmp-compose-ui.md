@@ -50,6 +50,48 @@ Route/Host Composable -> Screen Composable -> Section Composable
   hover, window resizing, touch targets, scroll behavior, and text scaling may
   differ by target.
 
+## State Holder And MVI Shape
+
+For non-trivial shared Compose screens, use an explicit state/action/effect
+contract:
+
+```text
+<Screen>Root     state owner, lifecycle collection, effects, navigation callbacks
+<Screen>         stateless rendering from state and callbacks
+<Screen>State    persistent visible state
+<Screen>Action   user intents
+<Screen>Effect   one-off navigation, snackbar, permission, file, or external launch
+```
+
+Rules:
+
+- Keep route/root composables thin. They collect state, handle effects, and
+  delegate rendering to stateless screens.
+- Stateless screens receive immutable state and one action callback or
+  role-sized callbacks. They do not resolve DI, read repositories, start network
+  calls, or parse navigation arguments.
+- Model loading, content, empty, error, permission denied, offline,
+  unsupported, submitting, and sync states when reachable.
+- Effects should be consumed once and should not replay after navigation,
+  window recreation, rotation, refresh, or target lifecycle changes.
+- Use typed route values for navigation arguments when the navigation framework
+  supports it; do not pass raw string route paths through screen components.
+
+## Performance And Resources
+
+- Use lazy lists/grids with stable keys for large or updating collections.
+  Avoid rendering large collections with eager layout containers.
+- Move heavy filtering, sorting, formatting, or mapping out of composable bodies
+  and into state owners, mappers, or stable derived state.
+- Keep shared strings, images, and plural/localized resources in the repo's
+  Compose Multiplatform resource strategy. Do not hard-code user-facing strings
+  in reusable screens when localization is in scope.
+- Keep Android-only preview tooling, iOS bridge code, desktop window APIs, and
+  browser APIs in their target source sets.
+- Use design-system primitives first. Promote feature components only when they
+  have a stable caller contract and no feature policy, route, analytics, or data
+  dependency.
+
 ## Preview And Fixture Rule
 
 Every new or meaningfully changed screen, section, or reusable component needs a

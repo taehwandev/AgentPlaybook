@@ -31,6 +31,27 @@ modules, source-set changes, platform actuals, or target app integration.
 - Are state, effects, repositories, and platform adapters owned by the right layer?
 - Is verification run for every affected target, or is the skipped target and
   residual risk stated?
+- Do presentation modules avoid data implementation, database entity, network
+  DTO, generated client, and platform SDK imports?
+- Are feature/domain/data/database/presentation splits justified by ownership,
+  dependency leakage, source-set pressure, offline/sync behavior, or test
+  boundaries rather than template ceremony?
+- Are build logic and version catalog changes limited to shared build setup,
+  with product routes, DI membership, secrets, signing values, and environment
+  policy kept out?
+- Does offline-first code use a durable local source of truth, explicit sync
+  state, retry/backoff, migration, conflict handling, and logout/account-switch
+  invalidation?
+- Does auth/network code skip token refresh loops, clear cached tokens on
+  logout, redact debug output, and map session expiry into typed state?
+- Are debug-only tools disabled or replaced with no-op release variants?
+- Are Compose screens split into root/state holder and stateless screen, with
+  typed state/actions/effects and previews or visual checks for changed states?
+- Are Flow, Channel, StateFlow, SharedFlow, callbacks, and suspend APIs tested
+  with deterministic coroutine control when behavior changed?
+- Are release checks covering serialization/minification rules, signing,
+  framework export, package identifiers, config injection, and target smoke
+  paths when release surfaces changed?
 
 ## Output
 

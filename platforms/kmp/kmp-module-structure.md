@@ -51,6 +51,27 @@ Use repo-local names first. KMP projects commonly separate these families:
 | Compose/design module | Shared Compose UI, theme, resources, design primitives, previews where supported. | Target lifecycle, platform SDK calls, repository internals. |
 | Build logic/testing | Convention plugins, target setup, fixtures, fake adapters, test utilities. | Runtime behavior hidden from production owners. |
 
+## Build Logic And Version Catalog
+
+Use Gradle convention plugins and a version catalog to keep KMP/CMP modules
+consistent when two or more modules repeat the same setup.
+
+- Put target setup, Kotlin/Android/Compose compiler options, shared test
+  dependencies, database/codegen wiring, coverage, resource prefixes, and build
+  config plugin setup in build logic when repetition is real.
+- Keep product behavior, routes, DI graph membership, signing values, API keys,
+  flavor policy, and provider-specific secrets out of convention plugins.
+- Version catalog entries should use repo-owned plugin aliases, dependency
+  bundles, and project config keys. Do not copy template package ids,
+  application ids, plugin ids, namespaces, or version values without checking
+  the target repo.
+- Treat build-time constants as runtime configuration. Public app ids and
+  environment URLs can be injected through the repo's config path; private
+  credentials, signing material, service-role keys, and refresh tokens must not
+  be generated into shared source.
+- Use Android resource prefixes or equivalent naming rules for modules with
+  Android resources so feature resources do not collide after aggregation.
+
 ## Source Set Ownership
 
 Use the default hierarchy template unless the project has a documented reason to
@@ -104,6 +125,36 @@ Add an umbrella module/framework when:
 Publish modules separately only when versioning, ownership, and migration notes
 are part of the workflow.
 
+## Feature Module Shape
+
+Use the repo's names first, but production KMP features usually need these
+owners once data, auth, navigation, or offline behavior appears:
+
+```text
+feature/<name>/domain        models, repository/service contracts, policies
+feature/<name>/data          repository implementations, DTOs, mappers, sync
+feature/<name>/database      cache/database entities, DAOs, migrations
+feature/<name>/presentation  state holder/ViewModel, UiState, actions, effects, screens
+```
+
+Rules:
+
+- Keep `domain` pure Kotlin and framework-light. It owns contracts and product
+  policies, not network DTOs, database rows, Compose UI, or target SDK types.
+- Keep `data` internal by default. It owns clients, DTO mapping, token/session
+  coordination, network/cache merging, and repository implementations.
+- Keep `database` optional and scoped to features that really persist local
+  state. It owns schema, entities, DAOs, migrations, and schema export paths.
+- Keep `presentation` responsible for state, user actions, effects, route
+  callbacks, and screens. It depends on domain contracts and UI/design modules,
+  not data implementations.
+- Register DI modules and navigation destinations at the app or composition
+  root. Feature modules may expose route contracts and DI module factories, but
+  they should not assemble the whole app graph.
+- Use type-safe route data for navigation arguments when the framework supports
+  it. Route contracts belong in the smallest module callers need; screen
+  implementations stay behind the presentation or feature implementation owner.
+
 ## Dependency Direction
 
 Keep shared dependencies predictable:
@@ -132,6 +183,12 @@ Forbidden edges:
 - feature module -> another feature implementation when a contract can express
   the dependency
 - actual implementation that silently succeeds when the target is unsupported
+- presentation -> data implementation, database entities, raw network DTOs, or
+  generated client models
+- build logic -> product routes, DI graph membership, signing secrets, or
+  environment-specific private config
+- debug tooling dependency -> release runtime when a no-op or disabled variant
+  is required
 
 ## Package Layout
 
@@ -147,6 +204,8 @@ src/commonMain/kotlin/<feature>/
   data/
   ui/                     shared Compose UI if used
   platform/               adapter contracts
+  navigation/             route contracts or feature-local graph entry
+  di/                     feature-local binding declarations
 src/androidMain/kotlin/<feature>/platform/
 src/iosMain/kotlin/<feature>/platform/
 src/commonTest/kotlin/<feature>/
@@ -163,6 +222,23 @@ remote/                   network DTOs and client wrappers
 local/                    cache/settings/database wrappers
 mapper/                   DTO/cache/native -> entity mapping
 ```
+
+## Test And Coverage Modules
+
+KMP test support is a boundary, not a dump folder.
+
+- Put shared fakes, fixtures, deterministic dispatchers, fake clocks, and
+  contract tests in `commonTest` or a dedicated test-support/assertions module
+  only when multiple modules need them.
+- Tests for state holders, repositories, mappers, retry handlers, and typed
+  errors should run without booting Android, iOS, desktop, DI, or network
+  shells.
+- Use coverage tooling only for modules where the metric is meaningful. Exclude
+  generated code, DI modules, serialization/generated implementations, and
+  design-system theme glue according to repo policy.
+- Do not let test-support modules depend on production implementation modules by
+  default. If a fake needs the implementation, the contract is probably too
+  broad or the test belongs in the implementation module.
 
 ## Migration Strategy
 
