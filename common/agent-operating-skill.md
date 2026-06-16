@@ -87,7 +87,10 @@ Before finishing:
 - Reusable code extraction or shared module/package contracts:
   `common/reusable-code-design.md`, plus `common/solid-design-principles.md`
   when the shared API exposes callbacks, interfaces, adapters, fakes, or
-  replaceable implementations.
+  replaceable implementations. When the task creates packages, folders,
+  source sets, modules, or shared/core/common boundaries, include a package
+  boundary note that names owner, allowed imports, forbidden imports, callers,
+  and focused verification before editing.
 - Reusable component, hook, widget, control, or caller-facing API design: `common/component-api-design.md`.
 - UI, async, reducer, store, ViewModel, hook, cache, or state-machine state design: `common/state-modeling.md`.
 - Error handling, typed failures, retry classification, or failure UX: `common/error-modeling.md`.
@@ -121,6 +124,21 @@ Before finishing:
   recording fakes, or assertion DSLs are added or moved. Add
   `platforms/android/android-security.md` when exported components, app links,
   WebView, permissions, or credentials are touched.
+- Android Compose performance, stability, lazy lists, side effects, custom
+  modifiers, baseline profiles, or measurement claims:
+  `platforms/android/android-compose-ui.md`,
+  `platforms/android/android-review.md`,
+  `platforms/android/android-external-skill-source-coverage.md`, and the
+  testing/verification cards. Do not claim a performance fix without the
+  repo's relevant measurement evidence or a clear statement that only a
+  structural risk was reduced.
+- Android platform-surface or SDK work such as AGP upgrades, Android CLI/device
+  inspection, R8/keep rules, Perfetto traces, XML-to-Compose migration,
+  adaptive layouts, edge-to-edge, Compose Styles, CameraX, Credential Manager,
+  Play Billing, Play Engage, Wear Compose, XR/Glimmer, or AppFunctions:
+  load the Android architecture/module/Compose/security card that matches the
+  surface, then apply the no-omission source manifest in
+  `platforms/android/android-external-skill-source-coverage.md` before editing.
 
 ## Output Contract
 

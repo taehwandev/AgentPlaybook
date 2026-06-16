@@ -82,6 +82,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Android architecture: `platforms/android/android-architecture.md`
 - Android module/package structure:
   `platforms/android/android-module-structure.md`
+- Android external skill source coverage and no-omission manifest:
+  `platforms/android/android-external-skill-source-coverage.md`
 - Android ViewModel, UiState, Flow, repository, persistence, one-off events:
   `platforms/android/android-viewmodel-state.md`
 - Android Compose UI structure, stateful/stateless split, previews, packages:
