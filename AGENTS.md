@@ -80,17 +80,19 @@ When applying AgentPlaybook to another repo, do not run VibeGuard `setup` or
 the target already has agent instructions or guardrails. Use `update` only when
 the user explicitly chooses to refresh an existing managed VibeGuard block;
 otherwise run audit with the current guardrails.
-For this repo, use the current VibeGuard package flow documented in
-`VIBEGUARD.md`. During local maintenance, prefer the official package command:
-
-```text
-npx --yes @taehwandev/vibeguard audit . --rules .
-```
-
-An installed binary is equivalent when the environment provides one:
+For this repo, use the current VibeGuard command policy documented in
+`VIBEGUARD.md`. During local maintenance, prefer an installed `vibeguard`
+binary when the environment provides one:
 
 ```text
 vibeguard audit . --rules .
+```
+
+Use the published package command only when no trusted installed binary is
+available or when a task explicitly needs the latest published package:
+
+```text
+npx --yes @taehwandev/vibeguard audit . --rules .
 ```
 
 When actively developing or validating a local VibeGuard checkout, this fallback

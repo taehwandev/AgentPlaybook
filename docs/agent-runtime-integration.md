@@ -231,10 +231,11 @@ For every runtime:
    instructions or guardrails. Use VibeGuard `update` only when the user
    explicitly selects refreshing an existing managed block; otherwise preserve
    current guardrails and run audit.
-7. Apply the selected VibeGuard mode with the published package command and the
-   selected AgentPlaybook root as the rule source. Treat
-   https://vibeguard.thdev.app/ as the human-facing reference, not a runtime
-   fetch dependency.
+7. Apply the selected VibeGuard mode with an installed `vibeguard` binary when
+   available, using the selected AgentPlaybook root as the rule source. Use the
+   published package command only when no trusted binary exists or an explicit
+   latest-package check is needed. Treat https://vibeguard.thdev.app/ as the
+   human-facing reference, not a runtime fetch dependency.
 8. Add or update the canonical repo instruction file, preferring `AGENTS.md`
    when supported.
 9. Update any existing repo-local runtime-specific instruction files in the
@@ -306,6 +307,7 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route task --request "<USER_REQ
 - The target runtime does not have file access and the user cannot paste the
   one-shot prompt.
 - The AgentPlaybook root cannot be located.
-- The VibeGuard command cannot run after using the published package command.
+- The VibeGuard command cannot run after using the installed binary or the
+  published package fallback.
 - Repo-local instructions conflict with AgentPlaybook on security, data,
   deployment, cost, or verification behavior.

@@ -41,7 +41,7 @@ type: human-reviewed-needed
 cd "${AGENTPLAYBOOK_HOME}"
 git pull --ff-only
 python3 scripts/workflow.py validate
-npx --yes @taehwandev/vibeguard audit . --rules .
+vibeguard audit . --rules .
 ```
 
 `AGENTPLAYBOOK_HOME`을 쓰지 않는다면 실제 AgentPlaybook 경로로 이동해서

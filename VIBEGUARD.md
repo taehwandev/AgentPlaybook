@@ -16,26 +16,41 @@ AgentPlaybook remains a reusable guidance library. VibeGuard remains the require
 
 ## Execution Policy
 
-VibeGuard is required. The default application source is the published package:
+VibeGuard is required. For normal AgentPlaybook maintenance, prefer an
+installed `vibeguard` binary when the environment provides one:
+
+```bash
+vibeguard <command> [project]
+```
+
+Use the published package command only when no trusted installed binary is
+available, when bootstrapping a machine, or when a task explicitly needs the
+latest published package:
 
 ```bash
 npx --yes @taehwandev/vibeguard <command> [project]
 ```
 
-An installed local `vibeguard` binary is equivalent. A local checkout command is allowed only when validating VibeGuard itself or when the package command cannot run and the checkout is trusted. If VibeGuard cannot run from any approved source, stop and report the blocker instead of continuing without the safety gate.
+Do not use `npx` as the first choice in routine agent hooks or repeated local
+maintenance, because it may contact the npm registry and wait through network
+retry timeouts even when the audit itself is fast. A local checkout command is
+allowed only when validating VibeGuard itself or when the package command cannot
+run and the checkout is trusted. If VibeGuard cannot run from any approved
+source, stop and report the blocker instead of continuing without the safety
+gate.
 
 ## Audit Commands
 
-Run the official package command during normal AgentPlaybook maintenance:
-
-```bash
-npx --yes @taehwandev/vibeguard audit . --rules .
-```
-
-Run an installed binary when the environment provides one:
+Run an installed binary during normal AgentPlaybook maintenance:
 
 ```bash
 vibeguard audit . --rules .
+```
+
+Use the package command only as the fallback or explicit latest-package path:
+
+```bash
+npx --yes @taehwandev/vibeguard audit . --rules .
 ```
 
 Use `vibeguard` as the canonical command name. Do not document deprecated hyphenated command spellings for new setup.
@@ -69,15 +84,15 @@ vibeguard evidence install-claude-hook .
 
 - Existing custom guardrails should default to audit-only unless the user chooses to refresh the managed block.
 
-- Initial AgentPlaybook application in a repo with no guardrails should use the current VibeGuard package flow with the selected AgentPlaybook root as `--rules`:
+- Initial AgentPlaybook application in a repo with no guardrails should use the current VibeGuard command policy with the selected AgentPlaybook root as `--rules`. Prefer `vibeguard` when installed, otherwise use the package command:
 
   ```bash
-  npx --yes @taehwandev/vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
-  npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
-  npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+  vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
+  vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
+  vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
   ```
 
-- Existing managed VibeGuard guardrails should be refreshed with `npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>` only when that mode is selected, then checked with the package audit command.
+- Existing managed VibeGuard guardrails should be refreshed with `vibeguard update . --rules <AGENTPLAYBOOK_ROOT>` only when that mode is selected, then checked with `vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>`. Use the package command only if no trusted binary is installed or the user explicitly requests the latest published package.
 
 - Normal AgentPlaybook maintenance should run audit-only before editing and before finishing.
 
@@ -92,8 +107,8 @@ vibeguard evidence install-claude-hook .
 - Keep `.env.example` value-free.
 - Ask before deleting data, running migrations, deploying, changing credentials, or increasing paid API/model usage.
 - For target repos that apply AgentPlaybook, apply VibeGuard with the selected AgentPlaybook root as `--rules`.
-- For normal AgentPlaybook repository maintenance, run `audit . --rules .`before editing and before finishing.
-- When an execution evidence adapter is configured, run `vibeguard evidence .`before final reporting and do not claim checks that are not supported by command output or evidence.
+- For normal AgentPlaybook repository maintenance, run `audit . --rules .` before editing and before finishing.
+- When an execution evidence adapter is configured, run `vibeguard evidence .` before final reporting and do not claim checks that are not supported by command output or evidence.
 
 ## Verification
 
@@ -101,5 +116,5 @@ Before finishing AgentPlaybook changes, run:
 
 ```bash
 python3 scripts/workflow.py validate
-npx --yes @taehwandev/vibeguard audit . --rules .
+vibeguard audit . --rules .
 ```

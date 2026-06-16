@@ -28,8 +28,10 @@ If a usable local copy exists but you think a fresh copy is needed, ask me
 first: "AgentPlaybook already exists locally at <path>. Do you want me to
 download or pin a new copy anyway, or should I reuse the existing root?"
 Apply the required VibeGuard safety gate with the selected AgentPlaybook root
-as the rule source. Use the published VibeGuard package command. The VibeGuard
-site is a human reference and does not need to be fetched by the agent.
+as the rule source. Use an installed `vibeguard` binary when available; use the
+published package command only when no trusted binary exists or an explicit
+latest-package check is needed. The VibeGuard site is a human reference and
+does not need to be fetched by the agent.
 Update the repo-local agent instructions with a short routing block. Keep
 repo-specific commands, paths, services, product policy, and domain language in
 this repo. If existing Claude, Codex, Antigravity, or other runtime instruction
@@ -136,25 +138,30 @@ Application drill:
 Audit only, preserving existing guardrails:
 
 ```bash
-npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
 ```
 
 Refresh an existing managed VibeGuard block only when the user explicitly
 selects that option:
 
 ```bash
-npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
-npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
-npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
+vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
+vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
 ```
 
 Use `setup` only for first-time target repos with no guardrails:
 
 ```bash
-npx --yes @taehwandev/vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
-npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
-npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
+vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
+vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
 ```
+
+If `vibeguard` is not installed, use the same command shapes with
+`npx --yes @taehwandev/vibeguard` in place of `vibeguard`. Do not choose `npx`
+first in repeated hooks or routine local maintenance; npm may contact the
+registry and wait through network retry timeouts before VibeGuard itself starts.
 
 Full VibeGuard setup, audit, fix, package, and evidence flow lives in VibeGuard
 docs for humans:
@@ -164,10 +171,11 @@ https://vibeguard.thdev.app/
 ```
 
 Do not block only because an agent browsing/fetch tool cannot read the
-VibeGuard site. Continue with the package command shape above, and use
-`npx --yes @taehwandev/vibeguard --help` if the current CLI surface must be
-checked. If the VibeGuard command itself cannot run, stop and report the
-blocker. Do not continue as if the safety gate were optional.
+VibeGuard site. Continue with the VibeGuard command shape above, and use
+`vibeguard --help` when an installed binary is available. Use
+`npx --yes @taehwandev/vibeguard --help` only as the missing-binary or
+latest-package fallback. If the VibeGuard command itself cannot run, stop and
+report the blocker. Do not continue as if the safety gate were optional.
 
 ## Install If Missing
 
@@ -290,6 +298,7 @@ Before reporting success:
 - The target project is ambiguous.
 - The user asked only for advice and did not ask to edit the repo.
 - No usable local copy exists and network access is unavailable or not approved.
-- The VibeGuard command cannot run after using the published package command.
+- The VibeGuard command cannot run after using the installed binary or the
+  published package fallback.
 - Existing repo-local instructions conflict with AgentPlaybook in a way that
   changes security, data handling, verification, deployment, or cost behavior.
