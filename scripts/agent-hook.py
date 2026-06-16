@@ -17,10 +17,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_review_hook import review_hook
 from agent_review_structure import (
     REVIEW_FUNCTION_LINE_LIMIT,
     REVIEW_SOURCE_FILE_LINE_LIMIT,
-    structure_review,
 )
 
 
@@ -134,122 +134,6 @@ def start_hook(args: argparse.Namespace) -> int:
         {"preflight": result},
         args.retry_attempt,
     )
-
-
-def review_hook(args: argparse.Namespace) -> int:
-    checks: dict[str, Any] = {}
-    failures: list[str] = []
-
-    review_evidence = (args.code_review_evidence or "").strip()
-    docs_evidence = (args.docs_freshness_evidence or "").strip()
-    structure_evidence = (args.structure_review_evidence or "").strip()
-    checks["code_review_evidence"] = review_evidence
-    checks["docs_freshness_evidence"] = docs_evidence
-    checks["structure_review_evidence"] = structure_evidence
-    if not review_evidence:
-        failures.append("code review evidence is required")
-    if not docs_evidence:
-        failures.append("docs freshness evidence is required")
-
-    status_before, status_before_lines = git_status(args.project)
-    checks["git_status_before"] = status_before
-    checks["changed_path_count"] = len(status_before_lines)
-    checks["changed_path_limit"] = args.max_changed_paths
-    if status_before["returncode"] != 0:
-        failures.append("git status failed")
-    elif len(status_before_lines) > args.max_changed_paths:
-        failures.append(
-            f"review scope has {len(status_before_lines)} changed paths; "
-            f"limit is {args.max_changed_paths}; split the change or run a smaller review scope"
-        )
-
-    structure = structure_review(
-        args.project,
-        args.max_source_file_lines,
-        args.max_function_lines,
-        run_command,
-    )
-    checks["structure_review"] = structure
-    failures.extend(f"structure review: {failure}" for failure in structure["failures"])
-    if structure["warnings"] and not structure_evidence:
-        warning_summary = "; ".join(structure["warnings"][:5])
-        if len(structure["warnings"]) > 5:
-            warning_summary += "; ..."
-        failures.append(f"structure review evidence is required: {warning_summary}")
-
-    diff_check = run_command(["git", "diff", "--check"], args.project)
-    checks["diff_check"] = diff_check
-    if diff_check["returncode"] != 0:
-        failures.append("git diff --check failed")
-
-    validate_script = args.rules / "scripts" / "workflow.py"
-    if validate_script.exists():
-        validate = run_command([sys.executable, str(validate_script), "validate"], args.rules)
-        checks["workflow_validate"] = validate
-        if validate["returncode"] != 0:
-            failures.append("workflow validate failed")
-    else:
-        failures.append(f"workflow validate script missing at {validate_script}")
-
-    vibeguard = run_command(vibeguard_command(args.project, args.rules), args.project)
-    vibeguard["overall"] = parse_overall(vibeguard["stdout"] + "\n" + vibeguard["stderr"])
-    checks["vibeguard"] = vibeguard
-    if vibeguard["returncode"] != 0:
-        failures.append("VibeGuard audit failed")
-    elif vibeguard["overall"] != "Ready":
-        failures.append(f"VibeGuard overall is {vibeguard['overall']}")
-
-    status_after, status_after_lines = git_status(args.project)
-    checks["git_status_after"] = status_after
-    if status_after["returncode"] != 0:
-        failures.append("git status failed")
-    elif status_after_lines != status_before_lines:
-        failures.append("review hook changed the worktree; review hooks must stay read-only")
-
-    details = review_failure_details(failures, structure) if failures else [
-        "code review evidence recorded",
-        "docs freshness evidence recorded",
-        f"structure review passed for {structure['checked_path_count']} source/style file(s)",
-        f"structure scope: {structure['scope']}",
-        "review scope guard passed",
-        "review hook left worktree unchanged",
-        "diff whitespace check passed",
-        "workflow validation passed",
-        "VibeGuard audit passed",
-    ]
-    return finish_with_result(
-        "review",
-        not failures,
-        details,
-        args.output,
-        checks,
-        args.retry_attempt,
-    )
-
-
-def review_failure_details(failures: list[str], structure: dict[str, Any]) -> list[str]:
-    details = [
-        f"structure scope: {structure['scope']}",
-        f"checked source/style files: {format_checked_paths(structure.get('checked_paths', []))}",
-    ]
-    details.extend(f"failure detail: {failure}" for failure in failures)
-    details.append(
-        "required recovery: fix scoped and safe code/docs issues immediately outside the hook, "
-        "then rerun this same review hook once with --retry-attempt 1"
-    )
-    details.append(
-        "do not finalize with FAIL; ask only when recovery needs a scope decision, destructive action, "
-        "credential change, external state, or a broader refactor"
-    )
-    return details
-
-
-def format_checked_paths(paths: list[str]) -> str:
-    if not paths:
-        return "none"
-    visible = paths[:8]
-    suffix = "" if len(paths) <= len(visible) else f" ... (+{len(paths) - len(visible)} more)"
-    return ", ".join(visible) + suffix
 
 
 def finish_hook(args: argparse.Namespace) -> int:
@@ -397,7 +281,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     review.add_argument(
         "--structure-review-evidence",
-        help="short evidence that file/function size and responsibility splits were reviewed",
+        help=(
+            "short evidence that file/function size and responsibility splits were reviewed; "
+            "new runtime package boundaries must include owner, allowed imports, forbidden imports, "
+            "callers/tests, and verification"
+        ),
     )
     review.add_argument(
         "--max-changed-paths",
@@ -434,7 +322,7 @@ def main() -> int:
             parser.error("start requires --request or --request-classified")
         return start_hook(args)
     if args.hook == "review":
-        return review_hook(args)
+        return review_hook(args, run_command, git_status, vibeguard_command, parse_overall, finish_with_result)
     return finish_hook(args)
 
 

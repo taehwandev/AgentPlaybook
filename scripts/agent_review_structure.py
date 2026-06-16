@@ -7,6 +7,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from agent_review_boundary import boundary_note_requirements
+from agent_review_purpose import purpose_failures
+
 
 CommandRunner = Callable[[list[str], Path], dict[str, Any]]
 
@@ -48,7 +51,7 @@ REVIEW_SOURCE_EXTENSIONS = {
 REVIEW_STYLE_EXTENSIONS = {".css", ".scss", ".sass"}
 STRUCTURE_REVIEW_SCOPE_NOTE = (
     "checks changed runtime source/style files only; tests, fixtures, Markdown, MDX, "
-    "and prose docs are excluded from file-size and function-size limits"
+    "and prose docs are excluded from runtime hard gates"
 )
 REVIEW_SKIP_PARTS = {
     ".agentplaybook",
@@ -106,6 +109,7 @@ def structure_review(
         "scope": STRUCTURE_REVIEW_SCOPE_NOTE,
         "warnings": [],
         "failures": list(discovery["command_errors"]),
+        "boundary_note_requirements": [],
         "discovery": discovery,
     }
 
@@ -125,6 +129,23 @@ def structure_review(
         metadata = discovery["path_metadata"].get(str(relative), {})
         check_file_size(relative, lines, max_file_lines, metadata, result)
         result["failures"].extend(large_block_failures(relative, lines, max_block_lines))
+    result["failures"].extend(
+        purpose_failures(
+            project,
+            paths,
+            discovery["path_metadata"],
+            review_source_path,
+            test_exempt_path,
+        )
+    )
+    result["boundary_note_requirements"] = boundary_note_requirements(
+        project,
+        paths,
+        discovery["path_metadata"],
+        run_command,
+        review_source_path,
+        test_exempt_path,
+    )
 
     return result
 
