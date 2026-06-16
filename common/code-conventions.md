@@ -15,6 +15,9 @@ common baseline.
 For app, repo, package, module, CLI, service, slug, or bundle-id naming, also
 use `common/project-naming.md`.
 
+For SOLID, Interface Segregation, Dependency Inversion, and DDD/domain-modeling
+fit, also use `common/solid-design-principles.md`.
+
 For file/module ownership, public contract, package layout, or `api`/`impl`
 split decisions, also use `common/code-structure-ownership.md`.
 
@@ -37,6 +40,15 @@ and retry/recovery behavior, use `common/error-modeling.md`.
 ## Rules
 
 - Make code easy to delete, move, and test.
+- Use SOLID as the default design baseline for production code, while avoiding
+  layers or abstractions that do not protect a real responsibility, caller
+  contract, test boundary, or dependency edge.
+- Keep caller-facing contracts narrow. Do not make a caller depend on a broad
+  service, repository, context, component prop object, hook return type, SDK
+  client, or module export when it needs only a role-sized subset.
+- Treat module public exports as interfaces. A module should expose a narrow
+  contract for its consumers instead of forcing them to import implementation,
+  platform, SDK, fixture, or unrelated feature details.
 - Treat reuse as an ownership boundary. Extract shared code only when the caller
   contract is clear enough to make future changes easier.
 - Prefer clear names over comments that explain unclear names.

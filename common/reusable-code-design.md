@@ -10,7 +10,9 @@ Use when creating, moving, extracting, or reviewing code that should be reused
 across screens, features, modules, packages, services, or apps.
 
 For file/module ownership and `api`/`impl` split choices, also use
-`code-structure-ownership.md`. For reusable UI, hook, widget, control, or
+`code-structure-ownership.md`. For SOLID, Interface Segregation, Dependency
+Inversion, and DDD/domain-modeling fit, also use
+`solid-design-principles.md`. For reusable UI, hook, widget, control, or
 component-like API design, also use `component-api-design.md`.
 
 Reusable code is an ownership decision, not only a DRY decision. Extract only
@@ -52,6 +54,8 @@ Reusable units should prefer:
 - Explicit callbacks, commands, or return values instead of hidden side effects.
 - Typed result/error/state models instead of string matching or scattered flags.
 - Dependency interfaces or adapters instead of direct framework/global access.
+- Role-sized interfaces, props, callbacks, and exports so each caller depends
+  only on the behavior it needs.
 - Stable names that describe the reusable role, not the first feature that used it.
 - Examples, previews, fixtures, or focused tests that show normal and edge states.
 
@@ -94,6 +98,8 @@ generic or too early.
 - Making shared code read global config, environment variables, singletons, or
   mutable caches without an adapter contract.
 - Creating a package that re-exports unrelated helpers as a grab bag.
+- Sharing a fat interface, context, hook return object, or service API that
+  forces callers or tests to provide unrelated no-op behavior.
 - Hiding breaking behavior changes behind a reuse refactor.
 
 ## Verification

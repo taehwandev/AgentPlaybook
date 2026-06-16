@@ -41,6 +41,14 @@ instructions, and any project or product guidance.
 - Are client and server permission boundaries consistent?
 - Are data, privacy, billing, or tenant boundaries affected?
 - Are API, DTO, route, event, webhook, or fixture contracts still compatible?
+- Does production code follow SOLID responsibility and dependency rules,
+  especially narrow caller-facing contracts for Interface Segregation?
+- Are broad services, repositories, contexts, component props, hook return
+  objects, SDK clients, or module exports forcing callers or tests to depend on
+  behavior they do not use?
+- Do module public exports stay narrower than their implementations, or do they
+  leak implementation, platform, SDK, fixture, generated, or unrelated feature
+  dependencies to consumers?
 - Are environment-specific API origins, callback URLs, redirect URIs, deep link
   hosts, webhook endpoints, CORS origins, and asset hosts supplied through the
   platform's config mechanism rather than hard-coded runtime literals?

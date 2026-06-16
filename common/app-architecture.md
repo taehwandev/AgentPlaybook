@@ -10,7 +10,9 @@ Use for new features, boundary cleanup, or structure decisions.
 
 For explicit UI/application/domain/cache state design, also use
 `state-modeling.md`. For file/module ownership and `api`/`impl` splits, also
-use `code-structure-ownership.md`. For failure contracts, retry/recovery, and
+use `code-structure-ownership.md`. For SOLID, Interface Segregation, Dependency
+Inversion, and DDD/domain-modeling fit, also use
+`solid-design-principles.md`. For failure contracts, retry/recovery, and
 user-visible failure states, also use `error-modeling.md`.
 For API origins, callback URLs, redirect URIs, webhook endpoints, CORS origins,
 deep link hosts, or asset hosts that vary by environment, also use
@@ -46,6 +48,9 @@ Keep files simple, but keep responsibilities named.
 - Domain owns product rules and user actions.
 - Data layer owns API, DB, cache, file, SDK calls.
 - Platform layer owns OS permissions, lifecycle, windows, notifications.
+- Caller-facing contracts stay role-sized: read-only callers do not receive
+  write commands, display components do not receive feature policy, and domain
+  rules do not depend on concrete transport, persistence, SDK, or UI types.
 - Runtime configuration owns environment-specific API origins, callback URLs,
   redirect hosts, webhook endpoints, CORS origins, and asset hosts through the
   platform's normal config mechanism, not scattered source literals.
@@ -58,6 +63,9 @@ Keep files simple, but keep responsibilities named.
   handles, shell calls, or platform permission payloads.
 - Do not add state, domain, repository, or adapter layers that only forward one
   method and add no rule, mapping, test boundary, or risk isolation.
+- Do not expose fat services, repositories, contexts, component props, hook
+  return objects, or module exports when a caller needs only a small role
+  contract.
 - Do not keep the same source of truth in UI state, cache, persistence, and
   server state without naming invalidation and conflict behavior.
 - Do not hide product policy in reusable components, generic helpers, or shared

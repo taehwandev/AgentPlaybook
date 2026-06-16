@@ -16,6 +16,11 @@ The default choice is local or single-module code. Split only when the split
 protects a real caller-facing boundary, extension point, dependency edge, or
 ownership line.
 
+For SOLID, Interface Segregation, Dependency Inversion, and DDD/domain-modeling
+fit, also use `common/solid-design-principles.md`. In structure decisions,
+SOLID means narrow caller contracts and dependency direction; it does not mean
+creating layers or interfaces before a real boundary exists.
+
 ## Unit Size And Split Criteria
 
 Use code size as review pressure, not an automatic split command. Long code is
@@ -132,6 +137,29 @@ import or ownership rule:
 Keep the current package when the proposed folder would contain one or two
 small unstable files, duplicate an architecture diagram without enforcing an
 import rule, or become a grab bag for unrelated helpers.
+
+### Module-Level SOLID / ISP
+
+Treat a module's public exports as an interface. Module-level ISP means callers
+depend only on the module contract they actually need, not on a broad
+implementation package.
+
+Create or reshape modules around narrow contracts when:
+
+- consumers need route contracts, events, commands, policies, models, factories,
+  or repository ports without implementation dependencies
+- read-only consumers should not import write commands, migrations, debug
+  tools, lifecycle wiring, or registration code
+- feature callers need stable API types without UI, data, SDK, database,
+  platform, paid, optional, or test dependencies leaking into their graph
+- tests need fakes, fixtures, or assertions without depending on production
+  implementation modules
+- a public barrel/export file is becoming a grab bag of unrelated symbols
+
+Do not publish a module API that forces every caller to import all UI, domain,
+data, platform, fixture, generated, and implementation details. A module split
+is justified only when the narrower contract changes dependency direction,
+build coupling, testability, or ownership.
 
 ### Shared Code Promotion
 

@@ -9,6 +9,10 @@ type: human-reviewed-needed
 Use when changing HTTP APIs, DTOs, schemas, SDK clients, route contracts,
 deep links, events, webhooks, queues, import/export formats, or shared fixtures.
 
+For SOLID, Interface Segregation, substitutable implementations, and dependency
+direction around code-level contracts, also use
+`common/solid-design-principles.md`.
+
 ## Default
 
 Treat contracts as product surfaces. A contract is not only server code; it is
@@ -29,6 +33,9 @@ what clients, tests, docs, integrations, and users can rely on.
   background jobs, and import flows.
 - Keep auth, tenant, permission, entitlement, and quota enforcement at the trusted
   boundary, not only in the client.
+- Keep code-level client and server interfaces narrow. Do not force clients,
+  adapters, fakes, or tests to implement unrelated operations to satisfy one
+  broad API surface.
 
 ## Compatibility Questions
 
@@ -51,4 +58,3 @@ Cover contract tests or equivalent verification for:
 - old-client compatibility when relevant
 - error shape and retry behavior
 - fixture or generated client parity
-

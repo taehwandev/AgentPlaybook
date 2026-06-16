@@ -10,12 +10,14 @@ Use when planning architecture for a feature, module, service, or app surface.
 
 For architecture track selection, also use `architecture-selection.md`. For
 module/file ownership and `api`/`impl` split decisions, also use
-`code-structure-ownership.md`. For state owner design, also use
-`state-modeling.md`. For failure contracts, also use `error-modeling.md`. For
-external, persisted, generated, cached, platform, or user-provided values, also
-use `defensive-boundaries.md`. For environment-specific API origins, callback
-URLs, redirect URIs, webhook endpoints, CORS origins, deep link hosts, or asset
-hosts, also use `runtime-url-configuration.md`.
+`code-structure-ownership.md`. For SOLID, Interface Segregation, Dependency
+Inversion, and DDD/domain-modeling fit, also use
+`solid-design-principles.md`. For state owner design, also use
+`state-modeling.md`. For failure contracts, also use `error-modeling.md`.
+For external, persisted, generated, cached, platform, or user-provided values,
+also use `defensive-boundaries.md`. For environment-specific API origins,
+callback URLs, redirect URIs, webhook endpoints, CORS origins, deep link hosts,
+or asset hosts, also use `runtime-url-configuration.md`.
 
 ## Method
 
@@ -29,13 +31,18 @@ Design from change pressure, not diagrams. First identify what changes together,
 4. Mark risky boundaries: auth, tenant, billing, persistence, sync, jobs, external APIs.
 5. Identify contracts that callers compile against, persist, send over the
    network, cache, generate, or expose publicly.
-6. Pick the smallest architecture that keeps those risks visible.
-7. Define verification before implementation.
+6. Check SOLID pressure: one responsibility per unit, narrow caller contracts,
+   substitutable implementations, and dependency direction toward stable policy
+   or contracts.
+7. Pick the smallest architecture that keeps those risks visible.
+8. Define verification before implementation.
 
 ## Rules
 
 - Keep architecture local until reuse or risk justifies shared layers.
 - Prefer explicit contracts over implicit global state.
+- Keep caller-facing contracts narrow enough for each caller to depend only on
+  the operations, state, callbacks, or exports it actually needs.
 - Use adapters for platform and external systems.
 - Avoid architecture that requires touching many unrelated files for one product change.
 - Record tradeoffs when choosing speed over structure or structure over simplicity.

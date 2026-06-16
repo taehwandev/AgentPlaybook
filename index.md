@@ -17,6 +17,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `common/task-intake-effort-routing.md`
 - All coding work: `common/llm-coding-discipline.md`
 - Code conventions, naming, comments, formatting: `common/code-conventions.md`
+- SOLID design principles, ISP contract/module splits, dependency inversion,
+  and DDD/domain-modeling fit: `common/solid-design-principles.md`
 - Code structure, file/module ownership, api/impl split:
   `common/code-structure-ownership.md`
 - Reusable code design, extraction, shared module/package contracts:

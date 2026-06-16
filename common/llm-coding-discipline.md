@@ -22,6 +22,21 @@ Use before coding. These rules reduce common LLM mistakes. Bias toward caution o
 - No single-use abstraction.
 - If the solution feels much larger than the problem, simplify.
 
+## Use SOLID As The Coding Baseline
+
+- Write production code against SOLID responsibility and dependency rules.
+- Treat Interface Segregation as mandatory for caller-facing contracts: callers
+  should not depend on operations, props, callbacks, lifecycle hooks, SDK
+  details, or implementation dependencies they do not use.
+- Apply Dependency Inversion when product rules, state transitions, adapters,
+  or platform/external systems need focused tests or import isolation.
+- Do not add layers, inheritance, dependency injection containers, or abstract
+  factories only to satisfy an acronym.
+- Use DDD only when real domain pressure exists; start with a smaller use case,
+  policy, mapper, reducer, or state owner when the rules are still local.
+
+For detailed checks, use `common/solid-design-principles.md`.
+
 ## Do Not Pack Everything Together
 
 - Do not solve implementation speed by dumping unrelated code into one file.

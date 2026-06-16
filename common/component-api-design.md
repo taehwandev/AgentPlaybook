@@ -6,7 +6,11 @@ type: human-reviewed-needed
 
 # Component API Design
 
-Use when designing reusable UI components, view components, hooks, widgets, controls, SDK helpers, or any caller-facing component-like API.
+Use when designing reusable UI components, view components, hooks, widgets,
+controls, SDK helpers, or any caller-facing component-like API.
+
+For SOLID and Interface Segregation on caller-facing API surfaces, also use
+`solid-design-principles.md`.
 
 A component API should make valid use easy, invalid use hard, and product policy visible in the caller rather than hidden inside the component.
 
@@ -18,6 +22,8 @@ Prefer:
 - Explicit callbacks for user intent or command output.
 - Slots/children/render callbacks when the structure is reusable but content belongs to the caller.
 - Typed states for loading, empty, error, disabled, selected, and permission states.
+- Segregated props, callbacks, slots, and return values so each caller depends
+  only on the state and commands it actually uses.
 - Stable defaults that do not perform side effects.
 - One root customization hook such as `modifier`, `className`, `style`, or equivalent, following the platform idiom.
 
@@ -25,6 +31,9 @@ Avoid:
 
 - Passing repositories, routers, activities, controllers, stores, or service locators into reusable components.
 - Boolean flag APIs that encode caller names, modes, or product variants.
+- Fat prop objects, context values, hook return objects, or callbacks that force
+  callers to pass unrelated navigation, analytics, auth, persistence, lifecycle,
+  or product-policy behavior.
 - Components that fetch data, decide navigation, log analytics, enforce product permissions, and render UI at the same time.
 - Hidden global config reads or environment-dependent behavior.
 - Copying a whole screen state into a leaf component when a smaller model works.
