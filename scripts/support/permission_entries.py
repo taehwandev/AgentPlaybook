@@ -68,6 +68,8 @@ def codex_prefix_rule_entries(scripts_dir: Path) -> list[str]:
     for script in _agentplaybook_python_scripts(scripts_dir):
         for path in _legacy_entrypoint_path_variants(script):
             entries.append(_codex_prefix_rule(["python3", path]))
+            entries.append(_codex_prefix_rule(["python", path]))
+            entries.append(_codex_prefix_rule([path]))
     return entries
 
 
@@ -97,6 +99,8 @@ def _python_entrypoint_commands(
     for path in path_variants:
         for prefix in env_prefixes:
             commands.append(f"{prefix}python3 {path}")
+            commands.append(f"{prefix}python {path}")
+            commands.append(f"{prefix}{path}")
     return commands
 
 
