@@ -37,6 +37,8 @@ def claude_project_permission_entries(scripts_dir: Path, *, spill_available: boo
         rel_path = str(Path("scripts") / script.name)
         for prefix in env_prefixes:
             _add_permission_command_entries(entries, "Bash", f"{prefix}python3 {rel_path}")
+            _add_permission_command_entries(entries, "Bash", f"{prefix}python {rel_path}")
+            _add_permission_command_entries(entries, "Bash", f"{prefix}{rel_path}")
     for subcommand in ("log", "status", "diff", "show", "branch"):
         entries.append(f"Bash(git -C * {subcommand} *)")
     return entries
