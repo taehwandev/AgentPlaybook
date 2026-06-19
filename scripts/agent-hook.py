@@ -126,6 +126,8 @@ def start_hook(args: argparse.Namespace) -> int:
     success = result["returncode"] == 0
     details = ["preflight completed" if success else "preflight failed"]
     details.extend(_summary_lines(result))
+    if success:
+        details.extend(_hook_summary_from_preflight(_preflight_evidence_path(args)))
     return finish_with_result(
         "start",
         success,
@@ -134,6 +136,26 @@ def start_hook(args: argparse.Namespace) -> int:
         {"preflight": result},
         args.retry_attempt,
     )
+
+
+def _preflight_evidence_path(args: argparse.Namespace) -> Path:
+    return args.evidence if args.evidence else args.project / ".agentplaybook" / "preflight.json"
+
+
+def _hook_summary_from_preflight(path: Path) -> list[str]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    hooks = (payload.get("route") or {}).get("hooks") or []
+    required = [hook.get("hook") for hook in hooks if hook.get("required")]
+    conditional = [hook.get("hook") for hook in hooks if not hook.get("required")]
+    lines: list[str] = []
+    if required:
+        lines.append(f"Required hooks: {required}")
+    if conditional:
+        lines.append(f"Conditional hooks: {conditional}")
+    return lines
 
 
 def finish_hook(args: argparse.Namespace) -> int:
@@ -171,7 +193,15 @@ def _summary_lines(result: dict[str, Any]) -> list[str]:
     for stream in ("stdout", "stderr"):
         for line in result.get(stream, "").splitlines():
             stripped = line.strip()
-            if stripped.startswith(("Route:", "VibeGuard overall:", "FAIL:", "Required gates:", "Retrospective required:")):
+            if stripped.startswith((
+                "Route:",
+                "Required hooks:",
+                "Conditional hooks:",
+                "VibeGuard overall:",
+                "FAIL:",
+                "Required gates:",
+                "Retrospective required:",
+            )):
                 lines.append(stripped)
     return lines[:8]
 

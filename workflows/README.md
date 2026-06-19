@@ -20,6 +20,9 @@ When `scripts/agent-preflight.py` and `scripts/agent-finish-check.py` are
 available, use them to record route, VibeGuard, git status, validation, and gate
 evidence before editing and before final report, commit, release, or handoff.
 Missing wrapper evidence or missing route gate evidence is non-compliant.
+The route output also includes a `Required Hooks` section. Follow it as the
+executable workflow checklist; if a route contains a `review hook` gate, the
+finish check must receive Review Hook evidence for that gate.
 
 Discover available scripted commands with:
 
@@ -92,13 +95,15 @@ the update.
 - `Review Hook`: the primary hook. Run it immediately after meaningful edits
   and before finish. It must record code review evidence and docs freshness
   evidence, then run structural review, local diff hygiene, workflow validation,
-  and VibeGuard audit. The structural review checks changed runtime source/style
-  files for oversized files, excessive per-file additions, oversized functions,
-  components, hooks, handlers, script steps, or style blocks. Test, fixture,
-  mock, spec, Markdown, MDX, and prose docs are excluded from these code-size
-  hard gates. Default hard gates are: new runtime file over 400 lines, more than
-  200 added lines in one runtime file, growth in an existing runtime file
-  already over 400 lines, or a runtime block over 120 lines. Architecture,
+  and VibeGuard audit. The structural review checks changed files in the
+  development-file extension allowlist for oversized files, excessive per-file
+  additions, oversized functions, components, hooks, handlers, script steps, or
+  style blocks. Tests, fixtures, mocks, specs, generated files, config/build
+  files, Markdown, MDX, and prose docs are excluded from these code-size hard
+  gates. Default hard gates are: new development source/style file over 400
+  lines, more than 200 added lines in one development source/style file, growth
+  in an existing development source/style file already over 400 lines, or a
+  development source/style block over 120 lines. Architecture,
   security, dependency, release, and test concerns are reviewed here as
   evidence, not as separate hooks. The review hook is read-only: it fails if its
   checks change the worktree. On `FAIL`, it must explain the exact failing
@@ -112,7 +117,8 @@ the update.
 - `Finish Hook`: run before final report, commit, release, or handoff. It
   verifies the required route gate evidence, final validation, diff hygiene,
   and final VibeGuard state. Use `--gate "<gate>=<evidence>"` for each required
-  gate from the start evidence.
+  gate from the start evidence. If `review hook` is one of those gates, missing
+  Review Hook evidence is a workflow failure.
 
 ## Current Workflows
 

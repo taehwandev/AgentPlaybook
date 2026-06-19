@@ -263,6 +263,10 @@ Before finalizing, compare the route's `gates` with the ledger:
 
 - Every required gate must be marked `executed` with evidence.
 - Every required gate must be `🐱🟢 SUCCESS` before completion is reported.
+- If the route includes a `review hook` gate, run
+  `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py review ...` and record
+  the hook result as that gate's evidence. Do not replace it with a memory-only
+  manual review unless the hook is unavailable and the fallback is reported.
 - If any required gate is missing, do not continue finalization.
 - Treat a missing gate as an execution error even when the final code or docs
   look correct.
@@ -274,17 +278,34 @@ Before finalizing, compare the route's `gates` with the ledger:
 When available, use the wrapper scripts to make the route and gate ledger
 auditable instead of relying on memory.
 
+The route output also contains a `Required Hooks` section. Treat it as the
+workflow's executable checklist:
+
+- `start` runs preflight before edits, reviews, commits, or completion reports.
+- `review` runs after meaningful edits and before finish, commit, release, or
+  handoff when the route marks it required.
+- `finish` runs before final report, commit, release, or handoff and verifies
+  route gate evidence.
+
 Before editing, reviewing, committing, or reporting completion:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
+
+`agent-hook.py start` delegates to `agent-preflight.py` and writes the same
+preflight evidence. Calling `agent-preflight.py` directly is acceptable only as
+a lower-level wrapper path when the start hook is unavailable.
 
 Before final report, commit, release, or handoff:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
 ```
+
+`agent-hook.py finish` delegates to `agent-finish-check.py`. Calling
+`agent-finish-check.py` directly is acceptable only as a lower-level wrapper path
+when the finish hook is unavailable.
 
 `agent-preflight.py` records the route manifest, current git status, and
 VibeGuard audit result in `<TARGET_REPO>/.agentplaybook/preflight.json`.
