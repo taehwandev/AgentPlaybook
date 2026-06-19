@@ -38,6 +38,34 @@ Use folders inside one app package until reuse, plugin boundaries, build
 ownership, or dependency leakage justifies a package. A package split without a
 stable export surface usually adds `pubspec.yaml` overhead before it adds value.
 
+## File And Class Split
+
+Apply `../../common/code-structure-ownership.md` before growing Dart files.
+Default to one primary public widget, controller, notifier, view model,
+repository, service, DTO, mapper, adapter, fixture, or test assertion owner per
+Dart file. Private helper widgets or functions may stay near a single caller
+only while they share the same review and test path.
+
+Split files before adding behavior when a feature file mixes separate owners
+such as route, view, state owner, widget section, repository contract,
+repository implementation, service, DTO, mapper, platform channel wrapper,
+fixture, and golden helper.
+
+Review must fail when a Dart runtime file keeps multiple independently
+importable owners in one file: widgets, controllers, notifiers, view models,
+repositories, services, DTOs, mappers, adapters, platform-channel wrappers,
+fixtures, or assertion helpers.
+
+Do not:
+
+- Put a route, screen, view model, repository, DTO, mapper, and platform service
+  in one Dart file because they are small or feature-local.
+- Export multiple unrelated public classes from one file or barrel library.
+- Use `part` files, nested classes, or broad `common.dart`, `helpers.dart`, or
+  `services.dart` files to hide unrelated responsibilities.
+- Create a package split when purpose-named files inside the app package would
+  solve the review and ownership problem.
+
 ## Project Families
 
 Use repo-local names first. Flutter apps commonly separate these families:

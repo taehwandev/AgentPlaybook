@@ -27,6 +27,33 @@ Route/Resolver -> Request DTO/Validator -> Use Case/Service
 
 Do not put validation, permission checks, database queries, external calls, and response shaping all inside one handler.
 
+## File And Handler Split
+
+Apply `../../common/code-structure-ownership.md` before growing server runtime
+files. Default to one primary route/resolver handler, validator,
+request/response DTO family, use case, service, repository, client, mapper, job,
+fixture, or assertion owner per file.
+
+Split files before adding behavior when transport parsing, validation, authz,
+tenant scope, product rule, transaction, external client call, response mapping,
+side effect, and logging can be named or tested independently.
+
+Review must fail when a server runtime file keeps multiple independently
+importable owners in one file: route handlers, resolvers, validators, DTO
+families, use cases, services, repositories, clients, mappers, jobs, fixtures,
+or assertion helpers.
+
+Do not:
+
+- Put route registration, handler, validator, use case, repository query,
+  external API client, DTO mapper, and response/error mapping in one file.
+- Export unrelated handlers, services, repositories, DTOs, and jobs from one
+  `services`, `models`, `helpers`, or barrel file.
+- Hide auth, tenant, transaction, or side-effect ownership behind nested helper
+  classes or anonymous inline callbacks.
+- Add a service or repository file that only renames one call; split only when
+  the file owns a real rule, transaction, dependency edge, or test boundary.
+
 ## Handler Contract
 
 Every endpoint should identify:

@@ -34,6 +34,35 @@ Window/Panel/View -> Presentation State -> Command/Use Case
 - System adapter owns filesystem, shell, clipboard, notification, accessibility,
   power assertions, login items, updater, OS handles, and IPC.
 
+## File And Command Split
+
+Apply `../../common/code-structure-ownership.md` before growing desktop/native
+runtime files. Default to one primary window/panel, presentation state owner,
+command/use case, app service, system adapter, IPC contract, fixture, or
+assertion owner per file.
+
+Split files before adding behavior when command enablement, validation,
+permission, progress, cancellation, bridge mapping, system API access, window
+state, product state, and rendering can be named or tested independently.
+
+Review must fail when a desktop/application runtime file keeps multiple
+independently importable owners in one file: windows, panels, presentation
+state, commands, services, system adapters, IPC contracts, bridge mappers,
+fixtures, or assertion helpers.
+
+Do not:
+
+- Put a window, view state, command, service, filesystem/shell adapter, IPC
+  payload mapper, and renderer UI in one file.
+- Implement menu, shortcut, toolbar, tray, panel, and renderer actions in
+  separate files that each repeat the same product logic instead of sharing a
+  command boundary.
+- Hide privileged shell, filesystem, clipboard, updater, permission, or
+  credential access behind a broad `AppService`, `SystemService`, `Helpers`, or
+  `Utils` file.
+- Split into packages or targets when purpose-named files inside the current
+  boundary would make ownership and verification clear.
+
 ## Command Rule
 
 Every user action that can be triggered from more than one entry point should

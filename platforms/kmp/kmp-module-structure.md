@@ -36,6 +36,32 @@ A single shared module is often the right starting point. Split only when build
 scale, source-set ownership, feature ownership, iOS framework shape, or
 dependency leakage creates real pressure.
 
+## File And Class Split
+
+Apply `../../common/code-structure-ownership.md` in every source set. KMP source
+files should default to one primary public or internal top-level class,
+interface, object, state holder, use case, repository, adapter, mapper, fixture,
+or assertion owner per file.
+
+Split common and target source files before adding behavior when separate
+owners appear, such as shared state, route contract, repository contract,
+repository implementation, DTO/entity mapping, `expect` contract, `actual`
+implementation, platform adapter, fake, fixture, and assertion DSL.
+
+Review must fail when a KMP runtime file keeps multiple independently importable
+owners in one file: shared classes, objects, interfaces, use cases,
+repositories, state holders, DTOs, mappers, `expect`/`actual` adapters, fakes,
+fixtures, or assertion helpers.
+
+Do not:
+
+- Keep shared product policy, target adapter code, Compose UI, DTOs, mappers,
+  and repository implementation in one `commonMain` file.
+- Put multiple importable Kotlin classes or objects in one file unless they are
+  a small sealed/value family with one stable contract.
+- Hide target-specific behavior in nested declarations inside a shared owner.
+- Split modules to compensate for files that should first be split by owner.
+
 ## Module Families
 
 Use repo-local names first. KMP projects commonly separate these families:

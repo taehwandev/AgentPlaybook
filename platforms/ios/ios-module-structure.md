@@ -137,6 +137,25 @@ the owner boundary.
 Use `../swift/swift-code-structure.md` for cross-platform Swift file and type
 ownership. These iOS examples show common target-local shapes.
 
+Apply the Swift file baseline strictly in iOS features: one primary screen,
+view model, coordinator, state type, repository contract, adapter, fixture, or
+assertion owner per file by default.
+
+Review must fail when an iOS runtime file keeps independently importable or
+reviewable owners together: SwiftUI views, UIKit view controllers, coordinators,
+data sources, cells, state owners, repositories, services, adapters, preview
+fixtures, or assertion helpers.
+
+Do not:
+
+- Put a SwiftUI screen, ViewModel, UiState, route, repository call, mapper, and
+  preview fixture in one file because they belong to one feature.
+- Keep UIKit coordinator, view controller, data source, cell, service, and
+  adapter declarations in one file when they can be tested or reviewed
+  independently.
+- Use extensions, nested types, or broad `Common`/`Helpers` files to hide mixed
+  UI, state, data, platform, and testing responsibilities.
+
 For SwiftUI features:
 
 ```text

@@ -133,6 +133,22 @@ owners:
 - services own orchestration and background work.
 - shared UI owns visual primitives only.
 
+File split baseline:
+
+- Default to one primary exported renderer component, hook, command, bridge
+  client, adapter, service, mapper, state owner, fixture, or assertion owner per
+  file.
+- Keep tiny private props/types or local subcomponents only when they share the
+  same caller and review path.
+- Review must fail when a React desktop runtime file keeps multiple
+  independently importable owners in one file: renderer components, hooks,
+  commands, bridge clients, adapters, services, mappers, state owners,
+  fixtures, or assertion helpers.
+- Do not put renderer UI, raw bridge calls, command semantics, file watcher
+  logic, service orchestration, and platform adapters in one file.
+- Do not hide unrelated bridge, service, adapter, and model exports behind a
+  broad `platform`, `services`, `helpers`, `utils`, or index barrel.
+
 ## Refactor Signals
 
 - A React component imports Tauri, Electron, shell, filesystem, updater, or

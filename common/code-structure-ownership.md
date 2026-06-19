@@ -29,27 +29,69 @@ path. Short code still needs extraction when it mixes owners, side effects, or
 contracts.
 
 Apply the same ownership criteria to web, mobile, desktop, server, scripts, CSS,
-styles, tests, and generated-adjacent glue. Apply strict runtime size gates to
-production/runtime source and style files; tests, specs, mocks, fixtures, and
-docs are reviewable but exempt from the hard size gates unless a repo-local rule
-opts them in:
+styles, tests, and generated-adjacent glue. Apply strict size gates only to
+changed files whose extension is in the development-file extension allowlist;
+tests, specs, mocks, fixtures, generated files, config/build files, and docs are
+reviewable but exempt from the hard size gates unless a repo-local rule opts
+them in:
 
 - Functions, methods, components, hooks, reducers, handlers, jobs, and scripts
   should be small enough to scan in one pass. About 40 to 80 lines is a normal
   review budget for orchestration code; over about 120 lines in runtime code is
   a hard review failure unless repo-local policy explicitly sets a different
   limit.
-- Source files should have one primary owner and one responsibility cluster.
-  A new runtime source/style file over about 400 lines fails review, and an
-  existing runtime source/style file already over about 400 lines must not grow.
-  More than about 200 added lines in one runtime file fails review because it is
-  usually a "dump it all here" signal.
+- Development source/style files should have one primary owner and one
+  responsibility cluster. A new file over about 400 lines fails review, and an
+  existing file already over about 400 lines must not grow. More than about 200
+  added lines in one development file fails review because it is usually a
+  "dump it all here" signal.
 - CSS and style files follow the same ownership rule. Do not group tokens,
   primitives, component variants, page layout overrides, and one-off fixes in
   one file only because they are all styles.
 - Packages, folders, namespaces, targets, or modules are ownership boundaries,
   not storage bins. Create them only when they make allowed imports, dependency
   direction, tests, or review ownership clearer.
+
+### All-Platform File And Type Baseline
+
+Across web, mobile, desktop, server, scripts, styles, tests, and
+generated-adjacent glue, a runtime file must default to one independently
+importable owner. Class-based code must keep one primary public or internal
+class per file. In non-class shapes, keep one primary exported component, hook,
+handler, service, repository, adapter, struct, enum, protocol, interface,
+object, or contract family per file.
+
+Split aggressively at the nearest useful boundary before adding behavior when a
+file has more than one named owner, review path, test path, side-effect owner,
+or caller-facing contract. "One file per class" means one importable owner per
+file; it does not require moving tiny private helpers, a sealed/algebraic value
+family, or a framework-mandated route companion when they share one caller set
+and one reason to change.
+
+Do not approve runtime code that adds or keeps several independently named
+owners in one file: classes, components, hooks, handlers, services,
+repositories, adapters, DTOs, mappers, validators, jobs, commands, state
+owners, platform bridges, fakes, fixtures, or assertion helpers. When a class,
+interface, struct, protocol, object, function component, hook, handler, or
+service is independently importable, testable, previewable, or reviewable, it
+must live in its own purpose-named file.
+
+Do not:
+
+- Keep multiple public or importable classes, components, services,
+  repositories, adapters, handlers, widgets, ViewModels, or state owners in one
+  runtime file because they are small, related, created together, or in the same
+  feature.
+- Hide mixed responsibilities behind nested classes, static methods, companion
+  objects, extension files, partial files, barrel exports, or catch-all
+  `types`, `models`, `services`, `helpers`, or `utils` files.
+- Co-locate contracts and implementation, UI and state owner, DTO and mapper,
+  route and rendering, handler and repository, platform adapter and product
+  policy, or fixtures and assertions when callers or tests can use them
+  independently.
+- Split into ownerless tiny files only to satisfy a count. Every new file needs
+  a responsibility name, allowed imports, review benefit, and nearest
+  verification path.
 
 ### Responsibility-Based File Split
 
@@ -540,9 +582,24 @@ caller cannot infer the capability without reading implementation files.
 
 ## Review Checklist
 
+- For files whose extension is in the development-file extension allowlist only,
+  excluding tests, specs, mocks, fixtures, generated files, config/build files,
+  Markdown, MDX, and prose docs unless repo-local policy opts them in, did the
+  review check file size, added-line budget, function/block size, and
+  independent owner count?
 - Who owns this file or module?
 - Which callers are allowed to import it?
 - Is the public surface smaller than the implementation?
+- Does any runtime file dump multiple independently named classes, components,
+  hooks, handlers, services, repositories, adapters, DTOs, mappers, validators,
+  jobs, commands, state owners, or platform bridges together without one caller
+  contract?
+- Does any runtime function, component, hook, handler, job, or script step span
+  hundreds of lines because it mixes parsing, validation, IO, state changes,
+  rendering, persistence, logging, navigation, retry, or recovery?
+- Does the split preserve future extension points through clear owners and
+  caller contracts, instead of leaving everything in one file or adding
+  speculative abstract layers?
 - Does the split remove coupling or only add ceremony?
 - Can the contract be tested without the implementation?
 - Will a future implementation swap require changing callers?

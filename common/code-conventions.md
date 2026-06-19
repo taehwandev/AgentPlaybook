@@ -65,7 +65,11 @@ and retry/recovery behavior, use `common/error-modeling.md`.
 
 ## Do Not Ship Monoliths
 
-These are stop signals for new or changed code:
+These are hard review failures for new or changed runtime code. Line-count hard
+gates apply only to files whose extension is in the development-file extension
+allowlist. Tests, specs, mocks, fixtures, generated files, config/build files,
+Markdown, MDX, and prose docs are excluded from the hard size gates unless
+repo-local policy opts them in, but they still need clear ownership:
 
 - Do not put a feature, screen, endpoint, job, script, style surface, and helper
   set into one file because it is faster.
@@ -74,6 +78,15 @@ These are stop signals for new or changed code:
 - Do not add a second responsibility to an already large function, component,
   class, hook, service, or source file. Split the new responsibility first or
   keep it in a named local unit with a clear owner.
+- Do not keep more than one public or independently importable primary class,
+  component, hook, handler, service, repository, adapter, type, struct, enum,
+  protocol, or interface in a runtime file by default. Move separate owners to
+  purpose-named files unless the repo documents a generated, sealed, or
+  framework-mandated contract family exception.
+- Do not let an independently importable class, component, hook, handler,
+  service, repository, adapter, DTO, mapper, validator, command, job, state
+  owner, or platform bridge share a runtime file with other owners just because
+  they were created together or seem small today.
 - Do not create `utils`, `helpers`, `common`, `misc`, or `shared` buckets for
   unrelated behavior. A new file must be named by responsibility and owner.
 - Do not write reusable-looking functions, classes, hooks, components, or
@@ -94,21 +107,23 @@ These are stop signals for new or changed code:
 
 ## Size Signals
 
-These are review signals for all code and hard gates for changed runtime
-source/style files unless repo-local policy is more specific. Tests, specs,
-mocks, fixtures, Markdown, MDX, and prose docs are exempt from hard size gates
-but still need clear ownership and reviewable structure:
+These are review signals for all code and hard gates only for changed files
+whose extension is in the development-file extension allowlist, unless
+repo-local policy is more specific. Tests, specs, mocks, fixtures, generated
+files, config/build files, Markdown, MDX, and prose docs are exempt from hard size
+gates but still need clear ownership and reviewable structure:
 
 - A normal function, method, component, hook, handler, or script step should
   usually fit in one review pass; about 40 to 80 lines is a useful pressure
   range for orchestration code.
 - A runtime function, component, hook, handler, script step, or style block over
   about 120 lines fails review by default.
-- A new runtime source/style file over about 400 lines fails review by default.
-- An existing runtime source/style file already over about 400 lines must not
-  grow; split the new responsibility first.
-- More than about 200 added lines in one runtime source/style file fails review
-  by default.
+- A new development source/style file over about 400 lines fails review by
+  default.
+- An existing development source/style file already over about 400 lines must
+  not grow; split the new responsibility first.
+- More than about 200 added lines in one development source/style file fails
+  review by default.
 
 Split only when it improves ownership, testability, or review. Do not create
 extra files just to satisfy a line count.

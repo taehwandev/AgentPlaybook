@@ -82,6 +82,35 @@ app/account/billing/error.tsx
 
 Keep those files thin. They should compose the feature, not become the feature.
 
+## File And Component Split
+
+Apply `../../common/code-structure-ownership.md` before growing React/web
+runtime files. Default to one primary exported component, hook, loader/action,
+route handler, store, reducer, client, mapper, policy, fixture, or assertion
+owner per file. Co-located private props/types and tiny local subcomponents are
+acceptable only while they are not imported independently and share the same
+review path.
+
+Split files before adding behavior when a route, container, screen, hook, state
+model, API client, DTO mapper, policy helper, browser adapter, fixture, and
+assertion helper can be named or tested independently.
+
+Review must fail when a web runtime file keeps multiple independently
+importable owners in one file: components, hooks, loaders/actions, route
+handlers, stores, reducers, clients, mappers, policies, browser adapters,
+fixtures, or assertion helpers.
+
+Do not:
+
+- Put a route/page, data fetching, permission policy, mutation, mapper, screen,
+  blocks, and analytics handling in one file.
+- Export multiple unrelated components, hooks, clients, stores, or model
+  families from one runtime file or barrel.
+- Hide mixed owners in `types.ts`, `models.ts`, `services.ts`, `helpers.ts`,
+  `utils.ts`, or an index barrel with unrelated exports.
+- Make an oversized component client-only because one small child needs browser
+  interactivity; split the interactive child.
+
 ## Next.js App Router File Conventions
 
 When a Next.js App Router app is in scope:

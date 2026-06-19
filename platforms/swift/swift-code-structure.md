@@ -58,8 +58,10 @@ entitlements.
 
 ## File And Type Ownership
 
-- Prefer one primary public or internal type per file when the type is imported,
-  tested, or reviewed as a standalone owner.
+- Default to one primary public or internal top-level type per file when the
+  type is imported, tested, previewed, or reviewed as a standalone owner. This
+  includes classes, structs, enums, protocols, actors, views, view models,
+  coordinators, repositories, adapters, fixtures, and assertion helpers.
 - Keep tiny private helpers near their only caller. Move helpers out only when
   they gain a stable owner or multiple real callers.
 - Use extensions to group protocol conformances, preview helpers, or small
@@ -72,6 +74,16 @@ entitlements.
 - Keep preview data deterministic and separate from production services.
 - Avoid catch-all `Utils`, `Common`, or `Extensions` folders unless each file
   has a clear responsibility and owner.
+
+Review must fail when a Swift runtime file keeps multiple independently
+importable owners in one file: classes, structs, enums, protocols, actors,
+views, view models, coordinators, repositories, adapters, DTOs, mappers,
+fixtures, or assertion helpers.
+
+Do not keep multiple importable Swift types in one file because they are small,
+created together, or used by the same feature. Exceptions should be narrow:
+private helper types, a sealed-style enum/value family, or a tiny protocol
+conformance extension that cannot be imported or reviewed independently.
 
 ## Access Control
 

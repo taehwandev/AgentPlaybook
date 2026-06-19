@@ -38,6 +38,34 @@ navigation, testing, or ownership boundary needs a split. Multi-module apps need
 clear dependency direction; otherwise the extra modules only move complexity into
 Gradle.
 
+## File And Class Split
+
+Apply `../../common/code-structure-ownership.md` before growing Android runtime
+files. Kotlin and Java source should default to one primary public or internal
+top-level class, interface, object, composable screen/state owner, repository,
+adapter, mapper, fake, or assertion subject per file.
+
+Split files before adding behavior when a feature file contains separate owners
+such as route contract, `NavEntry` mapping, screen rendering, ViewModel,
+UiState, repository contract, repository implementation, DTO mapper, platform
+adapter, fixture, recorder, and assertion DSL.
+
+Review must fail when an Android runtime file keeps multiple independently
+importable Kotlin/Java owners in one file: classes, objects, interfaces,
+ViewModels, repositories, services, mappers, validators, DI bindings, platform
+adapters, fakes, fixtures, or assertion subjects.
+
+Do not:
+
+- Put a ViewModel, screen, route key, repository, mapper, and DI binding in one
+  file because they all belong to one feature.
+- Keep multiple importable Kotlin/Java classes or objects in one file unless
+  they are a small sealed/value family with one caller-facing contract.
+- Use nested classes, companion objects, or extension files to hide unrelated
+  UI, state, data, platform, or testing responsibilities.
+- Create one-folder-per-type module structure without changing import rules;
+  split files first, then packages or modules only when ownership demands it.
+
 ## Package Boundary Artifact
 
 Before creating or moving Android packages, source sets, modules, or
