@@ -10,8 +10,9 @@ from pathlib import Path
 
 from support.agy_setup import configure_agy
 from support.claude_setup import configure_claude
-from support.permission_entries import codex_prefix_rule_entries
-from support.setup_config_files import merge_codex_prefix_rules, print_results
+from support.permission_entries import claude_project_permission_entries, codex_prefix_rule_entries
+from support.project_type_detection import detect_project_permissions
+from support.setup_config_files import merge_codex_prefix_rules, merge_permissions_allow, print_results
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = ROOT / "scripts"
@@ -20,6 +21,7 @@ DEFAULT_SPILL_SETUP_HELPER = (
     Path.home()
     / "Library/Application Support/Spill/adapters/setup/spill-token-metering-setup.mjs"
 )
+DEFAULT_GITHUB_DIR = Path.home() / "GitHub"
 
 
 def main() -> None:
@@ -35,6 +37,16 @@ def main() -> None:
         "--check",
         action="store_true",
         help="Exit non-zero if any required hook is missing.",
+    )
+    parser.add_argument(
+        "--target",
+        metavar="PATH",
+        help="Also install project-level permissions for this external project directory.",
+    )
+    parser.add_argument(
+        "--github-projects",
+        action="store_true",
+        help="Also install project-level permissions for all ~/GitHub/* projects.",
     )
     args = parser.parse_args()
 
@@ -60,6 +72,18 @@ def main() -> None:
             root=ROOT,
             scripts_dir=SCRIPTS_DIR,
             spill_available=spill_available,
+        )
+
+    # External project installs
+    target_paths: list[Path] = []
+    if args.target:
+        target_paths.append(Path(args.target).expanduser().resolve())
+    if args.github_projects:
+        target_paths += _find_github_projects()
+
+    for project_path in target_paths:
+        results += configure_external_project(
+            project_path, SCRIPTS_DIR, dry_run, spill_available=spill_available
         )
 
     print_results(results, dry_run)
@@ -105,3 +129,34 @@ def configure_codex(dry_run: bool) -> list[dict]:
     target = Path.home() / ".codex" / "rules" / "default.rules"
     status = merge_codex_prefix_rules(target, codex_prefix_rule_entries(SCRIPTS_DIR), dry_run)
     return [{"tool": "codex", "hook": "rules.AgentPlaybookPython", "status": status, "path": str(target)}]
+
+
+def configure_external_project(
+    project_path: Path,
+    scripts_dir: Path,
+    dry_run: bool,
+    *,
+    spill_available: bool = True,
+) -> list[dict]:
+    """Install AgentPlaybook + project-type-specific permissions for an external project.
+
+    Combines the standard project-level entries (AgentPlaybook scripts, git -C
+    wildcards) with entries detected from the project's build toolchain (Swift,
+    Node.js, Gradle, Rust, Go, Python) so that any parameter combination is
+    covered after a single install run.
+    """
+    target = project_path / ".claude" / "settings.json"
+    entries = claude_project_permission_entries(scripts_dir, spill_available=spill_available)
+    entries += detect_project_permissions(project_path)
+    status = merge_permissions_allow(target, entries, dry_run)
+    hook_label = f"permissions.project.{project_path.name}"
+    return [{"tool": "claude", "hook": hook_label, "status": status, "path": str(target)}]
+
+
+def _find_github_projects() -> list[Path]:
+    if not DEFAULT_GITHUB_DIR.exists():
+        return []
+    return sorted(
+        p for p in DEFAULT_GITHUB_DIR.iterdir()
+        if p.is_dir() and not p.name.startswith(".")
+    )

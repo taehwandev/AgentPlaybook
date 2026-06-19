@@ -131,6 +131,16 @@ def _legacy_entrypoint_path_variants(script: Path) -> list[str]:
             f"${{HOME}}/{suffix}",
             _double_quote(f"${{HOME}}/{suffix}"),
         ]
+    # Add $AGENTPLAYBOOK_HOME variants for the scripts/ relative path.
+    # AGENTPLAYBOOK_HOME points to the AgentPlaybook root, so the relative
+    # path from root is scripts/<name> — not the same suffix as from HOME.
+    ap_rel = f"scripts/{script.name}"
+    variants += [
+        f"$AGENTPLAYBOOK_HOME/{ap_rel}",
+        _double_quote(f"$AGENTPLAYBOOK_HOME/{ap_rel}"),
+        f"${{AGENTPLAYBOOK_HOME}}/{ap_rel}",
+        _double_quote(f"${{AGENTPLAYBOOK_HOME}}/{ap_rel}"),
+    ]
     return _dedupe(variants)
 
 
