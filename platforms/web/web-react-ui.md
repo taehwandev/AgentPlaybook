@@ -38,6 +38,41 @@ Route/Page -> Feature Container -> Screen/View -> Section Component
 - Design-system primitives own visual and interaction contracts, not product
   policy or business workflows.
 
+## Mandatory Component Split
+
+React screens must be split into named components instead of placing the full
+page tree in one route, page, or screen file. A screen may own the top-level
+state switch, but headers, filters, forms, table regions, rows, cards, dialogs,
+empty states, error states, permission states, and action bars must become
+section/block or feature components as soon as they have a distinct visual or
+interaction responsibility.
+
+Use a feature-local `components/`, `sections/`, or `blocks/` folder for UI that
+belongs to one feature, and split it by role from the start with folders such as
+`inputs`, `feedback`, `cards`, `tables`, `dialogs`, `navigation`, or
+`data-display`. Promote only stable, domain-free controls into the web
+design-system package.
+
+Do not:
+
+- Do not approve React UI that keeps distinct sections, rows, cards, dialogs,
+  feedback states, and actions in one route/page/screen component or one file.
+- Do not put every component for a route into `page.tsx`, `route.tsx`, or one
+  `Screen.tsx` file because JSX makes nesting easy.
+- Do not leave header, body, filters, table rows, empty/error/loading state,
+  dialogs, and bottom actions inside one large component.
+- Do not keep many named components in one `components.tsx` or `index.tsx` file
+  once they can be tested, imported, previewed, or reviewed independently.
+- Do not create a flat `components` folder that mixes unrelated inputs, cards,
+  dialogs, table rows, feedback states, and feature-only product sections.
+- Do not pass the entire screen state into every child to avoid designing
+  smaller props.
+- Do not import raw third-party primitives throughout features when the app has
+  or needs product-prefixed design-system wrappers.
+- Do not expose a library component unchanged as the product component. The
+  wrapper must define semantic variants, slots, accessibility, loading/disabled
+  behavior, token ownership, and supported escape hatches.
+
 ## Architecture Tracks
 
 Choose the smallest track that protects the real risk:
@@ -162,7 +197,7 @@ Rules:
 - Loading, empty, error, permission denied, offline, disabled, and submitted
   states must be representable when the flow can reach them.
 - Avoid impossible boolean combinations such as `isLoading && error && data`.
-- Convert DTOs before rendering. JSX should consume display models or UI models,
+- Convert DTOs before rendering. JSX must consume display models or UI models,
   not transport details.
 - Keep protected access rules in named helpers or policy functions. UI hiding is
   not authorization.

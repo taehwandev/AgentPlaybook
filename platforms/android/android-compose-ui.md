@@ -43,6 +43,40 @@ Route/Holder Composable -> Screen Composable -> Section Composable
   next layer. Avoid sending a whole screen `UiState` into sections and leaf
   components when a narrower value keeps recomposition and ownership clearer.
 
+## Mandatory Component Split
+
+Compose screens must be split into named composables instead of placing the
+whole UI tree in one `Route`, `Screen`, or file. A screen file may own the
+top-level state switch, but headers, filters, summary strips, forms, list
+regions, rows, cards, dialogs, empty states, error states, and bottom actions
+must become section or component composables as soon as they have a distinct
+visual or interaction responsibility.
+
+Use a feature-local `components/` package for reusable pieces inside a feature,
+and split it by role from the start with packages such as `inputs`, `feedback`,
+`cards`, `lists`, `dialogs`, `navigation`, or `data`. Promote only stable,
+domain-free controls into the design-system module.
+
+Do not:
+
+- Do not approve Compose UI that keeps distinct sections, rows, cards, dialogs,
+  feedback states, and actions in one screen function or one file.
+- Do not put every composable for a screen into one file because Compose makes
+  nesting easy.
+- Do not leave header, body, list item, empty/error/loading state, dialog, and
+  bottom bar composables inside one large `Screen` function.
+- Do not keep many named composables in one `Components.kt` file once they can
+  be previewed, tested, imported, or reviewed independently.
+- Do not pass a full screen `UiState` into every section or leaf to avoid
+  creating smaller models.
+- Do not create a flat `components` package that mixes inputs, cards, dialogs,
+  table/list rows, feedback states, and feature-only product sections.
+- Do not import raw Material components throughout feature screens when the app
+  has or needs product-prefixed design-system wrappers.
+- Do not expose a Material wrapper unchanged as the product component. A design
+  system wrapper must define semantic variants, slots, accessibility,
+  loading/disabled/error behavior, and token ownership.
+
 ## Stateful And Stateless
 
 Stateful composables:
@@ -552,8 +586,8 @@ contracts to a shared design-system module. Shared design-system modules can use
 ```text
 core/designsystem/.../theme/
 core/designsystem/.../tokens/
-core/designsystem/.../component/
-core/designsystem/.../component/<domain-free-group>/
+core/designsystem/.../components/
+core/designsystem/.../components/<domain-free-group>/
 core/designsystem/.../preview/
 ```
 

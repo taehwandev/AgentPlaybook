@@ -28,6 +28,15 @@ task creates a reusable control, repeated visual rule, or new app/screen
 surface, create the smallest useful design-system layer first: semantic tokens,
 one primitive, and an example or preview when the platform supports it.
 
+Raw third-party or platform UI controls are implementation details of the design
+system, not the default feature API. When a product adopts a button, input,
+dialog, sheet, menu, table, toast, badge, or other foundational control from a
+UI library, expose it through a repo/product-namespaced primitive such as
+`<Product>Button`, `AppButton`, `DsButton`, or the repo's established prefix.
+The wrapper must encode the product's tokens, accessibility, loading/disabled
+states, density, slots, and variant names while keeping the underlying library
+replaceable.
+
 ## Layers
 
 ```text
@@ -63,6 +72,10 @@ Use the lowest layer that owns the decision:
 - Prefer wrappers around platform UI libraries when the wrapper encodes a real
   product contract such as typography scale, touch target, loading behavior,
   accessibility semantics, or design tokens. Do not wrap only to rename an API.
+- Treat visible number formatting as a product UI contract. Shared metric,
+  table, chart, badge, and summary components should receive formatted display
+  strings or a typed numeric format policy instead of each caller inventing
+  grouping and decimal precision.
 - Keep design-system modules free of routes, feature ids, analytics names,
   permission policy, billing or entitlement rules, repository calls, fake data,
   and product-specific copy.
@@ -75,6 +88,36 @@ Use the lowest layer that owns the decision:
   at least two credible call sites or a foundational primitive need, examples or
   previews, and migration guidance for old usage.
 
+## Component Structure
+
+Reusable UI must have an explicit home. Put design-system primitives and
+composed controls under the repo's design-system `components` or equivalent
+package/folder. Put feature-only sections and feature components under that
+feature's `components`, `sections`, `blocks`, or established equivalent.
+
+Component folders must be split by capability from the start instead of using a
+single large bucket:
+
+```text
+components/
+  buttons/
+  inputs/
+  feedback/
+  navigation/
+  data-display/
+  layout/
+```
+
+Each component must own a small public API file plus local implementation
+parts, examples/previews, fixtures, and tests when the repo supports them. Do
+not keep several named components in one source file once they can be imported,
+previewed, tested, or reviewed independently.
+
+Review blocker: a reusable UI change is not acceptable when it leaves named
+components in a screen file, a flat catch-all component folder, raw library
+usage in feature screens, or an unchanged pass-through wrapper as the product
+API.
+
 ## Do Not
 
 - Do not add raw colors, fonts, spacing, radii, shadows, motion, z-index, or
@@ -86,9 +129,24 @@ Use the lowest layer that owns the decision:
 - Do not create reusable-looking components, hooks, style helpers, or functions
   without a stable caller contract. A design-system API must be reusable by a
   second caller or be a foundational primitive.
+- Do not import raw Material, SwiftUI, UIKit/AppKit, Radix, shadcn, MUI,
+  Chakra, Bootstrap, or other third-party primitives directly throughout feature
+  screens when a design-system wrapper must own the product contract.
+- Do not expose the third-party API unchanged as the product API. A wrapper that
+  only re-exports every prop, modifier, or style hook has not created a design
+  system boundary.
+- Do not skip design-system structure because "there is no design yet." Create
+  the smallest extensible primitive with semantic variants and documented
+  defaults instead of scattering raw library usage.
+- Do not put all buttons, fields, cards, dialogs, tables, empty states, and
+  feedback components in one `Components` file, one barrel export, one flat
+  `components` folder, or one unstructured folder.
 - Do not use boolean flags or nullable option bags to force unrelated product
   variants through one component. Split the component, keep it feature-local, or
   model the state explicitly.
+- Do not let reusable UI primitives format counts, currency, percentages, or
+  calculated metrics ad hoc. Use the shared locale-aware formatter or require a
+  caller-owned display value.
 - Do not replace multiple UI surfaces with a new primitive until the primitive
   has examples, previews, fixtures, stories, snapshots, or focused tests for the
   affected states.
@@ -107,7 +165,7 @@ spacing/control-md, radius/card, motion/emphasis
 
 Avoid exporting raw palette names as the main API when callers need semantic
 meaning. Raw palette values can exist below the token layer, but components
-should consume semantic roles.
+must consume semantic roles.
 
 For platform-specific design systems, keep token holders compatible with that
 platform's stability model. For example, Compose token/default holders should be
@@ -122,6 +180,8 @@ A reusable component API should define:
 - caller-owned actions and callbacks
 - slot ownership for leading/trailing/media/action content
 - accessibility labels, roles, focus behavior, and touch/click targets
+- visible number formatting ownership for counts, currency, percentages, rates,
+  measurements, and accessibility labels that announce numeric values
 - long text, localization, small screen, dark mode, and high-contrast behavior
 - replacement guidance when it supersedes an older pattern
 

@@ -22,6 +22,8 @@ affects navigation, commands, permissions, persistence, or cross-surface state.
 - Main success path.
 - Empty, loading, disabled, error, unavailable, and permission-denied states.
 - Long text, localized text, missing images, missing icons, and slow data.
+- Grouped and decimal numeric text in compact labels, badges, tables, charts,
+  summary cards, tooltips, notifications, and accessibility labels.
 - Small and large viewports or containers relevant to the product.
 - Light mode, dark mode, increased system font size, reduced motion, and high
   contrast when the platform supports them and the change can be affected.

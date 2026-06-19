@@ -49,6 +49,33 @@ tokens -> styles/modifiers -> primitives -> composed controls
 Do not push product policy, navigation, analytics names, repository calls,
 permission decisions, or feature copy into primitives.
 
+## Product-Prefixed Wrappers
+
+SwiftUI, UIKit, and AppKit controls used across the product must enter
+features through product/repo-prefixed design-system wrappers, styles, or
+configuration helpers. Even a button must become a stable primitive such as
+`<Product>Button`, `AppButton`, `DsButton`, or the repo's established prefix
+when it appears in repeated product UI.
+
+The wrapper must own semantic variants, token mapping, loading/disabled/error
+states, Dynamic Type behavior, accessibility labels/traits, slots, sizing, and
+platform appearance defaults. The feature should not need to know whether the
+primitive is backed by native SwiftUI, UIKit/AppKit, or a third-party library.
+
+Do not:
+
+- Do not scatter raw `Button`, `TextField`, `Toggle`, `Picker`, `Menu`, `List`,
+  UIKit/AppKit controls, or third-party controls throughout feature screens when
+  a design-system primitive must own the product contract.
+- Do not expose every native or third-party parameter unchanged. Keep supported
+  customization narrow and semantic; add explicit escape hatches only when a
+  real caller needs them.
+- Do not postpone wrappers because final visual design is missing. Start with
+  the smallest semantic primitive and evolve tokens, variants, and examples as
+  the design matures.
+- Do not let a feature screen become the first and only place that defines
+  product button, input, card, dialog, or feedback behavior.
+
 ## Token Rules
 
 Prefer semantic tokens over raw values:

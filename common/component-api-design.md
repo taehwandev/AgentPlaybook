@@ -41,6 +41,9 @@ Avoid:
   caller when there is no stable second use or explicit design-system contract.
 - Moving feature-specific product policy into a component only to reduce the
   caller's line count.
+- Accepting raw numbers for visible counts, currency, percentages, rates, or
+  measurements without either a typed formatting policy or a caller-owned
+  formatted display string.
 
 ## Controlled State
 
@@ -56,6 +59,16 @@ If a component can be both controlled and uncontrolled, document the precedence 
 
 Screen, view, section, and block components do not need to be reusable across features to be valuable. Their first responsibility is to keep rendering boundaries readable and policy-free.
 
+UI work must split named components as soon as a visual region, interaction, state
+branch, or repeated control has its own responsibility. A screen may compose
+many local components; it must not contain every header, filter, list, row,
+empty state, dialog, footer, and action control in one file.
+
+Use a `components`, `sections`, `blocks`, or repo-local equivalent folder for
+feature-local UI, and split it by role from the start with subfolders such as
+`inputs`, `feedback`, `tables`, `cards`, `dialogs`, `navigation`, or
+`data-display`. Do not begin with one flat dump of unrelated components.
+
 Use a feature-local view or block when:
 
 - a screen is too large to review as one unit
@@ -70,6 +83,26 @@ Promote a block into a reusable component only when the caller contract is stabl
 Do not skip the feature-local block step. If the only problem is that one screen
 or function is too large, split it into named local sections first. Promote to a
 shared component only after the reusable role and caller contract are clear.
+
+Review blocker: reject UI code that keeps distinct screen sections, reusable
+controls, dialogs, rows, cards, or feedback states inside one route/page/screen
+file when they can be named as components.
+
+Do not:
+
+- Do not put all screen components, dialogs, table rows, empty/error states,
+  cards, and form controls in the route/page/screen file.
+- Do not keep multiple named reusable components in one file because they are
+  "small"; split once they can be imported, previewed, tested, or reviewed on
+  their own.
+- Do not create a `components` folder that is just a storage bin. Subdivide by
+  role up front so ownership, states, imports, and review paths are explicit.
+- Do not pass through an external UI library's full prop surface unchanged.
+  Wrap it in a product/component contract with semantic variants, slots,
+  accessibility, and supported states.
+- Do not design only for the current screen. Even the first button, input, or
+  card wrapper must leave room for product tokens, loading/disabled/error
+  states, localization, and future variants.
 
 ## Naming
 
@@ -102,6 +135,8 @@ Add edge examples when affected:
 - empty and error
 - selected and unselected
 - long text and localization
+- grouped and decimal numeric values when the component displays counts,
+  currency, percentages, rates, measurements, or metric summaries
 - missing media or icon
 - permission denied or read-only
 - small screen or constrained container

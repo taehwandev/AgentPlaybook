@@ -40,6 +40,40 @@ Route/Coordinator -> Screen View -> Section View -> Feature View
 - Design-system primitives own visual and interaction contracts, not product
   policy, routing, or domain rules.
 
+## Mandatory View Split
+
+SwiftUI screens must be split into named views instead of placing the full
+screen hierarchy in one `body` or one file. A screen may own the top-level state
+switch, but headers, forms, filter bars, list regions, rows, cards, dialogs,
+empty states, error states, permission states, and bottom actions must become
+section or feature views as soon as they have a distinct visual or interaction
+responsibility.
+
+Use a feature-local `Components/` folder for reusable views inside a feature,
+and split it by role from the start with folders such as `Inputs`, `Feedback`,
+`Cards`, `Lists`, `Dialogs`, `Navigation`, or `DataDisplay`. Promote only
+stable, domain-free controls into the Swift design-system package.
+
+Do not:
+
+- Do not approve SwiftUI that keeps distinct sections, rows, cards, dialogs,
+  feedback states, and actions in one `body`, one screen view, or one file.
+- Do not put every view, row, card, dialog, empty/error/loading state, and
+  footer action into one `Screen.swift`.
+- Do not hide a large UI behind one `var body: some View` with many nested
+  stacks, builders, and conditionals.
+- Do not keep many named SwiftUI views in one file once they can be previewed,
+  tested, imported, or reviewed independently.
+- Do not use private nested view types to avoid creating files for real
+  sections or reusable controls.
+- Do not pass whole screen state into every section when a smaller display model
+  or binding makes ownership clearer.
+- Do not use raw SwiftUI/UIKit/AppKit controls across feature screens when a
+  product-prefixed design-system wrapper must own tokens and states.
+- Do not expose a platform control unchanged as the product component. The
+  wrapper must define semantic variants, slots, accessibility, loading/disabled
+  behavior, and token ownership.
+
 ## Architecture Tracks
 
 Choose the smallest track that makes ownership and testing clear:

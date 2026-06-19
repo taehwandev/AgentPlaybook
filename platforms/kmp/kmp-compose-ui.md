@@ -33,6 +33,39 @@ Route/Host Composable -> Screen Composable -> Section Composable
 - Design-system primitives know visual and interaction contracts, not product
   routes, analytics labels, storage, shell commands, or fake data.
 
+## Mandatory Component Split
+
+Compose Multiplatform screens must be split into named composables instead of
+placing the whole shared UI tree in one route, screen, or file. A screen may own
+the top-level state switch, but headers, filters, forms, list regions, rows,
+cards, dialogs, empty states, unsupported states, and bottom actions must
+become section or feature composables as soon as they have a distinct visual or
+interaction responsibility.
+
+Use a feature-local `components/` package for reusable pieces inside a feature,
+and split it by role from the start with packages such as `inputs`, `feedback`,
+`cards`, `lists`, `dialogs`, `navigation`, or `data`. Promote only stable,
+domain-free controls into the shared design-system module.
+
+Do not:
+
+- Do not approve shared Compose UI that keeps distinct sections, rows, cards,
+  dialogs, unsupported states, feedback states, and actions in one screen
+  function or one file.
+- Do not put every shared composable into one file because the UI currently has
+  one target or one screen.
+- Do not hide target differences, unsupported states, or platform callbacks
+  inside a shared leaf component.
+- Do not keep many named composables in one `Components.kt` file once they can
+  be previewed, tested, imported, or reviewed independently.
+- Do not create a flat shared `components` package that mixes feature sections,
+  design-system primitives, target adapters, and preview fixtures.
+- Do not import raw Material or platform primitives throughout shared features
+  when a product-prefixed design-system wrapper must own tokens and states.
+- Do not expose a platform/library component unchanged as the product component.
+  The wrapper must define semantic variants, slots, accessibility,
+  loading/disabled behavior, token ownership, and target-safe defaults.
+
 ## Shared UI Rules
 
 - Keep shared composables free of Android-only lifecycle, `Context`, resource

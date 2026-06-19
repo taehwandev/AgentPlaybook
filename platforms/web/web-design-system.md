@@ -41,6 +41,33 @@ tokens -> primitives -> composed components -> product patterns -> screens
 Do not skip directly from tokens to screens for repeated controls. Do not push
 product policy down into primitives.
 
+## Product-Prefixed Wrappers
+
+Web features must consume product/repo-prefixed design-system primitives
+instead of raw third-party or browser controls for repeated UI. Even a button
+must become a stable primitive such as `<Product>Button`, `AppButton`,
+`DsButton`, or the repo's established prefix when it appears in repeated product
+surfaces.
+
+The wrapper must own semantic variants, token mapping, loading/disabled/error
+states, focus-visible behavior, accessibility, slots, sizing, and responsive
+defaults. The feature should not need to know whether the primitive is backed by
+native HTML, Radix, shadcn, MUI, Chakra, Bootstrap, or another UI library.
+
+Do not:
+
+- Do not scatter raw `button`, `input`, `select`, dialog/menu primitives, or
+  third-party UI components throughout feature screens when a design-system
+  primitive must own the product contract.
+- Do not expose every library prop unchanged. Keep supported customization
+  narrow and semantic; add explicit escape hatches only when a real caller needs
+  them.
+- Do not postpone wrappers because final visual design is missing. Start with
+  the smallest semantic primitive and evolve tokens, variants, and stories as
+  the design matures.
+- Do not let a feature screen become the first and only place that defines
+  product button, input, card, dialog, table, or feedback behavior.
+
 ## Token Rules
 
 Prefer semantic tokens over raw values:
@@ -129,7 +156,7 @@ Rules:
 
 - Keep styling decisions close to the component that owns the visual contract.
 - Keep layout primitives separate from product sections. A stack/grid/surface
-  primitive should not know feature copy or data.
+  primitive must not know feature copy or data.
 - Avoid nested cards and decorative wrappers that create unclear hierarchy.
 - Define stable dimensions for fixed-format controls, tables, grids, toolbars,
   boards, and icon buttons so hover, loading, badge, and long-text states do not
