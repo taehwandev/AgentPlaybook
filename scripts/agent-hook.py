@@ -282,9 +282,9 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument(
         "--structure-review-evidence",
         help=(
-            "short evidence that file/function size and responsibility splits were reviewed; "
-            "new runtime package boundaries must include owner, allowed imports, forbidden imports, "
-            "callers/tests, and verification"
+            "short evidence that runtime file/function size, top-level owner count, and "
+            "responsibility splits were reviewed; new runtime package boundaries must "
+            "include owner, allowed imports, forbidden imports, callers/tests, and verification"
         ),
     )
     review.add_argument(
@@ -297,7 +297,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--max-source-file-lines",
         type=non_negative_int,
         default=REVIEW_SOURCE_FILE_LINE_LIMIT,
-        help="fail review when a changed source file is above this line count",
+        help="fail review when a changed development source/style file is above this line count",
     )
     review.add_argument(
         "--max-function-lines",

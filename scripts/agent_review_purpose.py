@@ -24,8 +24,18 @@ BRACE_TOP_LEVEL_TYPE_RE = re.compile(
 )
 GO_TOP_LEVEL_TYPE_RE = re.compile(r"^\s*type\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s+(?P<kind>struct|interface)\b")
 TS_TYPE_ALIAS_RE = re.compile(r"^\s*(?:export\s+)?type\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*=")
-MAX_TOP_LEVEL_TYPES = 4
-MAX_PUBLIC_TOP_LEVEL_TYPES = 1
+BRACE_TOP_LEVEL_FUNCTION_RE = re.compile(
+    r"^\s*(?:(?:export\s+default\s+|export\s+|public\s+|private\s+|protected\s+|"
+    r"internal\s+|open\s+|final\s+|static\s+|pub\s+|pub\(crate\)\s+)*)"
+    r"(?:async\s+)?(?P<kind>function|func|fun|fn)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\b"
+)
+BRACE_TOP_LEVEL_CONST_FUNCTION_RE = re.compile(
+    r"^\s*(?:export\s+)?(?:const|let|var)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*="
+    r"\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_][A-Za-z0-9_]*)\s*=>"
+)
+TYPE_OWNER_KINDS = {"actor", "class", "enum", "interface", "object", "protocol", "record", "struct", "trait", "type", "typealias"}
+MAX_TOP_LEVEL_OWNERS = 4
+MAX_PUBLIC_TOP_LEVEL_OWNERS = 1
 GENERIC_PACKAGE_PARTS = {"common", "commons", "helper", "helpers", "lib", "manager", "managers", "misc", "service", "services", "shared", "util", "utils"}
 MIXED_ROLE_BLOCKS = (
     ("ui", "data"),
@@ -79,13 +89,29 @@ def top_level_type_declarations(path: Path, lines: list[str]) -> list[dict[str, 
             else:
                 match = None
         elif brace_depth == 0 and stripped and not stripped.startswith(("//", "/*", "*")):
-            match = BRACE_TOP_LEVEL_TYPE_RE.match(line) or GO_TOP_LEVEL_TYPE_RE.match(line) or TS_TYPE_ALIAS_RE.match(line)
+            match = (
+                BRACE_TOP_LEVEL_TYPE_RE.match(line)
+                or GO_TOP_LEVEL_TYPE_RE.match(line)
+                or TS_TYPE_ALIAS_RE.match(line)
+                or BRACE_TOP_LEVEL_FUNCTION_RE.match(line)
+                or BRACE_TOP_LEVEL_CONST_FUNCTION_RE.match(line)
+            )
         else:
             match = None
         if match:
-            declarations.append(type_declaration(match.groupdict().get("kind") or "type", match.groupdict().get("name") or match.group(1), line, index))
+            declaration = type_declaration(match_kind(match), match_name(match), line, index)
+            if declaration["owner"]:
+                declarations.append(declaration)
         brace_depth = max(0, brace_depth + line.count("{") - line.count("}"))
     return declarations
+
+
+def match_kind(match: re.Match[str]) -> str:
+    return match.groupdict().get("kind") or "type"
+
+
+def match_name(match: re.Match[str]) -> str:
+    return match.groupdict().get("name") or match.group(1)
 
 
 def type_declaration(kind: str, name: str, line: str, index: int) -> dict[str, Any]:
@@ -96,29 +122,43 @@ def type_declaration(kind: str, name: str, line: str, index: int) -> dict[str, A
         "private": bool(re.search(r"\bprivate\b", line)) or name.startswith("_"),
         "exported": bool(re.search(r"\b(export|public|pub)\b", line)),
         "role": role_for_name(name),
+        "owner": top_level_owner(kind, name, line),
     }
+
+
+def top_level_owner(kind: str, name: str, line: str) -> bool:
+    return (
+        kind in TYPE_OWNER_KINDS
+        or bool(re.search(r"\b(export|public|pub|internal)\b", line))
+        or role_for_name(name) is not None
+        or component_or_hook_name(name)
+    )
+
+
+def component_or_hook_name(name: str) -> bool:
+    return bool(name[:1].isupper() or re.match(r"^use[A-Z]", name))
 
 
 def top_level_declaration_failures(path: Path, declarations: list[dict[str, Any]]) -> list[str]:
     failures: list[str] = []
     visible = [declaration for declaration in declarations if not declaration["private"]]
     public = [declaration for declaration in visible if declaration["exported"] or exported_by_default(path)]
-    if len(public) > MAX_PUBLIC_TOP_LEVEL_TYPES:
+    if len(public) > MAX_PUBLIC_TOP_LEVEL_OWNERS:
         failures.append(
-            f"{path} declares {len(public)} public/exported top-level types ({format_declarations(public)}); "
-            f"limit is {MAX_PUBLIC_TOP_LEVEL_TYPES}; split runtime files by purpose so one file owns one "
-            "public contract or implementation"
+            f"{path} declares {len(public)} public/exported top-level owners ({format_declarations(public)}); "
+            f"limit is {MAX_PUBLIC_TOP_LEVEL_OWNERS}; split runtime files so one file owns one "
+            "public contract, component, handler, service, or implementation"
         )
-    if len(declarations) > MAX_TOP_LEVEL_TYPES:
+    if len(declarations) > MAX_TOP_LEVEL_OWNERS:
         failures.append(
-            f"{path} declares {len(declarations)} top-level types ({format_declarations(declarations[:8])}); "
-            f"limit is {MAX_TOP_LEVEL_TYPES}; move separate contracts, state, data, platform, and helpers "
+            f"{path} declares {len(declarations)} top-level owners ({format_declarations(declarations[:8])}); "
+            f"limit is {MAX_TOP_LEVEL_OWNERS}; move separate contracts, state, data, platform, and helpers "
             "into purpose-named files"
         )
     roles = sorted({declaration["role"] for declaration in visible if declaration["role"]})
     if mixed_roles_blocked(roles):
         failures.append(
-            f"{path} mixes top-level type roles {', '.join(roles)} ({format_declarations(visible)}); "
+            f"{path} mixes top-level owner roles {', '.join(roles)} ({format_declarations(visible)}); "
             "split by purpose before approval"
         )
     return failures

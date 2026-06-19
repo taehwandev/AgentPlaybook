@@ -110,7 +110,7 @@ def review_success_details(structure: dict[str, Any]) -> list[str]:
     return [
         "code review evidence recorded",
         "docs freshness evidence recorded",
-        f"structure review passed for {structure['checked_path_count']} source/style file(s)",
+        f"structure review passed for {structure['checked_path_count']} development source/style file(s)",
         f"structure scope: {structure['scope']}",
         "review scope guard passed",
         "review hook left worktree unchanged",
@@ -123,7 +123,7 @@ def review_success_details(structure: dict[str, Any]) -> list[str]:
 def review_failure_details(failures: list[str], structure: dict[str, Any]) -> list[str]:
     details = [
         f"structure scope: {structure['scope']}",
-        f"checked source/style files: {format_checked_paths(structure.get('checked_paths', []))}",
+        f"checked development source/style files: {format_checked_paths(structure.get('checked_paths', []))}",
     ]
     details.extend(f"failure detail: {failure}" for failure in failures)
     details.append("required recovery: fix scoped and safe code/docs issues immediately outside the hook, then rerun this same review hook once with --retry-attempt 1")

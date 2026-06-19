@@ -50,7 +50,8 @@ REVIEW_SOURCE_EXTENSIONS = {
 }
 REVIEW_STYLE_EXTENSIONS = {".css", ".scss", ".sass"}
 STRUCTURE_REVIEW_SCOPE_NOTE = (
-    "checks changed runtime source/style files only; tests, fixtures, Markdown, MDX, "
+    "checks only changed files in the development-file extension allowlist; tests, "
+    "fixtures, mocks, specs, generated files, config/build files, Markdown, MDX, "
     "and prose docs are excluded from runtime hard gates"
 )
 REVIEW_SKIP_PARTS = {
@@ -64,6 +65,19 @@ REVIEW_SKIP_PARTS = {
     "node_modules",
     "target",
 }
+REVIEW_GENERATED_PARTS = {"__generated__", "generated", "gen"}
+REVIEW_CONFIG_FILE_NAMES = {
+    "package.swift",
+    "build.gradle",
+    "build.gradle.kts",
+    "settings.gradle",
+    "settings.gradle.kts",
+    "setup.py",
+}
+REVIEW_CONFIG_SUFFIXES = (
+    ".config.cjs", ".config.js", ".config.mjs", ".config.mts", ".config.py",
+    ".config.ts", ".conf.js", ".conf.ts", ".gradle", ".gradle.kts",
+)
 TEST_PATH_PARTS = {
     "__fixtures__",
     "__mocks__",
@@ -100,6 +114,7 @@ def structure_review(
     result: dict[str, Any] = {
         "checked_paths": [str(path) for path in paths],
         "checked_path_count": len(paths),
+        "development_extensions": sorted(REVIEW_SOURCE_EXTENSIONS),
         "strict_checked_paths": [],
         "test_exempt_paths": [],
         "max_file_lines": max_file_lines,
@@ -235,9 +250,19 @@ def review_source_path(project: Path, path: Path) -> bool:
     return (
         path.suffix.lower() in REVIEW_SOURCE_EXTENSIONS
         and not any(part in REVIEW_SKIP_PARTS for part in path.parts)
+        and not config_or_generated_path(path)
         and absolute.exists()
         and absolute.is_file()
     )
+
+
+def config_or_generated_path(path: Path) -> bool:
+    lower_parts = {part.lower() for part in path.parts}
+    if lower_parts.intersection(REVIEW_GENERATED_PARTS):
+        return True
+
+    name = path.name.lower()
+    return name in REVIEW_CONFIG_FILE_NAMES or name.endswith(REVIEW_CONFIG_SUFFIXES)
 
 
 def test_exempt_path(path: Path) -> bool:
@@ -270,12 +295,12 @@ def check_file_size(
 
     if status == "A" and line_count > max_file_lines:
         result["failures"].append(
-            f"{path} is a new runtime source/style file with {line_count} lines; "
+            f"{path} is a new development source/style file with {line_count} lines; "
             f"new-file hard limit is {max_file_lines}; split by responsibility before approval"
         )
     if added_lines > REVIEW_ADDED_LINE_LIMIT:
         result["failures"].append(
-            f"{path} adds {added_lines} lines in one runtime source/style file; "
+            f"{path} adds {added_lines} lines in one development source/style file; "
             f"per-file addition limit is {REVIEW_ADDED_LINE_LIMIT}; split the change before approval"
         )
     if status != "A" and line_count > max_file_lines and added_lines > 0:
@@ -285,7 +310,7 @@ def check_file_size(
         )
     elif line_count > REVIEW_FILE_REVIEW_WARNING_LIMIT:
         result["warnings"].append(
-            f"{path} is a changed source/style file with {line_count} lines; "
+            f"{path} is a changed development source/style file with {line_count} lines; "
             "structure-review evidence is required before approving more behavior"
         )
 
