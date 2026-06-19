@@ -198,6 +198,26 @@ The route output is the command manifest for the agent:
 Markdown output is optimized for direct agent reading. JSON output exposes the
 same fields for wrappers, launchers, or CI checks.
 
+## Automatic Gates
+
+Work-producing routes must include the common gates below even when an individual
+command profile forgets them:
+
+- `ambiguity check`: classify unknowns before implementation. If any blocker
+  can change behavior, scope, risk, acceptance criteria, or verification, stop
+  and ask the maintainer before editing. Do not continue with silent invented
+  assumptions.
+- `documentation`: update or create the relevant source-of-truth docs, or record
+  why docs are not applicable or intentionally unchanged.
+- `tests`: add, update, or run the closest useful test/check for code work. A
+  skipped test must include the command skipped, reason, and residual risk.
+- `multi-agent split decision`: for code work, choose parallel/multi-agent work
+  when scopes are disjoint and useful. If work stays serial, record why the
+  change is too small, same-file, contract-bound, or otherwise not safe to split.
+
+`agent-finish-check.py` validates evidence for these gates. Missing evidence or
+empty phrases such as "done" are not enough.
+
 ## Parallel Consumption
 
 After `route` returns a document and gate manifest, optimize for parallel

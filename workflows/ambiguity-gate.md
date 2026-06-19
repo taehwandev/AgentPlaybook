@@ -16,6 +16,10 @@ Do not turn unknowns into silent assumptions.
 
 Inspect the current conversation, repo-local instructions, product docs, architecture docs, existing code, tests, and recent artifacts before asking the maintainer. Do not ask for information that is already available in the repo or conversation.
 
+If an unknown is not answerable from that context and can change behavior,
+scope, risk, acceptance criteria, or verification, it is a blocker. Ask before
+editing. Do not proceed because the agent can imagine a plausible default.
+
 ## Unknown Classes
 
 Classify each unknown as exactly one of these:
@@ -26,6 +30,9 @@ Classify each unknown as exactly one of these:
 - `out-of-scope`: The request conflicts with current product direction or should be deferred or rejected.
 
 Ask the maintainer only for `blocker` unknowns.
+When a blocker exists, asking is mandatory. Continuing into PRD, ARD, planning,
+implementation, review, or commit without blocker-question evidence is a
+workflow failure.
 
 ## Question Drill
 

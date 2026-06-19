@@ -1,9 +1,13 @@
-"""Static route, platform, and concern catalogs for workflow.py."""
+"""Static route and platform catalogs for workflow.py."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, Tuple
+
+from workflow_concern_docs import BASELINE_CONCERNS, CONCERNS, PUBLIC_DISCOVERY_DOCS
+from workflow_concern_hints import REQUEST_CONCERN_HINTS
+from workflow_platform_concerns import PLATFORM_CONCERNS
 
 
 @dataclass(frozen=True)
@@ -11,6 +15,7 @@ class Profile:
     docs: Tuple[str, ...]
     gates: Tuple[str, ...]
     notes: Tuple[str, ...] = ()
+
 
 CORE_DOCS = (
     "AGENTS.md",
@@ -41,10 +46,7 @@ COMMANDS: Dict[str, Profile] = {
         notes=("Use for general multi-step agent work.",),
     ),
     "workflow-setup": Profile(
-        docs=(
-            "workflows/agent-task-lifecycle.md",
-            "common/tool-failure-recovery.md",
-        ),
+        docs=("workflows/agent-task-lifecycle.md", "common/tool-failure-recovery.md"),
         gates=("orient", "install or repair", "runtime label handoff", "verify", "handoff"),
         notes=(
             "Use when the task changes local agent prompts, runtime hooks, "
@@ -96,7 +98,12 @@ COMMANDS: Dict[str, Profile] = {
         notes=("Use before PRD, ARD, task breakdown, or implementation when unknowns can change behavior or risk.",),
     ),
     "feature": Profile(
-        docs=("workflows/feature-implementation.md", "workflows/product-architecture-delivery.md", "workflows/development-cycle.md", "common/product-spec-to-implementation.md"),
+        docs=(
+            "workflows/feature-implementation.md",
+            "workflows/product-architecture-delivery.md",
+            "workflows/development-cycle.md",
+            "common/product-spec-to-implementation.md",
+        ),
         gates=("PRD/ARD applicability", "acceptance criteria", "implementation", "verification", "handoff"),
     ),
     "bugfix": Profile(
@@ -241,288 +248,4 @@ PLATFORMS: Dict[str, Tuple[str, ...]] = {
         "platforms/application/application-system-integration.md",
         "platforms/application/application-review.md",
     ),
-}
-
-
-PUBLIC_DISCOVERY_DOCS = ("common/public-discovery.md",)
-
-
-REQUEST_CONCERN_HINTS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
-    (
-        "swift",
-        (
-            r"\bswift\b",
-            r"\bswiftui\b",
-            r"\bswift package\b",
-            r"\bswift packages\b",
-            "\uc2a4\uc704\ud504\ud2b8",
-            "\uc2a4\uc704\ud504\ud2b8ui",
-        ),
-    ),
-    (
-        "design-system",
-        (
-            r"\bdesign system\b",
-            r"\bdesign-system\b",
-            r"\bdesign tokens?\b",
-            r"\btokens?\b",
-            r"\bthemes?\b",
-            r"\bprimitives?\b",
-            "\ub514\uc790\uc778 \uc2dc\uc2a4\ud15c",
-            "\ub514\uc790\uc778\uc2dc\uc2a4\ud15c",
-            "\ud1a0\ud070",
-            "\ud14c\ub9c8",
-            "\ud504\ub9ac\ubbf8\ud2f0\ube0c",
-        ),
-    ),
-    (
-        "architecture",
-        (
-            r"\barchitecture\b",
-            r"\barchitectural\b",
-            r"\bboundar(?:y|ies)\b",
-            r"\blayers?\b",
-            "\uc544\ud0a4\ud14d\ucc98",
-            "\uacbd\uacc4",
-            "\ub808\uc774\uc5b4",
-        ),
-    ),
-    (
-        "structure",
-        (
-            r"\bstructure\b",
-            r"\bcode structure\b",
-            r"\bmodule structure\b",
-            r"\bfile structure\b",
-            r"\bpackage structure\b",
-            "\uad6c\uc870\ud654",
-            "\ucf54\ub4dc \uad6c\uc870",
-            "\ubaa8\ub4c8 \uad6c\uc870",
-            "\ud328\ud0a4\uc9c0 \uad6c\uc870",
-        ),
-    ),
-    (
-        "seo",
-        (
-            r"\bseo\b",
-            r"\bsearch engine optimization\b",
-            r"\bai search\b",
-            r"\bai search optimization\b",
-            r"\bgenerative ai search\b",
-            r"\bgenerative ai\b",
-            r"\bai overviews?\b",
-            r"\bai mode\b",
-            r"\baeo\b",
-            r"\bgeo\b",
-            r"\banswer engine(?: optimization)?\b",
-            r"\bllms(?:\.txt|-txt)?\b",
-            r"\bsitemap\b",
-            r"\brobots(?:\.txt)?\b",
-            r"\bcanonical\b",
-            r"\bopen graph\b",
-            r"\bopengraph\b",
-            r"\bog image\b",
-            r"\bstructured data\b",
-            "\uac80\uc0c9 \ucd5c\uc801\ud654",
-            "ai \uac80\uc0c9",
-            "\uc0dd\uc131\ud615 ai",
-            "\uc0dd\uc131\ud615 \uac80\uc0c9",
-            "\uc0ac\uc774\ud2b8\ub9f5",
-            "\ub85c\ubd07.txt",
-            "\uce90\ub178\ub2c8\uceec",
-            "\uc624\ud508 \uadf8\ub798\ud504",
-            "\uad6c\uc870\ud654 \ub370\uc774\ud130",
-        ),
-    ),
-    (
-        "runtime-url",
-        (
-            r"\bruntime url\b",
-            r"\bruntime urls\b",
-            r"\bbase url\b",
-            r"\bapi url\b",
-            r"\bapi origin\b",
-            r"\bcallback url\b",
-            r"\bredirect_uri\b",
-            r"\bredirect uri\b",
-            r"\bwebhook endpoint\b",
-            r"\bcors origin\b",
-            r"\basset host\b",
-            r"\bcdn origin\b",
-            r"\benvironment-specific url\b",
-            r"\benvironment specific url\b",
-            "\ud658\uacbd\ubcc4 url",
-            "\ud658\uacbd\ubcc4 \ub7f0\ud0c0\uc784 url",
-            "\ub7f0\ud0c0\uc784 url",
-            "\ucf5c\ubc31 url",
-            "\ub9ac\ub2e4\uc774\ub809\ud2b8 uri",
-            "\uc6f9\ud6c5",
-        ),
-    ),
-)
-
-
-CONCERNS: Dict[str, Tuple[str, ...]] = {
-    "security": ("common/secure-development-baseline.md", "common/security-privacy-review.md"),
-    "runtime-url": ("common/runtime-url-configuration.md",),
-    "url": ("common/runtime-url-configuration.md",),
-    "config": ("common/runtime-url-configuration.md",),
-    "intake": ("common/task-intake-effort-routing.md", "workflows/request-triage.md"),
-    "effort": ("common/task-intake-effort-routing.md",),
-    "api": ("common/api-contract-compatibility.md",),
-    "architecture": ("common/architecture-selection.md", "common/architecture-design.md", "common/app-architecture.md"),
-    "swift": (
-        "platforms/swift/swift-architecture.md",
-        "platforms/swift/swift-code-structure.md",
-        "platforms/swift/swift-design-system.md",
-        "platforms/swift/swift-review.md",
-    ),
-    "asset": ("common/asset-lifecycle.md",),
-    "assets": ("common/asset-lifecycle.md",),
-    "structure": ("common/code-structure-ownership.md",),
-    "module": ("common/code-structure-ownership.md",),
-    "reusability": ("common/reusable-code-design.md", "common/component-api-design.md"),
-    "component": ("common/component-api-design.md",),
-    "component-api": ("common/component-api-design.md",),
-    "state": ("common/state-modeling.md",),
-    "error": ("common/error-modeling.md",),
-    "errors": ("common/error-modeling.md",),
-    "ui": ("common/design-system.md", "common/component-api-design.md", "common/ui-visual-verification.md"),
-    "design": ("common/design-system.md", "common/component-api-design.md", "common/ui-visual-verification.md"),
-    "design-system": ("common/design-system.md", "common/component-api-design.md", "common/ui-visual-verification.md"),
-    "tokens": ("common/design-system.md", "common/ui-visual-verification.md"),
-    "accessibility": ("common/accessibility-i18n.md",),
-    "writing": ("common/human-authored-writing.md",),
-    "prose": ("common/human-authored-writing.md",),
-    "voice": ("common/human-authored-writing.md",),
-    "copy": ("common/human-authored-writing.md", "common/accessibility-i18n.md"),
-    "persistence": ("common/data-persistence-sync.md",),
-    "cache": ("common/server-side-caching.md",),
-    "release": ("common/release-deployment.md", "common/release-versioning.md"),
-    "dependency": ("common/dependency-policy.md",),
-    "generated": ("common/generated-files-policy.md",),
-    "worktree": ("common/worktree-hygiene.md",),
-    "stack": ("common/stack-discovery.md",),
-    "failure": ("common/tool-failure-recovery.md",),
-    "interaction": ("common/agent-interaction.md",),
-    "defensive": ("common/defensive-boundaries.md",),
-    "observability": ("common/observability-error-handling.md", "common/error-modeling.md"),
-    "discovery": PUBLIC_DISCOVERY_DOCS,
-    "seo": PUBLIC_DISCOVERY_DOCS,
-    "ai-mode": PUBLIC_DISCOVERY_DOCS,
-    "ai-overviews": PUBLIC_DISCOVERY_DOCS,
-    "ai-search": PUBLIC_DISCOVERY_DOCS,
-    "ai-search-optimization": PUBLIC_DISCOVERY_DOCS,
-    "aeo": PUBLIC_DISCOVERY_DOCS,
-    "answer-engine": PUBLIC_DISCOVERY_DOCS,
-    "answer-engine-optimization": PUBLIC_DISCOVERY_DOCS,
-    "canonical": PUBLIC_DISCOVERY_DOCS,
-    "generative-ai": PUBLIC_DISCOVERY_DOCS,
-    "generative-ai-search": PUBLIC_DISCOVERY_DOCS,
-    "geo": PUBLIC_DISCOVERY_DOCS,
-    "llms": PUBLIC_DISCOVERY_DOCS,
-    "llms-txt": PUBLIC_DISCOVERY_DOCS,
-    "open-graph": PUBLIC_DISCOVERY_DOCS,
-    "robots": PUBLIC_DISCOVERY_DOCS,
-    "sitemap": PUBLIC_DISCOVERY_DOCS,
-    "structured-data": PUBLIC_DISCOVERY_DOCS,
-    "wiki": ("workflows/documentation-update.md", "common/llm-wiki-documentation.md"),
-    "auth": ("product-patterns/auth-rbac-permissions.md", "product-patterns/auth-rbac-implementation.md"),
-    "invite": ("product-patterns/invitation-workflows.md", "product-patterns/invitation-implementation.md"),
-    "billing": (
-        "product-patterns/billing-entitlements.md",
-        "product-patterns/billing-entitlements-implementation.md",
-    ),
-}
-
-
-PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
-    ("android", "security"): ("platforms/android/android-security.md",),
-    ("android", "compose"): ("platforms/android/android-compose-ui.md",),
-    ("android", "state"): ("platforms/android/android-viewmodel-state.md",),
-    ("android", "ui"): ("platforms/android/android-compose-ui.md",),
-    ("android", "structure"): ("platforms/android/android-module-structure.md",),
-    ("android", "module"): ("platforms/android/android-module-structure.md",),
-    ("android", "background"): ("platforms/android/android-background-work.md",),
-    ("kmp", "security"): ("platforms/kmp/kmp-security.md",),
-    ("kmp", "compose"): ("platforms/kmp/kmp-compose-ui.md",),
-    ("kmp", "state"): ("platforms/kmp/kmp-state-data.md",),
-    ("kmp", "ui"): ("platforms/kmp/kmp-compose-ui.md",),
-    ("kmp", "structure"): ("platforms/kmp/kmp-module-structure.md",),
-    ("kmp", "module"): ("platforms/kmp/kmp-module-structure.md",),
-    ("kmp", "platform"): ("platforms/kmp/kmp-platform-integration.md",),
-    ("kmp", "desktop"): (
-        "platforms/kmp/kmp-platform-integration.md",
-        "platforms/application/application-command-ui.md",
-        "platforms/application/application-system-integration.md",
-    ),
-    ("flutter", "security"): ("platforms/flutter/flutter-security.md",),
-    ("flutter", "widget"): ("platforms/flutter/flutter-widget-ui.md",),
-    ("flutter", "state"): ("platforms/flutter/flutter-state-data.md",),
-    ("flutter", "ui"): ("platforms/flutter/flutter-widget-ui.md",),
-    ("flutter", "structure"): ("platforms/flutter/flutter-project-structure.md",),
-    ("flutter", "module"): ("platforms/flutter/flutter-project-structure.md",),
-    ("flutter", "platform"): ("platforms/flutter/flutter-platform-integration.md",),
-    ("flutter", "channel"): ("platforms/flutter/flutter-platform-integration.md",),
-    ("swift", "architecture"): ("platforms/swift/swift-architecture.md",),
-    ("swift", "structure"): ("platforms/swift/swift-code-structure.md",),
-    ("swift", "module"): ("platforms/swift/swift-code-structure.md",),
-    ("swift", "state"): ("platforms/swift/swift-architecture.md",),
-    ("swift", "ui"): ("platforms/swift/swift-design-system.md",),
-    ("swift", "design"): ("platforms/swift/swift-design-system.md",),
-    ("swift", "design-system"): ("platforms/swift/swift-design-system.md",),
-    ("swift", "tokens"): ("platforms/swift/swift-design-system.md",),
-    ("ios", "security"): ("platforms/ios/ios-security.md",),
-    ("ios", "architecture"): ("platforms/ios/ios-architecture.md",),
-    ("ios", "swiftui"): ("platforms/ios/ios-swiftui-ui.md", "platforms/swift/swift-design-system.md"),
-    ("ios", "uikit"): ("platforms/ios/ios-uikit-ui.md", "platforms/swift/swift-design-system.md"),
-    ("ios", "state"): ("platforms/ios/ios-state-concurrency.md",),
-    ("ios", "ui"): ("platforms/ios/ios-swiftui-ui.md", "platforms/swift/swift-design-system.md"),
-    ("ios", "design"): ("platforms/swift/swift-design-system.md",),
-    ("ios", "design-system"): ("platforms/swift/swift-design-system.md",),
-    ("ios", "tokens"): ("platforms/swift/swift-design-system.md",),
-    ("ios", "structure"): ("platforms/ios/ios-module-structure.md",),
-    ("ios", "module"): ("platforms/ios/ios-module-structure.md",),
-    ("web", "accessibility"): ("platforms/web/web-accessibility-i18n.md",),
-    ("web", "react"): ("platforms/web/web-react-ui.md",),
-    ("web", "state"): ("platforms/web/web-state-data.md",),
-    ("web", "api"): ("platforms/web/web-state-data.md", "platforms/web/web-security.md"),
-    ("web", "cache"): ("platforms/web/web-state-data.md", "platforms/web/web-security.md"),
-    ("web", "persistence"): ("platforms/web/web-state-data.md", "platforms/web/web-security.md"),
-    ("web", "auth"): ("platforms/web/web-state-data.md", "platforms/web/web-security.md"),
-    ("web", "ui"): ("platforms/web/web-react-ui.md", "platforms/web/web-design-system.md"),
-    ("web", "component"): ("platforms/web/web-react-ui.md", "platforms/web/web-design-system.md"),
-    ("web", "component-api"): ("platforms/web/web-react-ui.md", "platforms/web/web-design-system.md"),
-    ("web", "structure"): ("platforms/web/web-code-structure.md",),
-    ("web", "security"): ("platforms/web/web-security.md",),
-    ("server", "api"): ("platforms/server/server-api-implementation.md",),
-    ("server", "security"): ("platforms/server/server-security.md",),
-    ("application", "swift"): (
-        "platforms/swift/swift-architecture.md",
-        "platforms/swift/swift-code-structure.md",
-        "platforms/swift/swift-design-system.md",
-        "platforms/swift/swift-review.md",
-    ),
-    ("application", "architecture"): ("platforms/application/application-architecture.md",),
-    ("application", "desktop"): (
-        "platforms/application/application-react-desktop.md",
-        "platforms/application/application-command-ui.md",
-    ),
-    ("application", "react"): (
-        "platforms/application/application-react-desktop.md",
-        "platforms/web/web-code-structure.md",
-        "platforms/web/web-react-ui.md",
-        "platforms/web/web-state-data.md",
-    ),
-    ("application", "ui"): ("platforms/application/application-command-ui.md",),
-    ("application", "design"): ("platforms/swift/swift-design-system.md",),
-    ("application", "design-system"): ("platforms/swift/swift-design-system.md",),
-    ("application", "security"): ("platforms/application/application-security.md",),
-}
-
-
-BASELINE_CONCERNS: Dict[str, str] = {
-    "stack": "already included in every route through CORE_DOCS.",
-    "failure": "already included in every route through CORE_DOCS.",
-    "interaction": "already included in every route through CORE_DOCS.",
 }

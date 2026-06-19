@@ -22,9 +22,13 @@ Use this before implementation, review, refactoring, debugging, documentation, o
     preflight evidence may run together after request intake is settled.
  9. Inspect existing code, docs, tests, and local conventions.
 10. Make the smallest change that genuinely addresses the request.
-11. Verify with the narrowest reliable command first.
-12. Confirm the route gate ledger before reporting completion.
-13. Report what changed, what was verified, and what risk remains.
+11. For code work, record the multi-agent split decision before editing and use
+    parallel agents when scopes are disjoint and stable.
+12. Update/create affected docs and add/update/run the nearest useful test when
+    code behavior or workflow policy changes.
+13. Verify with the narrowest reliable command first.
+14. Confirm the route gate ledger before reporting completion.
+15. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -34,6 +38,9 @@ Before editing:
 - Classify the request as clear-exact, clear-scoped, vague-action, broad-product, risky-unclear, or direct-question before choosing effort.
 - If classified as direct-question, answer first and do not start work unless a separate actionable request remains.
 - If the direct question asks how to start app, product, or feature work, answer with the PRD -&gt; ARD -&gt; implementation sequence first. Do not give an implementation-only workflow for product delivery.
+- If a blocker unknown can change behavior, scope, risk, acceptance criteria, or
+  verification and repo context cannot answer it, ask before editing. Do not
+  invent product intent or acceptance criteria silently.
 - Check repo-local `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or equivalent docs.
 - Check stack manifests, lockfiles, and config before running commands, adding dependencies, or using framework-specific APIs.
 - Check whether the task touches data, auth, permissions, billing, persistence, filesystem, network, release, or external state.
@@ -63,6 +70,8 @@ Before finishing:
 
 - Confirm every required workflow route gate has ledger evidence when a scripted route was used.
 - Run the most relevant test, build, typecheck, lint, or smoke check.
+- For code work, include evidence for ambiguity handling, docs freshness,
+  tests, and multi-agent split decision when the route requires them.
 - If verification cannot run, state why and what risk remains.
 - Include file references when explaining non-trivial changes.
 

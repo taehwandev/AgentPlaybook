@@ -53,6 +53,11 @@ Use parallelism to reduce waiting, not to blur ownership.
 - Parallelize read-only orientation after route selection: selected document
   reads, file searches, stack discovery, git status, and preflight evidence may
   run together when the runtime supports it.
+- For code work, record a multi-agent split decision before editing. Use
+  parallel/multi-agent implementation when owned files or modules are disjoint
+  and the contract is stable. If the work stays serial, record the reason:
+  small scope, same-file edits, unstable shared contract, migration/dependency
+  surface, or another concrete overlap risk.
 - Split implementation across parallel agents only when each slice has explicit
   owned files or modules, forbidden files or modules, acceptance checks, and
   verification commands.

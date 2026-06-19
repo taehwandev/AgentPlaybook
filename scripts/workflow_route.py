@@ -20,6 +20,7 @@ from workflow_common import (
     QUESTION_ROUTE_COMMANDS,
     unique,
 )
+from workflow_gate_policy import add_automatic_gates, automatic_docs
 
 
 REVIEW_HOOK_REQUIRED_COMMANDS = {
@@ -48,6 +49,7 @@ def resolve_docs(
 ) -> dict[str, object]:
     profile = COMMANDS[command]
     docs: list[str] = [*CORE_DOCS, *profile.docs]
+    docs.extend(automatic_docs(command))
 
     if platform:
         docs.extend(PLATFORMS[platform])
@@ -106,7 +108,7 @@ def resolve_docs(
 
 
 def route_gates(command: str) -> list[str]:
-    gates = list(COMMANDS[command].gates)
+    gates = add_automatic_gates(command, list(COMMANDS[command].gates))
     if command not in REVIEW_HOOK_REQUIRED_COMMANDS or "review hook" in gates:
         return gates
 

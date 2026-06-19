@@ -23,6 +23,14 @@ Missing wrapper evidence or missing route gate evidence is non-compliant.
 The route output also includes a `Required Hooks` section. Follow it as the
 executable workflow checklist; if a route contains a `review hook` gate, the
 finish check must receive Review Hook evidence for that gate.
+Work-producing routes also carry automatic gates for ambiguity, documentation,
+tests, and multi-agent split decisions. Treat those gates as mandatory evidence,
+not suggestions. If ambiguity can change behavior, scope, risk, or verification,
+ask the blocker question before editing. If code changes, add/update/run the
+nearest useful test or record a specific skipped-test reason. If docs are absent
+but the change creates durable behavior or workflow policy, create the docs
+instead of leaving the gate empty. For code work, use parallel/multi-agent
+slices when scopes are disjoint; otherwise record the serial/small-scope reason.
 
 Discover available scripted commands with:
 
@@ -118,7 +126,9 @@ the update.
   verifies the required route gate evidence, final validation, diff hygiene,
   and final VibeGuard state. Use `--gate "<gate>=<evidence>"` for each required
   gate from the start evidence. If `review hook` is one of those gates, missing
-  Review Hook evidence is a workflow failure.
+  Review Hook evidence is a workflow failure. It also validates automatic gate
+  evidence for ambiguity, documentation, tests, and multi-agent split decisions;
+  vague placeholders such as "done" are failures.
 
 ## Current Workflows
 

@@ -13,6 +13,7 @@ from workflow_common import (
     RETRY_SCOPE,
     ROOT,
 )
+from workflow_gate_policy import automatic_gates
 from workflow_route import REVIEW_HOOK_REQUIRED_COMMANDS, resolve_docs, route_gates
 from workflow_spill import validate_spill_label_contracts
 
@@ -40,6 +41,9 @@ def validate_route_contracts() -> list[str]:
             expected_gates = ["request intake", *expected_gates]
         if route["gates"] != expected_gates:
             failures.append(f"{command}: route gates do not match profile gates")
+        for gate in automatic_gates(command):
+            if gate not in route["gates"]:
+                failures.append(f"{command}: automatic gate `{gate}` is missing")
 
         hooks = route.get("hooks")
         if not isinstance(hooks, list):

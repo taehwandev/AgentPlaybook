@@ -1,0 +1,92 @@
+"""Concern-to-document routes for workflow routing."""
+
+from __future__ import annotations
+
+from typing import Dict, Tuple
+
+
+PUBLIC_DISCOVERY_DOCS = ("common/public-discovery.md",)
+
+
+CONCERNS: Dict[str, Tuple[str, ...]] = {
+    "security": ("common/secure-development-baseline.md", "common/security-privacy-review.md"),
+    "runtime-url": ("common/runtime-url-configuration.md",),
+    "url": ("common/runtime-url-configuration.md",),
+    "config": ("common/runtime-url-configuration.md",),
+    "intake": ("common/task-intake-effort-routing.md", "workflows/request-triage.md"),
+    "effort": ("common/task-intake-effort-routing.md",),
+    "testing": ("common/testing.md", "common/verification-policy.md"),
+    "test": ("common/testing.md", "common/verification-policy.md"),
+    "verification": ("common/verification-policy.md", "common/testing.md"),
+    "api": ("common/api-contract-compatibility.md",),
+    "architecture": ("common/architecture-selection.md", "common/architecture-design.md", "common/app-architecture.md"),
+    "swift": (
+        "platforms/swift/swift-architecture.md",
+        "platforms/swift/swift-code-structure.md",
+        "platforms/swift/swift-design-system.md",
+        "platforms/swift/swift-review.md",
+    ),
+    "asset": ("common/asset-lifecycle.md",),
+    "assets": ("common/asset-lifecycle.md",),
+    "structure": ("common/code-structure-ownership.md",),
+    "module": ("common/code-structure-ownership.md",),
+    "reusability": ("common/reusable-code-design.md", "common/component-api-design.md"),
+    "component": ("common/component-api-design.md",),
+    "component-api": ("common/component-api-design.md",),
+    "state": ("common/state-modeling.md",),
+    "error": ("common/error-modeling.md",),
+    "errors": ("common/error-modeling.md",),
+    "ui": ("common/design-system.md", "common/component-api-design.md", "common/ui-visual-verification.md"),
+    "design": ("common/design-system.md", "common/component-api-design.md", "common/ui-visual-verification.md"),
+    "design-system": ("common/design-system.md", "common/component-api-design.md", "common/ui-visual-verification.md"),
+    "tokens": ("common/design-system.md", "common/ui-visual-verification.md"),
+    "accessibility": ("common/accessibility-i18n.md",),
+    "writing": ("common/human-authored-writing.md",),
+    "prose": ("common/human-authored-writing.md",),
+    "voice": ("common/human-authored-writing.md",),
+    "copy": ("common/human-authored-writing.md", "common/accessibility-i18n.md"),
+    "persistence": ("common/data-persistence-sync.md",),
+    "cache": ("common/server-side-caching.md",),
+    "release": ("common/release-deployment.md", "common/release-versioning.md"),
+    "dependency": ("common/dependency-policy.md",),
+    "generated": ("common/generated-files-policy.md",),
+    "worktree": ("common/worktree-hygiene.md",),
+    "stack": ("common/stack-discovery.md",),
+    "failure": ("common/tool-failure-recovery.md",),
+    "interaction": ("common/agent-interaction.md",),
+    "defensive": ("common/defensive-boundaries.md",),
+    "observability": ("common/observability-error-handling.md", "common/error-modeling.md"),
+    "discovery": PUBLIC_DISCOVERY_DOCS,
+    "seo": PUBLIC_DISCOVERY_DOCS,
+    "ai-mode": PUBLIC_DISCOVERY_DOCS,
+    "ai-overviews": PUBLIC_DISCOVERY_DOCS,
+    "ai-search": PUBLIC_DISCOVERY_DOCS,
+    "ai-search-optimization": PUBLIC_DISCOVERY_DOCS,
+    "aeo": PUBLIC_DISCOVERY_DOCS,
+    "answer-engine": PUBLIC_DISCOVERY_DOCS,
+    "answer-engine-optimization": PUBLIC_DISCOVERY_DOCS,
+    "canonical": PUBLIC_DISCOVERY_DOCS,
+    "generative-ai": PUBLIC_DISCOVERY_DOCS,
+    "generative-ai-search": PUBLIC_DISCOVERY_DOCS,
+    "geo": PUBLIC_DISCOVERY_DOCS,
+    "llms": PUBLIC_DISCOVERY_DOCS,
+    "llms-txt": PUBLIC_DISCOVERY_DOCS,
+    "open-graph": PUBLIC_DISCOVERY_DOCS,
+    "robots": PUBLIC_DISCOVERY_DOCS,
+    "sitemap": PUBLIC_DISCOVERY_DOCS,
+    "structured-data": PUBLIC_DISCOVERY_DOCS,
+    "wiki": ("workflows/documentation-update.md", "common/llm-wiki-documentation.md"),
+    "auth": ("product-patterns/auth-rbac-permissions.md", "product-patterns/auth-rbac-implementation.md"),
+    "invite": ("product-patterns/invitation-workflows.md", "product-patterns/invitation-implementation.md"),
+    "billing": (
+        "product-patterns/billing-entitlements.md",
+        "product-patterns/billing-entitlements-implementation.md",
+    ),
+}
+
+
+BASELINE_CONCERNS: Dict[str, str] = {
+    "stack": "already included in every route through CORE_DOCS.",
+    "failure": "already included in every route through CORE_DOCS.",
+    "interaction": "already included in every route through CORE_DOCS.",
+}
