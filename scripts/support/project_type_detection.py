@@ -75,7 +75,12 @@ def _entries_for_package_json(pkg_json: Path) -> list[str]:
             entries += _cmd_entries(f"{runner} {name}")
 
     # Install commands (always needed in a Node project)
-    for install_cmd in ("npm install", "bun install", "yarn install", "pnpm install"):
+    for install_cmd in (
+        "npm install", "npm i", "npm ci",
+        "bun install", "bun i",
+        "yarn install", "yarn",
+        "pnpm install", "pnpm i"
+    ):
         entries += _cmd_entries(install_cmd)
 
     return entries
@@ -115,7 +120,10 @@ def _go_permissions(project_path: Path) -> list[str]:
     if not (project_path / "go.mod").exists():
         return []
     entries: list[str] = []
-    for base in ("go build", "go test", "go run", "go vet", "go generate"):
+    for base in (
+        "go build", "go test", "go run", "go vet", "go generate",
+        "go mod download", "go get"
+    ):
         entries += _cmd_entries(base)
     return entries
 
@@ -131,7 +139,11 @@ def _python_permissions(project_path: Path) -> list[str]:
     if not has_python:
         return []
     entries: list[str] = []
-    for base in ("uv run", "poetry run", "pip install", "pip3 install"):
+    for base in (
+        "uv run", "uv pip install", "uv sync",
+        "poetry run", "poetry install",
+        "pip install", "pip3 install"
+    ):
         entries += _cmd_entries(base)
     return entries
 
