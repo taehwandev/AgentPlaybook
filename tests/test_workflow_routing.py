@@ -35,6 +35,8 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("agent_finish_common.py", entries)
         self.assertIn("agent_finish_check_steps.py", entries)
         self.assertIn("agent_finish_final_checks.py", entries)
+        self.assertIn("$AGENTPLAYBOOK_HOME/scripts/agent-hook.py", entries)
+        self.assertIn("${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py", entries)
 
     def test_code_route_gets_automatic_gates_and_docs(self) -> None:
         route = resolve_docs("feature", None, ["testing"], request_classified=True)

@@ -17,6 +17,7 @@ only for this block.
 Shared AgentPlaybook library:
 <AGENTPLAYBOOK_ROOT>/AGENTS.md
 <AGENTPLAYBOOK_ROOT>/index.md
+<AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
@@ -41,29 +42,31 @@ application drill first: add pointer vs merge vs pin; audit-only vs refresh
 with update vs first-time setup; apply now vs prepare instructions only.
 Default to preserving current guardrails and running audit only unless the user
 chooses to refresh the managed block.
-For multi-step tasks, run the workflow script first with `--request
-"<USER_REQUEST>"` and use its output as the command manifest before selecting
+For multi-step tasks, run `agent-hook.py start` first with `--request
+"<USER_REQUEST>"`; it runs workflow routing/preflight and reports the required
+hooks for the route. Use its output as the command manifest before selecting
 task documents, editing, reviewing, committing, or reporting completion. If the
 current user message is a direct question, answer it before routing or editing.
 If the direct question asks how to start app, product, or feature work, answer
 with the PRD -> ARD -> implementation path before lower-level coding steps. If
 the work then proceeds into code, use the `product` route unless an existing
 PRD/ARD or repo-local instruction makes the slice clearly trivial.
-If the workflow router cannot run, stop and report the blocker before
-continuing. Keep its gate execution ledger current; each required gate must
-have evidence before completion. Show a short gate signal after each completed
-or failed gate or task step. Completion requires every required gate to be
-🐱🟢 SUCCESS. Use only two cat signal badges in human-visible reports:
+If the workflow router or start hook cannot run, stop and report the blocker
+before continuing. Keep its gate execution ledger current; each required gate
+must have evidence before completion. Show a short gate signal after each
+completed or failed gate or task step. Completion requires every required gate
+to be 🐱🟢 SUCCESS. Use only two cat signal badges in human-visible reports:
 🐱🟢 SUCCESS means executed with evidence, and 🐱🔴 FAIL means blocked, failed,
 missed, or missing evidence and triggers missed-gate recovery: stop
 finalization, roll back only dependent agent-made changes after the missed gate
 when safe, return to the first missed gate only, and run the retrospective
 workflow. The missed gate gets one recovery retry; do not restart the whole
 route. Do not report any third gate state.
-When the wrapper scripts are available, run `agent-preflight.py` before editing,
-reviewing, committing, or reporting completion, and run `agent-finish-check.py`
-before final report, commit, release, or handoff. Pass evidence for every route
-gate to the finish check. The wrappers write local evidence under
+When the wrapper scripts are available, run `agent-hook.py start` before
+editing, `agent-hook.py review` after the scoped diff is ready, and
+`agent-hook.py finish` before final report, commit, release, or handoff. Pass
+evidence for every route gate to the finish check. The wrappers write local
+evidence under
 `.agentplaybook/`; this directory is runtime evidence and should usually be
 gitignored. When executing wrapper commands from an agent runtime, resolve
 `<AGENTPLAYBOOK_ROOT>` to an absolute path first; do not leave `$HOME`,
@@ -110,6 +113,7 @@ Worktree hygiene: <AGENTPLAYBOOK_ROOT>/common/worktree-hygiene.md
 Defensive boundaries: <AGENTPLAYBOOK_ROOT>/common/defensive-boundaries.md
 UI visual verification: <AGENTPLAYBOOK_ROOT>/common/ui-visual-verification.md
 Workflow script: <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
+Agent hook wrapper: <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py
 Preflight evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
 Finish evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
 Android Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/android/android-compose-ui.md
