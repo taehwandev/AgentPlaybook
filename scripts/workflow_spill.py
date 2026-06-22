@@ -21,17 +21,33 @@ SPILL_SETUP_HELPER = (
     / "spill-token-metering-setup.mjs"
 )
 SPILL_ALLOWED_TOOLS = {"codex", "claude", "antigravity", "openai"}
+SPILL_TOOL_ALIASES = {"agy": "antigravity"}
+CODEX_RUNTIME_ENV_KEYS = ("CODEX_SANDBOX", "CODEX_THREAD_ID", "CODEX_CI")
 SAFE_WORKFLOW_SLUG_RE = re.compile(r"^[a-z][a-z0-9_]{1,40}$")
 REQUIRED_SPILL_ACTION_LABELS = {"classify", "list", "query", "validate"}
 
 
-def spill_tool_label() -> str:
-    tool = (
-        os.environ.get("SPILL_AI_TOOL")
-        or os.environ.get("SPILL_TOKEN_USAGE_AI_TOOL")
-        or "codex"
-    )
-    return tool if tool in SPILL_ALLOWED_TOOLS else "codex"
+def spill_tool_label(env: dict[str, str] | None = None) -> str:
+    values = env if env is not None else os.environ
+
+    explicit_tool = _normal_tool_label(values.get("AGENTPLAYBOOK_AI_TOOL", ""))
+    if explicit_tool:
+        return explicit_tool
+
+    if any(values.get(key) for key in CODEX_RUNTIME_ENV_KEYS):
+        return "codex"
+
+    for key in ("SPILL_TOKEN_USAGE_AI_TOOL", "SPILL_AI_TOOL"):
+        tool = _normal_tool_label(values.get(key, ""))
+        if tool:
+            return tool
+    return "codex"
+
+
+def _normal_tool_label(value: str) -> str:
+    tool = value.strip().lower()
+    tool = SPILL_TOOL_ALIASES.get(tool, tool)
+    return tool if tool in SPILL_ALLOWED_TOOLS else ""
 
 
 def write_spill_label(task_type: str, stage: str) -> None:

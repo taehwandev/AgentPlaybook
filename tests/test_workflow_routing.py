@@ -18,6 +18,7 @@ from workflow_gate_policy import (
     TEST_GATE,
 )
 from workflow_route import resolve_docs
+from workflow_spill import spill_tool_label
 
 
 class WorkflowRoutingTests(unittest.TestCase):
@@ -37,6 +38,16 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("agent_finish_final_checks.py", entries)
         self.assertIn("$AGENTPLAYBOOK_HOME/scripts/agent-hook.py", entries)
         self.assertIn("${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py", entries)
+
+    def test_spill_tool_label_prefers_codex_runtime_over_stale_spill_env(self) -> None:
+        label = spill_tool_label({"CODEX_SANDBOX": "seatbelt", "SPILL_AI_TOOL": "claude"})
+
+        self.assertEqual("codex", label)
+
+    def test_spill_tool_label_allows_explicit_agentplaybook_override(self) -> None:
+        label = spill_tool_label({"AGENTPLAYBOOK_AI_TOOL": "agy", "CODEX_SANDBOX": "seatbelt"})
+
+        self.assertEqual("antigravity", label)
 
     def test_code_route_gets_automatic_gates_and_docs(self) -> None:
         route = resolve_docs("feature", None, ["testing"], request_classified=True)

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import shutil
 import subprocess
@@ -14,277 +13,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_preflight_runtime import (
+    active_runtime_label,
+    agy_runtime_bridge_issue,
+    check_agent_hooks,
+)
+from agent_preflight_spill import write_spill_label
+
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
-_BASELINE_HOOK_RE = re.compile(r"workflow\.py.*route.*triage.*--request-classified")
-AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
-AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = [
-    "Antigravity reads AGENTS.md",
-    "Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
-    "Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
-    "If this bridge or the project-root AGENTS.md cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
-]
-
-
-DEFAULT_SPILL_SETUP_HELPER = (
-    Path.home()
-    / "Library/Application Support/Spill/adapters/setup/spill-token-metering-setup.mjs"
-)
-SPILL_ALLOWED_TOOLS = {"codex", "claude", "antigravity", "openai"}
-
-
-def spill_tool_label() -> str:
-    tool = (
-        os.environ.get("SPILL_AI_TOOL")
-        or os.environ.get("SPILL_TOKEN_USAGE_AI_TOOL")
-        or "codex"
-    ).strip().lower()
-    return tool if tool in SPILL_ALLOWED_TOOLS else "codex"
-
-
-def write_spill_label(task_type: str, stage: str) -> None:
-    if not _has_spill_setup_helper():
-        return
-    try:
-        subprocess.run(
-            [
-                "node",
-                str(_spill_setup_helper_path()),
-                "--label",
-                spill_tool_label(),
-                "--task-type",
-                task_type,
-                "--stage",
-                stage,
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-            timeout=5,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return
-
-
-def _spill_setup_helper_path() -> Path:
-    override = os.environ.get("AGENTPLAYBOOK_SPILL_HELPER_PATH", "")
-    return Path(override) if override else DEFAULT_SPILL_SETUP_HELPER
-
-
-def _has_spill_setup_helper() -> bool:
-    return _spill_setup_helper_path().is_file()
-
-
-def _check_agent_hooks(playbook_root: Path) -> tuple[list[str], list[str]]:
-    """Return warning and failure strings for missing runtime registrations."""
-    warnings: list[str] = []
-    failures: list[str] = []
-    spill_available = _has_spill_setup_helper()
-
-    codex_rules = Path.home() / ".codex" / "rules" / "default.rules"
-    if codex_rules.exists():
-        try:
-            missing_permissions = _missing_text_entries(
-                codex_rules.read_text(),
-                _codex_prefix_rule_entries(playbook_root),
-            )
-            if missing_permissions:
-                warnings.append(
-                    "Codex AgentPlaybook Python prefix rules are missing. "
-                    f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
-                )
-        except OSError:
-            pass
-
-    claude_settings = Path.home() / ".claude" / "settings.json"
-    if claude_settings.exists():
-        try:
-            config = json.loads(claude_settings.read_text())
-            if spill_available:
-                groups = config.get("hooks", {}).get("UserPromptSubmit", [])
-                has_baseline = any(
-                    _BASELINE_HOOK_RE.search(h.get("command", ""))
-                    and "SPILL_AI_TOOL=claude" in h.get("command", "")
-                    for g in groups
-                    for h in g.get("hooks", [])
-                )
-                if not has_baseline:
-                    warnings.append(
-                        "Claude Code UserPromptSubmit Spill workflow label hook is missing. "
-                        f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
-                    )
-                spill_tool = config.get("env", {}).get("SPILL_AI_TOOL", "")
-                if spill_tool != "claude":
-                    warnings.append(
-                        "env.SPILL_AI_TOOL is not set to 'claude' in ~/.claude/settings.json. "
-                        f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
-                    )
-            missing_permissions = _missing_allow_entries(
-                config,
-                _claude_permission_entries(playbook_root, spill_available=spill_available),
-            )
-            if missing_permissions:
-                warnings.append(
-                    "Claude Code AgentPlaybook Python permissions are missing. "
-                    f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
-                )
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    agy_targets = [
-        Path.home() / ".gemini" / "config" / "config.json",
-        Path.home() / ".gemini" / "antigravity-cli" / "settings.json",
-    ]
-    agy_entries = _agy_permission_entries(playbook_root, spill_available=spill_available)
-    agy_configs = []
-    for target in agy_targets:
-        if not target.exists():
-            continue
-        try:
-            data = json.loads(target.read_text())
-            if isinstance(data, dict):
-                agy_configs.append(data)
-        except (json.JSONDecodeError, OSError):
-            pass
-    if agy_configs and not any(
-        not _missing_allow_entries(config, agy_entries)
-        for config in agy_configs
-    ):
-        warnings.append(
-            "AGY AgentPlaybook Python permissions are missing from AGY config. "
-            f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
-        )
-
-    agy_bridge_issue = _agy_runtime_bridge_issue(playbook_root)
-    if agy_bridge_issue and _active_runtime_label() == "antigravity":
-        failures.append(agy_bridge_issue)
-    elif agy_bridge_issue and agy_configs:
-        warnings.append(agy_bridge_issue)
-
-    return warnings, failures
-
-
-def _active_runtime_label() -> str:
-    for key in ("AGENTPLAYBOOK_AI_TOOL", "SPILL_AI_TOOL", "SPILL_TOKEN_USAGE_AI_TOOL"):
-        value = os.environ.get(key, "").strip().lower()
-        if value in {"agy", "antigravity"}:
-            return "antigravity"
-        if value in {"codex", "claude", "openai"}:
-            return value
-    return ""
-
-
-def _agy_runtime_bridge_issue(playbook_root: Path) -> str:
-    try:
-        text = AGY_RUNTIME_BRIDGE_PATH.read_text()
-    except OSError:
-        return (
-            "AGY runtime bridge is missing required fail-closed instructions at "
-            f"{AGY_RUNTIME_BRIDGE_PATH}. Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
-        )
-    missing = [phrase for phrase in AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES if phrase not in text]
-    if not missing:
-        return ""
-    return (
-        "AGY runtime bridge is missing required fail-closed instructions at "
-        f"{AGY_RUNTIME_BRIDGE_PATH}. Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
-    )
-
-
-def _claude_permission_entries(playbook_root: Path, *, spill_available: bool = True) -> list[str]:
-    entries: list[str] = []
-    for script in _agentplaybook_python_scripts(playbook_root):
-        for command in _python_entrypoint_commands(script, "claude", include_spill_env=spill_available):
-            _add_permission_command_entries(entries, "Bash", command)
-    return entries
-
-
-def _agy_permission_entries(playbook_root: Path, *, spill_available: bool = True) -> list[str]:
-    entries: list[str] = []
-    for script in _agentplaybook_python_scripts(playbook_root):
-        for command in _python_entrypoint_commands(script, "antigravity", include_spill_env=spill_available):
-            _add_permission_command_entries(entries, "command", command)
-    return entries
-
-
-def _codex_prefix_rule_entries(playbook_root: Path) -> list[str]:
-    entries: list[str] = []
-    for script in _agentplaybook_python_scripts(playbook_root):
-        for path in _entrypoint_path_variants(script):
-            entries.append(_codex_prefix_rule(["python3", path]))
-    return entries
-
-
-def _agentplaybook_python_scripts(playbook_root: Path) -> list[Path]:
-    return sorted((playbook_root / "scripts").glob("*.py"))
-
-
-def _python_entrypoint_commands(script: Path, tool: str, *, include_spill_env: bool = True) -> list[str]:
-    commands: list[str] = []
-    env_prefixes = ("",)
-    if include_spill_env:
-        env_prefixes += (
-            f"SPILL_AI_TOOL={tool} ",
-            f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
-        )
-    for path in _entrypoint_path_variants(script):
-        for prefix in env_prefixes:
-            commands.append(f"{prefix}python3 {path}")
-    return commands
-
-
-def _entrypoint_path_variants(script: Path) -> list[str]:
-    raw = str(script)
-    variants = [
-        raw,
-        _quote(raw),
-        _double_quote(raw),
-    ]
-    return _dedupe(variants)
-
-
-def _add_permission_command_entries(entries: list[str], prefix: str, command: str) -> None:
-    entries.append(f"{prefix}({command})")
-    entries.append(f"{prefix}({command}:*)")
-    entries.append(f"{prefix}({command} *)")
-
-
-def _codex_prefix_rule(pattern: list[str]) -> str:
-    encoded = ", ".join(json.dumps(item) for item in pattern)
-    return f"prefix_rule(pattern=[{encoded}], decision=\"allow\")"
-
-
-def _missing_allow_entries(config: dict[str, Any], entries: list[str]) -> list[str]:
-    permissions = config.get("permissions")
-    if not isinstance(permissions, dict):
-        return entries
-    allow = permissions.get("allow")
-    if not isinstance(allow, list):
-        return entries
-    return [entry for entry in entries if entry not in allow]
-
-
-def _missing_text_entries(text: str, entries: list[str]) -> list[str]:
-    return [entry for entry in entries if entry not in text]
-
-
-def _quote(s: str) -> str:
-    return "'" + s.replace("'", "'\\''") + "'"
-
-
-def _double_quote(s: str) -> str:
-    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
-
-
-def _dedupe(values: list[str]) -> list[str]:
-    seen: set[str] = set()
-    result: list[str] = []
-    for value in values:
-        if value in seen:
-            continue
-        seen.add(value)
-        result.append(value)
-    return result
 
 
 def clean_output(text: str) -> str:
@@ -367,9 +104,7 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def main() -> int:
-    write_spill_label("analysis", "classify")
-    playbook_root = Path(__file__).resolve().parents[1]
+def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run route, git status, and VibeGuard before agent work."
     )
@@ -393,79 +128,64 @@ def main() -> int:
     parser.add_argument("--project", type=Path, default=Path.cwd())
     parser.add_argument("--rules", type=Path, default=playbook_root)
     parser.add_argument("--evidence", type=Path)
-    args = parser.parse_args()
-    if args.request_classified and not args.classification_evidence:
-        parser.error(
-            "--request-classified requires --classification-evidence so request "
-            "intake cannot be skipped silently"
-        )
+    return parser
 
-    project = args.project.resolve()
-    rules = args.rules.resolve()
-    evidence_path = (
+
+def resolve_evidence_path(args: argparse.Namespace, project: Path) -> Path:
+    return (
         args.evidence.resolve()
         if args.evidence
         else project / ".agentplaybook" / "preflight.json"
     )
 
-    early_bridge_failure = ""
-    if _active_runtime_label() == "antigravity":
-        early_bridge_failure = _agy_runtime_bridge_issue(playbook_root)
-    if early_bridge_failure:
-        evidence = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "playbook_root": str(playbook_root),
-            "project": str(project),
-            "rules": str(rules),
-            "request_intake": {
-                "request": args.request or "",
-                "request_classified": args.request_classified,
-                "classification_evidence": args.classification_evidence or "",
-            },
-            "early_runtime_bridge_failure": early_bridge_failure,
-        }
-        write_json(evidence_path, evidence)
-        print(f"Preflight evidence: {evidence_path}")
-        print(f"FAIL: {early_bridge_failure}", file=sys.stderr)
-        return 1
 
-    route_result = run_command(route_command(args, playbook_root), project)
-    route_payload: dict[str, Any] | None = None
-    route_parse_error = ""
-    if route_result["returncode"] == 0:
-        try:
-            route_payload = json.loads(route_result["stdout"])
-        except json.JSONDecodeError as error:
-            route_parse_error = str(error)
+def request_intake(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "request": args.request or "",
+        "request_classified": args.request_classified,
+        "classification_evidence": args.classification_evidence or "",
+    }
 
-    git_status = run_command(
-        ["git", "status", "--short", "--untracked-files=all"],
-        project,
-    )
-    vibeguard = run_command(vibeguard_command(project, rules), project)
-    vibeguard_output = vibeguard["stdout"] + "\n" + vibeguard["stderr"]
-    vibeguard["overall"] = parse_overall(vibeguard_output)
 
+def write_early_bridge_failure(
+    args: argparse.Namespace,
+    playbook_root: Path,
+    project: Path,
+    rules: Path,
+    evidence_path: Path,
+    failure: str,
+) -> int:
     evidence = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "playbook_root": str(playbook_root),
         "project": str(project),
         "rules": str(rules),
-        "request_intake": {
-            "request": args.request or "",
-            "request_classified": args.request_classified,
-            "classification_evidence": args.classification_evidence or "",
-        },
-        "route": route_payload,
-        "route_parse_error": route_parse_error,
-        "route_command": route_result,
-        "git_status": git_status,
-        "vibeguard": vibeguard,
+        "request_intake": request_intake(args),
+        "early_runtime_bridge_failure": failure,
     }
     write_json(evidence_path, evidence)
+    print(f"Preflight evidence: {evidence_path}")
+    print(f"FAIL: {failure}", file=sys.stderr)
+    return 1
 
-    hook_warnings, hook_failures = _check_agent_hooks(playbook_root)
 
+def parse_route_payload(route_result: dict[str, Any]) -> tuple[dict[str, Any] | None, str]:
+    if route_result["returncode"] != 0:
+        return None, ""
+    try:
+        return json.loads(route_result["stdout"]), ""
+    except json.JSONDecodeError as error:
+        return None, str(error)
+
+
+def collect_failures(
+    route_result: dict[str, Any],
+    route_payload: dict[str, Any] | None,
+    route_parse_error: str,
+    git_status: dict[str, Any],
+    vibeguard: dict[str, Any],
+    hook_failures: list[str],
+) -> list[str]:
     failures: list[str] = []
     if route_result["returncode"] != 0:
         failures.append("workflow route failed")
@@ -478,6 +198,55 @@ def main() -> int:
     if vibeguard["returncode"] != 0:
         failures.append("VibeGuard audit failed")
     failures.extend(hook_failures)
+    return failures
+
+
+def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
+    project = args.project.resolve()
+    rules = args.rules.resolve()
+    evidence_path = resolve_evidence_path(args, project)
+
+    early_bridge_failure = ""
+    if active_runtime_label() == "antigravity":
+        early_bridge_failure = agy_runtime_bridge_issue(playbook_root)
+    if early_bridge_failure:
+        return write_early_bridge_failure(
+            args,
+            playbook_root,
+            project,
+            rules,
+            evidence_path,
+            early_bridge_failure,
+        )
+
+    route_result = run_command(route_command(args, playbook_root), project)
+    route_payload, route_parse_error = parse_route_payload(route_result)
+    git_status = run_command(["git", "status", "--short", "--untracked-files=all"], project)
+    vibeguard = run_command(vibeguard_command(project, rules), project)
+    vibeguard["overall"] = parse_overall(vibeguard["stdout"] + "\n" + vibeguard["stderr"])
+
+    write_json(evidence_path, {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "playbook_root": str(playbook_root),
+        "project": str(project),
+        "rules": str(rules),
+        "request_intake": request_intake(args),
+        "route": route_payload,
+        "route_parse_error": route_parse_error,
+        "route_command": route_result,
+        "git_status": git_status,
+        "vibeguard": vibeguard,
+    })
+
+    hook_warnings, hook_failures = check_agent_hooks(playbook_root)
+    failures = collect_failures(
+        route_result,
+        route_payload,
+        route_parse_error,
+        git_status,
+        vibeguard,
+        hook_failures,
+    )
 
     print(f"Preflight evidence: {evidence_path}")
     if route_payload:
@@ -485,12 +254,22 @@ def main() -> int:
     print(f"VibeGuard overall: {vibeguard['overall']['status']}")
     for warning in hook_warnings:
         print(f"WARN: {warning}", file=sys.stderr)
+    for failure in failures:
+        print(f"FAIL: {failure}", file=sys.stderr)
+    return 1 if failures else 0
 
-    if failures:
-        for failure in failures:
-            print(f"FAIL: {failure}", file=sys.stderr)
-        return 1
-    return 0
+
+def main() -> int:
+    write_spill_label("analysis", "classify")
+    playbook_root = Path(__file__).resolve().parents[1]
+    parser = build_parser(playbook_root)
+    args = parser.parse_args()
+    if args.request_classified and not args.classification_evidence:
+        parser.error(
+            "--request-classified requires --classification-evidence so request "
+            "intake cannot be skipped silently"
+        )
+    return run_preflight(args, playbook_root)
 
 
 if __name__ == "__main__":
