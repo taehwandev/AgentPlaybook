@@ -7,8 +7,8 @@ type: human-reviewed-needed
 # Request Triage Workflow
 
 Use when the agent needs to decide whether a user request is clear, whether a
-question drill is needed, and what effort level or route should be used before
-planning or implementation.
+Grill-Me `/grilling` session is needed, and what effort level or route should be used
+before planning or implementation.
 
 ## Read
 
@@ -24,15 +24,18 @@ planning or implementation.
 2. Classify clarity: `direct-question`, `clear-exact`, `clear-scoped`,
    `vague-action`, `broad-product`, or `risky-unclear`.
 3. Select effort: `quick`, `standard`, `deep`, or `specialist`.
-4. If `direct-question`, answer before workflow routing, editing, or
+4. For requirements analysis, record the compact alignment brief before a
+   Grill-Me session: shared understanding, possible mismatch, and
+   unsupported assumptions or blocker questions.
+5. If `direct-question`, answer before workflow routing, editing, or
    project-specific commands. Stop unless a separate actionable request remains.
-5. If `clear-exact`, inspect the named target and avoid broad route loading.
-6. If `clear-scoped`, run the smallest matching workflow route.
-7. If `vague-action` or `risky-unclear`, run a question drill or ambiguity gate.
-8. If `broad-product`, use PRD/product workflow before implementation.
-9. Record the selected route only when it changes the work.
+6. If `clear-exact`, inspect the named target and avoid broad route loading.
+7. If `clear-scoped`, run the smallest matching workflow route.
+8. If `vague-action` or `risky-unclear`, run Grill-Me or use the ambiguity gate.
+9. If `broad-product`, use PRD/product workflow before implementation.
+10. Record the selected route only when it changes the work.
 
-## Question Drill Output
+## Grill-Me Output
 
 Use when clarification is the deliverable or blockers prevent safe work:
 

@@ -104,7 +104,8 @@ def _validate_alignment_brief(evidence: str) -> list[str]:
         return []
     return [
         "alignment brief evidence must state shared understanding, possible differences, "
-        "and unsupported assumptions/unknowns or minimal blocker questions before PRD/product work"
+        "and unsupported assumptions/unknowns or minimal blocker questions before requirements "
+        "analysis or modification work"
     ]
 
 

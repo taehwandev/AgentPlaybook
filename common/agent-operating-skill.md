@@ -10,28 +10,32 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 
 ## Core Loop
 
- 1. Identify the target project and task type.
- 2. Classify request clarity and effort before loading broad context. If the user asks a direct question, answer it before starting workflow routing, editing, or project-specific commands.
- 3. Read repo-local instructions before changing files.
- 4. Discover the project stack before choosing commands or libraries.
+1. Identify the target project and task type.
+2. Classify request clarity and effort before loading broad context. If the user asks a direct question, answer it before starting workflow routing, editing, or project-specific commands.
+3. Read repo-local instructions before changing files.
+4. Discover the project stack before choosing commands or libraries.
 5. For multi-step tasks, run `scripts/workflow.py route ... --request "<USER_REQUEST>"` before selecting task documents, editing, reviewing, committing, or reporting completion.
- 6. Check preflight's global lesson summary when available. Accepted or promoted
-    lessons from `~/.agentplaybook/` apply across repos unless repo-local
-    instructions conflict.
- 7. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
- 8. Use `index.md` to load only relevant AgentPlaybook cards.
- 9. Parallelize independent read-only orientation when the runtime supports it:
+6. For requirements analysis or modification work, give a compact alignment
+   brief before drafting requirements or changing files. State shared
+   understanding, possible mismatch, and unsupported assumptions or minimal
+   blocker questions. Do this even when the work is not PRD-sized.
+7. Check preflight's global lesson summary when available. Accepted or promoted
+   lessons from `~/.agentplaybook/` apply across repos unless repo-local
+   instructions conflict.
+8. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
+9. Use `index.md` to load only relevant AgentPlaybook cards.
+10. Parallelize independent read-only orientation when the runtime supports it:
     selected document reads, file searches, stack inspection, git status, and
     preflight evidence may run together after request intake is settled.
-10. Inspect existing code, docs, tests, and local conventions.
-11. Make the smallest change that genuinely addresses the request.
-12. For code work, record the multi-agent split decision before editing and use
+11. Inspect existing code, docs, tests, and local conventions.
+12. Make the smallest change that genuinely addresses the request.
+13. For code work, record the multi-agent split decision before editing and use
     parallel agents when scopes are disjoint and stable.
-13. Update/create affected docs and add/update/run the nearest useful test when
+14. Update/create affected docs and add/update/run the nearest useful test when
     code behavior or workflow policy changes.
-14. Verify with the narrowest reliable command first.
-15. Confirm the route gate ledger before reporting completion.
-16. Report what changed, what was verified, and what risk remains.
+15. Verify with the narrowest reliable command first.
+16. Confirm the route gate ledger before reporting completion.
+17. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -44,6 +48,10 @@ Before editing:
 - If a blocker unknown can change behavior, scope, risk, acceptance criteria, or
   verification and repo context cannot answer it, ask before editing. Do not
   invent product intent or acceptance criteria silently.
+- For requirements analysis, feature, bugfix, refactor, docs, workflow setup, or
+  other modification routes, record an alignment brief before drafting or
+  editing. It must be a concise same/different/assumption check, not a full
+  Grill-Me `/grilling` session unless blockers require one.
 - Check repo-local `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or equivalent docs.
 - Check stack manifests, lockfiles, and config before running commands, adding dependencies, or using framework-specific APIs.
 - Check whether the task touches data, auth, permissions, billing, persistence, filesystem, network, release, or external state.
@@ -84,7 +92,7 @@ Before finishing:
 
 ## Task Routing
 
-- Request clarity, question drill, model/effort routing, or token reduction: `common/task-intake-effort-routing.md` and `workflows/request-triage.md`.
+- Request clarity, Grill-Me, model/effort routing, or token reduction: `common/task-intake-effort-routing.md` and `workflows/request-triage.md`.
 - Scripted workflow route: `workflows/scripted-agent-workflow.md` and `scripts/workflow.py` are mandatory for multi-step tasks when the script is available. Pass `--request "<USER_REQUEST>"` so the script can block direct questions and unclear work before implementation. If the script cannot run, report the blocker before using `index.md` as a fallback.
 - Stack, package manager, framework, runtime, or command discovery: `common/stack-discovery.md`.
 - Failed commands, compiler errors, lint errors, or broken verification: `common/tool-failure-recovery.md`.

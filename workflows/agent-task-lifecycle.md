@@ -49,34 +49,38 @@ or task-specific workflow to load next.
 7. Global lessons: when preflight includes accepted or promoted lessons from
    `~/.agentplaybook/`, check whether any apply to the current task before
    editing or reviewing.
-8. Inspect: read existing code, docs, tests, commands, and current user changes
+8. Alignment brief: before requirements analysis or modification work, record
+   the shared understanding, possible mismatches, and unsupported assumptions or
+   minimal blocker questions. Do this even when the task is too small for a full
+   PRD or Grill-Me session.
+9. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
-9. Decide: make a reasonable assumption when safe; ask only when ambiguity
+10. Decide: make a reasonable assumption when safe; ask only when ambiguity
    changes result or risk.
-10. Act: execute the scoped work with periodic progress updates for long tasks.
-11. Verify: collect evidence with the narrowest reliable command or manual
+11. Act: execute the scoped work with periodic progress updates for long tasks.
+12. Verify: collect evidence with the narrowest reliable command or manual
     check. For usage telemetry, distinguish setup, label, hook, and diagnostic
     evidence from exact queued/imported usage event evidence.
-12. Recover: when a command fails, diagnose stdout/stderr and make the smallest
+13. Recover: when a command fails, diagnose stdout/stderr and make the smallest
     correction before retrying.
-13. Ledger check: before finalizing, compare required gates against executed
+14. Ledger check: before finalizing, compare required gates against executed
     evidence and `SUCCESS`/`FAIL` state. Completion requires every required gate
     to be `🐱🟢 SUCCESS`. If any required gate is missing, blocked, failed, or
     lacks evidence, report `🐱🔴 FAIL` and follow missed-gate recovery in
     `workflows/scripted-agent-workflow.md`.
-14. Retrospective restart: when finish-check sets `retrospective_required`, run
+15. Retrospective restart: when finish-check sets `retrospective_required`, run
     `workflows/retrospective-learning.md`, use or update the generated global
     lesson candidate when safe, then restart at the first missed gate or same
     failed scope.
-15. Review: inspect the final diff, output, or artifact against the request and
+16. Review: inspect the final diff, output, or artifact against the request and
     risks.
-16. Report: state what changed or was found, verification status, skipped
+17. Report: state what changed or was found, verification status, skipped
     checks, and residual risk.
 
 ## Route To
 
 - Product or feature delivery with PRD/ARD gates: `workflows/product-architecture-delivery.md`
-- Request clarity, effort routing, or question drill: `workflows/request-triage.md`
+- Request clarity, effort routing, or Grill-Me: `workflows/request-triage.md`
 - Lower-level coding work: `workflows/development-cycle.md`
 - Feature behavior: `workflows/feature-implementation.md`
 - Bug or regression: `workflows/bugfix-debugging.md`

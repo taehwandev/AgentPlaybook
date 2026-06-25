@@ -8,7 +8,8 @@ type: human-reviewed-needed
 
 Use before PRD, ARD, task breakdown, implementation plan, or code work when the request has unknowns that could change behavior, scope, risk, or verification.
 
-For initial request clarity, effort level, token budget, and question-drill decisions, also use `../common/task-intake-effort-routing.md`.
+For initial request clarity, effort level, token budget, and Grill-Me skill
+decisions, also use `../common/task-intake-effort-routing.md`.
 
 ## Core Rule
 
@@ -34,17 +35,23 @@ When a blocker exists, asking is mandatory. Continuing into PRD, ARD, planning,
 implementation, review, or commit without blocker-question evidence is a
 workflow failure.
 
-## Question Drill
+## Grill-Me Skill
 
-Use a question drill when the user asks the agent to refine the request, or when the request is too vague to classify without inventing behavior.
+Use the Grill-Me skill when the user asks the agent to refine the request, or
+when the request is too vague to classify without inventing behavior.
 
 Examples:
 
 - "Change the button on home" usually needs a drill unless the repo has one obvious home button and a reversible local pattern.
 - "Improve the X button in `HomeScreen`" is usually scoped enough to inspect `HomeScreen` first and ask only if behavior or acceptance remains unclear.
-- A pasted compiler/test/runtime error is usually clear enough for quick or standard debugging without a drill.
+- A pasted compiler/test/runtime error is usually clear enough for quick or standard debugging without Grill-Me.
 
-Do not use the drill as ceremony for clear low-risk tasks.
+Do not invoke Grill-Me as ceremony for clear low-risk tasks.
+
+When Grill-Me is not needed, still record the alignment brief before
+requirements analysis or modification work: what is understood the same way,
+what may differ, and which unsupported assumption is safe by default. This brief
+is the minimum check; Grill-Me is for blockers or explicit user request.
 
 ## Mandatory Blockers
 
@@ -65,7 +72,9 @@ Stop and ask when any of these are unclear:
 - Ask up to five only when multiple high-risk blockers exist.
 - Each question should name the decision being made and why it matters.
 - Do not ask preference questions already settled by repo docs, product docs, architecture docs, existing UI, or platform constraints.
-- Batch questions once, then wait. Do not proceed into PRD, ARD, or implementation while blockers remain.
+- Ask one Grill-Me question at a time with its recommended answer when the
+  runtime supports that interaction pattern. Do not proceed into PRD, ARD, or
+  implementation while blockers remain.
 
 When blocked, use this shape:
 

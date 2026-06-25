@@ -49,7 +49,7 @@ def build_result(
     gate_evidence: dict[str, str],
     gate_signals: list[dict[str, str]],
     missed_gates: list[str],
-    question_drill_required: bool,
+    grill_me_required: bool,
     retrospective_required: bool,
     validate: dict[str, Any],
     diff_check: dict[str, Any],
@@ -70,7 +70,8 @@ def build_result(
         "gate_evidence": gate_evidence,
         "gate_signals": gate_signals,
         "missed_gates": missed_gates,
-        "question_drill_required": question_drill_required,
+        "grill_me_required": grill_me_required,
+        "question_drill_required": grill_me_required,
         "retrospective_required": retrospective_required,
         "allow_vibeguard_review": args.allow_vibeguard_review,
         "validate": validate,
@@ -114,7 +115,7 @@ def main() -> int:
         gate_signals,
         failures,
     )
-    question_drill_required = check_request_intake(
+    grill_me_required = check_request_intake(
         route,
         preflight.get("request_intake") or {},
         route.get("request_classification") or {},
@@ -154,7 +155,7 @@ def main() -> int:
         gate_evidence=gate_evidence,
         gate_signals=gate_signals,
         missed_gates=missed_gates,
-        question_drill_required=question_drill_required,
+        grill_me_required=grill_me_required,
         retrospective_required=retrospective_required,
         validate=validate,
         diff_check=diff_check,

@@ -23,14 +23,17 @@ Missing wrapper evidence or missing route gate evidence is non-compliant.
 The route output also includes a `Required Hooks` section. Follow it as the
 executable workflow checklist; if a route contains a `review hook` gate, the
 finish check must receive Review Hook evidence for that gate.
-Work-producing routes also carry automatic gates for ambiguity, documentation,
-tests, and multi-agent split decisions. Treat those gates as mandatory evidence,
-not suggestions. If ambiguity can change behavior, scope, risk, or verification,
-ask the blocker question before editing. If code changes, add/update/run the
-nearest useful test or record a specific skipped-test reason. If docs are absent
-but the change creates durable behavior or workflow policy, create the docs
-instead of leaving the gate empty. For code work, use parallel/multi-agent
-slices when scopes are disjoint; otherwise record the serial/small-scope reason.
+Work-producing routes also carry automatic gates for ambiguity, alignment,
+documentation, tests, and multi-agent split decisions. Treat those gates as
+mandatory evidence, not suggestions. If requirements analysis or modification
+work is involved, provide the compact same/different/assumption alignment brief
+before drafting or editing. If ambiguity can change behavior, scope, risk, or
+verification, ask the blocker question before editing. If code changes,
+add/update/run the nearest useful test or record a specific skipped-test reason.
+If docs are absent but the change creates durable behavior or workflow policy,
+create the docs instead of leaving the gate empty. For code work, use
+parallel/multi-agent slices when scopes are disjoint; otherwise record the
+serial/small-scope reason.
 
 Discover available scripted commands with:
 
@@ -127,15 +130,15 @@ the update.
   and final VibeGuard state. Use `--gate "<gate>=<evidence>"` for each required
   gate from the start evidence. If `review hook` is one of those gates, missing
   Review Hook evidence is a workflow failure. It also validates automatic gate
-  evidence for ambiguity, documentation, tests, and multi-agent split decisions;
-  vague placeholders such as "done" are failures.
+  evidence for ambiguity, alignment, documentation, tests, and multi-agent split
+  decisions; vague placeholders such as "done" are failures.
 
 ## Current Workflows
 
 - `agent-task-lifecycle.md`: route any agent task from intake to report.
 - `agent-handoff-continuation.md`: preserve state across interruption, resume, or handoff.
 - `scripted-agent-workflow.md`: define script-backed command routing for agents.
-- `request-triage.md`: classify request clarity, question-drill need, and effort before broad context loading.
+- `request-triage.md`: classify request clarity, Grill-Me need, and effort before broad context loading.
 - `ambiguity-gate.md`: classify blockers, researchable unknowns, safe assumptions, and out-of-scope items before PRD, ARD, or implementation.
 - `prd-creation.md`: write a PRD or product requirements note before ARD or code.
 - `product-architecture-delivery.md`: run PRD -> ARD -> review -> code -> review -> tests -> UI tests -> commit readiness with `product`.

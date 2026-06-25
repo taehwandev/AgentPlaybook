@@ -10,7 +10,7 @@ from workflow_common import ANSWER_ONLY_CLARITY, QUESTION_ROUTE_COMMANDS, unique
 from workflow_request_patterns import (
     BROAD_PATTERNS,
     DIRECT_QUESTION_PATTERNS,
-    DRILL_PHRASES,
+    GRILL_ME_REQUEST_PATTERNS,
     EXACT_PATTERNS,
     QUESTION_ACTION_PATTERNS,
     RISKY_PATTERNS,
@@ -41,6 +41,7 @@ def classify_request(text: str) -> dict[str, object]:
         "clarity": flags["clarity"],
         "effort": flags["effort"],
         "recommended_route": route,
+        "grill_me": question_drill,
         "question_drill": question_drill,
         "response_mode": response_mode,
         "reason": reason,
@@ -62,7 +63,7 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
     has_direct_question = _matches(DIRECT_QUESTION_PATTERNS, lowered)
     asks_agent_action = _matches(QUESTION_ACTION_PATTERNS, lowered)
     short_without_target = len(normalized.split()) <= 8 and not (has_exact or has_scoped)
-    asks_drill = any(phrase in lowered for phrase in DRILL_PHRASES)
+    asks_drill = _matches(GRILL_ME_REQUEST_PATTERNS, lowered)
     return {
         "has_exact": has_exact,
         "has_scoped": has_scoped,
@@ -97,7 +98,7 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
     if asks_drill:
         flags["clarity"] = "vague-action"
         flags["effort"] = "deep" if has_broad or has_risky else "standard"
-        return "triage", True, "clarify_first", "The request explicitly asks for a question drill before work."
+        return "triage", True, "clarify_first", "The request explicitly asks for the Grill-Me skill before work."
     if has_broad and not has_exact:
         flags["clarity"] = "broad-product"
         flags["effort"] = "deep"
@@ -138,7 +139,7 @@ def print_classification(result: dict[str, object]) -> None:
     print(f"Clarity: `{result['clarity']}`")
     print(f"Effort: `{result['effort']}`")
     print(f"Recommended route: `{result['recommended_route']}`")
-    print(f"Question drill: `{str(result['question_drill']).lower()}`")
+    print(f"Grill-Me skill: `{str(result['grill_me']).lower()}`")
     print(f"Response mode: `{result['response_mode']}`")
     print()
     print(f"Reason: {result['reason']}")
@@ -151,7 +152,8 @@ def print_classification(result: dict[str, object]) -> None:
         print("- Do not start a workflow route, edit files, or run project-specific work unless a separate action remains.")
     elif result["question_drill"]:
         print("- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route triage --request \"<request text>\"`.")
-        print("- Ask only blocker questions after checking available local context.")
+        print("- Use the Grill-Me skill's `/grilling` session after checking available local context.")
+        print("- If the skill is unavailable, report that blocker instead of substituting manual questions.")
     else:
         print(
             f"- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route {result['recommended_route']} "
@@ -183,7 +185,7 @@ def route_block_reason(
     if classification["question_drill"] and command not in QUESTION_ROUTE_COMMANDS:
         return (
             f"The current request needs clarification before route `{command}`. "
-            "Use `triage` or `ambiguity`, ask the blocker questions, and rerun the work route "
-            "only after the request is clear."
+            "Use `triage` or `ambiguity`, run the Grill-Me skill's `/grilling` session, "
+            "and rerun the work route only after the request is clear."
         )
     return None

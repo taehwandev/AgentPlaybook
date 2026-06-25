@@ -7,8 +7,8 @@ type: human-reviewed-needed
 # Task Intake And Effort Routing
 
 Use at the start of an agent conversation or task when deciding whether the
-request is clear enough, whether to ask a clarification drill, and how much
-model effort, context loading, and workflow depth the task deserves.
+request is clear enough, whether Grill-Me skill clarification is required, and
+how much model effort, context loading, and workflow depth the task deserves.
 
 The goal is to use the lowest capable effort level without skipping safety,
 verification, or repo-local rules.
@@ -22,7 +22,7 @@ Classify the request before loading many documents or doing deep reasoning.
 | `direct-question` | Asks for an explanation, timing, policy, status, or meaning without asking the agent to change files or run work. | Answer first. Do not start workflow routing, editing, or project-specific commands unless a separate action remains. If the question asks how to start app, product, or feature work, the answer must include the PRD -> ARD -> implementation path before lower-level coding steps. |
 | `clear-exact` | Names a file, symbol, command, error, stack trace, failing test, or precise behavior. | Use quick or standard effort; inspect the named target first. |
 | `clear-scoped` | Names a screen/component/feature and intended change, but local context is needed. | Use standard effort; inspect local code and route to the matching platform card. |
-| `vague-action` | Says "fix", "improve", "clean up", "make better", or similar without target behavior. | Use ambiguity gate or question drill before implementation. |
+| `vague-action` | Says "fix", "improve", "clean up", "make better", or similar without target behavior. | Use ambiguity gate or the Grill-Me skill before implementation. |
 | `broad-product` | Asks for a new feature, architecture, PRD, multi-screen flow, data model, billing/auth, or release behavior. | Use product/PRD route and deeper effort. |
 | `risky-unclear` | Could affect data, security, money, permissions, destructive changes, migrations, deploys, or external state. | Stop for blocker questions or approval. |
 
@@ -75,41 +75,61 @@ Do not default to the strongest model, longest reasoning, or full-document
 loading when the request is clear and low risk. Escalate when evidence shows the
 task is broader or riskier than first classified.
 
-## Question Drill
+## Grill-Me Skill
 
-A question drill is included, but it is not the default for every request. Use it
-when the user wants requirements discovery, the request is `vague-action`, or
-unknowns can change behavior, scope, risk, or verification.
+Grill-Me is a skill that runs a `/grilling` session to pressure-test a plan or
+design. It asks one question at a time, gives a recommended answer, waits for
+feedback, and continues until the decision tree is resolved. It is not the
+default for every request. Use it when the user asks for Grill-Me, wants
+requirements discovery, the request is `vague-action`, or unknowns can change
+behavior, scope, risk, or verification.
 
-For `prd` and `product` routes, always provide a compact alignment brief before
-drafting PRD content. This is not the same as a question drill. The brief must
+For requirements analysis and modification routes, always provide a compact
+alignment brief before drafting requirements or changing files. This is not the
+same as invoking Grill-Me and it is not limited to PRD work. The brief must
 surface what the agent and user appear to share, what may differ, and what is an
 unsupported assumption or unknown. Ask only one to three blocker questions when
 the answer changes behavior, risk, architecture, acceptance criteria, or
 verification; otherwise state the default assumption.
 
-Drill rules:
+Grill-Me rules:
 
-- Ask only blocker questions after checking available conversation and repo
-  context.
-- Ask one to three concise questions per pass.
+- Invoke the actual Grill-Me skill when it is available. Do not silently
+  replace it with agent-written questions.
+- If the Grill-Me skill is unavailable, stop and report the missing skill
+  instead of treating manual questions as completed Grill-Me evidence.
+- Feed Grill-Me only the minimum safe task summary and public or repo-safe facts
+  needed to ask blocker questions.
+- If an answer can be found by inspecting the codebase, inspect the code instead
+  of asking the user to explain existing behavior.
+- Ask only blocker questions returned by Grill-Me after checking available
+  conversation and repo context.
+- Ask one question at a time unless the skill output explicitly requires
+  grouping.
+- Include the skill's recommended answer and tradeoff when presenting the
+  question.
+- Wait for feedback before continuing Grill-Me.
+- Ask one to three concise questions per pass only when the runtime requires a
+  batched question format or the skill output is
+  explicitly scoped otherwise.
 - Prefer concrete choices with tradeoffs and a recommended default when the
   runtime allows structured choices.
-- Stop the drill when the task can be classified as `clear-exact`,
+- Stop Grill-Me when the task can be classified as `clear-exact`,
   `clear-scoped`, or `broad-product` with known acceptance criteria.
-- Do not use a drill to delay a clear low-risk task.
+- Do not invoke Grill-Me to delay a clear low-risk task.
 - Do not ask questions that repo-local docs, code, tests, PRD/ARD docs, or error
   output can answer.
 
 If the user explicitly asks for "grill me", "ask me questions", "help define
-requirements", or equivalent wording, run the drill as the deliverable until
-enough decisions are captured.
-For Korean requests, treat "그릴미" as the same explicit drill request.
+requirements", or equivalent wording, use Grill-Me as the deliverable until
+enough decisions are captured. Treat "그릴미" as an explicit Grill-Me request.
 When wrapper evidence is available, a route classification with
-`question_drill: true` must finish with question-drill evidence such as
-`question drill if needed=<evidence>` or `ask blockers=<evidence>`. Missing
-drill evidence is `🐱🔴 FAIL` and requires missed-gate recovery plus the
-retrospective workflow before final report, commit, release, or handoff.
+`grill_me: true` or legacy `question_drill: true` must finish with Grill-Me
+skill evidence such as `grill-me if needed=</grilling session/output evidence>`.
+Legacy `question drill if needed=<evidence>` is accepted only when the evidence
+still names the Grill-Me skill or `/grilling` session and output. Missing Grill-Me
+evidence is `🐱🔴 FAIL` and requires missed-gate recovery plus the retrospective
+workflow before final report, commit, release, or handoff.
 
 ## Token Controls
 
@@ -120,7 +140,8 @@ retrospective workflow before final report, commit, release, or handoff.
   low-risk answer-only tasks after answering them.
 - Use `scripts/workflow.py route <command> --request "<request>"` for multi-step
   routes. If the script reports `direct-question`, answer before routing. If it
-  reports `question_drill: true`, use `triage` or `ambiguity` before work.
+  reports `grill_me: true` or legacy `question_drill: true`, use `triage` or
+  `ambiguity` and a Grill-Me `/grilling` session before work.
 - Route after classification: load only the command/platform/concern cards that
   match the task.
 - For exact errors, read the error output, referenced files, and nearby code
@@ -151,7 +172,7 @@ Intake is verified when the route and effort explain:
 
 - why the request is answer-only, exact, scoped, vague, broad, or risky
 - which repo-local or AgentPlaybook documents must be read before work
-- which gate or question drill blocks implementation, if any
+- which gate or Grill-Me skill use blocks implementation, if any
 - which verification surface will prove the request when work is complete
 
 When a scripted route is used, the route output and wrapper preflight evidence

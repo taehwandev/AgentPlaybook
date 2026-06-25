@@ -13,7 +13,7 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Agent operating baseline: `common/agent-operating-skill.md`
 - User questions, approvals, status updates, and handoff messages:
   `common/agent-interaction.md`
-- Request clarity, model/effort routing, token controls, question drill:
+- Request clarity, model/effort routing, token controls, Grill-Me:
   `common/task-intake-effort-routing.md`
 - All coding work: `common/llm-coding-discipline.md`
 - Code conventions, naming, comments, formatting: `common/code-conventions.md`

@@ -37,8 +37,8 @@ the runtime requires one short question, ask one short question. Use structured
 choices only when they are allowed by the active runtime and helpful for the
 decision.
 
-Use `task-intake-effort-routing.md` to decide whether the request needs a
-question drill or can proceed with quick/standard effort.
+Use `task-intake-effort-routing.md` to decide whether the request needs the
+Grill-Me skill or can proceed with quick/standard effort.
 
 When a question is needed:
 
@@ -59,14 +59,19 @@ Decision needed:
 Default if safe:
 ```
 
-## Question Drill
+## Grill-Me Skill
 
-A question drill is a short sequence of blocker questions used to turn a vague
-request into a clear task. Use it only when the user asks for requirements
-discovery or when ambiguity changes behavior, risk, scope, or verification.
+Grill-Me is the skill used to run a `/grilling` session that turns a vague
+request into blocker questions and captured decisions. Use it only when the user
+asks for Grill-Me or requirements discovery, or when ambiguity changes behavior,
+risk, scope, or verification.
 
-- Do not drill when the request names a file, symbol, error, or exact behavior
-  and local inspection can answer the remaining details.
+- Do not invoke Grill-Me when the request names a file, symbol, error, or exact
+  behavior and local inspection can answer the remaining details.
+- If the Grill-Me skill is unavailable when required, report that blocker
+  instead of silently asking manual replacement questions.
+- Ask one Grill-Me question at a time with the recommended answer when the
+  runtime supports that interaction pattern.
 - Do not ask more than one pass of questions unless the user's answer creates a
   new blocker.
 - Match the user's language in the conversation.

@@ -4,23 +4,24 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from agent_finish_common import add_gate_signal, append_unique
 from agent_finish_gate_policy import validate_gate_evidence
+from workflow_request_patterns import GRILL_ME_REQUEST_PATTERNS
 
 
-QUESTION_DRILL_PHRASES = (
-    "grill me",
-    "ask me questions",
-    "help define requirements",
-    "question drill",
+LEGACY_GRILL_ME_FLAGS = (
+    "grill_me: true",
+    "grill_me true",
     "question_drill: true",
     "question_drill true",
-    "\uadf8\ub9b4\ubbf8",
 )
-QUESTION_DRILL_EVIDENCE_GATES = (
+GRILL_ME_EVIDENCE_GATES = (
+    "grill-me if needed",
+    "grill-me",
     "question drill if needed",
     "ask blockers",
     "question drill",
@@ -103,31 +104,39 @@ def check_request_intake(
         )
         failures.append("--request-classified used without classification evidence")
 
-    question_drill_required = question_drill_requested(
+    grill_me_required = grill_me_requested(
         _request_text(request_intake, request_classification)
     )
-    drill_gate = next((gate for gate in QUESTION_DRILL_EVIDENCE_GATES if gate_evidence.get(gate)), "")
-    if question_drill_required and drill_gate:
-        add_gate_signal(
-            gate_signals,
-            "SUCCESS",
-            "question drill",
-            "executed",
-            f"{drill_gate}: {gate_evidence[drill_gate]}",
-        )
-    elif question_drill_required:
-        append_unique(missed_gates, "question drill")
+    grill_me_gate = next((gate for gate in GRILL_ME_EVIDENCE_GATES if gate_evidence.get(gate)), "")
+    if grill_me_required and grill_me_gate:
+        evidence = gate_evidence[grill_me_gate]
+        evidence_failures = validate_grill_me_skill_evidence(evidence)
+        if evidence_failures:
+            append_unique(missed_gates, "grill-me")
+            for failure in evidence_failures:
+                add_gate_signal(gate_signals, "FAIL", "grill-me", "failed", failure)
+                failures.append(failure)
+        else:
+            add_gate_signal(
+                gate_signals,
+                "SUCCESS",
+                "grill-me",
+                "executed",
+                f"{grill_me_gate}: {evidence}",
+            )
+    elif grill_me_required:
+        append_unique(missed_gates, "grill-me")
         add_gate_signal(
             gate_signals,
             "FAIL",
-            "question drill",
+            "grill-me",
             "missed",
-            "request classification required a question drill but no drill evidence was provided",
+            "request classification required the Grill-Me skill but no Grill-Me evidence was provided",
         )
         failures.append(
-            "question drill was required by request classification but no question-drill gate evidence was provided"
+            "Grill-Me skill was required by request classification but no Grill-Me gate evidence was provided"
         )
-    return question_drill_required
+    return grill_me_required
 
 
 def check_preflight_vibeguard(preflight: dict[str, Any], failures: list[str]) -> None:
@@ -141,9 +150,64 @@ def check_preflight_vibeguard(preflight: dict[str, Any], failures: list[str]) ->
         failures.append("preflight VibeGuard overall status could not be parsed")
 
 
-def question_drill_requested(text: str) -> bool:
+def grill_me_requested(text: str) -> bool:
     lowered = text.lower()
-    return any(phrase in lowered for phrase in QUESTION_DRILL_PHRASES)
+    return any(flag in lowered for flag in LEGACY_GRILL_ME_FLAGS) or any(
+        re.search(pattern, lowered) for pattern in GRILL_ME_REQUEST_PATTERNS
+    )
+
+
+def validate_grill_me_skill_evidence(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    names_skill = any(
+        phrase in text
+        for phrase in ("grill-me", "grill me", "grillme", "/grilling", "grilling", "\uadf8\ub9b4\ubbf8")
+    )
+    names_session = any(
+        phrase in text
+        for phrase in (
+            "skill",
+            "/grilling",
+            "grilling",
+            "session",
+            "started",
+            "ran",
+            "used",
+            "invocation",
+            "invoked",
+            "output",
+            "result",
+        )
+    )
+    names_outcome = any(
+        phrase in text
+        for phrase in (
+            "completed",
+            "asked",
+            "answered",
+            "blocker",
+            "questions",
+            "one question",
+            "recommended answer",
+            "feedback",
+            "decisions",
+            "resolved",
+            "no blockers",
+            "clarified",
+        )
+    )
+    if names_skill and names_session and names_outcome:
+        return []
+    return [
+        "Grill-Me evidence must name the Grill-Me skill or /grilling session and its output; "
+        "manual blocker questions alone are not enough"
+    ]
+
+
+question_drill_requested = grill_me_requested
+validate_grill_me_service_evidence = validate_grill_me_skill_evidence
 
 
 def _request_text(request_intake: dict[str, Any], request_classification: dict[str, Any]) -> str:

@@ -174,7 +174,8 @@ evidence or missing gate evidence is non-compliant even if the final files look
 correct. If final VibeGuard is Needs review, report it explicitly and pass
 --allow-vibeguard-review with a reason only when that review state is
 acceptable. If --request-classified is used, include classification evidence. If
-the request asks for a question drill, missing drill evidence is 🐱🔴 FAIL.
+the request asks for Grill-Me, missing Grill-Me `/grilling` session evidence is
+🐱🔴 FAIL.
 
 After connecting it, verify that the referenced AgentPlaybook AGENTS.md and
 index.md files exist, confirm the VibeGuard gate is passing, then continue with

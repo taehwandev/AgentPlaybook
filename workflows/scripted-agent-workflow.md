@@ -41,13 +41,14 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<request text>"
 ```
 
 `classify` outputs the clarity label, effort level, recommended route command,
-whether a question drill is needed, response mode, and a short reason. Use the
-recommended route as the `<command>` argument to `route`. If `response_mode:
+whether the Grill-Me skill is needed, response mode, and a short reason. Use
+the recommended route as the `<command>` argument to `route`. If `response_mode:
 answer_first`, answer the user before routing or editing. When an answer-first
 question asks how to start app, product, or feature work, the answer must include
 PRD -> ARD -> implementation gates before lower-level coding steps. If
-`question_drill: true`, run the recommended route (typically `triage` or
-`ambiguity`) with `--request` and ask only the missing blocker questions before
+`grill_me: true` or legacy `question_drill: true`, run the recommended route
+(typically `triage` or `ambiguity`) with `--request`, run a Grill-Me
+`/grilling` session, and ask only the missing blocker questions before
 proceeding.
 
 Discover the supported values from the script itself:
@@ -216,10 +217,10 @@ command profile forgets them:
   can change behavior, scope, risk, acceptance criteria, or verification, stop
   and ask the maintainer before editing. Do not continue with silent invented
   assumptions.
-- `alignment brief`: before PRD or product delivery work, show the user a compact
-  same/different/assumption summary. This is required even when a full question
-  drill is not needed. It should reduce later rework, not become a long
-  questionnaire.
+- `alignment brief`: before requirements analysis, PRD/product delivery, or
+  modification work, show the user a compact same/different/assumption summary.
+  This is required even when the Grill-Me skill is not needed. It should
+  reduce later rework, not become a long questionnaire.
 - `documentation`: update or create the relevant source-of-truth docs, or record
   why docs are not applicable or intentionally unchanged.
 - `tests`: add, update, or run the closest useful test/check for code work. A
@@ -381,11 +382,13 @@ When `--request-classified` is used, it must also record
 It also writes `gate_signals`, `missed_gates`, and
 `retrospective_required`. When `retrospective_required` is true, it writes a
 safe lesson candidate under `~/.agentplaybook/lessons/inbox/` when permitted.
-If the route classification or stored request text requires a question drill,
-the finish check must receive drill evidence through a gate such as
-`question drill if needed=<evidence>` or `ask blockers=<evidence>`. Missing
-drill evidence is a `🐱🔴 FAIL` signal and blocks completion until missed-gate
-recovery and retrospective learning run.
+If the route classification or stored request text requires Grill-Me, the finish
+check must receive Grill-Me skill evidence through a gate such as
+`grill-me if needed=</grilling session/output evidence>`. Legacy
+`question drill if needed=<evidence>` is accepted only when it still names the
+Grill-Me skill or `/grilling` session and output. Missing Grill-Me evidence is a
+`🐱🔴 FAIL` signal and blocks completion until missed-gate recovery and
+retrospective learning run.
 Human-visible wrapper output uses only `🐱🟢 SUCCESS` and `🐱🔴 FAIL`.
 
 Treat missing wrapper evidence as non-compliant. If the wrappers are unavailable,
@@ -422,7 +425,7 @@ the missed gate, the rollback status, and the retrospective summary.
 
 The current script exposes these stable command profiles:
 
-- `triage`: request clarity, effort routing, and blocker-question drill.
+- `triage`: request clarity, effort routing, and Grill-Me blocker questions.
 - `workflow-setup`: local agent prompt, hook, workflow label bridge, or metering setup.
 - `docs-review`: documentation review with wiki/doc-maintenance checks.
 - `task`: general multi-step agent work.

@@ -116,7 +116,7 @@ def print_route(args: argparse.Namespace) -> int:
             print(
                 f"Classification: {request_classification['clarity']} / "
                 f"response_mode: {request_classification['response_mode']} / "
-                f"question_drill: {str(request_classification['question_drill']).lower()}",
+                f"grill_me: {str(request_classification['grill_me']).lower()}",
                 file=sys.stderr,
             )
         return 2

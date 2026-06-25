@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from agent_finish_gate_policy import validate_gate_evidence
+from agent_finish_check_steps import check_request_intake, validate_grill_me_skill_evidence
 from agent_global_lessons import lesson_summary, write_retrospective_candidate
 from support.permission_entries import codex_prefix_rule_entries
 from workflow_catalog import CONCERNS
@@ -23,8 +24,10 @@ from workflow_gate_policy import (
     MULTI_AGENT_GATE,
     SIDE_EFFECT_AUDIT_GATE,
     TEST_GATE,
+    ALIGNMENT_BRIEF_COMMANDS,
 )
 from workflow_request import infer_concerns_from_request
+from workflow_request import classify_request
 from workflow_route import resolve_docs
 from workflow_spill import spill_tool_label
 
@@ -137,6 +140,117 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertLess(
             product_route["gates"].index(ALIGNMENT_BRIEF_GATE),
             product_route["gates"].index("PRD"),
+        )
+        self.assertIn("workflows/prd-creation.md", prd_route["docs"])
+        self.assertIn("workflows/prd-creation.md", product_route["docs"])
+
+    def test_modify_and_analysis_routes_require_alignment_brief(self) -> None:
+        for command in sorted(ALIGNMENT_BRIEF_COMMANDS):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(ALIGNMENT_BRIEF_GATE, route["gates"])
+
+    def test_feature_alignment_runs_before_acceptance_criteria(self) -> None:
+        route = resolve_docs("feature", None, [], request_classified=True)
+
+        self.assertLess(
+            route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            route["gates"].index("acceptance criteria"),
+        )
+        self.assertIn("common/task-intake-effort-routing.md", route["docs"])
+
+    def test_grill_me_request_uses_triage_and_grill_gate(self) -> None:
+        classification = classify_request("그릴미 해줘")
+        route = resolve_docs("triage", None, [], request_classified=True)
+
+        self.assertTrue(classification["grill_me"])
+        self.assertTrue(classification["question_drill"])
+        self.assertEqual("triage", classification["recommended_route"])
+        self.assertIn("grill-me if needed", route["gates"])
+
+    def test_grill_me_policy_mention_does_not_require_grill_session(self) -> None:
+        classification = classify_request("`scripts/workflow_request.py`의 grill-me skill evidence policy를 수정해줘")
+
+        self.assertFalse(classification["grill_me"])
+        self.assertEqual("work", classification["response_mode"])
+
+    def test_grill_me_evidence_requires_skill_session(self) -> None:
+        self.assertEqual(
+            [
+                "Grill-Me evidence must name the Grill-Me skill or /grilling session and its output; "
+                "manual blocker questions alone are not enough"
+            ],
+            validate_grill_me_skill_evidence("asked blocker questions manually"),
+        )
+        self.assertEqual(
+            [],
+            validate_grill_me_skill_evidence(
+                "Grill-Me skill /grilling session output completed: asked one blocker question "
+                "with recommended answer and decisions resolved"
+            ),
+        )
+
+    def test_invalid_grill_me_finish_evidence_is_missed_gate(self) -> None:
+        gate_signals: list[dict[str, str]] = []
+        missed_gates: list[str] = []
+        failures: list[str] = []
+
+        required = check_request_intake(
+            {},
+            {"request": "그릴미 해줘"},
+            {},
+            {"grill-me if needed": "asked blocker questions manually"},
+            gate_signals,
+            missed_gates,
+            failures,
+        )
+
+        self.assertTrue(required)
+        self.assertIn("grill-me", missed_gates)
+        self.assertTrue(any("manual blocker questions alone are not enough" in failure for failure in failures))
+
+    def test_grill_me_policy_classification_evidence_does_not_require_session(self) -> None:
+        gate_signals: list[dict[str, str]] = []
+        missed_gates: list[str] = []
+        failures: list[str] = []
+
+        required = check_request_intake(
+            {},
+            {
+                "request_classified": True,
+                "classification_evidence": (
+                    "clear-scoped workflow policy update: Grill-Me means the grill-me skill "
+                    "/grilling session; current work updates evidence policy"
+                ),
+            },
+            {},
+            {},
+            gate_signals,
+            missed_gates,
+            failures,
+        )
+
+        self.assertFalse(required)
+        self.assertNotIn("grill-me", missed_gates)
+        self.assertFalse(any("Grill-Me skill was required" in failure for failure in failures))
+
+    def test_analysis_and_setup_alignment_runs_before_work_gates(self) -> None:
+        planning_route = resolve_docs("planning", None, [], request_classified=True)
+        release_route = resolve_docs("release", None, [], request_classified=True)
+        multi_agent_route = resolve_docs("multi-agent", None, [], request_classified=True)
+
+        self.assertLess(
+            planning_route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            planning_route["gates"].index("sources"),
+        )
+        self.assertLess(
+            release_route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            release_route["gates"].index("package"),
+        )
+        self.assertLess(
+            multi_agent_route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            multi_agent_route["gates"].index("roles"),
         )
 
     def test_review_hook_command_requests_code_work_evidence(self) -> None:

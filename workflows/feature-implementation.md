@@ -31,22 +31,27 @@ return here only for the ARD-scoped code slice.
 1. Check whether the request needs PRD/ARD gates. If yes, stop this route and
    reroute to `product`.
 2. Restate the requested behavior and assumptions.
-3. Identify the smallest implementation boundary.
-4. Record the boundary plan before editing: owned files/modules, affected
+3. Give a compact alignment brief before editing: what the user and agent appear
+   to understand the same way, what may differ, and which unsupported
+   assumptions will be used by default unless a blocker question changes them.
+4. Identify the smallest implementation boundary.
+5. Record the boundary plan before editing: owned files/modules, affected
    caller-facing contracts, existing same-file scope or new package boundary,
    and the nearest verification that will prove the change.
-5. Check repo-local instructions, existing patterns, affected contracts, and affected tests.
-6. Implement only the requested behavior.
-7. Update source-of-truth docs or record why docs are intentionally unchanged.
-8. Verify with the nearest useful command or manual smoke check.
-9. Run the side-effect audit from `workflows/development-cycle.md`.
-10. Report what changed, how it was verified, and any residual risk.
+6. Check repo-local instructions, existing patterns, affected contracts, and affected tests.
+7. Implement only the requested behavior.
+8. Update source-of-truth docs or record why docs are intentionally unchanged.
+9. Verify with the nearest useful command or manual smoke check.
+10. Run the side-effect audit from `workflows/development-cycle.md`.
+11. Report what changed, how it was verified, and any residual risk.
 
 ## Pre-Code Packet
 
 Before editing non-trivial code, record:
 
 - acceptance criteria or observable outcome;
+- alignment brief: same understanding, possible mismatch, and default
+  assumption or blocker question;
 - boundary plan: owner, scope, contracts, imports or same-file scope;
 - test/check plan tied to that boundary;
 - subagent/multi-agent split decision or the serial reason.

@@ -37,7 +37,7 @@ COMMANDS: Dict[str, Profile] = {
             "common/task-intake-effort-routing.md",
             "workflows/ambiguity-gate.md",
         ),
-        gates=("classify request", "select effort", "question drill if needed", "route recommendation"),
+        gates=("classify request", "select effort", "grill-me if needed", "route recommendation"),
         notes=("Use before loading broad context when request clarity or effort level is uncertain.",),
     ),
     "task": Profile(

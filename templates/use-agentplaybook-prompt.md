@@ -116,7 +116,8 @@ Rules:
     python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
     Missing wrapper evidence or missing route gate evidence is non-compliant.
     If `--request-classified` is used, include `--classification-evidence`.
-    If the request asks for a question drill, missing drill evidence is `🐱🔴 FAIL`.
+    If the request asks for Grill-Me, missing Grill-Me `/grilling` session
+    evidence is `🐱🔴 FAIL`.
     If final VibeGuard is `Needs review`, report that state and pass
     `--allow-vibeguard-review "<reason>"` only when the review state is
     acceptable. Then report changed files, checks run, skipped checks, and

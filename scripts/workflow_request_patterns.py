@@ -67,10 +67,14 @@ VAGUE_PATTERNS = (
     r"\b(fix|improve|clean up|make better|change|update|adjust|modify)\b",
     r"\b(button|home|screen|ui|layout|style)\b",
 )
-DRILL_PHRASES = (
-    "grill me",
-    "ask me questions",
-    "help define requirements",
-    "question drill",
-    "\uadf8\ub9b4\ubbf8",
+GRILL_ME_REQUEST_PATTERNS = (
+    r"\bgrill me\b",
+    r"\b(run|use|invoke|start|do)\s+(the\s+)?grill[- ]?me\b",
+    r"\bgrill[- ]?me\s+(this|me|my|us|please)\b",
+    r"\bask me questions\b",
+    r"\bhelp define requirements\b",
+    r"\bquestion drill\b",
+    r"\uadf8\ub9b4\ubbf8\s*(\ud574\uc918|\ud574\uc8fc\uc138\uc694|\ud574|\ud558\uc790|\ub3cc\ub824|\uc2e4\ud589|\uc368|\uc9c8\ubb38)",
 )
+
+DRILL_PHRASES = GRILL_ME_REQUEST_PATTERNS

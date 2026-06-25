@@ -31,21 +31,24 @@ the command manifest and keep the implementation inside its listed gates.
 
 1. Orient: identify target repo, repo-local rules, current user changes,
    discovered stack, affected surface, and existing verification commands.
-2. Scope: name the requested behavior, acceptance criteria, non-goals, and the
+2. Alignment brief: before changing files, state the understood change, what
+   should remain unchanged, where user/agent understanding may differ, and the
+   default assumption or blocker questions.
+3. Scope: name the requested behavior, acceptance criteria, non-goals, and the
    smallest safe slice.
-3. Boundary plan: choose state, domain, data, platform, contract, security, and
+4. Boundary plan: choose state, domain, data, platform, contract, security, and
    ownership boundaries. Name the owned files/modules, caller-facing contracts,
    allowed or forbidden dependency direction when relevant, and the nearest
    verification path before editing.
-4. Implement: change only the scoped files and keep generated, dependency,
+5. Implement: change only the scoped files and keep generated, dependency,
    formatting, and release churn separate when possible.
-5. Verify: run the narrowest reliable check that proves the changed surface.
-6. Side-effect audit: inspect the final diff and affected call paths for behavior
+6. Verify: run the narrowest reliable check that proves the changed surface.
+7. Side-effect audit: inspect the final diff and affected call paths for behavior
    outside the requested slice.
-7. Broaden only if needed: run wider checks when the narrow check cannot cover
+8. Broaden only if needed: run wider checks when the narrow check cannot cover
    shared contracts, auth, persistence, platform integration, release, or user
    flow risk.
-8. Handoff: report changed files, verification evidence, skipped checks, side
+9. Handoff: report changed files, verification evidence, skipped checks, side
    effects considered, and residual risk.
 
 ## Parallel Implementation

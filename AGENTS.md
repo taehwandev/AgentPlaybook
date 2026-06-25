@@ -196,10 +196,14 @@ Missing preflight evidence, missing finish-check evidence, or missing gate
 evidence is non-compliant even when the final code or documentation appears
 correct. `agent-preflight.py --request-classified` must include
 `--classification-evidence`; otherwise request intake is treated as skipped.
-If route classification or stored request text says `question_drill: true` or
-explicitly asks for a question drill, `agent-finish-check.py` must receive
-question-drill gate evidence such as `question drill if needed=<evidence>` or
-`ask blockers=<evidence>`. Missing drill evidence is `🐱🔴 FAIL` and sets
+If route classification or stored request text says `grill_me: true`, legacy
+`question_drill: true`, or explicitly asks for Grill-Me, `agent-finish-check.py`
+must receive Grill-Me skill evidence such as
+`grill-me if needed=</grilling session/output evidence>`. Legacy
+`question drill if needed=<evidence>` or `ask blockers=<evidence>` is accepted
+only when the evidence still names the Grill-Me skill or `/grilling` session
+and output.
+Missing Grill-Me evidence is `🐱🔴 FAIL` and sets
 `retrospective_required: true`.
 
 If the wrappers are unavailable, the fallback is still strict: run the

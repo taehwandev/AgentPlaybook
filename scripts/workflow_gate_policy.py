@@ -21,8 +21,19 @@ CODE_WORK_COMMANDS = {
     "workflow-setup",
 }
 ALIGNMENT_BRIEF_COMMANDS = {
+    "ambiguity",
+    "bugfix",
+    "docs",
+    "feature",
+    "multi-agent",
+    "planning",
     "prd",
     "product",
+    "refactor",
+    "release",
+    "task",
+    "triage",
+    "workflow-setup",
 }
 
 AMBIGUITY_GATE = "ambiguity check"
@@ -36,10 +47,10 @@ SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 
 def automatic_gates(command: str) -> list[str]:
     gates: list[str] = []
-    if command in ALIGNMENT_BRIEF_COMMANDS:
-        gates.append(ALIGNMENT_BRIEF_GATE)
     if command in WORK_PRODUCING_COMMANDS:
         gates.extend([AMBIGUITY_GATE, DOCUMENTATION_GATE])
+    if command in ALIGNMENT_BRIEF_COMMANDS:
+        gates.append(ALIGNMENT_BRIEF_GATE)
     if command in CODE_WORK_COMMANDS:
         gates.extend(
             [TEST_GATE, BOUNDARY_PLAN_GATE, MULTI_AGENT_GATE, SIDE_EFFECT_AUDIT_GATE]
@@ -53,7 +64,14 @@ def automatic_docs(command: str) -> list[str]:
     if AMBIGUITY_GATE in gates:
         docs.append("workflows/ambiguity-gate.md")
     if ALIGNMENT_BRIEF_GATE in gates:
-        docs.extend(["workflows/prd-creation.md", "common/product-spec-to-implementation.md"])
+        docs.extend(
+            [
+                "common/task-intake-effort-routing.md",
+                "common/product-spec-to-implementation.md",
+            ]
+        )
+        if command in {"prd", "product"}:
+            docs.append("workflows/prd-creation.md")
     if DOCUMENTATION_GATE in gates:
         docs.append("workflows/documentation-update.md")
     if TEST_GATE in gates:
@@ -83,7 +101,37 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
         if gate == AMBIGUITY_GATE:
             _insert_after_any(result, gate, anchors=("orient", "PRD/ARD applicability", "reproduce"))
         elif gate == ALIGNMENT_BRIEF_GATE:
-            _insert_before_any(result, gate, anchors=("PRD", "PRD draft", "ARD"))
+            _insert_before_any(
+                result,
+                gate,
+                anchors=(
+                    "PRD",
+                    "PRD draft",
+                    "ARD",
+                    "acceptance criteria",
+                    "scope",
+                    "act",
+                    "implementation",
+                    "code work",
+                    "fix",
+                    "small refactor",
+                    "edit",
+                    "install or repair",
+                    "sources",
+                    "options",
+                    "recommendation",
+                    "roles",
+                    "write scopes",
+                    "agent briefs",
+                    "package",
+                    "config",
+                    "grill-me if needed",
+                    "question drill if needed",
+                    "route recommendation",
+                    "ask blockers",
+                    "record assumptions",
+                ),
+            )
         elif gate == BOUNDARY_PLAN_GATE:
             _insert_before_any(result, gate, anchors=before_implementation)
         elif gate == MULTI_AGENT_GATE:
