@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_global_lessons import lesson_summary
 from agent_preflight_runtime import (
     active_runtime_label,
     agy_runtime_bridge_issue,
@@ -224,6 +225,7 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
     git_status = run_command(["git", "status", "--short", "--untracked-files=all"], project)
     vibeguard = run_command(vibeguard_command(project, rules), project)
     vibeguard["overall"] = parse_overall(vibeguard["stdout"] + "\n" + vibeguard["stderr"])
+    global_lessons = lesson_summary()
 
     write_json(evidence_path, {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -236,6 +238,7 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
         "route_command": route_result,
         "git_status": git_status,
         "vibeguard": vibeguard,
+        "global_lessons": global_lessons,
     })
 
     hook_warnings, hook_failures = check_agent_hooks(playbook_root)
@@ -252,6 +255,12 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
     if route_payload:
         print(f"Route: {route_payload.get('command')} gates={route_payload.get('gates')}")
     print(f"VibeGuard overall: {vibeguard['overall']['status']}")
+    print(
+        "Global lessons: "
+        f"accepted={len(global_lessons['accepted'])} "
+        f"promoted={len(global_lessons['promoted'])} "
+        f"candidates={global_lessons['candidate_count']}"
+    )
     for warning in hook_warnings:
         print(f"WARN: {warning}", file=sys.stderr)
     for failure in failures:

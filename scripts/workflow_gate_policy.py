@@ -20,19 +20,30 @@ CODE_WORK_COMMANDS = {
     "task",
     "workflow-setup",
 }
+ALIGNMENT_BRIEF_COMMANDS = {
+    "prd",
+    "product",
+}
 
 AMBIGUITY_GATE = "ambiguity check"
+ALIGNMENT_BRIEF_GATE = "alignment brief"
 DOCUMENTATION_GATE = "documentation"
 TEST_GATE = "tests"
+BOUNDARY_PLAN_GATE = "boundary plan"
 MULTI_AGENT_GATE = "multi-agent split decision"
+SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 
 
 def automatic_gates(command: str) -> list[str]:
     gates: list[str] = []
+    if command in ALIGNMENT_BRIEF_COMMANDS:
+        gates.append(ALIGNMENT_BRIEF_GATE)
     if command in WORK_PRODUCING_COMMANDS:
         gates.extend([AMBIGUITY_GATE, DOCUMENTATION_GATE])
     if command in CODE_WORK_COMMANDS:
-        gates.extend([TEST_GATE, MULTI_AGENT_GATE])
+        gates.extend(
+            [TEST_GATE, BOUNDARY_PLAN_GATE, MULTI_AGENT_GATE, SIDE_EFFECT_AUDIT_GATE]
+        )
     return gates
 
 
@@ -41,24 +52,44 @@ def automatic_docs(command: str) -> list[str]:
     gates = set(automatic_gates(command))
     if AMBIGUITY_GATE in gates:
         docs.append("workflows/ambiguity-gate.md")
+    if ALIGNMENT_BRIEF_GATE in gates:
+        docs.extend(["workflows/prd-creation.md", "common/product-spec-to-implementation.md"])
     if DOCUMENTATION_GATE in gates:
         docs.append("workflows/documentation-update.md")
     if TEST_GATE in gates:
         docs.extend(["common/testing.md", "common/verification-policy.md"])
+    if BOUNDARY_PLAN_GATE in gates:
+        docs.append("common/code-structure-ownership.md")
     if MULTI_AGENT_GATE in gates:
         docs.append("workflows/multi-agent-collaboration.md")
+    if SIDE_EFFECT_AUDIT_GATE in gates:
+        docs.append("workflows/development-cycle.md")
     return docs
 
 
 def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
     result = list(gates)
+    before_implementation = (
+        "act",
+        "implementation",
+        "code work",
+        "fix",
+        "small refactor",
+        "install or repair",
+    )
     for gate in automatic_gates(command):
         if gate in result:
             continue
         if gate == AMBIGUITY_GATE:
             _insert_after_any(result, gate, anchors=("orient", "PRD/ARD applicability", "reproduce"))
+        elif gate == ALIGNMENT_BRIEF_GATE:
+            _insert_before_any(result, gate, anchors=("PRD", "PRD draft", "ARD"))
+        elif gate == BOUNDARY_PLAN_GATE:
+            _insert_before_any(result, gate, anchors=before_implementation)
         elif gate == MULTI_AGENT_GATE:
-            _insert_before_any(result, gate, anchors=("act", "implementation", "code work", "fix", "small refactor", "install or repair"))
+            _insert_before_any(result, gate, anchors=before_implementation)
+        elif gate == SIDE_EFFECT_AUDIT_GATE:
+            _insert_before_any(result, gate, anchors=("verify", "verification", "handoff", "commit readiness"))
         elif gate in {DOCUMENTATION_GATE, TEST_GATE}:
             _insert_before_any(result, gate, anchors=("verify", "verification", "handoff", "commit readiness"))
         else:

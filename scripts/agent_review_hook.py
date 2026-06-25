@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -27,15 +28,25 @@ def review_hook(
     review_evidence = (args.code_review_evidence or "").strip()
     docs_evidence = (args.docs_freshness_evidence or "").strip()
     structure_evidence = (args.structure_review_evidence or "").strip()
+    boundary_evidence = (args.boundary_plan_evidence or "").strip()
+    side_effect_evidence = (args.side_effect_audit_evidence or "").strip()
+    route_gates = review_route_gates(args.project, args.evidence)
     checks.update(
         code_review_evidence=review_evidence,
         docs_freshness_evidence=docs_evidence,
         structure_review_evidence=structure_evidence,
+        boundary_plan_evidence=boundary_evidence,
+        side_effect_audit_evidence=side_effect_evidence,
+        route_gates=route_gates,
     )
     if not review_evidence:
         failures.append("code review evidence is required")
     if not docs_evidence:
         failures.append("docs freshness evidence is required")
+    if "boundary plan" in route_gates and not boundary_evidence:
+        failures.append("boundary plan evidence is required for this route")
+    if "side-effect audit" in route_gates and not side_effect_evidence:
+        failures.append("side-effect audit evidence is required for this route")
 
     status_before, status_before_lines = git_status(args.project)
     checks["git_status_before"] = status_before
@@ -104,6 +115,16 @@ def structure_evidence_failures(structure: dict[str, Any], structure_evidence: s
             f"forbidden imports, callers/tests, and verification. Missing: {', '.join(missing_fields)}"
         )
     return failures
+
+
+def review_route_gates(project: Path, evidence_path: Path | None) -> list[str]:
+    path = evidence_path if evidence_path else project / ".agentplaybook" / "preflight.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    gates = (payload.get("route") or {}).get("gates") or []
+    return [gate for gate in gates if isinstance(gate, str)]
 
 
 def review_success_details(structure: dict[str, Any]) -> list[str]:

@@ -201,6 +201,8 @@ def _summary_lines(result: dict[str, Any]) -> list[str]:
                 "FAIL:",
                 "Required gates:",
                 "Retrospective required:",
+                "Retrospective lesson candidate:",
+                "Global lessons:",
             )):
                 lines.append(stripped)
     return lines[:8]
@@ -316,6 +318,14 @@ def build_parser() -> argparse.ArgumentParser:
             "responsibility splits were reviewed; new runtime package boundaries must "
             "include owner, allowed imports, forbidden imports, callers/tests, and verification"
         ),
+    )
+    review.add_argument(
+        "--boundary-plan-evidence",
+        help="short evidence of the owned boundary/scope and nearest verification chosen before implementation",
+    )
+    review.add_argument(
+        "--side-effect-audit-evidence",
+        help="short evidence that the final diff and side-effect surfaces were checked",
     )
     review.add_argument(
         "--max-changed-paths",

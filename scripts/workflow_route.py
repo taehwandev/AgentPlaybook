@@ -142,7 +142,9 @@ def route_hooks(command: str) -> list[dict[str, object]]:
                 "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
                 "--code-review-evidence \"<evidence>\" "
                 "--docs-freshness-evidence \"<evidence>\" "
-                "--structure-review-evidence \"<owner/imports/callers/verification when structure changed>\""
+                "--structure-review-evidence \"<owner/imports/callers/verification when structure changed>\" "
+                "--boundary-plan-evidence \"<owned boundary/scope and nearest verification>\" "
+                "--side-effect-audit-evidence \"<final diff and side-effect audit>\""
             ),
         },
         {

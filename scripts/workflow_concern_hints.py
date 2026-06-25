@@ -73,6 +73,23 @@ REQUEST_CONCERN_HINTS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "metering",
+        (
+            r"\bspill\b",
+            r"\bmetering\b",
+            r"\busage telemetry\b",
+            r"\busage metering\b",
+            r"\btoken metering\b",
+            r"\bworkflow label bridge\b",
+            r"\blabel bridge\b",
+            r"\bruntime label handoff\b",
+            "\uc0ac\uc6a9\ub7c9",
+            "\ubbf8\ud130\ub9c1",
+            "\ud1a0\ud070 \ubbf8\ud130\ub9c1",
+            "\uc2a4\ud544",
+        ),
+    ),
+    (
         "seo",
         (
             r"\bseo\b",

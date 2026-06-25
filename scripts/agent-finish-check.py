@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_global_lessons import write_retrospective_candidate
 from agent_finish_check_steps import (
     check_preflight_vibeguard,
     check_request_intake,
@@ -53,6 +54,7 @@ def build_result(
     validate: dict[str, Any],
     diff_check: dict[str, Any],
     vibeguard: dict[str, Any],
+    retrospective_lesson: dict[str, Any],
     failures: list[str],
 ) -> dict[str, Any]:
     route = preflight.get("route") or {}
@@ -74,6 +76,7 @@ def build_result(
         "validate": validate,
         "diff_check": diff_check,
         "vibeguard": vibeguard,
+        "retrospective_lesson": retrospective_lesson,
         "failures": failures,
     }
 
@@ -83,6 +86,11 @@ def print_result(output_path: Path, required_gates: list[str], overall: str, res
     print(f"Required gates: {required_gates}")
     print(f"VibeGuard overall: {overall}")
     print(f"Retrospective required: {str(result['retrospective_required']).lower()}")
+    lesson = result.get("retrospective_lesson") or {}
+    if lesson.get("created"):
+        print(f"Retrospective lesson candidate: {lesson.get('relative_path')}")
+    elif result["retrospective_required"]:
+        print(f"Retrospective lesson candidate: {lesson.get('reason', 'not_created')}")
     print("Gate signals:")
     for gate_signal in result["gate_signals"]:
         print(
@@ -127,6 +135,13 @@ def main() -> int:
     retrospective_required = bool(missed_gates or gate_policy_failures)
     if retrospective_required:
         failures.append("retrospective required before final report, commit, release, or handoff")
+    retrospective_lesson = write_retrospective_candidate(
+        {
+            "missed_gates": missed_gates,
+            "gate_signals": gate_signals,
+            "retrospective_required": retrospective_required,
+        }
+    )
 
     result = build_result(
         playbook_root=playbook_root,
@@ -144,6 +159,7 @@ def main() -> int:
         validate=validate,
         diff_check=diff_check,
         vibeguard=vibeguard,
+        retrospective_lesson=retrospective_lesson,
         failures=failures,
     )
     write_json(output_path, result)
