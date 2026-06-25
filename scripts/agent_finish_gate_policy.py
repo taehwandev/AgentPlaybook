@@ -4,6 +4,7 @@ from __future__ import annotations
 
 
 AMBIGUITY_GATE = "ambiguity check"
+ROUTE_DOCS_READ_GATE = "route docs read"
 ALIGNMENT_BRIEF_GATE = "alignment brief"
 DOCUMENTATION_GATE = "documentation"
 TEST_GATE = "tests"
@@ -15,6 +16,8 @@ SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[str]) -> list[str]:
     failures: list[str] = []
     required = set(required_gates)
+    if ROUTE_DOCS_READ_GATE in required:
+        failures.extend(_validate_route_docs_read(gate_evidence.get(ROUTE_DOCS_READ_GATE, "")))
     if AMBIGUITY_GATE in required:
         failures.extend(_validate_ambiguity(gate_evidence.get(AMBIGUITY_GATE, "")))
     if ALIGNMENT_BRIEF_GATE in required:
@@ -30,6 +33,60 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
     if SIDE_EFFECT_AUDIT_GATE in required:
         failures.extend(_validate_side_effect_audit(gate_evidence.get(SIDE_EFFECT_AUDIT_GATE, "")))
     return failures
+
+
+def _validate_route_docs_read(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_read_action = any(
+        phrase in text
+        for phrase in (
+            "read",
+            "opened",
+            "loaded",
+            "consulted",
+            "checked",
+            "읽",
+            "확인",
+        )
+    )
+    names_route_docs = any(
+        phrase in text
+        for phrase in (
+            "route docs",
+            "routed docs",
+            "read in order",
+            "skill docs",
+            "guidance docs",
+            ".md",
+            "agents.md",
+            "index.md",
+        )
+    )
+    before_work = any(
+        phrase in text
+        for phrase in (
+            "before code",
+            "before coding",
+            "before implementation",
+            "before edit",
+            "before edits",
+            "before work",
+            "pre-code",
+            "pre implementation",
+            "코드 전",
+            "구현 전",
+            "수정 전",
+            "작업 전",
+        )
+    )
+    if has_read_action and names_route_docs and before_work:
+        return []
+    return [
+        "route docs read evidence must state that the routed skill/guidance docs "
+        "were read before code, implementation, or editing"
+    ]
 
 
 def _validate_ambiguity(evidence: str) -> list[str]:
@@ -77,6 +134,8 @@ def _validate_alignment_brief(evidence: str) -> list[str]:
             "may differ",
             "different understanding",
             "could differ",
+            "possible difference",
+            "possible differences",
             "possible mismatch",
             "uncertain scope",
             "다를 수",

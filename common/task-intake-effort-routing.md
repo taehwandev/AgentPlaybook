@@ -58,6 +58,28 @@ Do not downgrade effort only because a task names one file. If that file is a
 composition point, public contract, migration, release config, app shell, or
 security boundary, inspect the owner boundary and escalate.
 
+## PRD Creation Boundary
+
+PRD creation is a deliverable and risk decision. It is separate from the
+alignment brief and from Grill-Me.
+
+- The alignment brief is mandatory before requirements analysis or modification
+  work, but it does not imply a PRD.
+- Grill-Me is a clarification skill for blocker questions, but it does not imply
+  a PRD by itself.
+- Create a new PRD when the requested deliverable is explicitly a PRD/product
+  requirements note, or when work introduces a new product capability, flow,
+  multi-screen behavior, data model, API contract, auth/permission/billing
+  policy, release behavior, or durable acceptance criteria that do not already
+  exist.
+- Update an existing PRD or product source of truth when the change alters
+  documented user behavior, acceptance criteria, product policy, or required
+  states.
+- Do not create a PRD for a clear bugfix, refactor, documentation edit, test
+  update, hook/script/workflow-policy repair, or internal cleanup unless that
+  work changes product behavior or a public contract. Use an alignment brief and
+  acceptance criteria instead.
+
 ## Effort Profiles
 
 Use runtime-specific model or reasoning controls only when the runtime supports

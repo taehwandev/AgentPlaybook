@@ -210,9 +210,14 @@ same fields for wrappers, launchers, or CI checks.
 
 ## Automatic Gates
 
-Work-producing routes must include the common gates below even when an individual
-command profile forgets them:
+Work-producing, documentation, release, review, and retrospective routes must
+include the relevant common gates below even when an individual command profile
+forgets them:
 
+- `route docs read`: after routing and before code, implementation, review, or
+  edit work, read the route's `docs` / `Read In Order` list. Evidence must say
+  that the routed skill/guidance docs were read before work; merely listing
+  documents in the route output is not evidence that the agent consumed them.
 - `ambiguity check`: classify unknowns before implementation. If any blocker
   can change behavior, scope, risk, acceptance criteria, or verification, stop
   and ask the maintainer before editing. Do not continue with silent invented
@@ -235,7 +240,10 @@ command profile forgets them:
 - `side-effect audit`: after implementation and before final verification or
   handoff, inspect the final diff for unexpected generated files, lockfiles,
   public-contract changes, external-state surfaces, broad formatting churn, and
-  unrelated behavior.
+  unrelated behavior. If investigation finds a possible meaning, policy, route,
+  gate, or pass/fail interpretation change, pause for a meaning checkpoint
+  before editing unless the fix is mechanical and already covered by explicit
+  tests.
 
 `agent-finish-check.py` validates evidence for these gates. Missing evidence or
 empty phrases such as "done" are not enough.

@@ -22,6 +22,7 @@ from workflow_gate_policy import (
     BOUNDARY_PLAN_GATE,
     DOCUMENTATION_GATE,
     MULTI_AGENT_GATE,
+    ROUTE_DOCS_READ_GATE,
     SIDE_EFFECT_AUDIT_GATE,
     TEST_GATE,
     ALIGNMENT_BRIEF_COMMANDS,
@@ -110,6 +111,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         route = resolve_docs("feature", None, ["testing"], request_classified=True)
 
         for gate in (
+            ROUTE_DOCS_READ_GATE,
             AMBIGUITY_GATE,
             DOCUMENTATION_GATE,
             TEST_GATE,
@@ -126,6 +128,12 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("common/code-structure-ownership.md", route["docs"])
         self.assertIn("workflows/multi-agent-collaboration.md", route["docs"])
         self.assertIn("workflows/development-cycle.md", route["docs"])
+        self.assertLess(
+            route["gates"].index(ROUTE_DOCS_READ_GATE),
+            route["gates"].index("PRD/ARD applicability"),
+        )
+        self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index(AMBIGUITY_GATE))
+        self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index("implementation"))
 
     def test_prd_and_product_routes_require_alignment_brief(self) -> None:
         prd_route = resolve_docs("prd", None, [], request_classified=True)
@@ -235,6 +243,27 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertNotIn("grill-me", missed_gates)
         self.assertFalse(any("Grill-Me skill was required" in failure for failure in failures))
 
+    def test_grill_me_classification_boolean_requires_finish_evidence(self) -> None:
+        gate_signals: list[dict[str, str]] = []
+        missed_gates: list[str] = []
+        failures: list[str] = []
+        classification = classify_request("고쳐줘")
+
+        required = check_request_intake(
+            {},
+            {"request": "고쳐줘"},
+            classification,
+            {},
+            gate_signals,
+            missed_gates,
+            failures,
+        )
+
+        self.assertTrue(classification["grill_me"])
+        self.assertTrue(required)
+        self.assertIn("grill-me", missed_gates)
+        self.assertTrue(any("Grill-Me skill was required" in failure for failure in failures))
+
     def test_analysis_and_setup_alignment_runs_before_work_gates(self) -> None:
         planning_route = resolve_docs("planning", None, [], request_classified=True)
         release_route = resolve_docs("release", None, [], request_classified=True)
@@ -263,12 +292,33 @@ class WorkflowRoutingTests(unittest.TestCase):
     def test_triage_does_not_get_code_work_gates(self) -> None:
         route = resolve_docs("triage", None, [], request_classified=True)
 
+        self.assertNotIn(ROUTE_DOCS_READ_GATE, route["gates"])
         self.assertNotIn(TEST_GATE, route["gates"])
         self.assertNotIn(MULTI_AGENT_GATE, route["gates"])
+
+    def test_workflow_setup_reads_route_docs_before_repair(self) -> None:
+        route = resolve_docs("workflow-setup", None, ["structure"], request_classified=True)
+
+        self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
+        self.assertLess(
+            route["gates"].index(ROUTE_DOCS_READ_GATE),
+            route["gates"].index(AMBIGUITY_GATE),
+        )
+        self.assertLess(
+            route["gates"].index(ROUTE_DOCS_READ_GATE),
+            route["gates"].index("install or repair"),
+        )
+
+    def test_docs_route_reads_route_docs_before_edit(self) -> None:
+        route = resolve_docs("docs", None, ["structure"], request_classified=True)
+
+        self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
+        self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index("edit"))
 
     def test_finish_policy_rejects_empty_gate_phrases(self) -> None:
         failures = validate_gate_evidence(
             {
+                ROUTE_DOCS_READ_GATE: "done",
                 AMBIGUITY_GATE: "done",
                 ALIGNMENT_BRIEF_GATE: "done",
                 DOCUMENTATION_GATE: "done",
@@ -278,6 +328,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 SIDE_EFFECT_AUDIT_GATE: "done",
             },
             [
+                ROUTE_DOCS_READ_GATE,
                 AMBIGUITY_GATE,
                 ALIGNMENT_BRIEF_GATE,
                 DOCUMENTATION_GATE,
@@ -288,14 +339,18 @@ class WorkflowRoutingTests(unittest.TestCase):
             ],
         )
 
-        self.assertEqual(7, len(failures))
+        self.assertEqual(8, len(failures))
 
     def test_finish_policy_accepts_specific_evidence(self) -> None:
         failures = validate_gate_evidence(
             {
+                ROUTE_DOCS_READ_GATE: (
+                    "read routed docs before code: AGENTS.md, index.md, "
+                    "common/agent-operating-skill.md"
+                ),
                 AMBIGUITY_GATE: "no blockers; safe assumption recorded",
                 ALIGNMENT_BRIEF_GATE: (
-                    "same understanding: explicit goal captured; may differ: uncertain scope; "
+                    "same understanding: explicit goal captured; possible differences: uncertain scope; "
                     "unsupported assumptions: default MVP unless blocker question changes it"
                 ),
                 DOCUMENTATION_GATE: "updated workflows/README.md",
@@ -305,6 +360,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 SIDE_EFFECT_AUDIT_GATE: "final diff checked; no unexpected generated files or lockfile changes",
             },
             [
+                ROUTE_DOCS_READ_GATE,
                 AMBIGUITY_GATE,
                 ALIGNMENT_BRIEF_GATE,
                 DOCUMENTATION_GATE,

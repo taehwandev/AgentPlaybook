@@ -125,6 +125,17 @@ After verification, inspect the final diff and ask:
 If the answer is yes, either verify that surface, split the change, or report the
 remaining risk.
 
+When side-effect investigation reveals a possible meaning, policy, route, gate,
+or pass/fail interpretation change, stop at a meaning checkpoint before editing
+unless the fix is mechanical and already covered by explicit tests. The
+checkpoint should state:
+
+- the understood intent
+- the side-effect candidate
+- the proposed direction
+- what can be safely auto-fixed
+- the specific interpretation that needs confirmation
+
 Record side-effect audit evidence before handoff. Acceptable evidence names the
 final diff or checked surfaces and states whether unexpected generated files,
 lockfiles, public contracts, external state, formatting churn, or unrelated

@@ -43,38 +43,42 @@ or task-specific workflow to load next.
    "<USER_REQUEST>"` before manually choosing workflow cards. Use `index.md`
    only for simple answer-only work or an explicitly accepted fallback when the
    script cannot run.
-6. Gate ledger: create a ledger for every route gate, mark each gate when it is
+6. Route docs read: read the route's listed docs before editing, coding,
+   reviewing, or running project-specific work. When the route includes
+   `route docs read`, record evidence that the routed skill/guidance docs were
+   read before code, implementation, or edits.
+7. Gate ledger: create a ledger for every route gate, mark each gate when it is
    executed, and show a short `SUCCESS` or `FAIL` gate signal after each
    completed or failed gate or task step.
-7. Global lessons: when preflight includes accepted or promoted lessons from
+8. Global lessons: when preflight includes accepted or promoted lessons from
    `~/.agentplaybook/`, check whether any apply to the current task before
    editing or reviewing.
-8. Alignment brief: before requirements analysis or modification work, record
+9. Alignment brief: before requirements analysis or modification work, record
    the shared understanding, possible mismatches, and unsupported assumptions or
    minimal blocker questions. Do this even when the task is too small for a full
    PRD or Grill-Me session.
-9. Inspect: read existing code, docs, tests, commands, and current user changes
+10. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
-10. Decide: make a reasonable assumption when safe; ask only when ambiguity
+11. Decide: make a reasonable assumption when safe; ask only when ambiguity
    changes result or risk.
-11. Act: execute the scoped work with periodic progress updates for long tasks.
-12. Verify: collect evidence with the narrowest reliable command or manual
+12. Act: execute the scoped work with periodic progress updates for long tasks.
+13. Verify: collect evidence with the narrowest reliable command or manual
     check. For usage telemetry, distinguish setup, label, hook, and diagnostic
     evidence from exact queued/imported usage event evidence.
-13. Recover: when a command fails, diagnose stdout/stderr and make the smallest
+14. Recover: when a command fails, diagnose stdout/stderr and make the smallest
     correction before retrying.
-14. Ledger check: before finalizing, compare required gates against executed
+15. Ledger check: before finalizing, compare required gates against executed
     evidence and `SUCCESS`/`FAIL` state. Completion requires every required gate
     to be `🐱🟢 SUCCESS`. If any required gate is missing, blocked, failed, or
     lacks evidence, report `🐱🔴 FAIL` and follow missed-gate recovery in
     `workflows/scripted-agent-workflow.md`.
-15. Retrospective restart: when finish-check sets `retrospective_required`, run
+16. Retrospective restart: when finish-check sets `retrospective_required`, run
     `workflows/retrospective-learning.md`, use or update the generated global
     lesson candidate when safe, then restart at the first missed gate or same
     failed scope.
-16. Review: inspect the final diff, output, or artifact against the request and
+17. Review: inspect the final diff, output, or artifact against the request and
     risks.
-17. Report: state what changed or was found, verification status, skipped
+18. Report: state what changed or was found, verification status, skipped
     checks, and residual risk.
 
 ## Route To

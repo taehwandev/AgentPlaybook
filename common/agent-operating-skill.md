@@ -15,27 +15,35 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 3. Read repo-local instructions before changing files.
 4. Discover the project stack before choosing commands or libraries.
 5. For multi-step tasks, run `scripts/workflow.py route ... --request "<USER_REQUEST>"` before selecting task documents, editing, reviewing, committing, or reporting completion.
-6. For requirements analysis or modification work, give a compact alignment
+6. Read the route's listed docs before editing, reviewing, coding, or running
+   project-specific work. Record `route docs read` evidence when the route
+   includes that gate; the evidence must name that routed skill/guidance docs
+   were read before code, implementation, or edits.
+7. For requirements analysis or modification work, give a compact alignment
    brief before drafting requirements or changing files. State shared
    understanding, possible mismatch, and unsupported assumptions or minimal
    blocker questions. Do this even when the work is not PRD-sized.
-7. Check preflight's global lesson summary when available. Accepted or promoted
+8. Check preflight's global lesson summary when available. Accepted or promoted
    lessons from `~/.agentplaybook/` apply across repos unless repo-local
    instructions conflict.
-8. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
-9. Use `index.md` to load only relevant AgentPlaybook cards.
-10. Parallelize independent read-only orientation when the runtime supports it:
+9. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
+10. Use `index.md` to load only relevant AgentPlaybook cards.
+11. Parallelize independent read-only orientation when the runtime supports it:
     selected document reads, file searches, stack inspection, git status, and
     preflight evidence may run together after request intake is settled.
-11. Inspect existing code, docs, tests, and local conventions.
-12. Make the smallest change that genuinely addresses the request.
-13. For code work, record the multi-agent split decision before editing and use
+12. Inspect existing code, docs, tests, and local conventions.
+13. For code or architecture work that crosses files, packages, folders, or
+    modules, record a compact structure packet before editing: chosen boundary,
+    package/folder map, file split, allowed imports, forbidden imports,
+    callers/tests, and nearest verification.
+14. Make the smallest change that genuinely addresses the request.
+15. For code work, record the multi-agent split decision before editing and use
     parallel agents when scopes are disjoint and stable.
-14. Update/create affected docs and add/update/run the nearest useful test when
+16. Update/create affected docs and add/update/run the nearest useful test when
     code behavior or workflow policy changes.
-15. Verify with the narrowest reliable command first.
-16. Confirm the route gate ledger before reporting completion.
-17. Report what changed, what was verified, and what risk remains.
+17. Verify with the narrowest reliable command first.
+18. Confirm the route gate ledger before reporting completion.
+19. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -54,6 +62,14 @@ Before editing:
   Grill-Me `/grilling` session unless blockers require one.
 - Check repo-local `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or equivalent docs.
 - Check stack manifests, lockfiles, and config before running commands, adding dependencies, or using framework-specific APIs.
+- Read the route's `Read In Order` docs before code, implementation, review,
+  or edit work. Do not treat the route output as a passive suggestion; if the
+  route includes `route docs read`, finish evidence must state that routed
+  skill/guidance docs were read before work.
+- When implementation can add or move more than one file, package, folder, or
+  module, write the structure packet first. Do not start by dumping all code
+  into one feature, `common`, `shared`, `utils`, `helpers`, `services`, or
+  `manager` folder.
 - Check whether the task touches data, auth, permissions, billing, persistence, filesystem, network, release, or external state.
 - Check whether the task touches secrets, client keys, local config, logs, analytics, crash reporting, or open-source-safe setup.
 - Check for existing user changes in files you may touch.
@@ -128,7 +144,8 @@ Before finishing:
   replaceable implementations. When the task creates packages, folders,
   source sets, modules, or shared/core/common boundaries, include a package
   boundary note that names owner, allowed imports, forbidden imports, callers,
-  and focused verification before editing.
+  and focused verification before editing. If the task adds several roles, also
+  include the file split and package/folder map before writing code.
 - Reusable component, hook, widget, control, or caller-facing API design: `common/component-api-design.md`.
 - UI, async, reducer, store, ViewModel, hook, cache, or state-machine state design: `common/state-modeling.md`.
 - Error handling, typed failures, retry classification, or failure UX: `common/error-modeling.md`.

@@ -21,6 +21,49 @@ fit, also use `common/solid-design-principles.md`. In structure decisions,
 SOLID means narrow caller contracts and dependency direction; it does not mean
 creating layers or interfaces before a real boundary exists.
 
+## Architecture-To-Structure Drill
+
+Before writing code for work that crosses files, packages, folders, modules,
+targets, source sets, or reusable test support, sketch the structure before
+implementation. Keep it compact, but make the split explicit enough that a
+reviewer can tell where new code belongs and what must not import what.
+
+Use this order:
+
+1. Name the behavior or capability being changed.
+2. Name the owners that must stay separate: UI/rendering, state, domain policy,
+   data/persistence, platform/external adapter, public contract, and testing
+   support.
+3. Choose the lowest ownership level that protects the boundary:
+   file-private, package/internal, feature/module, feature-api contract,
+   shared/core module, or public package/API.
+4. Map the package or folder shape only for boundaries that have a real owner,
+   allowed imports, forbidden imports, callers, and verification.
+5. Split files by independently importable or testable owner before adding
+   behavior.
+6. Define public exports last; exports should be narrower than the
+   implementation and grouped by contract family.
+
+For non-trivial code work, the structure packet should include:
+
+```text
+behavior/capability:
+chosen ownership level:
+package/folder map:
+file split:
+allowed imports:
+forbidden imports:
+callers/tests:
+nearest verification:
+```
+
+Do not start by putting every new file under one feature folder, `common`,
+`shared`, `utils`, `helpers`, or another broad bucket and relying on future
+cleanup. A feature folder is acceptable only when its child files or subfolders
+still make the role boundaries obvious. A layer folder is acceptable only when
+it enforces a real import rule, dependency direction, test boundary, or public
+contract.
+
 ## Unit Size And Split Criteria
 
 Use code size as review pressure, not an automatic split command. Long code is
@@ -264,6 +307,18 @@ import or ownership rule:
   renderer to verify behavior.
 - The split prevents circular dependencies, broad manifest churn, or unrelated
   owners editing the same area.
+
+A package or folder split unit should have one capability owner, one import
+rule, one caller set or consumer family, and one primary verification path. Add
+subfolders only when the child role can be imported, tested, reviewed, or
+replaced separately. Typical child roles are contract/API, state, domain,
+data, platform adapter, UI/component, route/event, schema/DTO, and
+testing/assertions.
+
+Do not treat a folder as structured only because files are grouped under one
+feature name. A feature package that mixes screen rendering, state owner,
+repository/client, DTO/schema, mapper, platform adapter, fixtures, and
+assertions without role names and import rules is still a dump folder.
 
 Keep the current package when the proposed folder would contain one or two
 small unstable files, duplicate an architecture diagram without enforcing an

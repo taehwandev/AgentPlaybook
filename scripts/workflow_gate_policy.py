@@ -12,6 +12,15 @@ WORK_PRODUCING_COMMANDS = {
     "task",
     "workflow-setup",
 }
+ROUTE_DOCS_READ_COMMANDS = WORK_PRODUCING_COMMANDS | {
+    "docs",
+    "docs-review",
+    "multi-agent",
+    "prd",
+    "release",
+    "retrospective",
+    "review",
+}
 CODE_WORK_COMMANDS = {
     "bugfix",
     "feature",
@@ -37,6 +46,7 @@ ALIGNMENT_BRIEF_COMMANDS = {
 }
 
 AMBIGUITY_GATE = "ambiguity check"
+ROUTE_DOCS_READ_GATE = "route docs read"
 ALIGNMENT_BRIEF_GATE = "alignment brief"
 DOCUMENTATION_GATE = "documentation"
 TEST_GATE = "tests"
@@ -47,6 +57,8 @@ SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 
 def automatic_gates(command: str) -> list[str]:
     gates: list[str] = []
+    if command in ROUTE_DOCS_READ_COMMANDS:
+        gates.append(ROUTE_DOCS_READ_GATE)
     if command in WORK_PRODUCING_COMMANDS:
         gates.extend([AMBIGUITY_GATE, DOCUMENTATION_GATE])
     if command in ALIGNMENT_BRIEF_COMMANDS:
@@ -98,8 +110,45 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
     for gate in automatic_gates(command):
         if gate in result:
             continue
-        if gate == AMBIGUITY_GATE:
-            _insert_after_any(result, gate, anchors=("orient", "PRD/ARD applicability", "reproduce"))
+        if gate == ROUTE_DOCS_READ_GATE:
+            if "orient" in result:
+                _insert_after_any(result, gate, anchors=("orient",))
+            else:
+                _insert_before_any(
+                    result,
+                    gate,
+                    anchors=(
+                        "PRD/ARD applicability",
+                        "PRD",
+                        "PRD draft",
+                        "ARD",
+                        "acceptance criteria",
+                        "classify unknowns",
+                        "ask blockers",
+                        "source of truth",
+                        "diff review",
+                        "risk review",
+                        "package",
+                        "roles",
+                        "write scopes",
+                        "trigger",
+                        "reproduce",
+                        "behavior baseline",
+                        "act",
+                        "implementation",
+                        "code work",
+                        "fix",
+                        "small refactor",
+                        "edit",
+                        "install or repair",
+                    ),
+                )
+        elif gate == AMBIGUITY_GATE:
+            _insert_after_any(
+                result,
+                gate,
+                anchors=(ROUTE_DOCS_READ_GATE, "orient", "PRD/ARD applicability", "reproduce"),
+            )
         elif gate == ALIGNMENT_BRIEF_GATE:
             _insert_before_any(
                 result,

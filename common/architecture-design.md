@@ -34,8 +34,10 @@ Design from change pressure, not diagrams. First identify what changes together,
 6. Check SOLID pressure: one responsibility per unit, narrow caller contracts,
    substitutable implementations, and dependency direction toward stable policy
    or contracts.
-7. Pick the smallest architecture that keeps those risks visible.
-8. Define verification before implementation.
+7. Sketch the file, package, folder, or module structure before coding when the
+   design crosses more than one owned unit.
+8. Pick the smallest architecture that keeps those risks visible.
+9. Define verification before implementation.
 
 ## Rules
 
@@ -93,6 +95,38 @@ one of these benefits:
 Avoid boundaries that only rename a call, hide an obvious branch, or force every
 caller through flags, nullable options, global state, service locators, or
 framework-specific plumbing.
+
+## Structure Packet Before Code
+
+For architecture work that crosses files, packages, modules, services, or apps,
+leave a compact structure packet before implementation. This is separate from a
+full ARD; it is the minimum map needed to prevent dumping everything into one
+folder or one broad service.
+
+Use repo-local names first, then show only the boundaries that matter:
+
+```text
+chosen track:
+existing boundary reused:
+new or changed package/folder map:
+file split by responsibility:
+public contracts or exports:
+allowed imports:
+forbidden imports:
+callers/tests:
+verification:
+```
+
+The package or folder map must name role boundaries, not just containers. Split
+UI/rendering, state owner, domain policy, data/persistence, platform/external
+adapter, public contract, and reusable test support when they have different
+callers, imports, or verification paths.
+
+Do not approve an architecture plan that says only "add it under the feature
+folder" when the work contains multiple roles. Do not create a `services`,
+`utils`, `helpers`, `common`, `shared`, `manager`, or `core` folder as the
+first structure decision unless the concrete capability, allowed imports,
+forbidden imports, callers, and verification are already named.
 
 ## State Model
 

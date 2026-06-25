@@ -26,6 +26,12 @@ UI -> State -> Domain -> Data / Platform
 
 Keep files simple, but keep responsibilities named.
 
+Before code crosses more than one file, folder, package, target, or module,
+turn this shape into a concrete structure packet: which boundary owns UI,
+state, domain policy, data, platform adapters, public contracts, and reusable
+test support; where each role lives; what imports are allowed; what imports are
+forbidden; and which test or check proves the boundary.
+
 ## Choose The Boundary
 
 - Use a local UI boundary for display-only or one-screen interaction.
@@ -61,6 +67,9 @@ Keep files simple, but keep responsibilities named.
 
 - Do not let UI own raw API clients, database rows, SDK objects, filesystem
   handles, shell calls, or platform permission payloads.
+- Do not put UI rendering, state owner, domain policy, repository/client,
+  platform adapter, DTO/schema, mapper, fixtures, and assertions into one
+  folder or package without role boundaries and import rules.
 - Do not add state, domain, repository, or adapter layers that only forward one
   method and add no rule, mapping, test boundary, or risk isolation.
 - Do not expose fat services, repositories, contexts, component props, hook

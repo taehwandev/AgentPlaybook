@@ -104,7 +104,7 @@ def check_request_intake(
         )
         failures.append("--request-classified used without classification evidence")
 
-    grill_me_required = grill_me_requested(
+    grill_me_required = _classification_requires_grill_me(request_classification) or grill_me_requested(
         _request_text(request_intake, request_classification)
     )
     grill_me_gate = next((gate for gate in GRILL_ME_EVIDENCE_GATES if gate_evidence.get(gate)), "")
@@ -155,6 +155,20 @@ def grill_me_requested(text: str) -> bool:
     return any(flag in lowered for flag in LEGACY_GRILL_ME_FLAGS) or any(
         re.search(pattern, lowered) for pattern in GRILL_ME_REQUEST_PATTERNS
     )
+
+
+def _classification_requires_grill_me(request_classification: dict[str, Any]) -> bool:
+    return _truthy(request_classification.get("grill_me")) or _truthy(
+        request_classification.get("question_drill")
+    )
+
+
+def _truthy(value: Any) -> bool:
+    if value is True:
+        return True
+    if isinstance(value, str):
+        return value.strip().lower() == "true"
+    return False
 
 
 def validate_grill_me_skill_evidence(evidence: str) -> list[str]:
