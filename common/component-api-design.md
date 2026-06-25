@@ -75,6 +75,10 @@ Use a feature-local view or block when:
 - a section has a clear visual or interaction responsibility
 - the section needs a small view model slice rather than the whole screen state
 - the section emits a few user intents but does not own data fetching or product policy
+- the section updates at a different cadence or renders a more expensive tree
+  than nearby sections
+- the section can preserve local presentation state while the parent refreshes
+  or replaces other screen state
 
 Keep the block local when its copy, route decisions, permissions, tenant rules, billing rules, analytics names, or data shape are specific to one workflow.
 
@@ -83,6 +87,17 @@ Promote a block into a reusable component only when the caller contract is stabl
 Do not skip the feature-local block step. If the only problem is that one screen
 or function is too large, split it into named local sections first. Promote to a
 shared component only after the reusable role and caller contract are clear.
+
+Reusable components, section views, and block components should receive display
+models and callbacks, not a whole screen `UiState`, ViewModel, store, query
+result, or context object. Passing the whole state tree through the component
+graph hides ownership and makes every child depend on unrelated invalidation.
+
+Split for performance only when the API boundary also makes ownership clearer.
+Do not create a reusable-looking component only to quiet a render problem while
+leaving it coupled to one screen's data shape. Prefer a feature-local section,
+row model, selector, or small view model slice until the reusable caller
+contract is stable.
 
 Review blocker: reject UI code that keeps distinct screen sections, reusable
 controls, dialogs, rows, cards, or feedback states inside one route/page/screen

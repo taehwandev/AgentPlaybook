@@ -108,6 +108,12 @@ When Next.js App Router is the framework:
 - Convert DTOs to UI models before JSX renders them.
 - Keep protected access policy in named helpers or server/API boundaries; UI
   visibility is not authorization.
+- Split high-churn state, such as live messages, presence, typing, timers,
+  progress, drag, focus, hover, animation, and list windows, from coarse screen
+  `UiState` when it would cause unrelated React nodes to re-render.
+- Keep state near the smallest component, hook, cache selector, or external
+  subscription that owns its update cadence. Do not pass a whole screen
+  `UiState` or query result through the tree when a section or row model works.
 
 ## Browser Storage
 

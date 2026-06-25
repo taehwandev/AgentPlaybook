@@ -204,6 +204,37 @@ Rules:
 - Keep one-off effects such as toast, navigation, focus, and file download
   separate from persistent state.
 
+## Render Node And UiState Split
+
+Treat `UiState` as a render and observation contract, not as a requirement to
+pass one screen-shaped object through every React node. Split state and
+components by owner, update cadence, render cost, and reuse contract.
+
+Use a coarse screen `UiState` for top-level loading, content, empty, error,
+permission, selected ids, stable summary values, and workflow capabilities.
+Keep high-churn state closer to the React node that observes it:
+
+- chat or conversation messages, virtualized list windows, row delivery status,
+  read receipts, typing indicators, and presence
+- text drafts before commit, focus, hover, drag, scroll, animation, timers,
+  playback progress, live metrics, and cursors
+- query/cache subscription data where selectors can update only the section,
+  row, badge, or indicator that changed
+
+For conversation UI, do not put the full message list, typing, presence, unread
+markers, delivery status, and composer draft in one screen state object if each
+change re-renders the whole screen. Use a stable screen state for thread
+metadata and capabilities, a query/cache or external subscription for messages,
+row display models with stable keys, and section-local state for composer and
+interaction details. Use virtualization when list size or update cadence makes
+the rendered node count a risk.
+
+`memo`, `useMemo`, and `useCallback` are not substitutes for a correct state
+boundary. Use them after the state owner and prop shape are right, and only for
+real identity or render-cost issues. Avoid hiding a whole `UiState`, store, or
+query result in context when a section prop, selector, or feature-local hook can
+make the invalidation boundary explicit.
+
 ## Container And Screen Split
 
 Containers may:

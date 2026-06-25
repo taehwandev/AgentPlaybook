@@ -156,6 +156,35 @@ Rules:
 - Do not put SwiftUI types such as `Color`, `Font`, `Image`, or `View` inside
   domain models. Keep those at the UI/display boundary.
 
+## Observation And UiState Split
+
+SwiftUI invalidates views through observed state. Treat `UiState` as an
+observation contract, not as a mandate to pass one screen state or observable
+object into every section. Split state by owner, update cadence, render cost,
+and the smallest view that needs to change.
+
+Use coarse screen `UiState` for top-level loading, content, empty, error,
+permission, selected ids, stable summaries, and workflow capabilities. Keep
+high-churn state closer to the view that observes it:
+
+- chat or conversation messages, list windows, row delivery state, read
+  receipts, typing indicators, and presence
+- text drafts before commit, focus, scroll, drag, animation, timers, playback
+  progress, live metrics, and cursor-like state
+- row, badge, or indicator state where only one repeated view should update
+
+For conversation UI, a screen ViewModel can own thread metadata, connection
+status, permissions, composer availability, and top-level failure states.
+Messages should use stable `Identifiable` item models and a list/window owner
+that updates rows without invalidating unrelated sections. Typing, presence,
+delivery, and draft state should be held by the smallest ViewModel, observable
+slice, binding, or local `@State` that owns their lifecycle.
+
+Do not split for ceremony. A simple profile, read-only settings page, or small
+form can keep one enum or struct when all values update together. When a split
+is justified as performance work, name which observed object, binding, or view
+subtree avoids extra invalidation.
+
 ## View Composition
 
 Screen views should be easy to preview and test:

@@ -222,6 +222,42 @@ sealed interface ProfileStatus {
 }
 ```
 
+## UiState Split And High-Churn Streams
+
+The default "one observable state stream" contract is a starting point, not a
+license to put every value into one `UiState`. Use one coarse screen state when
+the values update together and the screen cost is low. Split state when update
+cadence, rendering cost, lifecycle owner, cache owner, or list window ownership
+differs.
+
+A ViewModel may expose a coarse screen `StateFlow<FooUiState>` for top-level
+status, title, permissions, selected ids, form availability, banners, and
+submit or refresh state. Keep high-churn data in separate streams or holders
+when it would recompose unrelated UI:
+
+- chat or conversation messages, paging windows, delivery status, read receipts,
+  typing indicators, and presence
+- playback progress, timers, sensor or location values, live metrics, cursors,
+  drag, scroll, focus, gesture, and animation state
+- large `LazyColumn` or `LazyRow` item models where only rows or a visible
+  window need to update
+
+For conversation UI, a `ConversationUiState` can own metadata, connection
+status, permission state, composer availability, and top-level failure states.
+Messages should be a paged, cached, or otherwise separate item stream with
+stable immutable ids. Typing, presence, delivery, and draft state should update
+through the smallest state holder or composable that observes them.
+
+Collect separate streams at the route or section boundary that owns the
+observation, then pass stable row models or plain values down. Do not pass the
+ViewModel, repository, `Flow`, callback bundle, mutable collection, or whole
+screen `UiState` into repeated rows to avoid creating a smaller model.
+
+Do not split state for ceremony. A simple profile, read-only settings page, or
+small form can keep one `UiState` when the update cadence and render cost are
+shared. When a split is justified as performance work, name which Compose read
+or recomposition boundary becomes smaller.
+
 ## Implementation Pattern
 
 Use repo-local naming and DI first, but keep this contract intact:
