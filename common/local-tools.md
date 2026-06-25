@@ -89,6 +89,48 @@ Never inspect prompts, responses, commands, file paths, transcripts, logs,
 diffs, source content, environment values, or secrets to reconstruct token
 usage, labels, session names, or display names.
 
+## Workflow Metering Changes
+
+When changing a workflow router, route catalog, hook, prompt bridge, permission
+installer, or local metering setup, treat usage-metering labels as a preserved
+contract rather than incidental metadata.
+
+Do:
+
+- keep every workflow command mapped to a safe reusable task/stage label;
+- keep action labels for classify, list, query, validate, and any new workflow
+  action that can run before a route exists;
+- add or update tests that fail when a command or action loses its label;
+- document whether the change affects setup evidence, label handoff,
+  diagnostics, or exact usage evidence.
+
+Do not:
+
+- rename or remove labels only because the route, hook, or command shape changed;
+- use prompts, commands, file paths, diffs, logs, repo names, or branch names to
+  derive labels or display names;
+- treat permission prompts, hook configuration, label writes, setup output, or
+  mock payloads as proof that real usage was recorded;
+- route usage metering work through design-token guidance. Use the metering,
+  usage, or telemetry workflow concern instead.
+
+## Global Agent Lessons
+
+Use a user-local global lesson store such as `~/.agentplaybook/` only for
+content-free cross-agent learning metadata. This store helps future agents on
+the same machine notice accepted or promoted lessons before repeating a workflow
+mistake.
+
+Allowed lesson fields are reusable slugs and counts such as failure type, missed
+gate, root-cause category, next action, promotion target, promotion status, and
+schema version. Do not store prompts, responses, commands, file paths, repo
+names, branch names, diffs, logs, source content, environment values, secrets,
+or project-specific display names.
+
+Treat global lessons as local guidance, not proof that work was completed. A
+lesson becomes durable only when it is promoted into shared docs, tests,
+workflow validation, hooks, or repo-local instructions.
+
 ## Discovery Pattern
 
 When local tooling matters:

@@ -33,8 +33,10 @@ the command manifest and keep the implementation inside its listed gates.
    discovered stack, affected surface, and existing verification commands.
 2. Scope: name the requested behavior, acceptance criteria, non-goals, and the
    smallest safe slice.
-3. Design: choose state, domain, data, platform, contract, and security
-   boundaries. Name likely side-effect surfaces before editing.
+3. Boundary plan: choose state, domain, data, platform, contract, security, and
+   ownership boundaries. Name the owned files/modules, caller-facing contracts,
+   allowed or forbidden dependency direction when relevant, and the nearest
+   verification path before editing.
 4. Implement: change only the scoped files and keep generated, dependency,
    formatting, and release churn separate when possible.
 5. Verify: run the narrowest reliable check that proves the changed surface.
@@ -54,10 +56,10 @@ Use parallelism to reduce waiting, not to blur ownership.
   reads, file searches, stack discovery, git status, and preflight evidence may
   run together when the runtime supports it.
 - For code work, record a multi-agent split decision before editing. Use
-  parallel/multi-agent implementation when owned files or modules are disjoint
-  and the contract is stable. If the work stays serial, record the reason:
-  small scope, same-file edits, unstable shared contract, migration/dependency
-  surface, or another concrete overlap risk.
+  subagents or parallel/multi-agent implementation when owned files or modules
+  are disjoint and the contract is stable. If the work stays serial, record the
+  reason: small scope, same-file edits, unstable shared contract,
+  migration/dependency surface, or another concrete overlap risk.
 - Split implementation across parallel agents only when each slice has explicit
   owned files or modules, forbidden files or modules, acceptance checks, and
   verification commands.
@@ -119,6 +121,11 @@ After verification, inspect the final diff and ask:
 
 If the answer is yes, either verify that surface, split the change, or report the
 remaining risk.
+
+Record side-effect audit evidence before handoff. Acceptable evidence names the
+final diff or checked surfaces and states whether unexpected generated files,
+lockfiles, public contracts, external state, formatting churn, or unrelated
+behavior were found.
 
 ## Route To
 

@@ -32,11 +32,28 @@ return here only for the ARD-scoped code slice.
    reroute to `product`.
 2. Restate the requested behavior and assumptions.
 3. Identify the smallest implementation boundary.
-4. Check repo-local instructions, existing patterns, affected contracts, and affected tests.
-5. Implement only the requested behavior.
-6. Verify with the nearest useful command or manual smoke check.
-7. Run the side-effect audit from `workflows/development-cycle.md`.
-8. Report what changed, how it was verified, and any residual risk.
+4. Record the boundary plan before editing: owned files/modules, affected
+   caller-facing contracts, existing same-file scope or new package boundary,
+   and the nearest verification that will prove the change.
+5. Check repo-local instructions, existing patterns, affected contracts, and affected tests.
+6. Implement only the requested behavior.
+7. Update source-of-truth docs or record why docs are intentionally unchanged.
+8. Verify with the nearest useful command or manual smoke check.
+9. Run the side-effect audit from `workflows/development-cycle.md`.
+10. Report what changed, how it was verified, and any residual risk.
+
+## Pre-Code Packet
+
+Before editing non-trivial code, record:
+
+- acceptance criteria or observable outcome;
+- boundary plan: owner, scope, contracts, imports or same-file scope;
+- test/check plan tied to that boundary;
+- subagent/multi-agent split decision or the serial reason.
+
+Do not start implementation when the boundary plan cannot name the owner,
+caller contract, and verification path. Ask for clarification or reroute to
+product/architecture work instead.
 
 ## Verification
 

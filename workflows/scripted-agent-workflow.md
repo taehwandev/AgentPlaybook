@@ -122,8 +122,10 @@ Current concern values:
 - `intake`
 - `invite`
 - `interaction`
+- `local-tools`
 - `llms`
 - `llms-txt`
+- `metering`
 - `module`
 - `observability`
 - `open-graph`
@@ -142,8 +144,11 @@ Current concern values:
 - `structure`
 - `structured-data`
 - `swiftui`
+- `telemetry`
 - `ui`
 - `uikit`
+- `usage`
+- `verification`
 - `voice`
 - `widget`
 - `wiki`
@@ -158,6 +163,10 @@ discovery keywords in `--request`, such as SEO, AI search, AEO, GEO, AI
 Overviews, AI Mode, `llms.txt`, sitemap, robots, canonical, Open Graph, and
 structured data. Inference is a convenience, not a replacement for adding
 specific `--concern` values when local context shows the risk.
+
+Use the `metering`, `usage`, or `telemetry` concern for local runtime usage
+metering, workflow label bridges, or Spill-related work. Do not use the
+`tokens` concern for usage metering; `tokens` routes design-system token work.
 
 Some concerns are baseline concerns. `stack`, `failure`, and `interaction` are
 valid concerns, but their core cards are already loaded by every route through
@@ -207,16 +216,49 @@ command profile forgets them:
   can change behavior, scope, risk, acceptance criteria, or verification, stop
   and ask the maintainer before editing. Do not continue with silent invented
   assumptions.
+- `alignment brief`: before PRD or product delivery work, show the user a compact
+  same/different/assumption summary. This is required even when a full question
+  drill is not needed. It should reduce later rework, not become a long
+  questionnaire.
 - `documentation`: update or create the relevant source-of-truth docs, or record
   why docs are not applicable or intentionally unchanged.
 - `tests`: add, update, or run the closest useful test/check for code work. A
   skipped test must include the command skipped, reason, and residual risk.
-- `multi-agent split decision`: for code work, choose parallel/multi-agent work
-  when scopes are disjoint and useful. If work stays serial, record why the
-  change is too small, same-file, contract-bound, or otherwise not safe to split.
+- `boundary plan`: before code edits, name the owned boundary, file/module
+  scope, caller-facing contract, or existing same-file scope, plus the nearest
+  verification that will prove the change.
+- `multi-agent split decision`: for code work, decide whether to spawn
+  subagents/parallel workers. Use them when owned files/modules are disjoint and
+  the shared contract is stable. If work stays serial, record why the change is
+  too small, same-file, contract-bound, or otherwise not safe to split.
+- `side-effect audit`: after implementation and before final verification or
+  handoff, inspect the final diff for unexpected generated files, lockfiles,
+  public-contract changes, external-state surfaces, broad formatting churn, and
+  unrelated behavior.
 
 `agent-finish-check.py` validates evidence for these gates. Missing evidence or
 empty phrases such as "done" are not enough.
+
+## Workflow Metering Contract
+
+When changing workflow commands, route profiles, hooks, runtime prompt bridges,
+permissions, or local metering setup, preserve the workflow label contract:
+
+- every route command in `workflow_catalog.COMMANDS` must have a matching
+  `SPILL_ROUTE_LABELS` entry;
+- every required workflow action must have a matching `SPILL_ACTION_LABELS`
+  entry;
+- labels must remain reusable safe slugs, not task text, project names, file
+  names, branch names, user names, or private content;
+- setup, permission, label, hook-load, mock-payload, and diagnostic signals must
+  not be reported as proof of real token usage;
+- `workflow.py validate` and the routing tests must fail when a route, action,
+  or concern change drops the metering contract.
+
+Use `common/local-tools.md` for the usage evidence boundary. For actual usage
+proof, require exact queued/imported local usage event evidence or the runtime's
+approved exact-usage success marker; otherwise record no usage event and avoid
+private-content reconstruction.
 
 ## Parallel Consumption
 
@@ -329,17 +371,21 @@ when the finish hook is unavailable.
 
 `agent-preflight.py` records the route manifest, current git status, and
 VibeGuard audit result in `<TARGET_REPO>/.agentplaybook/preflight.json`.
+It also records a content-free summary of accepted and promoted global lessons
+from `~/.agentplaybook/` when that local store exists.
 When `--request-classified` is used, it must also record
 `--classification-evidence`; otherwise request intake is treated as skipped.
 `agent-finish-check.py` requires evidence for every route gate, runs
 `workflow.py validate`, runs `git diff --check`, reruns VibeGuard, and writes
 `<TARGET_REPO>/.agentplaybook/finish.json`.
 It also writes `gate_signals`, `missed_gates`, and
-`retrospective_required`. If the route classification or stored request text
-requires a question drill, the finish check must receive drill evidence through
-a gate such as `question drill if needed=<evidence>` or
-`ask blockers=<evidence>`. Missing drill evidence is a `🐱🔴 FAIL` signal and
-blocks completion until missed-gate recovery and retrospective learning run.
+`retrospective_required`. When `retrospective_required` is true, it writes a
+safe lesson candidate under `~/.agentplaybook/lessons/inbox/` when permitted.
+If the route classification or stored request text requires a question drill,
+the finish check must receive drill evidence through a gate such as
+`question drill if needed=<evidence>` or `ask blockers=<evidence>`. Missing
+drill evidence is a `🐱🔴 FAIL` signal and blocks completion until missed-gate
+recovery and retrospective learning run.
 Human-visible wrapper output uses only `🐱🟢 SUCCESS` and `🐱🔴 FAIL`.
 
 Treat missing wrapper evidence as non-compliant. If the wrappers are unavailable,
@@ -360,8 +406,13 @@ If the agent missed any required gate:
    Preserve pre-existing user changes and ask before destructive cleanup.
 5. Re-execute the missed gate one time, then refresh any downstream gate
    evidence that depended on work after the missed gate.
-6. If the single retry fails, run `workflows/retrospective-learning.md` before
-   any handoff, commit, release, or completion report.
+6. If finish-check sets `retrospective_required`, run
+   `workflows/retrospective-learning.md`, inspect the generated global lesson
+   candidate when available, and restart at the first missed gate or same failed
+   scope before any handoff, commit, release, or completion report.
+7. If the same missed-gate scope fails again after retrospective restart, stop
+   and promote the lesson to shared docs, tests, workflow validation, or hooks
+   before continuing.
 
 The missed gate gets one recovery retry: original execution plus one recovery
 pass. If that recovery pass misses the gate again, stop and report the blocker,

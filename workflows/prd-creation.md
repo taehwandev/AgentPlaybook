@@ -30,21 +30,25 @@ from PRD into ARD and code.
 
 1. Source of truth: read the request, repo-local instructions, current product
    docs, issue, design note, or existing PRD before writing new requirements.
-2. Ambiguity check: classify unknowns as blocker, researchable, assumable, or
+2. Alignment brief: before drafting the PRD, tell the user the minimum useful
+   alignment: shared understanding, possible differences, unsupported
+   assumptions or unknowns, and at most the blocker questions that would change
+   behavior, risk, or verification.
+3. Ambiguity check: classify unknowns as blocker, researchable, assumable, or
    out-of-scope. Ask only when the answer can change behavior, risk, or
    verification.
-3. Actor and outcome: name the user or system actor and the outcome that should
+4. Actor and outcome: name the user or system actor and the outcome that should
    change.
-4. Scope: define what is in scope, explicitly out of scope, and what should not
+5. Scope: define what is in scope, explicitly out of scope, and what should not
    change.
-5. States and surfaces: cover success, loading, empty, error, permission denied,
+6. States and surfaces: cover success, loading, empty, error, permission denied,
    offline, conflict, rollback, data, auth, permission, billing, privacy,
    external services, and release impact when relevant.
-6. Acceptance criteria: write testable criteria before ARD or code. Prefer
+7. Acceptance criteria: write testable criteria before ARD or code. Prefer
    Given/When/Then when behavior has clear inputs and outcomes.
-7. Open decisions: name decisions that block ARD, implementation, security,
+8. Open decisions: name decisions that block ARD, implementation, security,
    data, release, or verification.
-8. Handoff: state where the PRD lives, what evidence was used, and the next
+9. Handoff: state where the PRD lives, what evidence was used, and the next
    recommended route: `product`, `planning`, `ambiguity`, or stop.
 
 Show a gate signal after each completed step when using a scripted route.
@@ -54,6 +58,12 @@ Show a gate signal after each completed step when using a scripted route.
 Use this shape unless the target repo has a PRD template:
 
 ```text
+Alignment:
+- Same understanding:
+- May differ:
+- Unsupported assumptions or unknowns:
+- Minimal questions:
+
 PRD:
 - User or actor:
 - Desired outcome:
@@ -68,6 +78,11 @@ PRD:
 - Verification signals:
 - Next route:
 ```
+
+The alignment section is not a long questionnaire. Prefer one to three concise
+blocker questions, and only ask them when the answer would change the PRD,
+architecture, risk, or verification. If no blocker question is needed, say which
+default assumption will be used.
 
 ## Stop If
 

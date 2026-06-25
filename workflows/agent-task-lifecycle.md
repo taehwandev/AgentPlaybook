@@ -46,24 +46,31 @@ or task-specific workflow to load next.
 6. Gate ledger: create a ledger for every route gate, mark each gate when it is
    executed, and show a short `SUCCESS` or `FAIL` gate signal after each
    completed or failed gate or task step.
-7. Inspect: read existing code, docs, tests, commands, and current user changes
+7. Global lessons: when preflight includes accepted or promoted lessons from
+   `~/.agentplaybook/`, check whether any apply to the current task before
+   editing or reviewing.
+8. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
-8. Decide: make a reasonable assumption when safe; ask only when ambiguity
+9. Decide: make a reasonable assumption when safe; ask only when ambiguity
    changes result or risk.
-9. Act: execute the scoped work with periodic progress updates for long tasks.
-10. Verify: collect evidence with the narrowest reliable command or manual
+10. Act: execute the scoped work with periodic progress updates for long tasks.
+11. Verify: collect evidence with the narrowest reliable command or manual
     check. For usage telemetry, distinguish setup, label, hook, and diagnostic
     evidence from exact queued/imported usage event evidence.
-11. Recover: when a command fails, diagnose stdout/stderr and make the smallest
+12. Recover: when a command fails, diagnose stdout/stderr and make the smallest
     correction before retrying.
-12. Ledger check: before finalizing, compare required gates against executed
+13. Ledger check: before finalizing, compare required gates against executed
     evidence and `SUCCESS`/`FAIL` state. Completion requires every required gate
     to be `🐱🟢 SUCCESS`. If any required gate is missing, blocked, failed, or
     lacks evidence, report `🐱🔴 FAIL` and follow missed-gate recovery in
     `workflows/scripted-agent-workflow.md`.
-13. Review: inspect the final diff, output, or artifact against the request and
+14. Retrospective restart: when finish-check sets `retrospective_required`, run
+    `workflows/retrospective-learning.md`, use or update the generated global
+    lesson candidate when safe, then restart at the first missed gate or same
+    failed scope.
+15. Review: inspect the final diff, output, or artifact against the request and
     risks.
-14. Report: state what changed or was found, verification status, skipped
+16. Report: state what changed or was found, verification status, skipped
     checks, and residual risk.
 
 ## Route To

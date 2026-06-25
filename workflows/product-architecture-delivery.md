@@ -96,6 +96,17 @@ repo is a monorepo.
 Produce or update a product requirements note before coding when behavior is
 non-trivial.
 
+Before writing the PRD, give the user a compact alignment brief:
+
+- same understanding: explicit goals and facts confirmed from the request or
+  repo context
+- may differ: scope, actor, success criteria, policy, or verification points
+  where the agent may be assuming differently than the user
+- unsupported assumptions or unknowns: defaults the agent would use if no
+  blocker answer is needed
+- minimal questions: one to three blocker questions only when the answer changes
+  behavior, risk, architecture, or verification
+
 PRD must answer:
 
 - Who is the user or system actor?

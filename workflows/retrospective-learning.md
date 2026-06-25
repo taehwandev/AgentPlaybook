@@ -48,9 +48,15 @@ Do not run a formal retrospective for trivial work with no reusable lesson.
    stale docs, missing platform card, ambiguous product decision, or execution error.
 5. Decide the smallest durable fix: shared doc update, repo-local instruction,
    PRD/ARD update, test, checklist item, TODO, or no change.
-6. Apply the doc or task update when it is safe and in scope; otherwise record the
-   follow-up owner and location.
-7. Report the learning in a short, reusable form.
+6. Record the lesson in the global local lesson store when the wrapper produced
+   a candidate, or create a safe candidate manually when needed. Use only
+   content-free reusable slugs: failure type, missed gate, root-cause category,
+   next action, promotion target, and promotion status.
+7. Apply the doc, test, hook, validation, or task update when it is safe and in
+   scope; otherwise record the follow-up owner and location.
+8. Restart at the first missed gate or same failed scope after the retrospective
+   decision is recorded.
+9. Report the learning in a short, reusable form.
 
 ## Output
 
@@ -74,6 +80,36 @@ Keep the write-up factual. Do not assign blame or narrate effort. Write the
 retrospective discussion result in the user's language for that task. For
 example, answer in Korean when the user is working in Korean, and in English
 when the user is working in English.
+
+## Global Lesson Store
+
+Use `~/.agentplaybook/lessons/` as the user-local cross-agent memory store.
+This store is not project evidence and is not a substitute for shared docs,
+tests, workflow validation, or hooks.
+
+Recommended directories:
+
+```text
+~/.agentplaybook/
+  lessons/
+    inbox/
+    accepted/
+    promoted/
+  index.json
+```
+
+- `inbox`: automatically generated or manually drafted lesson candidates after
+  a missed gate, failed hook, or repeatable agent mistake.
+- `accepted`: local cross-agent lessons that should be checked by future agents
+  on this machine.
+- `promoted`: lessons already turned into shared docs, tests, validation, or
+  hooks.
+
+Global lesson records must not contain prompts, responses, commands, file paths,
+repo names, branch names, diffs, logs, source content, environment values,
+secrets, or project-specific display names. If a useful lesson cannot be
+expressed without private content, do not store it globally; summarize the
+safe reusable category in the project-local retrospective only.
 
 ## Durable Fix Options
 

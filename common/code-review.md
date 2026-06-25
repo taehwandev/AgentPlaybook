@@ -26,6 +26,11 @@ instructions, and any project or product guidance.
 - Repo-local instructions and any matching AgentPlaybook platform/product cards.
 - Final diff, including generated files, lockfiles, fixtures, snapshots, and
   config.
+- Boundary-plan evidence for code work: owned scope, caller-facing contract,
+  import direction or same-file scope, and nearest verification.
+- Side-effect audit evidence for code work: final diff review and unexpected
+  generated, lockfile, public-contract, external-state, formatting, or unrelated
+  behavior.
 - Verification output or evidence gaps.
 - Affected source-of-truth docs, runbooks, API references, architecture notes,
   and agent instructions when behavior, commands, contracts, setup, or
@@ -59,6 +64,11 @@ instructions, and any project or product guidance.
   reason?
 - Does it follow local patterns?
 - Is the diff wider than needed?
+- Does the boundary plan match the actual files changed, or did implementation
+  drift into another owner or contract?
+- Did the side-effect audit explicitly cover generated files, lockfiles,
+  public-contract changes, external state, formatting churn, and unrelated
+  behavior?
 
 ## Findings Criteria
 
@@ -107,6 +117,9 @@ as a read-only gate:
 - Do not let the hook apply documentation updates, code review fixes, or
   structure rewrites. It records whether those decisions were already handled or
   should fail.
+- For code-work routes, the hook must fail when boundary-plan evidence or
+  side-effect audit evidence is missing from the route review. These are
+  workflow evidence checks, not optional review commentary.
 - If the diff is too broad to review confidently in one pass, fail the hook and
   split the work before retrying.
 - Check file-size gates only for changed files whose extension is in the

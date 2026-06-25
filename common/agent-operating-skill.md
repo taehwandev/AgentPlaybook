@@ -14,21 +14,24 @@ Use this before implementation, review, refactoring, debugging, documentation, o
  2. Classify request clarity and effort before loading broad context. If the user asks a direct question, answer it before starting workflow routing, editing, or project-specific commands.
  3. Read repo-local instructions before changing files.
  4. Discover the project stack before choosing commands or libraries.
- 5. For multi-step tasks, run `scripts/workflow.py route ... --request "<USER_REQUEST>"` before selecting task documents, editing, reviewing, committing, or reporting completion.
- 6. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
- 7. Use `index.md` to load only relevant AgentPlaybook cards.
- 8. Parallelize independent read-only orientation when the runtime supports it:
+5. For multi-step tasks, run `scripts/workflow.py route ... --request "<USER_REQUEST>"` before selecting task documents, editing, reviewing, committing, or reporting completion.
+ 6. Check preflight's global lesson summary when available. Accepted or promoted
+    lessons from `~/.agentplaybook/` apply across repos unless repo-local
+    instructions conflict.
+ 7. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
+ 8. Use `index.md` to load only relevant AgentPlaybook cards.
+ 9. Parallelize independent read-only orientation when the runtime supports it:
     selected document reads, file searches, stack inspection, git status, and
     preflight evidence may run together after request intake is settled.
- 9. Inspect existing code, docs, tests, and local conventions.
-10. Make the smallest change that genuinely addresses the request.
-11. For code work, record the multi-agent split decision before editing and use
+10. Inspect existing code, docs, tests, and local conventions.
+11. Make the smallest change that genuinely addresses the request.
+12. For code work, record the multi-agent split decision before editing and use
     parallel agents when scopes are disjoint and stable.
-12. Update/create affected docs and add/update/run the nearest useful test when
+13. Update/create affected docs and add/update/run the nearest useful test when
     code behavior or workflow policy changes.
-13. Verify with the narrowest reliable command first.
-14. Confirm the route gate ledger before reporting completion.
-15. Report what changed, what was verified, and what risk remains.
+14. Verify with the narrowest reliable command first.
+15. Confirm the route gate ledger before reporting completion.
+16. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -74,6 +77,10 @@ Before finishing:
   tests, and multi-agent split decision when the route requires them.
 - If verification cannot run, state why and what risk remains.
 - Include file references when explaining non-trivial changes.
+- If any required gate is missed or fails, run the retrospective workflow before
+  retrying the same scope or reporting completion. Treat the generated global
+  lesson candidate as a prompt to promote a recurring lesson into shared docs,
+  tests, validation, or hooks.
 
 ## Task Routing
 

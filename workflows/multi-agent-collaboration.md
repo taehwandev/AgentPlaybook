@@ -6,8 +6,8 @@ type: human-reviewed-needed
 
 # Multi-Agent Collaboration
 
-Use when work is split across multiple agents, delegated roles, parallel tasks,
-or a builder/verifier pair.
+Use when work is split across subagents, multiple agents, delegated roles,
+parallel tasks, or a builder/verifier pair.
 
 ## Roles
 
@@ -50,13 +50,13 @@ readiness gates.
 
 ## Parallel Work
 
-Agents may edit in parallel only when write scopes are disjoint.
+Subagents or agents may edit in parallel only when write scopes are disjoint.
 
 Rules:
 
-- The lead agent should actively look for safe parallel slices when a task has
-  independent surfaces. Do not wait for the user to request parallel agents when
-  the split is obvious and low risk.
+- The lead agent should actively look for safe subagent/parallel slices when a
+  task has independent surfaces. Do not wait for the user to request parallel
+  agents when the split is obvious and low risk.
 - Assign each writer explicit owned files or modules.
 - Assign explicit forbidden files or modules when overlap is likely.
 - Do not assign two writers to the same file.
@@ -84,8 +84,8 @@ Bad splits:
 
 ## Lead-Agent Split Decision
 
-Before spawning or assigning parallel implementation work, the lead agent must
-name:
+Before spawning subagents or assigning parallel implementation work, the lead
+agent must name:
 
 - the stable contract that all workers can rely on
 - each worker's owned files, packages, or modules

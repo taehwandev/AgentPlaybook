@@ -185,6 +185,12 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REP
 
 The wrappers write local JSON evidence under `<TARGET_REPO>/.agentplaybook/`.
 That directory is local runtime evidence and should usually be gitignored.
+The wrappers may also read or write safe cross-agent lessons under
+`~/.agentplaybook/`. That user-global store is for content-free lesson metadata
+only: missed gate slugs, failure types, root-cause categories, next actions, and
+promotion status. It must not contain prompts, responses, commands, file paths,
+repo names, branch names, diffs, logs, source content, environment values,
+secrets, or project-specific display names.
 
 Missing preflight evidence, missing finish-check evidence, or missing gate
 evidence is non-compliant even when the final code or documentation appears
@@ -201,6 +207,12 @@ workflow router, `git status --short --untracked-files=all`, VibeGuard before
 work, VibeGuard again before finishing, and report each required gate with
 concrete evidence. Do not claim wrapper evidence exists unless the wrapper was
 actually run.
+
+When `agent-finish-check.py` marks `retrospective_required`, run the
+retrospective workflow before retrying or reporting completion, then resume at
+the first missed gate or same failed scope. Repeated or high-risk lessons should
+be promoted from `~/.agentplaybook/lessons/inbox/` into shared docs, tests,
+workflow validation, or hooks.
 
 VibeGuard `Needs review` is not completion unless the agent explicitly reports
 the review state and passes `--allow-vibeguard-review "<reason>"`. `🐱🔴 FAIL`,

@@ -81,6 +81,13 @@ A question drill is included, but it is not the default for every request. Use i
 when the user wants requirements discovery, the request is `vague-action`, or
 unknowns can change behavior, scope, risk, or verification.
 
+For `prd` and `product` routes, always provide a compact alignment brief before
+drafting PRD content. This is not the same as a question drill. The brief must
+surface what the agent and user appear to share, what may differ, and what is an
+unsupported assumption or unknown. Ask only one to three blocker questions when
+the answer changes behavior, risk, architecture, acceptance criteria, or
+verification; otherwise state the default assumption.
+
 Drill rules:
 
 - Ask only blocker questions after checking available conversation and repo
