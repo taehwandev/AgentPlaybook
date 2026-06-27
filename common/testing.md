@@ -82,6 +82,24 @@ regression.
 - Do not mark behavior verified when only mocked, placeholder, or happy-path
   behavior ran.
 
+## Common Rationalizations
+
+| Rationalization | Required Response |
+| --- | --- |
+| "The change is small." | Check whether the risk is small; add the nearest test when a contract or state transition changed. |
+| "The compiler passed." | Compiler success does not prove behavior, permissions, persistence, UI, or release paths. |
+| "Manual testing is faster." | Record the manual scenario and add automated coverage when the risk is recurring or high. |
+| "The existing test is flaky." | Diagnose the unstable boundary; do not weaken assertions to get a pass. |
+
+## Red Flags
+
+- A behavior change has only formatting, lint, or typecheck evidence.
+- A high-risk path is tested only through mocks of the unit under test.
+- A snapshot update hides a product or layout change without a focused
+  assertion.
+- Tests cover the happy path but omit error, empty, permission, stale, or
+  unavailable states that the changed boundary can produce.
+
 ## Report
 
 For automated checks, report command, result, and what boundary it proved. For

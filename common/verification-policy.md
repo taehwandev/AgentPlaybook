@@ -9,6 +9,9 @@ type: human-reviewed-needed
 Work is not done just because files changed. Completion requires evidence or a
 clear explanation of why evidence could not be collected.
 
+For the final completion bar before handoff, commit, release, PR, or final
+report, also use `common/definition-of-done.md`.
+
 ## Verification Order
 
 Prefer the smallest reliable check first:

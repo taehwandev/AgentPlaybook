@@ -4,11 +4,14 @@ from __future__ import annotations
 
 
 WORK_PRODUCING_COMMANDS = {
+    "build",
     "bugfix",
+    "code-simplify",
     "feature",
     "product",
     "refactor",
     "release",
+    "ship",
     "task",
     "workflow-setup",
 }
@@ -16,13 +19,19 @@ ROUTE_DOCS_READ_COMMANDS = WORK_PRODUCING_COMMANDS | {
     "docs",
     "docs-review",
     "multi-agent",
+    "plan",
     "prd",
     "release",
     "retrospective",
     "review",
+    "spec",
+    "test",
+    "webperf",
 }
 CODE_WORK_COMMANDS = {
+    "build",
     "bugfix",
+    "code-simplify",
     "feature",
     "product",
     "refactor",
@@ -31,17 +40,24 @@ CODE_WORK_COMMANDS = {
 }
 ALIGNMENT_BRIEF_COMMANDS = {
     "ambiguity",
+    "build",
     "bugfix",
+    "code-simplify",
     "docs",
     "feature",
     "multi-agent",
+    "plan",
     "planning",
     "prd",
     "product",
     "refactor",
     "release",
+    "ship",
+    "spec",
     "task",
+    "test",
     "triage",
+    "webperf",
     "workflow-setup",
 }
 
@@ -82,7 +98,7 @@ def automatic_docs(command: str) -> list[str]:
                 "common/product-spec-to-implementation.md",
             ]
         )
-        if command in {"prd", "product"}:
+        if command in {"prd", "product", "spec"}:
             docs.append("workflows/prd-creation.md")
     if DOCUMENTATION_GATE in gates:
         docs.append("workflows/documentation-update.md")
@@ -114,35 +130,7 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
             if "orient" in result:
                 _insert_after_any(result, gate, anchors=("orient",))
             else:
-                _insert_before_any(
-                    result,
-                    gate,
-                    anchors=(
-                        "PRD/ARD applicability",
-                        "PRD",
-                        "PRD draft",
-                        "ARD",
-                        "acceptance criteria",
-                        "classify unknowns",
-                        "ask blockers",
-                        "source of truth",
-                        "diff review",
-                        "risk review",
-                        "package",
-                        "roles",
-                        "write scopes",
-                        "trigger",
-                        "reproduce",
-                        "behavior baseline",
-                        "act",
-                        "implementation",
-                        "code work",
-                        "fix",
-                        "small refactor",
-                        "edit",
-                        "install or repair",
-                    ),
-                )
+                result.insert(0, gate)
         elif gate == AMBIGUITY_GATE:
             _insert_after_any(
                 result,
@@ -163,6 +151,11 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
                     "implementation",
                     "code work",
                     "fix",
+                    "baseline",
+                    "measure",
+                    "test scope",
+                    "run checks",
+                    "simplification plan",
                     "small refactor",
                     "edit",
                     "install or repair",

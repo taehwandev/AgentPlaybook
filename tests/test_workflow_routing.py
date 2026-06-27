@@ -19,7 +19,7 @@ from agent_preflight_runtime import (
 )
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
 from support.permission_entries import codex_prefix_rule_entries
-from workflow_catalog import CONCERNS
+from workflow_catalog import COMMANDS, CONCERNS
 from workflow_gate_policy import (
     AMBIGUITY_GATE,
     ALIGNMENT_BRIEF_GATE,
@@ -35,6 +35,7 @@ from workflow_request import infer_concerns_from_request
 from workflow_request import classify_request
 from workflow_route import resolve_docs
 from workflow_spill import spill_tool_label
+from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS
 
 
 class WorkflowRoutingTests(unittest.TestCase):
@@ -51,6 +52,51 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("testing", CONCERNS)
         self.assertIn("common/testing.md", CONCERNS["testing"])
         self.assertIn("common/verification-policy.md", CONCERNS["testing"])
+        self.assertIn("definition-of-done", CONCERNS)
+        self.assertIn("common/definition-of-done.md", CONCERNS["definition-of-done"])
+
+    def test_lifecycle_alias_commands_are_registered(self) -> None:
+        for command in ("spec", "plan", "build", "test", "webperf", "code-simplify", "ship"):
+            with self.subTest(command=command):
+                self.assertIn(command, COMMANDS)
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn("request intake", route["gates"])
+                self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
+
+        self.assertIn("common/incremental-implementation.md", resolve_docs("build", None, [], request_classified=True)["docs"])
+        self.assertIn("common/web-performance-verification.md", resolve_docs("webperf", None, [], request_classified=True)["docs"])
+        self.assertIn("common/ci-cd-automation.md", resolve_docs("ship", None, [], request_classified=True)["docs"])
+
+        webperf_route = resolve_docs("webperf", None, [], request_classified=True)
+        self.assertLess(webperf_route["gates"].index(ROUTE_DOCS_READ_GATE), webperf_route["gates"].index("baseline"))
+        self.assertLess(webperf_route["gates"].index(ALIGNMENT_BRIEF_GATE), webperf_route["gates"].index("baseline"))
+
+        spec_route = resolve_docs("spec", None, [], request_classified=True)
+        self.assertLess(spec_route["gates"].index(ROUTE_DOCS_READ_GATE), spec_route["gates"].index("local product docs"))
+        self.assertLess(spec_route["gates"].index(ROUTE_DOCS_READ_GATE), spec_route["gates"].index("ambiguity check"))
+
+    def test_agent_skills_gap_concerns_are_registered(self) -> None:
+        expected = {
+            "skill-card": "common/agent-skill-card-anatomy.md",
+            "source-driven": "common/source-driven-development.md",
+            "doubt-driven": "common/doubt-driven-development.md",
+            "incremental": "common/incremental-implementation.md",
+            "deprecation": "common/deprecation-migration.md",
+            "ci": "common/ci-cd-automation.md",
+            "webperf": "common/web-performance-verification.md",
+            "browser-testing": "common/browser-runtime-testing.md",
+        }
+
+        for concern, doc in expected.items():
+            with self.subTest(concern=concern):
+                self.assertIn(concern, CONCERNS)
+                self.assertIn(doc, CONCERNS[concern])
+
+    def test_strict_card_required_headings_cover_anti_rationalization(self) -> None:
+        self.assertIn("## Common Rationalizations", STRICT_CARD_REQUIRED_HEADINGS)
+        self.assertIn("## Red Flags", STRICT_CARD_REQUIRED_HEADINGS)
+        self.assertIn("## Verification", STRICT_CARD_REQUIRED_HEADINGS)
 
     def test_metering_concern_is_registered_separately_from_design_tokens(self) -> None:
         self.assertIn("metering", CONCERNS)
@@ -65,6 +111,46 @@ class WorkflowRoutingTests(unittest.TestCase):
         concerns = infer_concerns_from_request("Preserve Spill workflow label bridge data")
 
         self.assertIn("metering", concerns)
+
+    def test_agent_skills_gap_requests_infer_new_concerns(self) -> None:
+        examples = (
+            ("Add a definition of done checklist", "testing"),
+            ("Review web performance and Core Web Vitals", "webperf"),
+            ("Review Jetpack Compose recomposition performance", "compose"),
+            ("Review Jetpack Compose recomposition performance", "performance"),
+            ("Use official docs for this SDK change", "source-driven"),
+            ("Run a doubt-driven assumption review", "doubt-driven"),
+            ("Split this into vertical slices", "incremental"),
+            ("Fix CI/CD automation", "ci"),
+        )
+
+        for request, concern in examples:
+            with self.subTest(request=request):
+                self.assertIn(concern, infer_concerns_from_request(request))
+
+    def test_android_performance_route_loads_external_skill_manifest(self) -> None:
+        route = resolve_docs(
+            "workflow-setup",
+            "android",
+            ["performance"],
+            request_classified=True,
+        )
+
+        self.assertIn("platforms/android/android-compose-ui.md", route["docs"])
+        self.assertIn("platforms/android/android-review.md", route["docs"])
+        self.assertIn("platforms/android/android-external-skill-source-coverage.md", route["docs"])
+
+    def test_android_platform_surfaces_load_external_skill_manifest(self) -> None:
+        for concern in ("architecture", "security", "testing", "module", "dependency", "migration", "devtools"):
+            with self.subTest(concern=concern):
+                route = resolve_docs(
+                    "workflow-setup",
+                    "android",
+                    [concern],
+                    request_classified=True,
+                )
+
+                self.assertIn("platforms/android/android-external-skill-source-coverage.md", route["docs"])
 
     def test_retrospective_candidate_writes_safe_global_lesson(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

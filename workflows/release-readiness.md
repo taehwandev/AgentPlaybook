@@ -13,6 +13,10 @@ signing, or handing off release-sensitive work.
 
 - `common/release-deployment.md`
 - `common/release-versioning.md`
+- `common/ci-cd-automation.md` when workflow files, release automation,
+  package publishing, deployment jobs, or CI gates are touched
+- `common/deprecation-migration.md` when release work removes, renames,
+  migrates, or changes compatibility
 - `common/verification-policy.md`
 - `common/secure-development-baseline.md`
 - `common/generated-files-policy.md`
@@ -37,6 +41,8 @@ signing, or handing off release-sensitive work.
    action, and known residual risk.
 7. Confirm post-release smoke, logs, monitoring, or health checks can detect
    failure.
+8. Confirm CI/CD gates, publish/deploy permissions, and rollback automation are
+   scoped to the intended branch, tag, environment, or approval path.
 
 ## Verification
 

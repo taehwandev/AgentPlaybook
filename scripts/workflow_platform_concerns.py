@@ -5,14 +5,58 @@ from __future__ import annotations
 from typing import Dict, Tuple
 
 
+ANDROID_EXTERNAL_SKILL_DOCS = ("platforms/android/android-external-skill-source-coverage.md",)
+ANDROID_COMPOSE_DOCS = (
+    "platforms/android/android-compose-ui.md",
+    "platforms/android/android-review.md",
+    *ANDROID_EXTERNAL_SKILL_DOCS,
+)
+ANDROID_STRUCTURE_DOCS = (
+    "platforms/android/android-module-structure.md",
+    *ANDROID_EXTERNAL_SKILL_DOCS,
+)
+ANDROID_PLATFORM_SURFACE_DOCS = (
+    "platforms/android/android-module-structure.md",
+    "platforms/android/android-review.md",
+    *ANDROID_EXTERNAL_SKILL_DOCS,
+)
+
+
 PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
-    ("android", "security"): ("platforms/android/android-security.md",),
-    ("android", "compose"): ("platforms/android/android-compose-ui.md",),
-    ("android", "state"): ("platforms/android/android-viewmodel-state.md",),
-    ("android", "ui"): ("platforms/android/android-compose-ui.md",),
-    ("android", "structure"): ("platforms/android/android-module-structure.md",),
-    ("android", "module"): ("platforms/android/android-module-structure.md",),
+    ("android", "architecture"): (
+        "platforms/android/android-architecture.md",
+        "platforms/android/android-module-structure.md",
+        *ANDROID_EXTERNAL_SKILL_DOCS,
+    ),
+    ("android", "security"): (
+        "platforms/android/android-security.md",
+        "platforms/android/android-review.md",
+        *ANDROID_EXTERNAL_SKILL_DOCS,
+    ),
+    ("android", "compose"): ANDROID_COMPOSE_DOCS,
+    ("android", "performance"): ANDROID_COMPOSE_DOCS,
+    ("android", "state"): (
+        "platforms/android/android-viewmodel-state.md",
+        "platforms/android/android-compose-ui.md",
+        *ANDROID_EXTERNAL_SKILL_DOCS,
+    ),
+    ("android", "ui"): ANDROID_COMPOSE_DOCS,
+    ("android", "testing"): (
+        "platforms/android/android-review.md",
+        *ANDROID_EXTERNAL_SKILL_DOCS,
+    ),
+    ("android", "test"): (
+        "platforms/android/android-review.md",
+        *ANDROID_EXTERNAL_SKILL_DOCS,
+    ),
+    ("android", "structure"): ANDROID_STRUCTURE_DOCS,
+    ("android", "module"): ANDROID_STRUCTURE_DOCS,
     ("android", "background"): ("platforms/android/android-background-work.md",),
+    ("android", "devtools"): ANDROID_PLATFORM_SURFACE_DOCS,
+    ("android", "dependency"): ANDROID_PLATFORM_SURFACE_DOCS,
+    ("android", "release"): ANDROID_PLATFORM_SURFACE_DOCS,
+    ("android", "migration"): ANDROID_PLATFORM_SURFACE_DOCS,
+    ("android", "platform"): ANDROID_PLATFORM_SURFACE_DOCS,
     ("kmp", "security"): ("platforms/kmp/kmp-security.md",),
     ("kmp", "compose"): ("platforms/kmp/kmp-compose-ui.md",),
     ("kmp", "state"): ("platforms/kmp/kmp-state-data.md",),

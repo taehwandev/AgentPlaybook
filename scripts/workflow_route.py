@@ -24,7 +24,9 @@ from workflow_gate_policy import add_automatic_gates, automatic_docs
 
 
 REVIEW_HOOK_REQUIRED_COMMANDS = {
+    "build",
     "bugfix",
+    "code-simplify",
     "docs",
     "docs-review",
     "feature",
@@ -33,6 +35,8 @@ REVIEW_HOOK_REQUIRED_COMMANDS = {
     "product",
     "refactor",
     "release",
+    "ship",
+    "spec",
     "retrospective",
     "review",
     "task",

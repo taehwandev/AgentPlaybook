@@ -21,6 +21,12 @@ the command manifest and keep the implementation inside its listed gates.
 - `common/llm-coding-discipline.md`
 - `common/code-conventions.md`
 - `common/stack-discovery.md`
+- `common/incremental-implementation.md` when the change can be split into
+  verified slices
+- `common/source-driven-development.md` when framework, SDK, platform, API, or
+  external documentation behavior can change over time
+- `common/doubt-driven-development.md` when the plan depends on high-risk or
+  non-obvious assumptions
 - `common/change-size-policy.md`
 - `common/worktree-hygiene.md` when the checkout already contains changes
 - `common/tool-failure-recovery.md` when verification or build commands fail
@@ -40,15 +46,21 @@ the command manifest and keep the implementation inside its listed gates.
    ownership boundaries. Name the owned files/modules, caller-facing contracts,
    allowed or forbidden dependency direction when relevant, and the nearest
    verification path before editing.
-5. Implement: change only the scoped files and keep generated, dependency,
+5. Slice plan: choose vertical, contract-first, risk-first, test-first, or
+   UI-state slicing when the work is non-trivial. Do not broaden beyond the
+   first useful slice until it has evidence or an explicit residual-risk note.
+6. Implement: change only the scoped files and keep generated, dependency,
    formatting, and release churn separate when possible.
-6. Verify: run the narrowest reliable check that proves the changed surface.
-7. Side-effect audit: inspect the final diff and affected call paths for behavior
+7. Verify: run the narrowest reliable check that proves the changed surface.
+8. Side-effect audit: inspect the final diff and affected call paths for behavior
    outside the requested slice.
-8. Broaden only if needed: run wider checks when the narrow check cannot cover
+9. Doubt pass when needed: challenge the weakest assumption before handoff when
+   the work touches data, auth, billing, release, migration, external state,
+   security, privacy, observability, or architecture.
+10. Broaden only if needed: run wider checks when the narrow check cannot cover
    shared contracts, auth, persistence, platform integration, release, or user
    flow risk.
-9. Handoff: report changed files, verification evidence, skipped checks, side
+11. Handoff: report changed files, verification evidence, skipped checks, side
    effects considered, and residual risk.
 
 ## Parallel Implementation

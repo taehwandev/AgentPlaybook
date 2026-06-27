@@ -327,6 +327,48 @@ For every runtime:
     commands.
 19. Report verification and residual risk.
 
+## Lifecycle Aliases
+
+Runtimes may expose short lifecycle commands for convenience, but they should
+call AgentPlaybook routing instead of creating a second active workflow router.
+
+| Alias | Route Command | Primary Use |
+| --- | --- | --- |
+| `/spec` | `spec` | requirements note, PRD, acceptance criteria, open decisions |
+| `/plan` | `plan` | research, options, recommendation before implementation |
+| `/build` | `build` | scoped feature or implementation slice |
+| `/test` | `test` | verification-only work or test evidence collection |
+| `/review` | `review` | code, diff, risk, and verification review |
+| `/webperf` | `webperf` | browser/web performance measurement and review |
+| `/code-simplify` | `code-simplify` | behavior-preserving simplification and refactor cleanup |
+| `/ship` | `ship` | release, packaging, rollout, rollback, and launch checks |
+
+The alias should run:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <route-command> --request "<USER_REQUEST>"
+```
+
+Do not let aliases bypass request intake, preflight, route docs, VibeGuard,
+review hook, finish-check, or repo-local instructions.
+
+## Controlled Auto Mode
+
+Do not add an unrestricted "auto build" or "auto ship" mode to a runtime bridge.
+Automation may proceed without another question only when all of these are true:
+
+- the user approved the goal or the repo has an explicit auto-run policy;
+- project discovery selected exactly one target repo;
+- the route command, docs, gates, and verification surface are known;
+- destructive work, external writes, deploys, migrations, publishing,
+  credential changes, and paid-usage increases are out of scope or separately
+  approved;
+- each slice still runs preflight, route docs, review hook when required,
+  finish-check, and the nearest verification.
+
+If any condition fails, the runtime should stop at a decision point instead of
+continuing under an "auto" label.
+
 If a required route gate was missed, the runtime must stop finalization, roll
 back only dependent agent-made changes after the missed gate when safe, return
 to the first missed gate only, and run the retrospective workflow. The missed

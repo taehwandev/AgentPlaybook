@@ -20,6 +20,16 @@ from workflow_spill import validate_spill_label_contracts
 
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 FRONTMATTER_REQUIRED_KEYS = ("keyflow_id:", "status:", "type:")
+STRICT_CARD_MARKER = "agentplaybook_card_contract: strict"
+STRICT_CARD_REQUIRED_HEADINGS = (
+    "## Use When",
+    "## Decision Rule",
+    "## Common Rationalizations",
+    "## Red Flags",
+    "## Do Not",
+    "## Stop If",
+    "## Verification",
+)
 
 
 def validate_route_contracts() -> list[str]:
@@ -103,6 +113,7 @@ def validate() -> int:
     markdown_files = sorted(ROOT.rglob("*.md"))
     bad_frontmatter: list[str] = []
     bad_links: list[str] = []
+    bad_card_quality: list[str] = []
 
     for path in markdown_files:
         relative = path.relative_to(ROOT)
@@ -118,6 +129,14 @@ def validate() -> int:
         missing_keys = [key[:-1] for key in FRONTMATTER_REQUIRED_KEYS if key not in header]
         if missing_keys:
             bad_frontmatter.append(f"{relative}: missing {', '.join(missing_keys)}")
+        if STRICT_CARD_MARKER in header:
+            missing_headings = [
+                heading for heading in STRICT_CARD_REQUIRED_HEADINGS if not _has_heading(text, heading)
+            ]
+            if missing_headings:
+                bad_card_quality.append(
+                    f"{relative}: strict card missing {', '.join(missing_headings)}"
+                )
 
         for raw_link in MARKDOWN_LINK_RE.findall(text):
             link = raw_link.strip()
@@ -145,8 +164,12 @@ def validate() -> int:
         print("Invalid workflow route contracts:", file=sys.stderr)
         for item in bad_route_contracts:
             print(f"- {item}", file=sys.stderr)
+    if bad_card_quality:
+        print("Invalid strict card anatomy:", file=sys.stderr)
+        for item in bad_card_quality:
+            print(f"- {item}", file=sys.stderr)
 
-    if missing or bad_frontmatter or bad_links or bad_route_contracts:
+    if missing or bad_frontmatter or bad_links or bad_route_contracts or bad_card_quality:
         return 1
 
     print(
@@ -155,3 +178,7 @@ def validate() -> int:
         f"{len(COMMANDS)} route contracts are valid."
     )
     return 0
+
+
+def _has_heading(text: str, heading: str) -> bool:
+    return re.search(rf"^{re.escape(heading)}(?:\s|$)", text, re.MULTILINE) is not None

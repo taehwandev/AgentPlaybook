@@ -13,6 +13,8 @@ Use when creating, reviewing, or restructuring docs, guides, specs, READMEs, age
 - `workflows/agent-task-lifecycle.md`
 - `common/code-conventions.md` for naming and clarity
 - `common/llm-wiki-documentation.md` for wiki, knowledge-base, runbook, onboarding, durable architecture, or operational docs
+- `common/agent-skill-card-anatomy.md` when creating or materially updating an
+  AgentPlaybook guidance card
 - `common/project-naming.md` when names, slugs, or product identifiers appear
 - `common/verification-policy.md` when links, examples, or commands can be checked
 - `common/human-authored-writing.md` when the task changes prose voice, tone, or AI-writing signals without changing facts
@@ -47,6 +49,12 @@ agent behavior. A useful shared card should answer these questions directly:
   broader checks for higher-risk surfaces.
 - Report contract: what the final response, PR, commit, or handoff must say
   when that card governed the work.
+
+Use `common/agent-skill-card-anatomy.md` as the stricter contract when a card is
+new, broad-use, recurring-mistake guidance, or expected to be loaded before
+code, review, release, or handoff. The preferred shape includes explicit
+anti-rationalization, red-flag, do-not, stop-if, verification, and report
+sections so the guidance is executable rather than inspirational.
 
 For short review cards, include at least findings priority, review checks,
 verification focus, and output shape. For platform implementation cards, include

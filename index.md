@@ -46,8 +46,16 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Accessibility, localization, dates, numbers, UI text: `common/accessibility-i18n.md`
 - Human-authored prose, voice fidelity, and AI-writing signal cleanup:
   `common/human-authored-writing.md`
+- AgentPlaybook card anatomy, anti-rationalization, red flags, and evidence
+  sections: `common/agent-skill-card-anatomy.md`
 - Architecture choice/change: `common/architecture-selection.md`
 - Architecture design: `common/architecture-design.md`
+- Source-driven framework, SDK, platform, API, and external-doc decisions:
+  `common/source-driven-development.md`
+- Doubt-driven challenge pass for high-risk assumptions:
+  `common/doubt-driven-development.md`
+- Incremental implementation and verified slice planning:
+  `common/incremental-implementation.md`
 - New feature or product ambiguity: `common/product-spec-to-implementation.md`
 - LLM-readable wiki, knowledge-base, runbook, or durable documentation:
   `common/llm-wiki-documentation.md`
@@ -60,6 +68,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Refactor: `common/refactoring.md`
 - Testing or bug regression: `common/testing.md`
 - Verification evidence: `common/verification-policy.md`
+- Completion checklist and Definition of Done:
+  `common/definition-of-done.md`
 - Tool, compiler, lint, test, and command failure recovery:
   `common/tool-failure-recovery.md`
 - Local tools, AI CLIs, runtime, usage telemetry: `common/local-tools.md`
@@ -71,6 +81,14 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Persistence, cache, sync, migration: `common/data-persistence-sync.md`
 - Server-rendered/API/edge/database caching and invalidation: `common/server-side-caching.md`
 - Errors, logs, audit, diagnostics: `common/observability-error-handling.md`
+- CI/CD automation, workflow files, release checks, publishing and deployment
+  automation: `common/ci-cd-automation.md`
+- Deprecation, migration, removal, compatibility windows, and zero-usage
+  cleanup: `common/deprecation-migration.md`
+- Web performance evidence, Core Web Vitals, bundle/runtime measurement:
+  `common/web-performance-verification.md`
+- Browser runtime testing, console/network/DOM/accessibility inspection:
+  `common/browser-runtime-testing.md`
 - Error modeling, typed failures, retryability, user-visible failure states:
   `common/error-modeling.md`
 - Code review: `common/code-review.md`
@@ -163,6 +181,10 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 
 - Workflow script command list:
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list`
+- Lifecycle aliases supported by the workflow router: `spec`, `plan`, `build`,
+  `test`, `review`, `webperf`, `code-simplify`, and `ship`. These aliases map
+  to AgentPlaybook routes and must not replace the router with a second active
+  command framework.
 - Preflight evidence wrapper:
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>"`
 - Finish evidence wrapper:

@@ -74,6 +74,24 @@ QA / Regression:
 - edge cases, empty/loading/error/permission states, known regressions,
   automated coverage, smoke/manual coverage, and missing acceptance checks
 
+## Specialist Personas
+
+Use these as named lenses when they match the risk. They are roles in the review
+packet, not separate authorities:
+
+- Code Reviewer: correctness, readability, ownership, imports, side effects,
+  maintainability, and nearest tests.
+- Test Engineer: assertions, fixtures, state coverage, boundary values,
+  regression evidence, and missing automated or manual checks.
+- Security Auditor: auth, permission, tenant, secret, privacy, dependency,
+  logging, and release trust boundaries.
+- Web Performance Auditor: Core Web Vitals, bundle size, runtime cost, network,
+  cache, layout shift, and measurement quality.
+
+Split these across subagents only when each reviewer receives raw artifacts,
+clear scope, and no leaked expected answer. Merge duplicate findings and keep
+the final recommendation in one place.
+
 ## Output
 
 Lead with findings:

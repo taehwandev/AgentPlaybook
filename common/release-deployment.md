@@ -39,6 +39,13 @@ environment, verification gate, and rollback or forward-fix path.
 - Run destructive migrations only with a rollback, restore, or forward-fix plan.
 - Feature flags need an owner, default, rollout condition, monitoring signal, and
   cleanup plan.
+- CI/CD automation should separate build, test, package, publish, deploy, and
+  smoke stages enough that failures are diagnosable and rollback remains
+  realistic. Use `common/ci-cd-automation.md` when automation changes.
+- Deprecation, migration, or removal work needs compatibility mode, migrated
+  callers, docs, and zero-usage or rollback evidence. Use
+  `common/deprecation-migration.md` when release behavior removes or replaces a
+  path.
 - Release notes should mention user-visible changes, migrations, breaking
   changes, security impact, and required operator action.
 - Never print or commit deployment secrets, signing material, or generated

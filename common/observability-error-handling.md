@@ -16,6 +16,9 @@ design, also use `error-modeling.md`.
 - User-facing message
 - Developer diagnostic
 - Operational log
+- Metric
+- Trace or span
+- Alert
 - Audit event
 - Recovery action
 
@@ -27,6 +30,31 @@ design, also use `error-modeling.md`.
 - Logs should help debug without leaking secrets or unnecessary personal data.
 - Audit events should record actor, target, action, time, and result.
 - Retry needs idempotency or a clear duplicate-handling strategy.
+- Logs, metrics, traces, and alerts should answer the operator question the
+  change creates: is it failing, where is it failing, how many users or jobs are
+  affected, and what action is needed?
+- Prefer symptom alerts over implementation-detail alerts when the symptom is
+  measurable.
+- Keep correlation ids stable across logs, traces, async work, and user-visible
+  support states when the platform supports it.
+- Keep metric cardinality bounded. Do not put user ids, secrets, raw URLs,
+  prompts, customer data, or unbounded error strings in metric labels.
+
+## Instrumentation
+
+Choose signals by the surface being changed:
+
+| Surface | Useful Signals |
+| --- | --- |
+| Request or API path | rate, errors, duration, status, dependency failure, correlation id |
+| Worker or queue | enqueue rate, lag, retry count, dead-letter count, job duration |
+| Storage or cache | hit/miss, stale read, write failure, migration/backfill progress |
+| UI or client runtime | user-visible failure, startup/load time, key interaction error, crash |
+| Release or migration | rollout stage, version, smoke result, rollback trigger, compatibility error |
+
+Add instrumentation only when it answers a concrete support, operations, or
+product reliability question. Do not add noisy logs or metrics because they are
+easy to emit.
 
 ## Exception Handling
 
@@ -59,3 +87,6 @@ correlation id
 - Can the user recover or understand the block?
 - Is sensitive data excluded from logs and telemetry?
 - Are repeated failures rate-limited or deduplicated?
+- Does an alert point to a symptom that requires action?
+- Was telemetry exercised with a test, local run, staging check, or explicit
+  residual-risk note?

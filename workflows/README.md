@@ -41,6 +41,24 @@ Discover available scripted commands with:
 python3 scripts/workflow.py list
 ```
 
+## Lifecycle Aliases
+
+The router also exposes lifecycle aliases for runtimes that prefer short
+commands:
+
+- `spec`: PRD, requirements note, acceptance criteria, open decisions.
+- `plan`: research, options, and recommendation.
+- `build`: scoped implementation slice.
+- `test`: verification-only work or test evidence collection.
+- `review`: diff, risk, and verification review.
+- `webperf`: browser and web performance measurement.
+- `code-simplify`: behavior-preserving simplification.
+- `ship`: release, package, rollout, rollback, and launch checks.
+
+These aliases are convenience entrypoints into `scripts/workflow.py route`.
+They must not bypass the normal route docs, preflight, VibeGuard, review hook,
+finish-check, or repo-local instructions.
+
 ## Decision Rule
 
 Use the smallest workflow that covers the actual risk:
@@ -64,6 +82,8 @@ A workflow is complete only when:
 - the final diff or artifact was inspected against the request
 - the smallest reliable verification ran, or the skip reason and residual risk
   are explicit
+- `common/definition-of-done.md` is satisfied before handoff, commit, release,
+  PR, or final report
 - handoff reports changed files, commands, results, blockers, and remaining risk
 
 ## Essential Hooks

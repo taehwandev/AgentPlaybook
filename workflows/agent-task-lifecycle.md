@@ -25,6 +25,8 @@ or task-specific workflow to load next.
   or metering evidence matter
 - `common/tool-failure-recovery.md` when a command fails
 - `common/verification-policy.md` when the task has a checkable result
+- `common/definition-of-done.md` before final report, handoff, commit, release,
+  or PR creation
 - `index.md` to select only task-specific cards
 
 ## Steps
@@ -72,13 +74,16 @@ or task-specific workflow to load next.
     to be `🐱🟢 SUCCESS`. If any required gate is missing, blocked, failed, or
     lacks evidence, report `🐱🔴 FAIL` and follow missed-gate recovery in
     `workflows/scripted-agent-workflow.md`.
-16. Retrospective restart: when finish-check sets `retrospective_required`, run
+16. Definition of Done: before final report, handoff, commit, release, or PR
+    creation, compare the final diff and evidence against
+    `common/definition-of-done.md`.
+17. Retrospective restart: when finish-check sets `retrospective_required`, run
     `workflows/retrospective-learning.md`, use or update the generated global
     lesson candidate when safe, then restart at the first missed gate or same
     failed scope.
-17. Review: inspect the final diff, output, or artifact against the request and
+18. Review: inspect the final diff, output, or artifact against the request and
     risks.
-18. Report: state what changed or was found, verification status, skipped
+19. Report: state what changed or was found, verification status, skipped
     checks, and residual risk.
 
 ## Route To
