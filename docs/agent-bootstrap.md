@@ -19,8 +19,9 @@ Apply AgentPlaybook to this project:
 https://github.com/taehwandev/AgentPlaybook
 
 Before changing anything, read this project's current agent instructions first:
-AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
-CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+AGENTS.md, CLAUDE.md, CODEX.md, .agents/README.md, CONTRIBUTING.md, task docs,
+PRD/ARD docs, equivalent project docs, or explicitly documented local override
+files.
 
 If AgentPlaybook already exists locally, link this repo to the existing copy.
 Do not clone, vendor, or copy a second copy unless no usable local copy exists.
@@ -85,16 +86,28 @@ Local reuse is the default and a hard stop for install work:
 
 1. Identify the target project from the user's request and current working
    directory.
-2. Read the target project's current agent instructions before changing files:
-   `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`,
-   `.agents/README.md`, `CONTRIBUTING.md`, task docs, PRD/ARD docs, or
-   equivalent project docs.
-3. Check whether the user supplied an explicit AgentPlaybook path.
-4. Check `AGENTPLAYBOOK_HOME`.
-5. Check legacy `KEYFLOW_AGENT_ROOT` only when present.
-6. Check common local installs such as `~/.agent-playbook`,
+2. If the runtime started from `~`, another non-project directory, or a
+   directory that may not be the requested target, use the selected
+   AgentPlaybook root's entry helper before project work:
+
+   ```text
+   python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
+   ```
+
+   Continue only when it returns `selected`. If it returns `ambiguous` or
+   `not_found`, ask the user for the target project instead of guessing. Do not
+   scan broad home directories by default; use an explicit path, registry alias,
+   or known `--search-root` first.
+3. Read the target project's current agent instructions before changing files:
+   `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`,
+   `CONTRIBUTING.md`, task docs, PRD/ARD docs, equivalent project docs, or an
+   explicitly documented local override file.
+4. Check whether the user supplied an explicit AgentPlaybook path.
+5. Check `AGENTPLAYBOOK_HOME`.
+6. Check legacy `KEYFLOW_AGENT_ROOT` only when present.
+7. Check common local installs such as `~/.agent-playbook`,
    `~/AgentPlaybook`, and `~/GitHub/AgentPlaybook`.
-7. Check repo-pinned locations only when the target repo already contains one,
+8. Check repo-pinned locations only when the target repo already contains one,
    such as `.agents/AgentPlaybook`, `tools/AgentPlaybook`, or a git submodule.
 
 A usable AgentPlaybook root contains all of:
@@ -239,8 +252,8 @@ that subsystem.
 1. Find the canonical repo-local instruction file. Prefer `AGENTS.md` when the
    active runtimes read it.
 2. Also inspect existing runtime-specific instruction files, such as
-   `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`,
-   Antigravity CLI docs, or an equivalent project guide.
+   `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, Antigravity CLI docs,
+   equivalent project guides, or explicitly documented local override files.
 3. Preserve existing repo-local instructions.
 4. Confirm the required VibeGuard gate passed or stopped with a reported
    blocker.
@@ -279,6 +292,8 @@ Before reporting success:
 - `AGENTS.md` and `index.md` exist under that root.
 - `setup-agent-hooks.py --check` either passed or missing user-level hooks or
   permissions were installed after approval.
+- `agent-entry.py` or `project-discover.py` selects the target repo when the
+  runtime starts outside it, or stops with `ambiguous` / `not_found`.
 - The VibeGuard gate ran with the selected AgentPlaybook root as the rule
   source.
 - Multi-step work has preflight and finish-check evidence when the wrapper
@@ -296,6 +311,8 @@ Before reporting success:
 ## Stop If
 
 - The target project is ambiguous.
+- Project discovery returns `ambiguous` or `not_found` and the user has not
+  chosen a target project.
 - The user asked only for advice and did not ask to edit the repo.
 - No usable local copy exists and network access is unavailable or not approved.
 - The VibeGuard command cannot run after using the installed binary or the

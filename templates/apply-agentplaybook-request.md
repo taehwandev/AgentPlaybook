@@ -19,14 +19,22 @@ Step 1 - Apply AgentPlaybook to this project:
 https://github.com/taehwandev/AgentPlaybook
 
 Before changing anything, open and read this project's current agent instructions first:
-AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
-CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+AGENTS.md, CLAUDE.md, CODEX.md, .agents/README.md, CONTRIBUTING.md, task docs,
+PRD/ARD docs, equivalent project docs, or explicitly documented local override
+files.
 Do not rely on implicit runtime discovery: Codex-style agents must explicitly
-read the current project's AGENTS.md or AGENTS.override.md, Claude must
-explicitly read CLAUDE.md when present, Antigravity agents must explicitly read
-the current project's AGENTS.md, and generic agents must explicitly read the
-project instruction document they are configured to load.
+read the current project's AGENTS.md, Claude must explicitly read CLAUDE.md
+when present, Antigravity agents must explicitly read the current project's
+AGENTS.md, and generic agents must explicitly read the project instruction
+document they are configured to load.
 Do not claim the file was read unless you actually opened it.
+If the target project is not explicit or the runtime starts outside the target,
+run the AgentPlaybook entry helper before reading project docs:
+
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
+
+Continue only when it returns `selected`. If it returns `ambiguous` or
+`not_found`, ask me for the target project instead of guessing.
 
 Use an existing local AgentPlaybook install if one is available. Check an
 explicit path from me first, then AGENTPLAYBOOK_HOME, then common local clones
@@ -119,10 +127,10 @@ site. Continue with the package command shape above, and use
 
 If VibeGuard cannot run, stop and tell me the blocker.
 
-Update the repo-local agent instructions, such as AGENTS.md,
-AGENTS.override.md, CLAUDE.md, CODEX.md, or .agents/README.md, with a short
-routing block. Preserve existing project rules. Keep repo-specific commands,
-paths, services, product policy, and domain language in this repo.
+Update the repo-local agent instructions, such as AGENTS.md, CLAUDE.md,
+CODEX.md, .agents/README.md, or an explicitly documented local override file,
+with a short routing block. Preserve existing project rules. Keep repo-specific
+commands, paths, services, product policy, and domain language in this repo.
 
 When writing committed repo-local instruction files, do not commit my personal
 absolute path such as /Users/.../AgentPlaybook. Use ${AGENTPLAYBOOK_HOME} for a
@@ -213,8 +221,12 @@ file the active runtime loads.
 
 The bridge must force this behavior:
 - Start every task by identifying the current project root.
+- If the runtime starts from ~ or another non-project directory, resolve the
+  target with `agent-entry.py` or `project-discover.py` before project work.
+- If discovery is `ambiguous` or `not_found`, ask me for the target project
+  instead of proceeding.
 - Before project work, open the project-root instruction file for the active runtime.
-- Codex reads AGENTS.md / AGENTS.override.md.
+- Codex reads AGENTS.md.
 - Claude reads CLAUDE.md.
 - Antigravity reads AGENTS.md.
 - Do not claim an instruction file was read unless you actually opened it.
@@ -234,6 +246,18 @@ The bridge must force this behavior:
 - For multi-step tasks, require AgentPlaybook preflight and finish-check
   evidence when those wrapper scripts are available; missing wrapper or gate
   evidence is non-compliant.
+
+Optional local project registry for this machine:
+~/.agentplaybook/projects.json
+
+{
+  "projects": [
+    {"root": "~/Downloads/nunu-os-main", "aliases": ["nunu", "nunu-os"]}
+  ],
+  "search_roots": ["~/Documents", "~/Downloads"]
+}
+
+Keep this registry local; do not commit personal paths into target repos.
 ```
 
 For a team-pinned install, add this sentence:

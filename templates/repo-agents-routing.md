@@ -17,19 +17,23 @@ only for this block.
 Shared AgentPlaybook library:
 <AGENTPLAYBOOK_ROOT>/AGENTS.md
 <AGENTPLAYBOOK_ROOT>/index.md
+<AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
+<AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
 
-Use repo-local instructions first. Explicitly read the current target project's
-instruction file for this runtime before using AgentPlaybook: Codex-style agents
-read `AGENTS.md` / `AGENTS.override.md`, Claude reads `CLAUDE.md` when present,
-Codex-specific setups read `CODEX.md` when present, Antigravity reads
+Use repo-local instructions first. If this block is being installed into a
+personal or global runtime instructions file, and the runtime starts outside the
+target repo or the request does not name one clear repo, run
+`agent-entry.py` or `project-discover.py` first and stop when it returns
+`ambiguous` or `not_found`. Explicitly read the current target project's
+instruction file for this runtime before using AgentPlaybook: Codex-style
+agents read `AGENTS.md`, Claude reads `CLAUDE.md` when
+present, Codex-specific setups read `CODEX.md` when present, Antigravity reads
 `AGENTS.md`, and generic agents read their configured project instruction
-document or `.agents/README.md` when used. If this block is being installed into
-a personal or global runtime instructions file, it must still tell the runtime
-to read the current project's local instruction files first.
+document or `.agents/README.md` when used.
 Use the shared index only to select the smallest relevant document set.
 VibeGuard is required before documentation, code, config, dependency, data,
 deployment, or credential changes. Apply the current VibeGuard package command
@@ -114,6 +118,8 @@ Defensive boundaries: <AGENTPLAYBOOK_ROOT>/common/defensive-boundaries.md
 UI visual verification: <AGENTPLAYBOOK_ROOT>/common/ui-visual-verification.md
 Workflow script: <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 Agent hook wrapper: <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py
+Agent entry manifest: <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
+Project discovery: <AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
 Preflight evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
 Finish evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
 Android Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/android/android-compose-ui.md

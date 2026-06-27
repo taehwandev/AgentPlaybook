@@ -14,6 +14,10 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from agent_finish_gate_policy import validate_gate_evidence
 from agent_finish_check_steps import check_request_intake, validate_grill_me_skill_evidence
 from agent_global_lessons import lesson_summary, write_retrospective_candidate
+from agent_preflight_runtime import (
+    AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
+)
+from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
 from support.permission_entries import codex_prefix_rule_entries
 from workflow_catalog import CONCERNS
 from workflow_gate_policy import (
@@ -52,6 +56,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("metering", CONCERNS)
         self.assertIn("usage", CONCERNS)
         self.assertIn("common/local-tools.md", CONCERNS["metering"])
+        self.assertIn("docs/agent-runtime-integration.md", CONCERNS["local-tools"])
         self.assertIn("common/local-tools.md", CONCERNS["usage"])
         self.assertIn("common/design-system.md", CONCERNS["tokens"])
         self.assertNotIn("common/local-tools.md", CONCERNS["tokens"])
@@ -96,6 +101,18 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("agent_finish_final_checks.py", entries)
         self.assertIn("$AGENTPLAYBOOK_HOME/scripts/agent-hook.py", entries)
         self.assertIn("${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py", entries)
+
+    def test_agy_runtime_bridge_requires_project_discovery_entry(self) -> None:
+        required = [
+            "If the runtime starts outside the target repo or the target repo is not explicit, run AgentPlaybook agent-entry.py or project-discover.py before project work.",
+            "If project discovery returns ambiguous or not_found, ask the user for the target project before routing, editing, testing, committing, or reporting completion.",
+        ]
+        block = _agy_runtime_bridge_block(ROOT)
+
+        for phrase in required:
+            self.assertIn(phrase, AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES)
+            self.assertIn(phrase, PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES)
+            self.assertIn(phrase, block)
 
     def test_spill_tool_label_prefers_codex_runtime_over_stale_spill_env(self) -> None:
         label = spill_tool_label({"CODEX_SANDBOX": "seatbelt", "SPILL_AI_TOOL": "claude"})

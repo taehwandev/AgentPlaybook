@@ -54,7 +54,7 @@ CONCERNS: Dict[str, Tuple[str, ...]] = {
     "stack": ("common/stack-discovery.md",),
     "failure": ("common/tool-failure-recovery.md",),
     "interaction": ("common/agent-interaction.md",),
-    "local-tools": ("common/local-tools.md",),
+    "local-tools": ("common/local-tools.md", "docs/agent-runtime-integration.md"),
     "metering": ("common/local-tools.md",),
     "telemetry": ("common/local-tools.md",),
     "usage": ("common/local-tools.md",),

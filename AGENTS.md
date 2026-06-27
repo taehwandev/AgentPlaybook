@@ -15,6 +15,25 @@ shared operating habits, review criteria, architecture principles, and platform
 guidance. Repo-local instructions remain the source of truth for project paths,
 commands, naming, domain rules, and product-specific policy.
 
+## Project Discovery Entry
+
+At the start of work, identify the target project from the user's request and
+the current working directory. When the runtime starts from `~`, another
+non-project directory, or a directory that may not be the requested target, use
+the local project entry helpers before project work when they exist:
+
+```text
+<AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
+<AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
+```
+
+Continue only when discovery returns `selected`. If it returns `ambiguous` or
+`not_found`, ask the user for the target project instead of guessing from the
+prompt. Keep discovery cheap by preferring the current directory, explicit
+paths, registry aliases, and known search roots over broad home-directory
+scans. After selection, read the target project's local instructions before
+using shared AgentPlaybook guidance.
+
 ## Shared Guidance Boundary
 
 Write AgentPlaybook guidance as a reusable common baseline, not as the operating
@@ -50,9 +69,9 @@ When instructions conflict, follow this order:
 
 1. System and developer instructions from the active agent runtime.
 2. The user's current request.
-3. The target repo's local instructions, such as `AGENTS.md`,
-   `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, or
-   `CONTRIBUTING.md`.
+3. The target repo's local instructions, such as `AGENTS.md`, `CLAUDE.md`,
+   `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or an explicitly
+   documented local override file.
 4. More specific shared AgentPlaybook documents, such as platform or product-pattern docs.
 5. Shared AgentPlaybook common cards.
 6. General guidance in `README.md`.

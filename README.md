@@ -148,9 +148,10 @@ Public site: `https://agentplaybook.thdev.app/#update`
 
 After choosing the root, add a short pointer to the target repo's canonical
 agent instruction file. Prefer `AGENTS.md` when the active runtimes read it.
-If existing runtime-specific files such as `AGENTS.override.md`, `CLAUDE.md`,
-`CODEX.md`, `.agents/README.md`, or Antigravity CLI docs are present, update
-their AgentPlaybook pointer in the same pass or point them back to `AGENTS.md`.
+If existing runtime-specific files such as `CLAUDE.md`, `CODEX.md`,
+`.agents/README.md`, Antigravity CLI docs, or explicitly documented local
+override files are present, update their AgentPlaybook pointer in the same pass
+or point them back to `AGENTS.md`.
 Do not create extra runtime-specific files only to duplicate the same routing
 block.
 
@@ -332,12 +333,13 @@ Use this shape for one task:
 ```text
 Use this project's current agent instructions first.
 Read whichever exist in the target repo:
-AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
-CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+AGENTS.md, CLAUDE.md, CODEX.md, .agents/README.md, CONTRIBUTING.md, task docs,
+PRD/ARD docs, equivalent project docs, or explicitly documented local override
+files.
 Do not rely on implicit runtime discovery. Codex-style agents should explicitly
-read the current project's AGENTS.md / AGENTS.override.md, Claude should read
-CLAUDE.md when present, and Antigravity should read the current project's
-AGENTS.md before AgentPlaybook.
+read the current project's AGENTS.md, Claude should read CLAUDE.md when
+present, and Antigravity should read the current project's AGENTS.md before
+AgentPlaybook.
 
 Then use AgentPlaybook:
 <AGENTPLAYBOOK_ROOT>/AGENTS.md
@@ -395,6 +397,12 @@ file or a pasted prompt.
   to update user-level runtime bridges such as `~/.codex/AGENTS.md`,
   `~/.claude/CLAUDE.md`, `~/.antigravity`, `~/.antigravitycli`, or
   `~/.antigravity-ide`.
+- When a runtime starts from `~` or another non-project directory, resolve the
+  target first with
+  `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>`.
+  Continue only when it returns `selected`; ask the user when it returns
+  `ambiguous` or `not_found`. Optional local aliases can live in
+  `~/.agentplaybook/projects.json`.
 - To avoid repeated prompts for AgentPlaybook's required Python wrappers, run
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check`, then run
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py` after approval if

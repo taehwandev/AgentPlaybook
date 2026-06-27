@@ -29,14 +29,19 @@ https://vibeguard.thdev.app/
 
 Rules:
 1. Identify the target repo and read repo-local instructions first, including
-   AGENTS.md, AGENTS.override.md, CLAUDE.md, CODEX.md, .agents/README.md,
-   CONTRIBUTING.md, task docs, PRD/ARD docs, or equivalent project docs.
+   AGENTS.md, CLAUDE.md, CODEX.md, .agents/README.md, CONTRIBUTING.md, task
+   docs, PRD/ARD docs, equivalent project docs, or explicitly documented local
+   override files.
+   If the target repo is not explicit or the runtime current directory is
+   outside the target, run:
+   python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
+   Continue only when it returns `selected`; ask me to choose when it returns
+   `ambiguous` or `not_found`.
    Do not rely on implicit runtime discovery. If you are Codex-style, explicitly
-   read the current project's AGENTS.md or AGENTS.override.md; if you are
-   Claude, explicitly read CLAUDE.md when present; if you are Antigravity,
-   explicitly read the current project's AGENTS.md; if you are another runtime,
-   explicitly read the project instruction document that runtime is configured
-   to load.
+   read the current project's AGENTS.md; if you are Claude, explicitly read
+   CLAUDE.md when present; if you are Antigravity, explicitly read the current
+   project's AGENTS.md; if you are another runtime, explicitly read the project
+   instruction document that runtime is configured to load.
    If you are Antigravity and cannot confirm the project-root AGENTS.md, stop
    before routing, editing, testing, committing, or reporting completion and ask
    for bridge repair.

@@ -87,12 +87,65 @@ AgentPlaybook already exists locally at <path>. Do you want me to download or
 pin a new copy anyway, or should I reuse the existing root?
 ```
 
+## Project Discovery Entry
+
+When a runtime starts from a personal directory such as `~`, or when the target
+repo is not explicit in the current request, resolve the project before reading
+project docs or running task commands. Use the local entry helpers:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/project-discover.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --runtime <codex|claude|antigravity|generic> --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
+```
+
+`project-discover.py` returns one of three states:
+
+- `selected`: a single target project is safe to use; open its instruction
+  files before project work.
+- `ambiguous`: multiple candidates have comparable evidence; ask the user to
+  choose one before reading project docs, editing, testing, committing, or
+  reporting completion.
+- `not_found`: no usable project was found; ask for the target path before
+  project work.
+
+`agent-entry.py` wraps the same discovery result with the AgentPlaybook root,
+workflow script, preflight script, finish-check script, selected project
+instruction files, and next-step checklist. User-level runtime bridges should
+call it when the current working directory might not be the target project.
+
+Project discovery uses safe local evidence only: explicit paths in the request,
+the current working directory, common project markers, repo-local instruction
+files, configured search roots, and an optional local registry. It does not
+scan broad home directories by default; pass `--search-root` for a known parent
+or `--include-default-search-roots` only when the user accepts that broader
+search cost and ambiguity risk. It must not use prompt guessing as a substitute
+for a selected project. If the result is ambiguous or missing, stop and ask.
+
+Optional local project registry:
+
+```json
+{
+  "projects": [
+    {
+      "root": "~/Downloads/nunu-os-main",
+      "aliases": ["nunu", "nunu-os"]
+    }
+  ],
+  "search_roots": ["~/Documents", "~/Downloads"]
+}
+```
+
+Store that file at `~/.agentplaybook/projects.json`, or pass a specific path
+with `--registry`. The registry is local machine state and may contain personal
+paths; do not commit it to target repos. This is separate from global
+retrospective lessons, which must remain reusable and path-free.
+
 ## Long-Lived Repo Setup
 
 For repos that will keep using AgentPlaybook, add a short routing block to the
 instruction file each agent runtime reads:
 
-- Codex-style runtimes: `AGENTS.md` or `AGENTS.override.md`.
+- Codex-style runtimes: `AGENTS.md`.
 - Claude-style runtimes: `CLAUDE.md`.
 - Codex-specific local docs: `CODEX.md` when the repo already uses it.
 - Antigravity: `AGENTS.md`.
@@ -113,9 +166,9 @@ runtime already reads from `AGENTS.md`.
 Every runtime bridge must explicitly tell the agent to read the current target
 project's own instructions first. Do not rely on implicit discovery. State the
 runtime-specific entrypoint directly: Codex-style agents should read the current
-project's `AGENTS.md` / `AGENTS.override.md`, Claude should read the current
-project's `CLAUDE.md` when present, Codex-specific setups should read `CODEX.md`
-when present, and Antigravity should read the current project's `AGENTS.md`.
+project's `AGENTS.md`, Claude should read the current project's `CLAUDE.md`
+when present, Codex-specific setups should read `CODEX.md` when present, and
+Antigravity should read the current project's `AGENTS.md`.
 Then tell the agent to follow AgentPlaybook as shared guidance only after those
 local instructions.
 
@@ -125,6 +178,8 @@ short and point to:
 ```text
 <AGENTPLAYBOOK_ROOT>/AGENTS.md
 <AGENTPLAYBOOK_ROOT>/index.md
+<AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
+<AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
@@ -160,7 +215,7 @@ because not every agent automatically discovers Codex-style `AGENTS.md` files.
 
 Codex:
 
-- Prefer repo-local `AGENTS.md` / `AGENTS.override.md` plus the routing block.
+- Prefer repo-local `AGENTS.md` plus the routing block.
 - Use the workflow router for multi-step work.
 - AgentPlaybook command permissions belong in user-level
   `~/.codex/rules/default.rules` as narrow `prefix_rule` entries for the
@@ -190,6 +245,9 @@ Claude:
 Antigravity:
 
 - Use `AGENTS.md` as the project instruction surface that Antigravity reads.
+- The managed user-level bridge installed by `setup-agent-hooks.py` must tell
+  AGY to run `agent-entry.py` or `project-discover.py` before project work when
+  it starts outside the target repo or cannot identify one clear target.
 - Do not create an extra Antigravity-specific file only to duplicate guidance
   already available from `AGENTS.md`.
 - If Antigravity-specific docs already exist, update their pointer in the same
@@ -213,56 +271,61 @@ Generic agents:
 
 For every runtime:
 
-1. Identify the target repo and read the current repo-local instructions:
-   `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`,
-   `.agents/README.md`, `CONTRIBUTING.md`, task docs, PRD/ARD docs, or
-   equivalent project guidance.
-2. Select the setup mode: existing local install, first-time local shared
+1. Identify the target repo. If the runtime started outside the repo, the
+   target is not explicit, or multiple repos match the request, run
+   `scripts/agent-entry.py` or `scripts/project-discover.py` first. Continue
+   only when discovery returns `selected`; ask the user when it returns
+   `ambiguous` or `not_found`.
+2. Read the current repo-local instructions:
+   `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`,
+   `CONTRIBUTING.md`, task docs, PRD/ARD docs, equivalent project guidance, or
+   explicitly documented local override files.
+3. Select the setup mode: existing local install, first-time local shared
    install, or team-pinned install.
-3. Locate the AgentPlaybook root. If any usable local or repo-pinned root
+4. Locate the AgentPlaybook root. If any usable local or repo-pinned root
    exists, reuse it unless the user explicitly approves a new download or
    pinned copy.
-4. Install only when no usable root exists, then validate the selected root.
-5. Run `scripts/setup-agent-hooks.py --check`. If hooks or permissions are
+5. Install only when no usable root exists, then validate the selected root.
+6. Run `scripts/setup-agent-hooks.py --check`. If hooks or permissions are
    missing, ask for approval to update user-level runtime config, then run
    `scripts/setup-agent-hooks.py`.
-6. Inspect existing VibeGuard files and agent instructions. Ask the application
+7. Inspect existing VibeGuard files and agent instructions. Ask the application
    drill before running setup or update when the repo already has custom
    instructions or guardrails. Use VibeGuard `update` only when the user
    explicitly selects refreshing an existing managed block; otherwise preserve
    current guardrails and run audit.
-7. Apply the selected VibeGuard mode with an installed `vibeguard` binary when
+8. Apply the selected VibeGuard mode with an installed `vibeguard` binary when
    available, using the selected AgentPlaybook root as the rule source. Use the
    published package command only when no trusted binary exists or an explicit
    latest-package check is needed. Treat https://vibeguard.thdev.app/ as the
    human-facing reference, not a runtime fetch dependency.
-8. Add or update the canonical repo instruction file, preferring `AGENTS.md`
+9. Add or update the canonical repo instruction file, preferring `AGENTS.md`
    when supported.
-9. Update any existing repo-local runtime-specific instruction files in the
+10. Update any existing repo-local runtime-specific instruction files in the
    same pass, or leave them out only when the runtime reads `AGENTS.md` and no
    separate file exists. Offer optional Step 2 for personal/global runtime
    bridges; only update those files when the user chooses it.
-10. Read AgentPlaybook `AGENTS.md`.
-11. For multi-step tasks, run `scripts/workflow.py route ... --request
+11. Read AgentPlaybook `AGENTS.md`.
+12. For multi-step tasks, run `scripts/workflow.py route ... --request
     "<USER_REQUEST>"` to select the smallest document set and gate manifest.
     If the request is a direct question, answer it before routing or editing.
     Use `index.md` only for simple answer-only work or an explicitly accepted
     fallback when the script cannot run.
-12. When wrapper scripts are available, run `scripts/agent-preflight.py` before
+13. When wrapper scripts are available, run `scripts/agent-preflight.py` before
     editing and `scripts/agent-finish-check.py` before final report, commit,
     release, or handoff. Missing wrapper evidence or route gate evidence is
     non-compliant.
-13. Keep a gate execution ledger, mark each route gate with evidence when it is
+14. Keep a gate execution ledger, mark each route gate with evidence when it is
    executed or fails, assign only `🐱🟢 SUCCESS` or `🐱🔴 FAIL`, and show a
    short gate signal after each completed or failed gate or task step.
-14. Load only selected cards.
-15. Execute repo-local commands only from trusted repo-local instructions.
-16. Before reporting completion, confirm every required route gate is
+15. Load only selected cards.
+16. Execute repo-local commands only from trusted repo-local instructions.
+17. Before reporting completion, confirm every required route gate is
     `🐱🟢 SUCCESS` with ledger evidence.
-17. When a VibeGuard execution evidence adapter is configured, use the
+18. When a VibeGuard execution evidence adapter is configured, use the
     VibeGuard CLI evidence command and compare the summary with claimed
     commands.
-18. Report verification and residual risk.
+19. Report verification and residual risk.
 
 If a required route gate was missed, the runtime must stop finalization, roll
 back only dependent agent-made changes after the missed gate when safe, return
@@ -283,6 +346,8 @@ absent from progress reports.
 After connecting a runtime, verify:
 
 - the target repo instruction file points to the selected AgentPlaybook root
+- `agent-entry.py` or `project-discover.py` selects the target repo when the
+  runtime starts outside it, or stops with `ambiguous` / `not_found`
 - the runtime still reads the target repo's current agent instructions first
 - existing runtime-specific files, such as `CLAUDE.md`, `CODEX.md`, or
   Antigravity docs, are updated or intentionally not created because the
@@ -306,6 +371,8 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route task --request "<USER_REQ
 
 - The target runtime does not have file access and the user cannot paste the
   one-shot prompt.
+- Project discovery is ambiguous or missing and the user has not chosen a
+  target project.
 - The AgentPlaybook root cannot be located.
 - The VibeGuard command cannot run after using the installed binary or the
   published package fallback.
