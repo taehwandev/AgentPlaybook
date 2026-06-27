@@ -238,6 +238,26 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index(AMBIGUITY_GATE))
         self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index("implementation"))
 
+    def test_workspace_scope_checkpoint_evidence_is_validated_when_present(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                "workspace scope checkpoint": (
+                    "starting primary repo: app; secondary repo/source of truth: web; "
+                    "mode: primary-led secondary write; verification: web test plus app smoke"
+                )
+            },
+            [],
+        )
+
+        self.assertEqual([], failures)
+
+        failures = validate_gate_evidence(
+            {"workspace scope checkpoint": "primary repo: app; secondary repo: web"},
+            [],
+        )
+
+        self.assertTrue(any("workspace scope checkpoint evidence" in failure for failure in failures))
+
     def test_prd_and_product_routes_require_alignment_brief(self) -> None:
         prd_route = resolve_docs("prd", None, [], request_classified=True)
         product_route = resolve_docs("product", None, [], request_classified=True)

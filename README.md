@@ -162,6 +162,49 @@ repo-relative path such as `.agents/AgentPlaybook` for a repo-pinned install.
 Personal full paths belong only in shell environment setup, one-shot prompts,
 or uncommitted user-level runtime bridges.
 
+When starting an agent from `~`, a workspace parent, or another repo, resolve
+the target first:
+
+```bash
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-entry.py" --runtime codex --request "<USER_REQUEST>" --cwd "$PWD"
+```
+
+If discovery returns `selected`, use the reported `runtime_launch` guidance for
+the next session. For Codex, the normal shape is:
+
+```bash
+codex -C <TARGET_REPO>
+codex -C <TARGET_REPO> --add-dir "${AGENTPLAYBOOK_HOME}"
+```
+
+Use the second form only when the task needs the AgentPlaybook root in the
+session workspace, such as maintaining shared playbook docs, scripts, or runtime
+bridges. Repo instruction files decide behavior; `-C` and `--add-dir` decide
+which filesystem roots the runtime can use without repeated prompts.
+
+For products that span several repos, add a local workspace group to
+`~/.agentplaybook/projects.json` instead of relying on prompt guessing:
+
+```json
+{
+  "workspace_groups": [
+    {
+      "name": "product-x",
+      "aliases": ["product-x"],
+      "members": [
+        {"role": "app", "root": "~/GitHub/product-x-app", "aliases": ["app", "desktop"]},
+        {"role": "web", "root": "~/GitHub/product-x-web", "aliases": ["web"]}
+      ]
+    }
+  ]
+}
+```
+
+When an agent starts in one repo and discovers that another repo must be written,
+it should stop for a workspace scope checkpoint before that write. The checkpoint
+names the starting primary repo, secondary/source-of-truth repo, selected mode,
+write scope, session model, and cross-repo verification.
+
 ```text
 Shared AgentPlaybook guidance:
 ${AGENTPLAYBOOK_HOME}/AGENTS.md

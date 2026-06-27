@@ -123,4 +123,49 @@ def format_entry_text(manifest: dict[str, object]) -> str:
     workflow_command = manifest.get("workflow_command")
     if workflow_command:
         lines.append(f"workflow_command: {workflow_command}")
+    runtime_launch = manifest.get("runtime_launch")
+    if isinstance(runtime_launch, dict):
+        lines.append("runtime_launch:")
+        primary_workspace = runtime_launch.get("primary_workspace")
+        if primary_workspace:
+            lines.append(f"  primary_workspace: {primary_workspace}")
+        commands = runtime_launch.get("commands")
+        if isinstance(commands, list) and commands:
+            lines.append("  commands:")
+            for command in commands:
+                if isinstance(command, dict):
+                    label = command.get("label")
+                    command_text = command.get("command")
+                    if label and command_text:
+                        lines.append(f"  - {label}: {command_text}")
+                    elif command_text:
+                        lines.append(f"  - {command_text}")
+        notes = runtime_launch.get("notes")
+        if isinstance(notes, list) and notes:
+            lines.append("  notes:")
+            lines.extend(f"  - {note}" for note in notes)
+    workspace_scope = manifest.get("workspace_scope")
+    if isinstance(workspace_scope, dict):
+        lines.append("workspace_scope:")
+        scope_mode = workspace_scope.get("scope_mode")
+        if scope_mode:
+            lines.append(f"  scope_mode: {scope_mode}")
+        workspace_group = workspace_scope.get("workspace_group")
+        if workspace_group:
+            lines.append(f"  workspace_group: {workspace_group}")
+        primary_repo = workspace_scope.get("primary_repo")
+        if primary_repo:
+            lines.append(f"  primary_repo: {primary_repo}")
+        primary_role = workspace_scope.get("primary_role")
+        if primary_role:
+            lines.append(f"  primary_role: {primary_role}")
+        primary_candidates = workspace_scope.get("primary_candidates")
+        if isinstance(primary_candidates, list) and primary_candidates:
+            lines.append("  primary_candidates:")
+            lines.extend(f"  - {candidate}" for candidate in primary_candidates)
+        checkpoint = workspace_scope.get("scope_checkpoint")
+        if isinstance(checkpoint, dict):
+            fields = checkpoint.get("fields")
+            if isinstance(fields, list) and fields:
+                lines.append(f"  checkpoint_fields: {', '.join(str(field) for field in fields)}")
     return "\n".join(lines)

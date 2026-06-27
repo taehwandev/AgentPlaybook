@@ -110,8 +110,9 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --runtime <codex|claude|anti
 
 `agent-entry.py` wraps the same discovery result with the AgentPlaybook root,
 workflow script, preflight script, finish-check script, selected project
-instruction files, and next-step checklist. User-level runtime bridges should
-call it when the current working directory might not be the target project.
+instruction files, workspace scope guidance, runtime launch guidance, and
+next-step checklist. User-level runtime bridges should call it when the current
+working directory might not be the target project.
 
 Project discovery uses safe local evidence only: explicit paths in the request,
 the current working directory, common project markers, repo-local instruction
@@ -131,6 +132,24 @@ Optional local project registry:
       "aliases": ["nunu", "nunu-os"]
     }
   ],
+  "workspace_groups": [
+    {
+      "name": "product-x",
+      "aliases": ["product-x"],
+      "members": [
+        {
+          "role": "app",
+          "root": "~/GitHub/product-x-app",
+          "aliases": ["app", "desktop"]
+        },
+        {
+          "role": "web",
+          "root": "~/GitHub/product-x-web",
+          "aliases": ["web"]
+        }
+      ]
+    }
+  ],
   "search_roots": ["~/Documents", "~/Downloads"]
 }
 ```
@@ -139,6 +158,98 @@ Store that file at `~/.agentplaybook/projects.json`, or pass a specific path
 with `--registry`. The registry is local machine state and may contain personal
 paths; do not commit it to target repos. This is separate from global
 retrospective lessons, which must remain reusable and path-free.
+
+Use `workspace_groups` when a product alias can mean several repos, such as an
+app shell, web surface, shared API, or docs repo. If only the group alias
+matches the request, discovery should not guess a single repo. It should return
+the primary candidates and require a target decision. If a member alias also
+matches, such as `web` or `desktop`, that member can become the selected
+primary repo.
+
+## Runtime Launch Root Discipline
+
+Project instructions and runtime launch roots solve different problems.
+`AGENTS.md`, `CLAUDE.md`, `CODEX.md`, and `.agents/README.md` tell the agent
+what behavior to follow. They do not grant filesystem write scope. When a
+runtime starts from `~`, a workspace parent, or a different repo, first run
+`agent-entry.py`; when it returns `selected`, start or relaunch the runtime with
+the selected target project as the primary workspace.
+
+For Codex, use the selected repo as `-C`:
+
+```text
+codex -C <TARGET_REPO>
+```
+
+When the current task may also edit or run shared AgentPlaybook files, add the
+selected AgentPlaybook root explicitly:
+
+```text
+codex -C <TARGET_REPO> --add-dir <AGENTPLAYBOOK_ROOT>
+```
+
+Use `--add-dir` only for additional roots that belong in the current session's
+workspace. Prefer one selected target repo over broad parent folders such as
+`~/GitHub` when the target is known. Do not use unrestricted filesystem modes
+as the default fix for missing workspace roots.
+
+`agent-entry.py --runtime codex` includes these launch commands in its
+`runtime_launch` section after project discovery succeeds. User-level runtime
+bridges may show this section to the operator or use it as a relaunch hint, but
+they must still stop on `ambiguous` or `not_found`.
+
+## Cross-Repo Scope Checkpoint
+
+For multi-repo products, distinguish the primary repo from secondary repos:
+
+- Primary repo: the repo whose user path or acceptance result defines success
+  for the current task.
+- Secondary repo: a repo that may need to be read or changed because it owns a
+  web route, app bridge, shared contract, API schema, configuration, docs, or
+  other source of truth.
+
+Start with the primary repo when the request is clear. During orientation, stop
+for a workspace scope checkpoint before writing to a secondary repo. The
+checkpoint must state:
+
+```text
+starting primary:
+new source of truth:
+secondary repo:
+mode: single-repo | primary-led secondary read | primary-led secondary write | multi-session
+write scope:
+verification:
+session model:
+```
+
+Use these modes:
+
+- `single-repo`: only the primary repo is changed and verified.
+- `primary-led secondary read`: the primary repo remains the only write target;
+  the secondary repo is inspected to confirm contracts or behavior.
+- `primary-led secondary write`: the primary repo owns acceptance, but a small
+  secondary repo change is needed. Use one session with the primary as `-C` and
+  the secondary as an added workspace only when the write scope is small and
+  clearly bounded.
+- `multi-session`: both repos need meaningful implementation, verification, or
+  commits. Use separate sessions and a lead agent or lead checklist for the
+  shared contract, ordering, verification, and commit split.
+
+Do not silently broaden from one repo to another because investigation found a
+related file. If the secondary change is more than a small bounded contract,
+route, bridge, config, or docs update, prefer `multi-session`.
+
+When wrapper finish evidence is available and a secondary repo was written, add
+one of these gates to the finish check:
+
+```text
+--gate "workspace scope checkpoint=<checkpoint evidence>"
+--gate "scope expansion checkpoint=<checkpoint evidence>"
+--gate "cross-repo scope checkpoint=<checkpoint evidence>"
+```
+
+The finish-check policy validates that the evidence names the starting primary
+repo, secondary/source-of-truth repo, chosen mode, and cross-repo verification.
 
 ## Long-Lived Repo Setup
 
@@ -216,6 +327,13 @@ because not every agent automatically discovers Codex-style `AGENTS.md` files.
 Codex:
 
 - Prefer repo-local `AGENTS.md` plus the routing block.
+- Start Codex with the selected target repo as the primary workspace:
+  `codex -C <TARGET_REPO>`.
+- Add `--add-dir <AGENTPLAYBOOK_ROOT>` only when the task must include the
+  shared playbook root in the session workspace, such as maintaining
+  AgentPlaybook itself or editing shared runtime bridge files.
+- Do not expect `AGENTS.md` or `.codex/rules` to change sandbox roots; they
+  control behavior and permission matching, not the runtime's workspace root.
 - Use the workflow router for multi-step work.
 - AgentPlaybook command permissions belong in user-level
   `~/.codex/rules/default.rules` as narrow `prefix_rule` entries for the
@@ -390,6 +508,8 @@ After connecting a runtime, verify:
 - the target repo instruction file points to the selected AgentPlaybook root
 - `agent-entry.py` or `project-discover.py` selects the target repo when the
   runtime starts outside it, or stops with `ambiguous` / `not_found`
+- workspace group aliases either select a clear member repo or return primary
+  candidates with workspace scope guidance instead of guessing
 - the runtime still reads the target repo's current agent instructions first
 - existing runtime-specific files, such as `CLAUDE.md`, `CODEX.md`, or
   Antigravity docs, are updated or intentionally not created because the

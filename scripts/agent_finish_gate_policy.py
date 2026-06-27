@@ -11,6 +11,11 @@ TEST_GATE = "tests"
 BOUNDARY_PLAN_GATE = "boundary plan"
 MULTI_AGENT_GATE = "multi-agent split decision"
 SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
+WORKSPACE_SCOPE_CHECKPOINT_GATES = (
+    "workspace scope checkpoint",
+    "scope expansion checkpoint",
+    "cross-repo scope checkpoint",
+)
 
 
 def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[str]) -> list[str]:
@@ -32,6 +37,9 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
         failures.extend(_validate_multi_agent(gate_evidence.get(MULTI_AGENT_GATE, "")))
     if SIDE_EFFECT_AUDIT_GATE in required:
         failures.extend(_validate_side_effect_audit(gate_evidence.get(SIDE_EFFECT_AUDIT_GATE, "")))
+    for gate in WORKSPACE_SCOPE_CHECKPOINT_GATES:
+        if gate in gate_evidence:
+            failures.extend(_validate_workspace_scope_checkpoint(gate_evidence[gate]))
     return failures
 
 
@@ -340,4 +348,68 @@ def _validate_side_effect_audit(evidence: str) -> list[str]:
     return [
         "side-effect audit evidence must state that the final diff/side effects were checked "
         "and name unexpected changes, public-contract risk, generated/lockfile churn, or that none were found"
+    ]
+
+
+def _validate_workspace_scope_checkpoint(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_primary = any(
+        phrase in text
+        for phrase in (
+            "starting primary",
+            "primary repo",
+            "primary:",
+            "primary=",
+            "시작 primary",
+            "기준 repo",
+        )
+    )
+    has_secondary = any(
+        phrase in text
+        for phrase in (
+            "secondary repo",
+            "secondary:",
+            "secondary=",
+            "source of truth",
+            "new source",
+            "추가 repo",
+            "소스 오브 트루스",
+        )
+    )
+    has_mode = any(
+        phrase in text
+        for phrase in (
+            "single-repo",
+            "single_repo",
+            "primary-led",
+            "primary_led",
+            "secondary read",
+            "secondary write",
+            "multi-session",
+            "multi_session",
+            "mode:",
+            "mode=",
+            "모드",
+        )
+    )
+    has_verification = any(
+        phrase in text
+        for phrase in (
+            "verification",
+            "verify",
+            "test",
+            "smoke",
+            "check",
+            "검증",
+            "테스트",
+        )
+    )
+    if has_primary and has_secondary and has_mode and has_verification:
+        return []
+    return [
+        "workspace scope checkpoint evidence must state the starting primary repo, "
+        "secondary/source-of-truth repo, chosen mode, and cross-repo verification before "
+        "writing to a secondary repo"
     ]

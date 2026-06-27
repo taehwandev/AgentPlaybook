@@ -36,14 +36,17 @@ Use this before implementation, review, refactoring, debugging, documentation, o
     modules, record a compact structure packet before editing: chosen boundary,
     package/folder map, file split, allowed imports, forbidden imports,
     callers/tests, and nearest verification.
-14. Make the smallest change that genuinely addresses the request.
-15. For code work, record the multi-agent split decision before editing and use
+14. When a product alias or investigation crosses repositories, choose the
+    primary repo from the acceptance path and stop for a workspace scope
+    checkpoint before writing to any secondary repo.
+15. Make the smallest change that genuinely addresses the request.
+16. For code work, record the multi-agent split decision before editing and use
     parallel agents when scopes are disjoint and stable.
-16. Update/create affected docs and add/update/run the nearest useful test when
+17. Update/create affected docs and add/update/run the nearest useful test when
     code behavior or workflow policy changes.
-17. Verify with the narrowest reliable command first.
-18. Confirm the route gate ledger before reporting completion.
-19. Report what changed, what was verified, and what risk remains.
+18. Verify with the narrowest reliable command first.
+19. Confirm the route gate ledger before reporting completion.
+20. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -72,6 +75,12 @@ Before editing:
   `manager` folder.
 - Check whether the task touches data, auth, permissions, billing, persistence, filesystem, network, release, or external state.
 - Check whether the task touches secrets, client keys, local config, logs, analytics, crash reporting, or open-source-safe setup.
+- If a product/workspace alias may map to multiple repos, use local workspace
+  group discovery or ask for the primary repo. Do not guess a single repo from
+  the alias alone.
+- Before writing to a secondary repo, record a workspace scope checkpoint:
+  starting primary, secondary/source of truth, selected mode, write scope,
+  session model, and cross-repo verification.
 - Check for existing user changes in files you may touch.
 - After route selection, read independent route documents and run read-only
   orientation commands in parallel when possible. Do not serialize document

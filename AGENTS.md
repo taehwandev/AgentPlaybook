@@ -34,6 +34,21 @@ paths, registry aliases, and known search roots over broad home-directory
 scans. After selection, read the target project's local instructions before
 using shared AgentPlaybook guidance.
 
+When starting or relaunching a runtime, make the selected target project the
+primary workspace. For Codex, use `codex -C <TARGET_REPO>`; add
+`--add-dir <AGENTPLAYBOOK_ROOT>` only when the current task must include the
+shared playbook root in the session workspace. Instruction files define agent
+behavior; runtime launch roots define filesystem scope and prevent repeated
+permission prompts.
+
+When one product spans multiple repositories, keep that product as a local
+workspace group in `~/.agentplaybook/projects.json`. Treat the first selected
+repo as the primary repo for acceptance. If investigation shows that another
+repo is the source of truth or must be written, stop before that write and
+record a workspace scope checkpoint: starting primary, secondary/source-of-truth
+repo, selected mode (`primary-led secondary read`, `primary-led secondary
+write`, or `multi-session`), write scope, and cross-repo verification.
+
 ## Shared Guidance Boundary
 
 Write AgentPlaybook guidance as a reusable common baseline, not as the operating

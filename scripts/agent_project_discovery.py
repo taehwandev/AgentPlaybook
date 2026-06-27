@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from shlex import quote
 from typing import Sequence
 
 from agent_project_search import (
@@ -25,6 +26,7 @@ from agent_project_types import (
     format_discovery_text,
     format_entry_text,
 )
+from agent_workspace_scope import add_workspace_group_candidates, workspace_scope_manifest
 from workflow_common import ROOT, unique
 
 
@@ -66,6 +68,8 @@ def discover_projects(
             candidate.aliases = aliases
             add_candidate(candidates, candidate)
 
+    add_workspace_group_candidates(candidates, registry, request_lc)
+
     scan_roots = _scan_roots(registry, search_roots, include_default_search_roots)
     for scan_root in scan_roots:
         if not scan_root.exists() or not scan_root.is_dir():
@@ -100,6 +104,7 @@ def build_entry_manifest(
     max_depth: int = 2,
     include_default_search_roots: bool = False,
 ) -> dict[str, object]:
+    registry = load_registry(registry_path)
     result = discover_projects(
         request,
         cwd,
@@ -123,8 +128,14 @@ def build_entry_manifest(
         "next_steps": [],
     }
     if result.selected:
+        workspace_scope = workspace_scope_manifest(registry, request.lower(), result.selected)
+        if workspace_scope:
+            manifest["workspace_scope"] = workspace_scope
+        manifest["runtime_launch"] = _runtime_launch_guidance(result.selected, runtime)
         manifest["next_steps"] = [
             "Open the selected project's runtime instruction files before project work.",
+            "Treat the selected project as primary; stop for a workspace scope checkpoint before writing to a secondary repo.",
+            "When starting a new runtime session, use the launch guidance so the selected project is the primary workspace.",
             "Run AgentPlaybook workflow routing with the current request before editing.",
             "Run preflight before edits and finish check before final report, commit, release, or handoff.",
         ]
@@ -133,8 +144,12 @@ def build_entry_manifest(
             "--request \"<USER_REQUEST>\""
         )
     elif result.status == "ambiguous":
+        workspace_scope = workspace_scope_manifest(registry, request.lower(), None)
+        if workspace_scope:
+            manifest["workspace_scope"] = workspace_scope
         manifest["next_steps"] = [
             "Ask the user to choose one candidate before reading project docs or editing.",
+            "If this is a workspace group request, choose the primary repo or declare a multi-session plan before edits.",
             "Optionally add a stable alias to ~/.agentplaybook/projects.json.",
         ]
     else:
@@ -143,6 +158,51 @@ def build_entry_manifest(
             "Optionally register known projects in ~/.agentplaybook/projects.json.",
         ]
     return manifest
+
+
+def _runtime_launch_guidance(selected: ProjectCandidate, runtime: str) -> dict[str, object]:
+    project = selected.path
+    guidance: dict[str, object] = {
+        "primary_workspace": str(project),
+        "agentplaybook_root": str(ROOT),
+        "policy": (
+            "Start the runtime with the selected target project as the primary workspace. "
+            "Add AgentPlaybook as an extra workspace only when the task may read, run, or edit shared playbook files."
+        ),
+        "notes": [
+            "Repo instruction files choose behavior; runtime launch options choose filesystem scope.",
+            "Prefer the selected project as the primary workspace instead of a broad parent folder.",
+            "Do not use unrestricted filesystem modes as the default fix for missing workspace roots.",
+        ],
+    }
+    if runtime == "codex":
+        commands = [
+            {
+                "label": "target project only",
+                "command": f"codex -C {quote(str(project))}",
+            },
+        ]
+        if project != ROOT:
+            commands.append(
+                {
+                    "label": "target project plus AgentPlaybook",
+                    "command": f"codex -C {quote(str(project))} --add-dir {quote(str(ROOT))}",
+                }
+            )
+        guidance["commands"] = commands
+        guidance["notes"] = [
+            *guidance["notes"],
+            "For Codex, use --add-dir only for additional directories that must be in the session workspace.",
+            "If using codex exec outside a git repo, add --skip-git-repo-check only after confirming that directory is an intentional workspace router.",
+        ]
+        if project == ROOT:
+            guidance["notes"].append("The selected project is AgentPlaybook itself, so an extra --add-dir for the same root is unnecessary.")
+    else:
+        guidance["notes"] = [
+            *guidance["notes"],
+            "For non-Codex runtimes, use the runtime's equivalent workspace or project-root launch option when available.",
+        ]
+    return guidance
 
 
 def _scan_roots(

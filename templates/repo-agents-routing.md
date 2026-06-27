@@ -28,12 +28,29 @@ Use repo-local instructions first. If this block is being installed into a
 personal or global runtime instructions file, and the runtime starts outside the
 target repo or the request does not name one clear repo, run
 `agent-entry.py` or `project-discover.py` first and stop when it returns
-`ambiguous` or `not_found`. Explicitly read the current target project's
+`ambiguous` or `not_found`. If `agent-entry.py` returns `selected`, prefer
+starting or relaunching the runtime with that selected repo as the primary
+workspace. For Codex, use `codex -C <TARGET_REPO>`; add
+`--add-dir <AGENTPLAYBOOK_ROOT>` only when the task needs the shared
+AgentPlaybook root in the session workspace. Repo instruction files define
+behavior; runtime launch options define filesystem scope. Explicitly read the
+current target project's
 instruction file for this runtime before using AgentPlaybook: Codex-style
 agents read `AGENTS.md`, Claude reads `CLAUDE.md` when
 present, Codex-specific setups read `CODEX.md` when present, Antigravity reads
 `AGENTS.md`, and generic agents read their configured project instruction
 document or `.agents/README.md` when used.
+If the request names a product/workspace alias that may map to multiple repos,
+use the local `~/.agentplaybook/projects.json` workspace group when available.
+Do not guess a single repo from the alias alone. If work starts in one primary
+repo and investigation shows a secondary repo must be written, stop before that
+write and record a workspace scope checkpoint: starting primary, secondary or
+source-of-truth repo, selected mode (`primary-led secondary read`,
+`primary-led secondary write`, or `multi-session`), write scope, session model,
+and cross-repo verification. When finish-check evidence is used and a secondary
+repo was written, pass it as `workspace scope checkpoint=<evidence>`,
+`scope expansion checkpoint=<evidence>`, or
+`cross-repo scope checkpoint=<evidence>`.
 Use the shared index only to select the smallest relevant document set.
 VibeGuard is required before documentation, code, config, dependency, data,
 deployment, or credential changes. Apply the current VibeGuard package command

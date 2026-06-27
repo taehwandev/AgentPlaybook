@@ -36,21 +36,23 @@ def find_project_root(start: Path) -> Path | None:
 def load_registry(registry_path: Path | None = None) -> dict[str, object]:
     path = registry_path or default_registry_path()
     if not path.exists():
-        return {"projects": [], "search_roots": []}
+        return {"projects": [], "search_roots": [], "workspace_groups": []}
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return {"projects": [], "search_roots": []}
+        return {"projects": [], "search_roots": [], "workspace_groups": []}
     if isinstance(raw, list):
-        return {"projects": raw, "search_roots": []}
+        return {"projects": raw, "search_roots": [], "workspace_groups": []}
     if isinstance(raw, dict):
         projects = raw.get("projects", [])
         search_roots = raw.get("search_roots", [])
+        workspace_groups = raw.get("workspace_groups", [])
         return {
             "projects": projects if isinstance(projects, list) else [],
             "search_roots": search_roots if isinstance(search_roots, list) else [],
+            "workspace_groups": workspace_groups if isinstance(workspace_groups, list) else [],
         }
-    return {"projects": [], "search_roots": []}
+    return {"projects": [], "search_roots": [], "workspace_groups": []}
 
 
 def build_candidate(path: Path, base_score: int, reason: str, source: str) -> ProjectCandidate:

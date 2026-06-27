@@ -46,21 +46,26 @@ the command manifest and keep the implementation inside its listed gates.
    ownership boundaries. Name the owned files/modules, caller-facing contracts,
    allowed or forbidden dependency direction when relevant, and the nearest
    verification path before editing.
-5. Slice plan: choose vertical, contract-first, risk-first, test-first, or
+5. Workspace scope checkpoint: when a product spans multiple repos and
+   orientation shows that another repo is the source of truth or must be
+   written, stop before that write. State the starting primary repo,
+   secondary/source-of-truth repo, selected mode, write scope, session model,
+   and cross-repo verification.
+6. Slice plan: choose vertical, contract-first, risk-first, test-first, or
    UI-state slicing when the work is non-trivial. Do not broaden beyond the
    first useful slice until it has evidence or an explicit residual-risk note.
-6. Implement: change only the scoped files and keep generated, dependency,
+7. Implement: change only the scoped files and keep generated, dependency,
    formatting, and release churn separate when possible.
-7. Verify: run the narrowest reliable check that proves the changed surface.
-8. Side-effect audit: inspect the final diff and affected call paths for behavior
+8. Verify: run the narrowest reliable check that proves the changed surface.
+9. Side-effect audit: inspect the final diff and affected call paths for behavior
    outside the requested slice.
-9. Doubt pass when needed: challenge the weakest assumption before handoff when
+10. Doubt pass when needed: challenge the weakest assumption before handoff when
    the work touches data, auth, billing, release, migration, external state,
    security, privacy, observability, or architecture.
-10. Broaden only if needed: run wider checks when the narrow check cannot cover
+11. Broaden only if needed: run wider checks when the narrow check cannot cover
    shared contracts, auth, persistence, platform integration, release, or user
    flow risk.
-11. Handoff: report changed files, verification evidence, skipped checks, side
+12. Handoff: report changed files, verification evidence, skipped checks, side
    effects considered, and residual risk.
 
 ## Parallel Implementation
@@ -81,6 +86,9 @@ Use parallelism to reduce waiting, not to blur ownership.
 - Prefer parallel writers for disjoint surfaces such as isolated adapter code
   and separate docs, or independent UI and domain slices after the contract is
   stable.
+- For cross-repo product work, keep one primary repo session when the secondary
+  repo is read-only or the write is small and bounded. Use separate sessions
+  when both repos need meaningful implementation, verification, or commits.
 - Serialize edits to shared contracts, route schemas, migrations, generated
   files, dependency config, package manifests, release config, architecture
   boundaries, and any file that two agents would both touch.

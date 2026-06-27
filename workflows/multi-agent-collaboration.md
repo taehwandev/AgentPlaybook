@@ -82,6 +82,24 @@ Bad splits:
 - multiple agents adding exports to the same package barrel, public API, design
   system surface, generated client, migration chain, or release manifest
 
+## Cross-Repo Product Work
+
+When one product spans several repos, keep a lead decision separate from worker
+execution:
+
+- Choose the primary repo from the final user path or acceptance result.
+- Treat another repo as secondary until a checkpoint proves it must be written.
+- Use `primary-led secondary read` when the secondary repo only confirms a
+  contract, route, schema, config, docs, or platform behavior.
+- Use `primary-led secondary write` only for a small bounded secondary change
+  with explicit write scope and cross-repo verification.
+- Use `multi-session` when both repos need meaningful implementation, their own
+  tests, or separate commits. The lead owns the shared contract, ordering,
+  integration review, and final verification.
+
+Do not let two sessions change the same shared contract independently. Define
+the contract first, then assign repo-specific implementation scopes.
+
 ## Lead-Agent Split Decision
 
 Before spawning subagents or assigning parallel implementation work, the lead

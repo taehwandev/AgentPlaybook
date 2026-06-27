@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from agent_project_discovery import build_entry_manifest, discover_projects, find_project_root
+from agent_project_types import format_entry_text
 
 
 class AgentProjectDiscoveryTests(unittest.TestCase):
@@ -170,6 +171,114 @@ class AgentProjectDiscoveryTests(unittest.TestCase):
             self.assertIn("workflow.py", manifest["workflow_command"])
             self.assertIn("AGENTS.md", manifest["selected_project"]["instruction_files"])
             self.assertIn("Open the selected project's runtime instruction files before project work.", manifest["next_steps"])
+
+    def test_entry_manifest_includes_codex_runtime_launch_guidance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir) / "app"
+            project.mkdir()
+            (project / "AGENTS.md").write_text("# agent\n", encoding="utf-8")
+
+            manifest = build_entry_manifest(
+                "update app",
+                project,
+                runtime="codex",
+                command="feature",
+                include_default_search_roots=False,
+            )
+
+            runtime_launch = manifest["runtime_launch"]
+            self.assertEqual(str(project.resolve()), runtime_launch["primary_workspace"])
+            self.assertEqual(str(ROOT), runtime_launch["agentplaybook_root"])
+            commands = [item["command"] for item in runtime_launch["commands"]]
+            self.assertTrue(any(command.startswith("codex -C ") for command in commands))
+            self.assertTrue(any("--add-dir" in command and str(ROOT) in command for command in commands))
+            self.assertIn("runtime_launch:", format_entry_text(manifest))
+
+    def test_workspace_group_alias_reports_primary_candidates_without_guessing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            app = base / "keyflow-app"
+            web = base / "keyflow-web"
+            outside = base / "outside"
+            for project in (app, web):
+                project.mkdir()
+                (project / "AGENTS.md").write_text("# agent\n", encoding="utf-8")
+            outside.mkdir()
+            registry = base / "projects.json"
+            registry.write_text(
+                json.dumps(
+                    {
+                        "workspace_groups": [
+                            {
+                                "name": "keyflow",
+                                "aliases": ["keyflow"],
+                                "members": [
+                                    {"role": "app", "root": str(app), "aliases": ["desktop", "app"]},
+                                    {"role": "web", "root": str(web), "aliases": ["web"]},
+                                ],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            manifest = build_entry_manifest(
+                "keyflow 작업해줘",
+                outside,
+                runtime="codex",
+                registry_path=registry,
+                include_default_search_roots=False,
+            )
+
+            self.assertEqual("ambiguous", manifest["status"])
+            self.assertEqual("needs_target_decision", manifest["workspace_scope"]["scope_mode"])
+            self.assertEqual("keyflow", manifest["workspace_scope"]["workspace_group"])
+            self.assertEqual([str(app.resolve()), str(web.resolve())], manifest["workspace_scope"]["primary_candidates"])
+            self.assertIn("workspace_scope:", format_entry_text(manifest))
+
+    def test_workspace_group_member_alias_selects_primary_with_checkpoint_guidance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            app = base / "keyflow-app"
+            web = base / "keyflow-web"
+            outside = base / "outside"
+            for project in (app, web):
+                project.mkdir()
+                (project / "AGENTS.md").write_text("# agent\n", encoding="utf-8")
+            outside.mkdir()
+            registry = base / "projects.json"
+            registry.write_text(
+                json.dumps(
+                    {
+                        "workspace_groups": [
+                            {
+                                "name": "keyflow",
+                                "aliases": ["keyflow"],
+                                "members": [
+                                    {"role": "app", "root": str(app), "aliases": ["desktop", "app"]},
+                                    {"role": "web", "root": str(web), "aliases": ["web"]},
+                                ],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            manifest = build_entry_manifest(
+                "keyflow web 수정",
+                outside,
+                runtime="codex",
+                registry_path=registry,
+                include_default_search_roots=False,
+            )
+
+            self.assertEqual("selected", manifest["status"])
+            self.assertEqual(str(web.resolve()), manifest["selected_project"]["path"])
+            self.assertEqual("primary_selected_checkpoint_before_expansion", manifest["workspace_scope"]["scope_mode"])
+            self.assertEqual("web", manifest["workspace_scope"]["primary_role"])
+            self.assertTrue(manifest["workspace_scope"]["scope_checkpoint"]["required_before_secondary_write"])
 
 
 if __name__ == "__main__":
