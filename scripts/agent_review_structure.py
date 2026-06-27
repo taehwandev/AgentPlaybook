@@ -9,6 +9,7 @@ from typing import Any
 
 from agent_review_boundary import boundary_note_requirements
 from agent_review_purpose import purpose_failures
+from agent_workspace_policy import is_writing_workspace
 
 
 CommandRunner = Callable[[list[str], Path], dict[str, Any]]
@@ -174,6 +175,13 @@ def changed_source_paths(project: Path, run_command: CommandRunner) -> tuple[dic
 
     head = run_command(["git", "rev-parse", "--verify", "HEAD"], project)
     commands["rev_parse_head"] = head
+    if head["returncode"] != 0 and is_writing_workspace(project):
+        return {
+            "commands": commands,
+            "command_errors": [],
+            "path_metadata": path_metadata,
+            "review_only": "non_git_writing_workspace",
+        }, []
     if head["returncode"] == 0:
         collect_head_diff(project, run_command, commands, names, path_metadata, command_errors)
     else:

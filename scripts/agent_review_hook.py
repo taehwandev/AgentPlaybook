@@ -10,6 +10,7 @@ from typing import Any
 
 from agent_review_boundary import format_boundary_note_requirements, missing_boundary_note_fields
 from agent_review_structure import structure_review
+from agent_workspace_policy import is_git_status_review_only, is_writing_workspace, non_git_writing_workspace_note
 
 
 CommandRunner = Callable[[list[str], Path], dict[str, Any]]
@@ -49,10 +50,14 @@ def review_hook(
         failures.append("side-effect audit evidence is required for this route")
 
     status_before, status_before_lines = git_status(args.project)
+    if is_git_status_review_only(args.project, status_before):
+        status_before["review_only"] = True
+        status_before["review_note"] = non_git_writing_workspace_note(args.project)
+        status_before_lines = []
     checks["git_status_before"] = status_before
     checks["changed_path_count"] = len(status_before_lines)
     checks["changed_path_limit"] = args.max_changed_paths
-    if status_before["returncode"] != 0:
+    if status_before["returncode"] != 0 and not status_before.get("review_only"):
         failures.append("git status failed")
     elif len(status_before_lines) > args.max_changed_paths:
         failures.append(
@@ -65,7 +70,19 @@ def review_hook(
     failures.extend(f"structure review: {failure}" for failure in structure["failures"])
     failures.extend(structure_evidence_failures(structure, structure_evidence))
 
-    diff_check = run_command(["git", "diff", "--check"], args.project)
+    diff_check = (
+        {
+            "command": ["git", "diff", "--check"],
+            "cwd": str(args.project),
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "skipped": True,
+            "review_note": non_git_writing_workspace_note(args.project),
+        }
+        if status_before.get("review_only")
+        else run_command(["git", "diff", "--check"], args.project)
+    )
     checks["diff_check"] = diff_check
     if diff_check["returncode"] != 0:
         failures.append("git diff --check failed")
@@ -84,12 +101,16 @@ def review_hook(
     checks["vibeguard"] = vibeguard
     if vibeguard["returncode"] != 0:
         failures.append("VibeGuard audit failed")
-    elif vibeguard["overall"] != "Ready":
+    elif vibeguard["overall"] != "Ready" and not is_writing_workspace(args.project):
         failures.append(f"VibeGuard overall is {vibeguard['overall']}")
 
     status_after, status_after_lines = git_status(args.project)
+    if is_git_status_review_only(args.project, status_after):
+        status_after["review_only"] = True
+        status_after["review_note"] = non_git_writing_workspace_note(args.project)
+        status_after_lines = []
     checks["git_status_after"] = status_after
-    if status_after["returncode"] != 0:
+    if status_after["returncode"] != 0 and not status_after.get("review_only"):
         failures.append("git status failed")
     elif status_after_lines != status_before_lines:
         failures.append("review hook changed the worktree; review hooks must stay read-only")

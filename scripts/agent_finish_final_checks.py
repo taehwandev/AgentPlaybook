@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_finish_common import add_gate_signal, parse_overall, run_command, vibeguard_command
+from agent_workspace_policy import is_writing_workspace, non_git_writing_workspace_note
 
 
 def run_final_checks(
@@ -21,7 +22,19 @@ def run_final_checks(
         [sys.executable, str(playbook_root / "scripts" / "workflow.py"), "validate"],
         playbook_root,
     )
-    diff_check = run_command(["git", "diff", "--check"], project)
+    diff_check = (
+        {
+            "command": ["git", "diff", "--check"],
+            "cwd": str(project),
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "skipped": True,
+            "review_note": non_git_writing_workspace_note(project),
+        }
+        if is_writing_workspace(project)
+        else run_command(["git", "diff", "--check"], project)
+    )
     vibeguard = run_command(vibeguard_command(project, rules), project)
     vibeguard["overall"] = parse_overall(vibeguard["stdout"] + "\n" + vibeguard["stderr"])
     _record_final_check_signals(validate, diff_check, vibeguard, allow_vibeguard_review, gate_signals, failures)
@@ -44,6 +57,8 @@ def _record_final_check_signals(
     if diff_check["returncode"] != 0:
         add_gate_signal(gate_signals, "FAIL", "diff check", "failed", "non-zero exit")
         failures.append("git diff --check failed")
+    elif diff_check.get("skipped"):
+        add_gate_signal(gate_signals, "SUCCESS", "diff check", "review accepted", diff_check["review_note"])
     else:
         add_gate_signal(gate_signals, "SUCCESS", "diff check", "executed", "exit 0")
     _record_vibeguard_signal(vibeguard, allow_vibeguard_review, gate_signals, failures)

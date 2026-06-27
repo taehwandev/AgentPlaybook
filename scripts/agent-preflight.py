@@ -20,6 +20,7 @@ from agent_preflight_runtime import (
     check_agent_hooks,
 )
 from agent_preflight_spill import write_spill_label
+from agent_workspace_policy import is_git_status_review_only, non_git_writing_workspace_note
 
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
@@ -194,7 +195,7 @@ def collect_failures(
         failures.append("workflow route output was not valid JSON")
     elif route_payload and route_payload.get("missing"):
         failures.append("workflow route reported missing documents")
-    if git_status["returncode"] != 0:
+    if git_status["returncode"] != 0 and not git_status.get("review_only"):
         failures.append("git status failed")
     if vibeguard["returncode"] != 0:
         failures.append("VibeGuard audit failed")
@@ -223,6 +224,9 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
     route_result = run_command(route_command(args, playbook_root), project)
     route_payload, route_parse_error = parse_route_payload(route_result)
     git_status = run_command(["git", "status", "--short", "--untracked-files=all"], project)
+    if is_git_status_review_only(project, git_status):
+        git_status["review_only"] = True
+        git_status["review_note"] = non_git_writing_workspace_note(project)
     vibeguard = run_command(vibeguard_command(project, rules), project)
     vibeguard["overall"] = parse_overall(vibeguard["stdout"] + "\n" + vibeguard["stderr"])
     global_lessons = lesson_summary()
