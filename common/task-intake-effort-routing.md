@@ -65,6 +65,12 @@ alignment brief and from Grill-Me.
 
 - The alignment brief is mandatory before requirements analysis or modification
   work, but it does not imply a PRD.
+- When a PRD is not created for requirements analysis or modification work, the
+  agent must still give the user a compact PRD-skip alignment checkpoint before
+  drafting or editing. This must be user-visible, not only an internal note.
+  State shared understanding, possible differences, unsupported assumptions or
+  unknowns, and either the minimal blocker question or the safe default the
+  agent will use.
 - Grill-Me is a clarification skill for blocker questions, but it does not imply
   a PRD by itself.
 - Create a new PRD when the requested deliverable is explicitly a PRD/product
@@ -77,8 +83,8 @@ alignment brief and from Grill-Me.
   states.
 - Do not create a PRD for a clear bugfix, refactor, documentation edit, test
   update, hook/script/workflow-policy repair, or internal cleanup unless that
-  work changes product behavior or a public contract. Use an alignment brief and
-  acceptance criteria instead.
+  work changes product behavior or a public contract. Use the user-visible
+  PRD-skip alignment checkpoint and acceptance criteria instead.
 
 ## Effort Profiles
 
@@ -112,7 +118,9 @@ same as invoking Grill-Me and it is not limited to PRD work. The brief must
 surface what the agent and user appear to share, what may differ, and what is an
 unsupported assumption or unknown. Ask only one to three blocker questions when
 the answer changes behavior, risk, architecture, acceptance criteria, or
-verification; otherwise state the default assumption.
+verification; otherwise state the default assumption. Do not satisfy this only
+with private notes or finish-check evidence after the fact; the checkpoint must
+be visible in the conversation before the work starts.
 
 Grill-Me rules:
 

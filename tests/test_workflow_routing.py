@@ -482,6 +482,19 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertEqual(8, len(failures))
 
+    def test_alignment_evidence_requires_user_visible_checkpoint(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                ALIGNMENT_BRIEF_GATE: (
+                    "same understanding: explicit goal captured; possible differences: uncertain scope; "
+                    "unsupported assumptions: default MVP unless blocker question changes it"
+                )
+            },
+            [ALIGNMENT_BRIEF_GATE],
+        )
+
+        self.assertTrue(any("user-visible checkpoint" in failure for failure in failures))
+
     def test_finish_policy_accepts_specific_evidence(self) -> None:
         failures = validate_gate_evidence(
             {
@@ -492,7 +505,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                 AMBIGUITY_GATE: "no blockers; safe assumption recorded",
                 ALIGNMENT_BRIEF_GATE: (
                     "same understanding: explicit goal captured; possible differences: uncertain scope; "
-                    "unsupported assumptions: default MVP unless blocker question changes it"
+                    "unsupported assumptions: default MVP unless blocker question changes it; "
+                    "user-visible checkpoint told the user before edits"
                 ),
                 DOCUMENTATION_GATE: "updated workflows/README.md",
                 TEST_GATE: "unittest tests/test_workflow_routing.py passed",

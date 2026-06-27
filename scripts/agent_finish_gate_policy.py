@@ -167,12 +167,38 @@ def _validate_alignment_brief(evidence: str) -> list[str]:
             "질문",
         )
     )
-    if has_shared and has_difference and has_assumption:
+    has_user_visible_checkpoint = any(
+        phrase in text
+        for phrase in (
+            "user-visible",
+            "told the user",
+            "told user",
+            "presented to the user",
+            "presented to user",
+            "reported to the user",
+            "reported to user",
+            "asked the user",
+            "asked user",
+            "confirmed with user",
+            "shared with user",
+            "sent to user",
+            "before edits",
+            "before editing",
+            "사용자에게",
+            "유저에게",
+            "전달",
+            "물어",
+            "확인받",
+            "수정 전",
+            "작업 전",
+        )
+    )
+    if has_shared and has_difference and has_assumption and has_user_visible_checkpoint:
         return []
     return [
         "alignment brief evidence must state shared understanding, possible differences, "
-        "and unsupported assumptions/unknowns or minimal blocker questions before requirements "
-        "analysis or modification work"
+        "unsupported assumptions/unknowns or minimal blocker questions, and the user-visible "
+        "checkpoint before requirements analysis or modification work"
     ]
 
 

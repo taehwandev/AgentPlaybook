@@ -51,7 +51,10 @@ Do not invoke Grill-Me as ceremony for clear low-risk tasks.
 When Grill-Me is not needed, still record the alignment brief before
 requirements analysis or modification work: what is understood the same way,
 what may differ, and which unsupported assumption is safe by default. This brief
-is the minimum check; Grill-Me is for blockers or explicit user request.
+is the minimum check; Grill-Me is for blockers or explicit user request. When a
+PRD is not created, this alignment brief is the PRD-skip checkpoint and must be
+visible to the user before drafting or editing. Do not replace it with a private
+note or after-the-fact finish evidence.
 
 ## Mandatory Blockers
 

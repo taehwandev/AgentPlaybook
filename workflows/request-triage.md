@@ -26,7 +26,9 @@ before planning or implementation.
 3. Select effort: `quick`, `standard`, `deep`, or `specialist`.
 4. For requirements analysis, record the compact alignment brief before a
    Grill-Me session: shared understanding, possible mismatch, and
-   unsupported assumptions or blocker questions.
+   unsupported assumptions or blocker questions. If the task will not create a
+   PRD but will still analyze requirements or modify files, make this a
+   user-visible PRD-skip checkpoint before drafting or editing.
 5. If `direct-question`, answer before workflow routing, editing, or
    project-specific commands. Stop unless a separate actionable request remains.
 6. If `clear-exact`, inspect the named target and avoid broad route loading.

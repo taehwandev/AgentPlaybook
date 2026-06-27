@@ -37,9 +37,11 @@ the command manifest and keep the implementation inside its listed gates.
 
 1. Orient: identify target repo, repo-local rules, current user changes,
    discovered stack, affected surface, and existing verification commands.
-2. Alignment brief: before changing files, state the understood change, what
-   should remain unchanged, where user/agent understanding may differ, and the
-   default assumption or blocker questions.
+2. Alignment brief: before changing files, tell the user the understood change,
+   what should remain unchanged, where user/agent understanding may differ, and
+   the default assumption or blocker questions. If this route does not create a
+   PRD, treat this as the PRD-skip checkpoint; it must be user-visible before
+   edits, not only recorded in finish evidence.
 3. Scope: name the requested behavior, acceptance criteria, non-goals, and the
    smallest safe slice.
 4. Boundary plan: choose state, domain, data, platform, contract, security, and

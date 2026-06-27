@@ -19,10 +19,12 @@ Use this before implementation, review, refactoring, debugging, documentation, o
    project-specific work. Record `route docs read` evidence when the route
    includes that gate; the evidence must name that routed skill/guidance docs
    were read before code, implementation, or edits.
-7. For requirements analysis or modification work, give a compact alignment
-   brief before drafting requirements or changing files. State shared
+7. For requirements analysis or modification work, give the user a compact
+   alignment brief before drafting requirements or changing files. State shared
    understanding, possible mismatch, and unsupported assumptions or minimal
-   blocker questions. Do this even when the work is not PRD-sized.
+   blocker questions. Do this even when the work is not PRD-sized. If no PRD is
+   created, this PRD-skip checkpoint is still required and must be visible to
+   the user, not only recorded internally.
 8. Check preflight's global lesson summary when available. Accepted or promoted
    lessons from `~/.agentplaybook/` apply across repos unless repo-local
    instructions conflict.
@@ -60,9 +62,12 @@ Before editing:
   verification and repo context cannot answer it, ask before editing. Do not
   invent product intent or acceptance criteria silently.
 - For requirements analysis, feature, bugfix, refactor, docs, workflow setup, or
-  other modification routes, record an alignment brief before drafting or
-  editing. It must be a concise same/different/assumption check, not a full
-  Grill-Me `/grilling` session unless blockers require one.
+  other modification routes, give the user an alignment brief before drafting
+  or editing. It must be a concise same/different/assumption check, not a full
+  Grill-Me `/grilling` session unless blockers require one. Do not treat "no
+  PRD" as "no question or checkpoint"; when a PRD is skipped, state the skip
+  reason, shared understanding, possible differences, unsupported assumptions,
+  and the minimal blocker question or safe default before work starts.
 - Check repo-local `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or equivalent docs.
 - Check stack manifests, lockfiles, and config before running commands, adding dependencies, or using framework-specific APIs.
 - Read the route's `Read In Order` docs before code, implementation, review,
@@ -105,6 +110,8 @@ While editing:
 Before finishing:
 
 - Confirm every required workflow route gate has ledger evidence when a scripted route was used.
+- Confirm alignment evidence names the user-visible checkpoint, not only an
+  internal note reconstructed after the work.
 - Run the most relevant test, build, typecheck, lint, or smoke check.
 - For code work, include evidence for ambiguity handling, docs freshness,
   tests, and multi-agent split decision when the route requires them.
