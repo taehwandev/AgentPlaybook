@@ -92,6 +92,91 @@ For `api` / `impl` / `assertions` module families:
   fakes, assertion subjects, matchers, and contract tests. It depends on `api`
   and must not depend on production `impl` by default.
 
+Minimal shape:
+
+```text
+feature/profile/api
+  ProfileRoute.kt
+  ProfileEvent.kt
+  ProfileRepository.kt
+  model/Profile.kt
+
+feature/profile/impl
+  ProfileRouteHolder.kt
+  ProfileViewModel.kt
+  ProfileScreen.kt
+  mapper/ProfileUiMapper.kt
+  di/ProfileModule.kt
+
+feature/profile/assertions
+  ProfileFixtures.kt
+  RecordingProfileRepository.kt
+  ProfileRouteSubject.kt
+```
+
+The `api` module exposes what callers need to compile. The `impl` module owns
+how the feature runs. The `assertions` module owns reusable test helpers that
+compile against `api` and avoid pulling app, DI, network, database, WebView,
+camera, or other production implementations into tests.
+
+Example API contract:
+
+```kotlin
+@JvmInline
+value class ProfileId(val value: String)
+
+data class ProfileRoute(val id: ProfileId)
+
+sealed interface ProfileEvent {
+    data class OpenProfile(val id: ProfileId) : ProfileEvent
+    data object Back : ProfileEvent
+}
+
+interface ProfileRepository {
+    suspend fun loadProfile(id: ProfileId): Profile
+}
+```
+
+Example implementation boundary:
+
+```kotlin
+class ProfileViewModel(
+    private val repository: ProfileRepository,
+    private val noticeSink: NoticeSink,
+    private val routeSink: RouteEventSink<ProfileEvent>,
+) : ViewModel() {
+    fun onAction(action: ProfileAction) {
+        when (action) {
+            ProfileAction.BackClick -> routeSink.tryEmit(ProfileEvent.Back)
+            ProfileAction.RetryClick -> load()
+        }
+    }
+}
+```
+
+Example assertions boundary:
+
+```kotlin
+class RecordingProfileRepository : ProfileRepository {
+    val requestedIds = mutableListOf<ProfileId>()
+    var nextProfile: Profile = ProfileFixtures.profile()
+
+    override suspend fun loadProfile(id: ProfileId): Profile {
+        requestedIds += id
+        return nextProfile
+    }
+}
+
+object ProfileFixtures {
+    fun profile(id: ProfileId = ProfileId("profile-1")) = Profile(id = id)
+}
+```
+
+Do not put the fake in the production implementation module only because it is
+small. Once more than one test boundary needs it, move it to `assertions` so
+tests can depend on the contract and fake without importing the production
+screen, DI graph, network stack, or app module.
+
 If the package note cannot explain who imports the package and which import is
 forbidden, keep the code in the existing package and only split files by
 responsibility.
@@ -111,9 +196,9 @@ whole shape. Distill the reference into the current repo's scale:
   repository API/implementation splits, domain use cases, and deterministic fake
   or assertion modules.
 - Rename plugin ids, packages, modules, and generated namespaces to the target
-  repo. Never keep reference-project names in shared build or source contracts.
-- Drop reference-only dependencies such as ads, banking SDKs, billing, Firebase,
-  Hilt, KSP, generated factories, signing, flavors, analytics, or enterprise
+  repo. Never keep source-project names in shared build or source contracts.
+- Drop source-only dependencies such as ads, billing, Firebase, Hilt, KSP,
+  generated factories, signing, flavors, analytics, domain-specific SDKs, or
   verification tooling unless the current task explicitly needs them.
 - Collapse deep reference folder hierarchies when the target has only one
   product area. A small app often needs `app`, `core:designsystem`,
@@ -211,6 +296,14 @@ Choose a single feature module when:
 - implementation dependencies are acceptable to callers
 - the boundary is still changing quickly
 
+If the repo's architecture baseline is `api` plus implementation modules, follow
+that convention, but keep the SOLID reason explicit. The `api` module is the
+caller-facing interface: role-sized contracts, route/deep-link events, ports,
+entities, and delegates. The implementation module owns concrete screens,
+ViewModels, adapters, mappers, DI bindings, platform launchers, and runtime
+wiring. Do not let the split become two files that mirror each other without
+reducing imports, cycles, test weight, or implementation leakage.
+
 Choose a `feature-api` plus `feature` implementation pair when:
 
 - another feature, holder, app module, or navigation graph must reference the
@@ -287,6 +380,12 @@ shared app-runtime boundary exists.
 Avoid broad `BaseActivity`, `BaseFragment`, or universal `BaseViewModel`
 hierarchies. Prefer small contracts such as app environment, route coordinator,
 notice host, permission host, and platform adapter interfaces.
+
+For ViewModel-adjacent runtime capabilities, prefer interfaces and delegates
+over inheritance. A notice, router, deep-link, permission, or launcher delegate
+can own reusable effect plumbing, but the ViewModel remains the action/state
+owner. The delegate exists to avoid broad base classes, not to hide product
+policy or screen state.
 
 A reusable Compose Activity base may own only the narrow Activity template:
 edge-to-edge setup, content installation, lifecycle-aware intent/deep-link

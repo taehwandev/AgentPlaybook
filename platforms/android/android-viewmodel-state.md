@@ -6,9 +6,9 @@ type: human-reviewed-needed
 
 # Android ViewModel And State
 
-Use when creating, changing, moving, or reviewing Android ViewModels, `UiState`,
-`Flow`, use cases, repositories, persistence, permission state, or navigation
-events.
+Use when creating, changing, moving, or reviewing Android ViewModels, typed UI
+actions, `UiState`, one-off effects, `Flow`, use cases, repositories, network
+presentation hints, persistence, permission state, or navigation events.
 
 For Compose screen/component structure, also read `android-compose-ui.md`. For
 background work, also read `android-background-work.md`. For reusable extraction,
@@ -19,13 +19,15 @@ also read `../../common/reusable-code-design.md`.
 Use this shape unless the repo has a stricter local pattern:
 
 ```text
-Route/Composable -> ViewModel -> Use Case -> Repository -> DataSource/Adapter
+View/Route/Composable -> Action -> ViewModel -> Use Case -> Repository
+  -> DataSource/Adapter -> domain/repository entity
+  -> ViewModel maps entity/failure to UiState + SideEffect
 ```
 
-- Route/Composable collects state, sends user intent, and handles lifecycle-aware
-  UI effects.
-- ViewModel owns screen state, user intent handling, cancellation, and event
-  output.
+- View/Route/Composable collects state, renders it, emits typed actions, and
+  handles lifecycle-aware UI effects.
+- ViewModel receives actions through one explicit surface such as
+  `onAction(action)`, owns screen state, cancellation, and event output.
 - Use case owns product rules and orchestration when logic is reused, risky, or
   independently testable.
 - Repository owns source coordination, caching, DTO/domain mapping, and error
@@ -36,6 +38,12 @@ Route/Composable -> ViewModel -> Use Case -> Repository -> DataSource/Adapter
 Do not add a use case or repository only as a pass-through. Add it when it
 protects a product rule, side effect, test boundary, cache boundary, or platform
 API boundary.
+
+Clean Architecture is useful when a feature has real domain or integration
+pressure. It is not a naming template. In that track, request/response DTOs stay
+at the data/network boundary, entities or domain models cross into the
+ViewModel/use-case boundary, and `UiState` plus one-off effects are the only
+presentation outputs.
 
 ## State Holder Selection
 
@@ -59,8 +67,10 @@ UI logic depend directly on repositories or long-lived business state.
 
 ## ViewModel Contract
 
-ViewModels should expose one observable state stream and explicit intent methods
-or typed actions:
+ViewModels should expose an explicit state contract and explicit intent methods
+or typed actions. One coarse observable state stream is a useful default for
+small screens, but it is not mandatory when performance, ownership, or update
+cadence requires smaller streams.
 
 ```kotlin
 @Immutable
@@ -90,6 +100,45 @@ Rules:
 - Keep one-off effects separate from persistent state. Use a typed effect stream
   or route callback for navigation, snackbar, permission launch, external
   activity, and file/share actions.
+
+## Effect Interfaces And Delegates
+
+ViewModels should communicate with app/runtime effects through role-sized
+interfaces, not concrete Android UI, router, Activity, or SDK implementations.
+This keeps Dependency Inversion and Interface Segregation visible in the
+ViewModel boundary.
+
+Examples of role-sized ports:
+
+```text
+NoticeSink or NoticeEffectDelegate       toast, snackbar, alert, inline notice
+RouteEventSink or RouteDispatcher        app route events and navigation requests
+DeepLinkOpener or DeepLinkDispatcher     allowlisted deep-link requests
+PermissionRequester                      permission prompt requests
+ExternalActivityLauncher                 share, browser, file picker, settings
+```
+
+Use delegates to compose reusable behavior into a ViewModel without inheriting
+from broad base classes. A delegate can own a channel, shared flow, sink, mapper,
+or small effect API. The ViewModel still owns the screen action reducer and
+state transition; the delegate only owns the reusable capability it represents.
+
+Do not create a `BaseViewModel` only to inherit notice, routing, permission, or
+coroutine helpers. Inject small interfaces or delegates instead.
+
+For runtime permissions, prefer Compose-first request gates when the permission
+is local to a screen. The Composable or route holder owns
+`rememberLauncherForActivityResult`, rationale UI, duplicate request guards, and
+`shouldShowRequestPermissionRationale` checks. The ViewModel should receive only
+the user's intent and a pure decision such as `Granted`, `Denied`,
+`PermanentlyDenied`, `Canceled`, or `Unavailable` when that decision affects
+business state.
+
+Use a ViewModel-facing `PermissionRequester` or runtime effect only when the
+same permission flow is reused across several screens, must integrate with a
+global router/notice host, or needs reusable assertion fakes across test
+boundaries. Do not route every simple permission check through a ViewModel
+side-effect stream only for architectural symmetry.
 
 ## Feature Actions, Feedback, And I18n Text
 
@@ -255,8 +304,10 @@ screen `UiState` into repeated rows to avoid creating a smaller model.
 
 Do not split state for ceremony. A simple profile, read-only settings page, or
 small form can keep one `UiState` when the update cadence and render cost are
-shared. When a split is justified as performance work, name which Compose read
-or recomposition boundary becomes smaller.
+shared. When a split is justified as performance work, name which Compose read,
+observer, or recomposition boundary becomes smaller. Prefer structural language
+such as "reduces broad invalidation risk" unless measurement proves a runtime
+performance improvement.
 
 ## Implementation Pattern
 
@@ -333,6 +384,15 @@ Implementation rules:
 
 - Keep action handling centralized in the ViewModel or reducer; do not scatter
   business actions across composables.
+- Treat the normal round trip as `Action -> ViewModel -> domain/data work ->
+  entity or typed failure -> UiState and SideEffect`. Do not let a composable
+  parse a server response, call a repository directly, or decide domain failure
+  meaning.
+- Keep notice, router, deep-link, permission, external launch, and platform
+  outputs behind small interfaces or delegates. ViewModels may invoke those
+  contracts, but they should not import concrete router implementations,
+  Android `Toast`, `SnackbarHostState`, `AlertDialog`, `NavController`,
+  `ActivityResultLauncher`, or `Activity`.
 - Use `Channel`/`receiveAsFlow`, `SharedFlow`, or repo-local event primitives
   intentionally. Effects should not replay after rotation unless replay is the
   product contract.
@@ -352,9 +412,10 @@ Implementation rules:
 - Preserve cancellation semantics. Cancellation should escape as cancellation,
   not become a generic user-visible failure or retryable network error.
 - If the server returns presentation hints such as toast/banner, alert/dialog,
-  full-page error, retry metadata, or a deep-link action, treat them as an API
-  contract hint. The ViewModel maps supported hints into Compose state/effects;
-  the feature UI should not parse raw server envelopes or transport responses.
+  full-page error, retry metadata, no-op/none, or a deep-link action, treat them
+  as API contract hints. The ViewModel maps supported hints into Compose
+  state/effects; the feature UI should not parse raw server envelopes or
+  transport responses.
 - Put required content data inside the `Content` state, or use another explicit
   state shape when stale content can coexist with refresh/error. Avoid nullable
   payloads that contradict the status.
@@ -427,6 +488,9 @@ Implementation rules:
 - Navigation, snackbar, permission prompt, file picker, and external app launch
   should be explicit outputs from the state owner.
 - Events must not replay after rotation unless replay is the intended behavior.
+- Server-driven notice hints should become local effects only after the state
+  owner validates the current screen context. A `none` hint means no user-visible
+  effect; it should not suppress required state updates or diagnostics.
 
 ## Tests
 
@@ -441,6 +505,10 @@ Choose the closest checks configured in the repo:
 - Coroutine tests with injected dispatchers and deterministic clocks.
 - Compose UI tests for lifecycle collection, rendering state, and emitted
   actions.
+- Mapper tests for request/response DTOs to entity/domain models and entity to
+  `UiState`.
+- Effect tests for supported server hints such as none, snackbar/toast, alert,
+  full-page, retry, and deep-link action when the feature supports them.
 
 Review the final diff for direct data-source calls from UI, public mutable
 state, impossible UI state combinations, replaying one-off events, missing

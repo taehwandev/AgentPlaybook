@@ -23,10 +23,58 @@ For WorkManager, foreground services, alarms, notifications, sync, uploads, or d
 ## Boundaries
 
 ```text
-Screen/Composable/Fragment -> ViewModel -> Use Case -> Repository -> Data Source/Platform Adapter
+Screen/Composable/Fragment -> Action -> ViewModel
+  -> effect interfaces/delegates for notice, routing, deep links, permissions, launchers
+  -> Use Case -> Repository -> Data Source/Platform Adapter
 ```
 
-Module boundaries should support this dependency direction instead of fighting it. UI feature modules depend on repository/domain contracts, not repository internals; shared core/design-system modules do not depend on feature implementations.
+Module boundaries should support this dependency direction instead of fighting
+it. UI feature modules depend on repository/domain contracts, not repository
+internals; shared core/design-system modules do not depend on feature
+implementations.
+
+Treat SOLID as the reason for these boundaries. Interface Segregation keeps
+ViewModels talking to small capability interfaces for alert, toast/snackbar,
+router, deep-link, permission, and launcher effects. Dependency Inversion keeps
+those interfaces in API/core contracts while concrete implementations live in
+app, runtime, data, or feature implementation modules. Delegates are a
+composition pattern for sharing those capabilities without inheriting from broad
+base ViewModels.
+
+Minimal effect contract shape:
+
+```kotlin
+interface NoticeSink {
+    fun showNotice(request: NoticeRequest)
+}
+
+interface RouteEventSink<E : Any> {
+    fun tryEmit(event: E)
+}
+
+class NoticeDelegate(
+    private val sink: MutableSharedFlow<NoticeRequest>,
+) : NoticeSink {
+    override fun showNotice(request: NoticeRequest) {
+        sink.tryEmit(request)
+    }
+}
+```
+
+Use this shape when a ViewModel needs alert, snackbar/toast, router, deep-link,
+permission, or external launcher behavior without depending on Android UI
+classes. The delegate exists to compose a capability; it must not become a
+hidden base ViewModel, global service locator, product policy owner, or screen
+state owner.
+
+Do not:
+
+- Inject `Activity`, `Context`, `NavController`, `SnackbarHostState`, `Toast`,
+  `AlertDialog`, `ActivityResultLauncher`, or SDK clients into ViewModels.
+- Put every effect into one broad `UiEffectManager`.
+- Emit server presentation hints directly from the network layer to Android UI.
+- Hide route registration, deep-link parsing, repository calls, or analytics in
+  a reusable Activity base.
 
 ## Concrete Structure Baseline
 
@@ -46,6 +94,13 @@ build-logic                  convention plugins and shared build settings
 ```
 
 Keep the `app` module thin. Put reusable visual primitives in the design system, pure business data in model/domain, source coordination in data, and screen orchestration in feature implementations. Skip `api` modules, use cases, or repository splits until another module, test boundary, platform dependency, or replaceable implementation needs the contract.
+
+When a repo intentionally uses `api` plus implementation modules as its baseline
+architecture, keep the same SOLID meaning: `api` exposes role-sized contracts,
+events, route keys, repository ports, and stable entities; implementation
+modules own screens, ViewModels, adapters, mappers, platform calls, and concrete
+runtime wiring. The split exists so callers import interfaces and contracts
+instead of concrete implementations, not to add ceremony.
 
 Do not copy this baseline as literal module names. It is a shape for ownership
 and dependency direction. If a repo's `app`, `core-app`, `core-ui`, `runtime`,
