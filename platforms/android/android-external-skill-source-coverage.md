@@ -62,6 +62,46 @@ This gate is especially important for tasks involving package/module
 boundaries, Navigation 3, deep links, Compose performance, edge-to-edge,
 testing, credentials, billing, profiling, Wear, XR, CameraX, and AppFunctions.
 
+## Workflow Routing Contract
+
+This manifest is not a passive bibliography. Android routes must load it when
+the selected platform is `android` and the task concern touches any source
+surface covered by the external skill repositories.
+
+The workflow router should include this manifest for Android concerns such as:
+
+- `architecture`, `module`, or `structure`: module/package boundaries,
+  Navigation 3, deep links, `api`/`impl`, `assertions`, and feature contracts.
+- `compose`, `ui`, `state`, or `performance`: Compose state, side effects,
+  recomposition, stability, lazy layouts, modifier APIs, slots, focus, previews,
+  and UI testing.
+- `testing` or `test`: Android testing setup, Compose UI testing, screenshot
+  testing, state restoration, form-factor coverage, and E2E scope.
+- `security`: exported components, intents, PendingIntent mutability, deep
+  links, WebView bridges, credentials, and release configuration.
+- `devtools`, `dependency`, `release`, `migration`, or `platform`: Android CLI,
+  AGP, R8, Perfetto, XML-to-Compose migration, edge-to-edge, CameraX,
+  Credential Manager, Play surfaces, Wear, XR, and AppFunctions.
+
+If an Android route for those concerns does not include this manifest, treat the
+route as incomplete before editing. Keep AgentPlaybook's local Android
+architecture as the primary rule source; use external skills to prevent
+omission and to confirm version-sensitive source behavior.
+
+## Source Trigger Map
+
+Use the narrowest external source file that matches the touched surface:
+
+| Surface | Start With |
+| --- | --- |
+| Compose recomposition, stability, deferred reads, lazy list jank, custom modifiers, baseline profiles, or performance claims | `skydoves/compose-performance-skills` `INDEX.md` and the matching `SKILL.md`; then use Chris Banes focused Compose skills when state, effects, or API shape is the root cause. |
+| Compose state hoisting, state-holder split, side effects, modifiers, slots, focus, UI testing, Flow, or coroutine ownership | `chrisbanes/skills` matching `skills/<name>/SKILL.md`. |
+| Android CLI/device inspection, AGP, R8, Navigation 3, edge-to-edge, testing setup, intent security, CameraX, credentials, Play, Wear, XR, or AppFunctions | `android/skills` matching platform `SKILL.md` and its listed references. |
+
+Do not copy full skill text into AgentPlaybook. Distill only reusable decision
+rules, stop signals, and verification requirements into the local Android card
+that owns the recurring lesson.
+
 ## Google Android Skills Coverage
 
 Repository: `https://github.com/android/skills`

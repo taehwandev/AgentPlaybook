@@ -21,6 +21,28 @@ For Compose performance, stability, modifier, effect, slot, focus, animation,
 and testing work that cites external skill repositories, also read
 `android-external-skill-source-coverage.md` before editing or reviewing.
 
+## Android Skill Source Check
+
+When the task names or implies Jetpack Compose performance, recomposition,
+stability, lazy layouts, modifier APIs, side effects, Flow collection, focus,
+animation, previews, UI testing, or Android platform UI behavior, apply the
+external source manifest before implementation. Use it as a no-omission check,
+not as a replacement for this card's local architecture.
+
+- Use Compose performance sources when the claim involves jank, skippability,
+  compiler reports, `LazyColumn`/`LazyRow`, `Modifier.Node`, R8/release-mode
+  measurement, Baseline Profiles, or Macrobenchmark evidence.
+- Use Compose state/effect sources when the risk is broad recomposition from
+  whole-screen state, frame-rate reads in composition, effect restart keys,
+  state-holder split, or `Flow` parameters crossing into leaf composables.
+- Use official Android skills when the surface is edge-to-edge, IME insets,
+  testing setup, Navigation 3 scenes, R8, Android CLI/device inspection, or
+  another platform SDK feature.
+
+If a route for Android Compose or performance work does not load
+`android-external-skill-source-coverage.md`, fix the route or load the manifest
+manually before editing.
+
 ## Compose Layers
 
 Use this shape unless the repo has a stricter local pattern:
@@ -278,6 +300,10 @@ Performance claims should use release-like evidence whenever practical:
   according to the repo's tooling. Do not invent metrics.
 - Keep each fix scoped to one diagnosed cause and remeasure before moving to the
   next optimization.
+- Do not chase perfect skippability as a success metric. Skippability,
+  recomposition counts, compiler stability reports, and Layout Inspector output
+  are diagnostics; the task still needs a user-visible path, bottleneck
+  category, and verification evidence that matches the claim.
 
 ### Stability And Strong Skipping
 

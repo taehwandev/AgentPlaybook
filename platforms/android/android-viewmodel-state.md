@@ -368,6 +368,19 @@ Implementation rules:
 - Use `viewModelScope` for work owned by the ViewModel.
 - Use `viewModelScope.launch { ... }` for one-shot suspend work such as loading,
   submit, retry, or save actions.
+- Treat the ViewModel or equivalent UI state holder as the normal boundary that
+  translates non-suspending UI events into suspending work. Repositories, use
+  cases, data sources, SDK adapters, and managers should usually expose
+  `suspend` APIs and let the caller own the coroutine scope.
+- Do not store a `CoroutineScope` in repository, use-case, data-source, manager,
+  or DI-singleton classes unless the class can prove cancellation, restart,
+  error reporting, and lifecycle ownership. Constructor or `init` launches in
+  those classes are review red flags because callers cannot await, cancel, or
+  observe failure.
+- Do not create ad-hoc scopes with `CoroutineScope(...)`, `MainScope()`, or
+  similar inside business/data/platform classes to fire-and-forget work. Invert
+  the API to `suspend`, a caller-owned Flow, WorkManager, or another explicit
+  lifecycle owner.
 - Use `onEach { ... }.launchIn(viewModelScope)` for long-lived Flow
   subscriptions owned by the ViewModel, such as event buses, repositories, or
   platform callbacks that should keep collecting while the ViewModel is active.
@@ -380,8 +393,20 @@ Implementation rules:
 - Suppress stale results from older requests.
 - Use `stateIn` or `shareIn` intentionally; define initial value, sharing
   policy, and stop timeout.
+- Keep `stateIn`/`shareIn` as a stable owner property when the resulting
+  `StateFlow` or `SharedFlow` is the observable contract. Avoid recreating it
+  inside a function that callers invoke repeatedly unless the function is
+  intentionally a cold flow factory.
+- Choose `StateFlow`, `SharedFlow`, or `Channel` by replay and delivery
+  semantics. `StateFlow` is for latest observable state with a synchronous
+  value; `SharedFlow` is for broadcast events with explicit replay/buffer
+  choices; `Channel.receiveAsFlow()` can fit single-consumer one-off UI effects
+  when exact broadcast replay is not desired.
 - Avoid collecting infinite flows inside use cases without a clear owner.
 - Map errors into user-visible state or typed domain errors before UI.
+- Preserve structured cancellation. Do not catch `Exception`, `Throwable`, or
+  use `runCatching` around suspend calls without rethrowing
+  `CancellationException`.
 
 ## Persistence And Cache
 

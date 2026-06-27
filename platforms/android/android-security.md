@@ -31,6 +31,18 @@ release-channel config.
 - Treat `Activity`, `Service`, `Receiver`, and `Provider` export settings as security boundaries.
 - Validate deep links and app links before using embedded IDs, tokens, or redirect targets.
 - Use explicit intents for sensitive flows and check `PendingIntent` mutability.
+  Prefer immutable `PendingIntent` by default; require an explicit target and a
+  documented reason when mutability is needed.
+- Treat nested intents, `onNewIntent`, app links, custom schemes, and
+  externally supplied extras as untrusted input. Sanitize or whitelist the
+  action, component, data URI, categories, MIME type, flags, and extras before
+  launching or trusting them.
+- Protect exported services, receivers, and providers with the narrowest
+  manifest permissions, caller validation, signature checks, or explicit
+  non-exported configuration that the behavior allows.
+- Keep `ContentProvider` projections, selections, sort orders, and URI grants
+  constrained; do not pass caller-controlled SQL fragments or broad file URI
+  grants through unchecked.
 - Keep WebView JavaScript bridges narrow, typed, and unavailable to untrusted content.
 - Prefer platform photo picker and scoped storage over broad file permissions.
 - Keep cleartext traffic disabled unless the repo documents an accepted debug-only exception.
