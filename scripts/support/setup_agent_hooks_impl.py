@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -150,7 +151,51 @@ def configure_external_project(
     entries += detect_project_permissions(project_path)
     status = merge_permissions_allow(target, entries, dry_run)
     hook_label = f"permissions.project.{project_path.name}"
-    return [{"tool": "claude", "hook": hook_label, "status": status, "path": str(target)}]
+    exclude_status = ensure_local_claude_excluded(project_path, dry_run)
+    return [
+        {"tool": "claude", "hook": hook_label, "status": status, "path": str(target)},
+        {
+            "tool": "git",
+            "hook": f"exclude.claude.{project_path.name}",
+            "status": exclude_status,
+            "path": str(project_path / ".git" / "info" / "exclude"),
+        },
+    ]
+
+
+def ensure_local_claude_excluded(project_path: Path, dry_run: bool) -> str:
+    """Keep generated project Claude permissions local unless already tracked."""
+    git_dir = project_path / ".git"
+    if not git_dir.is_dir():
+        return "ok"
+    if _git_path_matches(project_path, ["ls-files", "--error-unmatch", ".claude/settings.json"]):
+        return "ok"
+    if _git_path_matches(project_path, ["check-ignore", "-q", ".claude/settings.json"]):
+        return "ok"
+
+    exclude = git_dir / "info" / "exclude"
+    text = exclude.read_text() if exclude.exists() else ""
+    lines = text.splitlines()
+    if ".claude/" in lines or ".claude/settings.json" in lines:
+        return "ok"
+    if dry_run:
+        return "missing"
+
+    exclude.parent.mkdir(parents=True, exist_ok=True)
+    if text and not text.endswith("\n"):
+        text += "\n"
+    exclude.write_text(text + ".claude/\n")
+    return "installed"
+
+
+def _git_path_matches(project_path: Path, args: list[str]) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(project_path), *args],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    return result.returncode == 0
 
 
 def _find_github_projects() -> list[Path]:

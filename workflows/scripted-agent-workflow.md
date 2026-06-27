@@ -374,6 +374,29 @@ Before final report, commit, release, or handoff:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
 ```
 
+Write finish evidence for the validator, not only for a human summary. When a
+route includes these gates, the evidence must name the actual check that
+satisfies the policy:
+
+- `ambiguity check`: no blockers, blockers resolved, questions asked,
+  clarified decision, or explicit safe assumption.
+- `alignment brief`: shared understanding, possible differences, unsupported
+  assumptions or unknowns, and the user-visible checkpoint before requirement
+  analysis or modification work.
+- `documentation`: docs updated, docs created, source-of-truth checked, or why
+  docs were not applicable or unchanged.
+- `boundary plan`: owned boundary/scope or contract, plus the nearest
+  verification/check before implementation.
+- `multi-agent split decision`: serial/single-agent or parallel/split, with
+  owned scopes or the reason parallel work is not applicable.
+- `side-effect audit`: final diff and side effects checked, naming unexpected
+  changes, public-contract risk, generated/lockfile churn, or that none were
+  found.
+- `workspace scope checkpoint`, `scope expansion checkpoint`, or
+  `cross-repo scope checkpoint`: starting primary repo, secondary or
+  source-of-truth repo, chosen mode, and cross-repo verification before writing
+  to a secondary repo.
+
 `agent-hook.py finish` delegates to `agent-finish-check.py`. Calling
 `agent-finish-check.py` directly is acceptable only as a lower-level wrapper path
 when the finish hook is unavailable.
