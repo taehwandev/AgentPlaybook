@@ -116,6 +116,83 @@ class AgentProjectDiscoveryTests(unittest.TestCase):
             self.assertEqual(project.resolve(), result.selected.path)
             self.assertIn("nunu", result.selected.aliases)
 
+    def test_explicit_project_slug_does_not_select_conflicting_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            current = base / "Spill"
+            current.mkdir()
+            (current / "AGENTS.md").write_text("# spill app\n", encoding="utf-8")
+            (current / ".git").mkdir()
+            registry = base / "projects.json"
+            registry.write_text(json.dumps({"projects": []}), encoding="utf-8")
+
+            result = discover_projects(
+                "spill-web 작업해줘",
+                current,
+                registry_path=registry,
+                search_roots=[],
+                max_depth=0,
+                include_default_search_roots=False,
+            )
+
+            self.assertEqual("not_found", result.status)
+
+    def test_registry_exact_slug_beats_conflicting_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            current = base / "Spill"
+            target = base / "Spill-web"
+            current.mkdir()
+            target.mkdir()
+            (current / "AGENTS.md").write_text("# spill app\n", encoding="utf-8")
+            (current / ".git").mkdir()
+            (target / "AGENTS.md").write_text("# spill web\n", encoding="utf-8")
+            (target / ".git").mkdir()
+            registry = base / "projects.json"
+            registry.write_text(
+                json.dumps({"projects": [{"root": str(target), "aliases": ["spill-web", "spill web"]}]}),
+                encoding="utf-8",
+            )
+
+            result = discover_projects(
+                "spill-web 작업해줘",
+                current,
+                registry_path=registry,
+                search_roots=[],
+                max_depth=0,
+                include_default_search_roots=False,
+            )
+
+            self.assertEqual("selected", result.status)
+            self.assertEqual(target.resolve(), result.selected.path)
+
+    def test_search_root_slug_match_ignores_prefix_and_generic_web(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            spill = base / "Spill"
+            spill_web = base / "Spill-web"
+            generic_web = base / "DTP" / "web"
+            for project in (spill, spill_web, generic_web):
+                project.mkdir(parents=True)
+                (project / "AGENTS.md").write_text("# agent\n", encoding="utf-8")
+                (project / ".git").mkdir()
+            outside = base / "outside"
+            outside.mkdir()
+            registry = base / "projects.json"
+            registry.write_text(json.dumps({"projects": []}), encoding="utf-8")
+
+            result = discover_projects(
+                "spill-web 작업해줘",
+                outside,
+                registry_path=registry,
+                search_roots=[base],
+                max_depth=2,
+                include_default_search_roots=False,
+            )
+
+            self.assertEqual("selected", result.status)
+            self.assertEqual(spill_web.resolve(), result.selected.path)
+
     def test_search_roots_report_ambiguous_when_projects_tie(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             base = Path(temp_dir)

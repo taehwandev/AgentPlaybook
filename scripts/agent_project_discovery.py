@@ -16,6 +16,8 @@ from agent_project_search import (
     load_registry,
     registry_project_path,
     registry_search_roots,
+    request_has_explicit_project_slug,
+    request_name_matches,
     safe_resolve,
     scan_project_roots,
     usable_directory,
@@ -49,11 +51,9 @@ def discover_projects(
         if root:
             add_candidate(candidates, build_candidate(root, 130, "explicit path in request", "request_path"))
 
-    cwd_root = find_project_root(cwd)
-    if cwd_root:
-        add_candidate(candidates, build_candidate(cwd_root, 65, "current working directory is inside a project", "cwd"))
-
     request_lc = request.lower()
+    cwd_root = find_project_root(cwd)
+    has_explicit_project_slug = request_has_explicit_project_slug(request_lc)
     for entry in registry.get("projects", []):
         path = registry_project_path(entry)
         if not path or not path.exists():
@@ -62,11 +62,14 @@ def discover_projects(
         if not root or not isinstance(entry, dict):
             continue
         aliases = [alias for alias in entry.get("aliases", []) if isinstance(alias, str)]
-        matched_aliases = [alias for alias in aliases if alias.lower() in request_lc]
-        if matched_aliases or root.name.lower() in request_lc:
+        matched_aliases = [alias for alias in aliases if request_name_matches(alias, request_lc, allow_generic=True)]
+        if matched_aliases or request_name_matches(root.name, request_lc):
             candidate = build_candidate(root, 120, "registry alias or project name matched request", "registry")
             candidate.aliases = aliases
             add_candidate(candidates, candidate)
+
+    if cwd_root and (not has_explicit_project_slug or request_name_matches(cwd_root.name, request_lc)):
+        add_candidate(candidates, build_candidate(cwd_root, 65, "current working directory is inside a project", "cwd"))
 
     add_workspace_group_candidates(candidates, registry, request_lc)
 
@@ -77,7 +80,7 @@ def discover_projects(
         for root in scan_project_roots(scan_root, max_depth=max(0, max_depth)):
             score = 35
             reason = "project marker found under configured search root"
-            if root.name.lower() in request_lc:
+            if request_name_matches(root.name, request_lc):
                 score += 65
                 reason = "project name matched request under configured search root"
             add_candidate(candidates, build_candidate(root, score, reason, "search_root"))
@@ -215,8 +218,10 @@ def _scan_roots(
 
 
 def _rescore_for_request(candidate: ProjectCandidate, request_lc: str) -> ProjectCandidate:
-    names = [candidate.path.name, *candidate.aliases]
-    if any(name and name.lower() in request_lc for name in names):
+    if request_name_matches(candidate.path.name, request_lc) or any(
+        request_name_matches(alias, request_lc, allow_generic=True)
+        for alias in candidate.aliases
+    ):
         candidate.confidence += 12
         candidate.reasons = unique([*candidate.reasons, "candidate name appeared in request"])
     return candidate

@@ -14,10 +14,22 @@ from workflow_common import unique
 
 
 DEFAULT_SEARCH_ROOT_NAMES = ("Documents", "Developer", "GitHub", "Projects", "Downloads")
+GENERIC_PROJECT_NAMES = {
+    "app",
+    "api",
+    "backend",
+    "client",
+    "desktop",
+    "frontend",
+    "mobile",
+    "server",
+    "web",
+}
 SKIP_SEARCH_DIRS = {
     ".git", ".hg", ".svn", ".cache", ".gradle", ".idea", ".venv",
     "build", "dist", "node_modules", "target", "DerivedData",
 }
+PROJECT_SLUG_PATTERN = re.compile(r"(?<![A-Za-z0-9])([A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)+)(?![A-Za-z0-9])")
 
 
 def find_project_root(start: Path) -> Path | None:
@@ -135,6 +147,32 @@ def env_search_roots() -> list[Path]:
     ]
 
 
+def request_has_explicit_project_slug(request_lc: str) -> bool:
+    """Return true when the request names a slug-like project target."""
+    return bool(PROJECT_SLUG_PATTERN.search(request_lc))
+
+
+def request_name_matches(name: str, request_lc: str, *, allow_generic: bool = False) -> bool:
+    """Match project names without treating hyphenated slugs as loose substrings."""
+    name_lc = name.strip().lower()
+    if not name_lc:
+        return False
+
+    parts = _normalized_parts(name_lc)
+    normalized_name = " ".join(parts)
+    if not allow_generic and normalized_name in GENERIC_PROJECT_NAMES:
+        return False
+
+    if _contains_strict_name(request_lc, name_lc):
+        return True
+
+    if len(parts) > 1:
+        normalized_request = " ".join(_normalized_parts(request_lc))
+        return f" {normalized_name} " in f" {normalized_request} "
+
+    return False
+
+
 def default_search_roots() -> list[Path]:
     return [Path.home() / name for name in DEFAULT_SEARCH_ROOT_NAMES]
 
@@ -199,3 +237,11 @@ def iter_child_dirs(path: Path) -> list[Path]:
         except OSError:
             continue
     return result
+
+
+def _contains_strict_name(request_lc: str, name_lc: str) -> bool:
+    return re.search(rf"(?<![a-z0-9_-]){re.escape(name_lc)}(?![a-z0-9_-])", request_lc) is not None
+
+
+def _normalized_parts(value: str) -> list[str]:
+    return [part for part in re.split(r"[^a-z0-9]+", value.lower()) if part]

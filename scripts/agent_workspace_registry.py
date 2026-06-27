@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from agent_project_search import request_name_matches
 from workflow_common import unique
 
 
@@ -83,7 +84,7 @@ def member_path(member: dict[str, Any]) -> Path | None:
 
 
 def matches_request(aliases: list[str], request_lc: str) -> bool:
-    return any(alias and alias.lower() in request_lc for alias in aliases)
+    return any(request_name_matches(alias, request_lc, allow_generic=True) for alias in aliases)
 
 
 def _string_list(raw: object) -> list[str]:
