@@ -6,34 +6,21 @@ type: human-reviewed-needed
 
 # AgentPlaybook 최신화 안내
 
-이 문서는 한글 빠른 안내입니다. AgentPlaybook의 기준 정책은
-`README.md`, `AGENTS.md`, `docs/agent-bootstrap.md`,
-`docs/agent-runtime-integration.md`에 있습니다.
+이 문서는 한글 빠른 안내입니다. AgentPlaybook의 기준 정책은 `README.md`, `AGENTS.md`, `docs/agent-bootstrap.md`, `docs/agent-runtime-integration.md`에 있습니다.
 
 ## 기본 원칙
 
-- AgentPlaybook은 복사해서 각 저장소에 붙여넣기보다, 하나의 root를
-  링크해서 쓰는 방식이 기본입니다.
-- 개인이나 소수 사용자는 Git checkout 하나를 `git pull --ff-only`로
-  최신화하면 됩니다.
-- AgentPlaybook을 링크한 대상 저장소는 별도 복사본을 업데이트할 필요가
-  없습니다. 다음 에이전트 작업 때 선택된 AgentPlaybook root의 최신 파일을
-  다시 읽으면 됩니다.
-- 작업이 진행 중일 때 자동으로 pull하지 마세요. 지침이 중간에 바뀌면
-  작업 기준도 바뀝니다. 최신화는 작업 사이에 사람이 명시적으로 실행하는
-  것이 안전합니다.
+- AgentPlaybook은 복사해서 각 저장소에 붙여넣기보다, 하나의 root를 링크해서 쓰는 방식이 기본입니다.
+- 개인이나 소수 사용자는 Git checkout 하나를 `git pull --ff-only`로 최신화하면 됩니다.
+- AgentPlaybook을 링크한 대상 저장소는 별도 복사본을 업데이트할 필요가 없습니다. 다음 에이전트 작업 때 선택된 AgentPlaybook root의 최신 파일을 다시 읽으면 됩니다.
+- 작업이 진행 중일 때 자동으로 pull하지 마세요. 지침이 중간에 바뀌면 작업 기준도 바뀝니다. 최신화는 작업 사이에 사람이 명시적으로 실행하는 것이 안전합니다.
 
 ## 경로 표기 원칙
 
-- Git에 커밋되는 `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`
-  같은 repo-local 지침에는 `/Users/.../AgentPlaybook` 같은 개인 절대 경로를
-  넣지 마세요.
-- 개인 로컬 공유 설치는 `${AGENTPLAYBOOK_HOME}`으로 가리키고, 팀 고정
-  설치는 `.agents/AgentPlaybook` 같은 repo-relative 경로를 사용하세요.
-- 개인 절대 경로는 shell 환경변수 설정, 커밋하지 않는 사용자 전역 런타임
-  브리지, 또는 한 번만 붙여넣는 one-shot 프롬프트에서만 허용합니다.
-- 기존에 커밋된 지침에서 개인 절대 경로를 발견하면 push 전에 portable
-  reference로 바꿔야 합니다.
+- Git에 커밋되는 `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`같은 repo-local 지침에는 `/Users/.../AgentPlaybook` 같은 개인 절대 경로를 넣지 마세요.
+- 개인 로컬 공유 설치는 `${AGENTPLAYBOOK_HOME}`으로 가리키고, 팀 고정 설치는 `.agents/AgentPlaybook` 같은 repo-relative 경로를 사용하세요.
+- 개인 절대 경로는 shell 환경변수 설정, 커밋하지 않는 사용자 전역 런타임 브리지, 또는 한 번만 붙여넣는 one-shot 프롬프트에서만 허용합니다.
+- 기존에 커밋된 지침에서 개인 절대 경로를 발견하면 push 전에 portable reference로 바꿔야 합니다.
 
 ## 개인 로컬 설치 최신화
 
@@ -44,19 +31,15 @@ python3 scripts/workflow.py validate
 vibeguard audit . --rules .
 ```
 
-`AGENTPLAYBOOK_HOME`을 쓰지 않는다면 실제 AgentPlaybook 경로로 이동해서
-같은 명령을 실행하면 됩니다.
+`AGENTPLAYBOOK_HOME`을 쓰지 않는다면 실제 AgentPlaybook 경로로 이동해서 같은 명령을 실행하면 됩니다.
 
 ## 실행 근거 강제
 
-최신화 후 여러 단계 작업을 맡길 때는 에이전트가 wrapper evidence를 만들게
-하는 것이 안전합니다. 지침을 읽었다는 말만으로는 충분하지 않습니다.
+최신화 후 여러 단계 작업을 맡길 때는 에이전트가 wrapper evidence를 만들게 하는 것이 안전합니다. 지침을 읽었다는 말만으로는 충분하지 않습니다.
 
 작업 전:
 
-에이전트 런타임에서 실행할 때는 `${AGENTPLAYBOOK_HOME}`을 먼저 실제 절대 경로로
-치환하세요. 승인 민감 명령에는 `$HOME`, `${HOME}`, `~`, 상대 경로를 남기지
-않습니다.
+에이전트 런타임에서 실행할 때는 `${AGENTPLAYBOOK_HOME}`을 먼저 실제 절대 경로로 치환하세요. 승인 민감 명령에는 `$HOME`, `${HOME}`, `~`, 상대 경로를 남기지 않습니다.
 
 ```bash
 python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-preflight.py" \
@@ -80,24 +63,13 @@ python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-finish-check.py" \
   --gate "report=<근거>"
 ```
 
-이 스크립트들은 대상 저장소의 `.agentplaybook/` 아래에 로컬 JSON 근거를
-남깁니다. 보통 이 디렉터리는 커밋하지 않고 `.gitignore`에 둡니다. preflight
-근거, finish-check 근거, route gate 근거가 없으면 결과물이 맞아 보여도
-AgentPlaybook 기준으로는 non-compliant입니다.
-사람이 보는 보고에는 두 가지 고양이 신호 배지만 씁니다:
-`🐱🟢 SUCCESS`는 근거와 함께 실행됨, `🐱🔴 FAIL`은 차단, 실패, 누락 또는
-근거 없음입니다. 제3의 gate 상태는 보고하지 않습니다. `--request-classified`를
-쓸 때는 `--classification-evidence`를 함께 남겨야 하며, "그릴미"처럼 질문
-드릴을 요청한 경우 드릴 근거가 없으면 `🐱🔴 FAIL`입니다.
+이 스크립트들은 대상 저장소의 `.agentplaybook/` 아래에 로컬 JSON 근거를 남깁니다. 보통 이 디렉터리는 커밋하지 않고 `.gitignore`에 둡니다. preflight 근거, finish-check 근거, route gate 근거가 없으면 결과물이 맞아 보여도 AgentPlaybook 기준으로는 non-compliant입니다. 사람이 보는 보고에는 두 가지 고양이 신호 배지만 씁니다: `🐱🟢 SUCCESS`는 근거와 함께 실행됨, `🐱🔴 FAIL`은 차단, 실패, 누락 또는 근거 없음입니다. 제3의 gate 상태는 보고하지 않습니다. `--request-classified`를 쓸 때는 `--classification-evidence`를 함께 남겨야 하며, "그릴미"처럼 질문 드릴을 요청한 경우 드릴 근거가 없으면 `🐱🔴 FAIL`입니다.
 
-VibeGuard가 `Needs review`이면 완료가 아닙니다. 그 상태를 명시
-보고하고, 받아들일 수 있는 사유가 있을 때만
-`--allow-vibeguard-review "<사유>"`로 finish check를 통과시킵니다.
+VibeGuard가 `Needs review`이면 완료가 아닙니다. 그 상태를 명시 보고하고, 받아들일 수 있는 사유가 있을 때만 `--allow-vibeguard-review "<사유>"`로 finish check를 통과시킵니다.
 
 ## 팀 고정 버전 최신화
 
-팀이 submodule이나 repo-pinned copy로 특정 버전을 고정했다면, 대상
-저장소의 일반 리뷰 흐름으로 pinned commit을 올립니다.
+팀이 submodule이나 repo-pinned copy로 특정 버전을 고정했다면, 대상 저장소의 일반 리뷰 흐름으로 pinned commit을 올립니다.
 
 ```bash
 cd <target-repo>
