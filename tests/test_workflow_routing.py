@@ -17,11 +17,12 @@ from agent_finish_check_steps import (
     validate_grill_me_skill_evidence,
     validate_route_docs_manifest_evidence,
 )
+from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_global_lessons import lesson_summary, write_retrospective_candidate
 from agent_preflight_runtime import (
     AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
 )
-from agent_route_docs import route_fingerprint
+from agent_route_docs import preflight_evidence_sha256, route_fingerprint
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
 from support.permission_entries import codex_prefix_rule_entries
 from workflow_catalog import COMMANDS, CONCERNS
@@ -221,6 +222,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("workflow_gate_policy.py", entries)
         self.assertIn("workflow_concern_docs.py", entries)
         self.assertIn("agent-docs-read.py", entries)
+        self.assertIn("agent_delegation_plan.py", entries)
         self.assertIn("agent_finish_gate_policy.py", entries)
         self.assertIn("agent_finish_common.py", entries)
         self.assertIn("agent_finish_check_steps.py", entries)
@@ -343,7 +345,9 @@ class WorkflowRoutingTests(unittest.TestCase):
             route,
             {ROUTE_DOCS_READ_GATE: "read routed docs before edits with docs-read receipt"},
             {
+                "schema_version": 1,
                 "route_fingerprint": route_fingerprint(route),
+                "doc_count": 3,
                 "docs": [
                     {"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"},
                     {"path": "common/agent-operating-skill.md", "size_bytes": 1, "sha256": "def"},
@@ -353,6 +357,43 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
         self.assertEqual([], failures)
+
+    def test_route_docs_read_receipt_must_match_current_preflight_hash(self) -> None:
+        route = {
+            "gates": [ROUTE_DOCS_READ_GATE],
+            "docs": ["AGENTS.md"],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            evidence_path.write_text('{"route":"a"}\n', encoding="utf-8")
+            receipt = {
+                "schema_version": 1,
+                "route_fingerprint": route_fingerprint(route),
+                "doc_count": 1,
+                "preflight_evidence": str(evidence_path),
+                "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
+                "docs": [{"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"}],
+            }
+
+            self.assertEqual(
+                [],
+                validate_route_docs_manifest_evidence(
+                    route,
+                    {ROUTE_DOCS_READ_GATE: "read routed docs before edits; applied takeaway: wrapper receipt policy"},
+                    receipt,
+                    evidence_path,
+                ),
+            )
+
+            evidence_path.write_text('{"route":"b"}\n', encoding="utf-8")
+            failures = validate_route_docs_manifest_evidence(
+                route,
+                {ROUTE_DOCS_READ_GATE: "read routed docs before edits; applied takeaway: wrapper receipt policy"},
+                receipt,
+                evidence_path,
+            )
+
+            self.assertTrue(any("stale" in failure for failure in failures))
 
     def test_prd_and_product_routes_require_alignment_brief(self) -> None:
         prd_route = resolve_docs("prd", None, [], request_classified=True)
@@ -601,7 +642,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             {
                 ROUTE_DOCS_READ_GATE: (
                     "read routed docs before code: AGENTS.md, index.md, "
-                    "common/agent-operating-skill.md"
+                    "common/agent-operating-skill.md; applied takeaway: wrapper "
+                    "receipt policy and gate evidence criteria"
                 ),
                 AMBIGUITY_GATE: "no blockers; safe assumption recorded",
                 ALIGNMENT_BRIEF_GATE: (
@@ -637,6 +679,14 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertEqual([], failures)
 
+    def test_route_docs_read_evidence_requires_applied_takeaway(self) -> None:
+        failures = validate_gate_evidence(
+            {ROUTE_DOCS_READ_GATE: "read routed docs before edits with docs-read receipt"},
+            [ROUTE_DOCS_READ_GATE],
+        )
+
+        self.assertTrue(any("applied" in failure for failure in failures))
+
     def test_parallel_subagent_evidence_requires_contract_forbidden_scope_and_verification(self) -> None:
         failures = validate_gate_evidence(
             {MULTI_AGENT_GATE: "parallel subagent split with owned scope"},
@@ -657,6 +707,63 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
         self.assertEqual([], failures)
+
+    def test_parallel_subagent_finish_requires_structured_delegation_plan(self) -> None:
+        evidence = {
+            MULTI_AGENT_GATE: (
+                "parallel subagent split: worker docs owns workflows/*.md; "
+                "forbidden scope: scripts/*.py; contract brief: report doc gaps; "
+                "verification: workflow validate"
+            )
+        }
+
+        failures = validate_delegation_plan_evidence([MULTI_AGENT_GATE], evidence, {})
+
+        self.assertTrue(any("agent-delegation-plan.json" in failure for failure in failures))
+
+        plan = {
+            "schema_version": 1,
+            "mode": "parallel",
+            "workers": [
+                {
+                    "id": "docs-a",
+                    "role": "docs reviewer",
+                    "owned_scope": ["workflows/*.md"],
+                    "forbidden_scope": ["scripts/*.py"],
+                    "contract": "report documentation gaps only",
+                    "acceptance": ["findings include file and rule"],
+                    "verification": ["python3 scripts/workflow.py validate"],
+                }
+            ],
+            "integration_review": {
+                "contract_drift_check": "compare worker findings with route gate policy",
+                "final_verification": ["python3 -m unittest discover tests"],
+            },
+        }
+
+        self.assertEqual([], validate_delegation_plan_evidence([MULTI_AGENT_GATE], evidence, plan))
+
+    def test_serial_multi_agent_decision_does_not_require_delegation_plan(self) -> None:
+        failures = validate_delegation_plan_evidence(
+            [MULTI_AGENT_GATE],
+            {
+                MULTI_AGENT_GATE: (
+                    "serial single-agent because same-file contract-bound change with overlapping verification"
+                )
+            },
+            {},
+        )
+
+        self.assertEqual([], failures)
+
+    def test_multi_agent_route_specific_gates_require_structured_delegation_plan(self) -> None:
+        failures = validate_delegation_plan_evidence(
+            ["roles", "write scopes", "agent briefs", "integration review"],
+            {},
+            {},
+        )
+
+        self.assertTrue(any("agent-delegation-plan.json" in failure for failure in failures))
 
     def test_multi_agent_route_gates_reject_done_only_evidence(self) -> None:
         failures = validate_gate_evidence(

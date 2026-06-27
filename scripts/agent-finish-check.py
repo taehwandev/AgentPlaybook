@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_delegation_plan import read_delegation_plan
 from agent_global_lessons import write_retrospective_candidate
 from agent_finish_check_steps import (
     check_preflight_vibeguard,
@@ -51,6 +52,7 @@ def build_result(
     gate_signals: list[dict[str, str]],
     missed_gates: list[str],
     route_docs_receipt: dict[str, Any],
+    delegation_plan: dict[str, Any],
     grill_me_required: bool,
     retrospective_required: bool,
     validate: dict[str, Any],
@@ -73,6 +75,7 @@ def build_result(
         "gate_signals": gate_signals,
         "missed_gates": missed_gates,
         "route_docs_read_receipt": route_docs_receipt,
+        "agent_delegation_plan": delegation_plan,
         "grill_me_required": grill_me_required,
         "question_drill_required": grill_me_required,
         "retrospective_required": retrospective_required,
@@ -111,6 +114,7 @@ def main() -> int:
     preflight = read_preflight(evidence_path, failures)
     route = preflight.get("route") or {}
     route_docs_receipt = read_route_docs_receipt_for_preflight(evidence_path)
+    delegation_plan = read_delegation_plan(project)
     gate_evidence = dict(args.gate)
     gate_signals: list[dict[str, str]] = []
     required_gates, missed_gates, gate_policy_failures = check_required_gates(
@@ -119,6 +123,8 @@ def main() -> int:
         gate_signals,
         failures,
         route_docs_receipt,
+        evidence_path,
+        delegation_plan,
     )
     grill_me_required = check_request_intake(
         route,
@@ -161,6 +167,7 @@ def main() -> int:
         gate_signals=gate_signals,
         missed_gates=missed_gates,
         route_docs_receipt=route_docs_receipt,
+        delegation_plan=delegation_plan,
         grill_me_required=grill_me_required,
         retrospective_required=retrospective_required,
         validate=validate,

@@ -28,6 +28,10 @@ def receipt_path_for_evidence(evidence_path: Path) -> Path:
     return evidence_path.parent / RECEIPT_FILENAME
 
 
+def preflight_evidence_sha256(evidence_path: Path) -> str:
+    return hashlib.sha256(evidence_path.read_bytes()).hexdigest()
+
+
 def read_route_doc_receipt(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
@@ -62,13 +66,18 @@ def build_route_doc_receipt(
         "project": str(project),
         "playbook_root": str(playbook_root),
         "preflight_evidence": str(evidence_path),
+        "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
         "route_fingerprint": route_fingerprint(route),
         "doc_count": len(entries),
         "docs": entries,
     }
 
 
-def validate_route_doc_receipt(route: dict[str, Any], receipt: dict[str, Any]) -> list[str]:
+def validate_route_doc_receipt(
+    route: dict[str, Any],
+    receipt: dict[str, Any],
+    evidence_path: Path | None = None,
+) -> list[str]:
     docs = [str(doc) for doc in (route.get("docs") or []) if str(doc).strip()]
     if not docs:
         return ["route docs read receipt cannot be checked because preflight route docs are missing"]
@@ -76,8 +85,25 @@ def validate_route_doc_receipt(route: dict[str, Any], receipt: dict[str, Any]) -
         return [f"route docs read receipt is missing; run docs-read after preflight for {len(docs)} routed docs"]
     if receipt.get("invalid_json"):
         return ["route docs read receipt is not valid JSON"]
+    if receipt.get("schema_version") != 1:
+        return ["route docs read receipt has an unsupported schema version"]
     if receipt.get("route_fingerprint") != route_fingerprint(route):
         return ["route docs read receipt does not match the current preflight route manifest"]
+    if receipt.get("doc_count") != len(docs):
+        return ["route docs read receipt doc_count does not match the current preflight route manifest"]
+
+    if evidence_path:
+        if receipt.get("preflight_evidence") != str(evidence_path):
+            return ["route docs read receipt is bound to a different preflight evidence file"]
+        expected_hash = receipt.get("preflight_evidence_sha256")
+        if not expected_hash:
+            return ["route docs read receipt is missing the preflight evidence hash"]
+        try:
+            current_hash = preflight_evidence_sha256(evidence_path)
+        except OSError as error:
+            return [f"route docs read receipt cannot hash current preflight evidence: {error}"]
+        if expected_hash != current_hash:
+            return ["route docs read receipt is stale for the current preflight evidence"]
 
     receipt_docs = receipt.get("docs") or []
     receipt_paths = {str(item.get("path")) for item in receipt_docs if item.get("path")}

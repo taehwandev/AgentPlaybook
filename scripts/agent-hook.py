@@ -199,8 +199,9 @@ def docs_read_hook(args: argparse.Namespace) -> int:
     ]
     if args.evidence:
         command.extend(["--evidence", str(args.evidence)])
-    if args.output:
-        command.extend(["--output", str(args.output)])
+    receipt_output = args.receipt_output or args.output
+    if receipt_output:
+        command.extend(["--receipt-output", str(receipt_output)])
 
     result = run_command(command, args.project)
     success = result["returncode"] == 0
@@ -311,7 +312,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("hook", choices=("start", "docs-read", "review", "finish"))
     parser.add_argument("--project", type=existing_path, default=Path.cwd())
     parser.add_argument("--rules", type=existing_path, default=ROOT)
-    parser.add_argument("--output", type=existing_path)
+    parser.add_argument(
+        "--output",
+        type=existing_path,
+        help=(
+            "hook evidence output for start/review/finish; legacy docs-read "
+            "alias for --receipt-output"
+        ),
+    )
+    parser.add_argument(
+        "--receipt-output",
+        type=existing_path,
+        help="docs-read receipt path; use this instead of --output for docs-read",
+    )
     parser.add_argument(
         "--evidence",
         type=existing_path,

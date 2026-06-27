@@ -143,10 +143,11 @@ def route_hooks(command: str) -> list[dict[str, object]]:
             {
                 "hook": "docs-read",
                 "required": True,
-                "when": "after start/preflight and after reading routed docs, before edits, reviews, commits, or completion reports",
+                "when": "after start/preflight and before edits, reviews, commits, or completion reports; writes the routed-doc receipt",
                 "command": (
                     "python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read "
-                    "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>"
+                    "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+                    "[--receipt-output <TARGET_REPO>/.agentplaybook/route-docs-read.json]"
                 ),
             }
         )

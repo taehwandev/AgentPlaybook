@@ -17,7 +17,16 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
     parser.add_argument("--project", type=Path, default=Path.cwd())
     parser.add_argument("--rules", type=Path, default=playbook_root)
     parser.add_argument("--evidence", type=Path)
-    parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--receipt-output",
+        type=Path,
+        help="where to write the route-docs-read receipt",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="legacy alias for --receipt-output",
+    )
     return parser
 
 
@@ -37,7 +46,8 @@ def main() -> int:
         print("FAIL: preflight route has no docs to read", file=sys.stderr)
         return 1
 
-    output_path = args.output.resolve() if args.output else receipt_path_for_evidence(evidence_path)
+    output_arg = args.receipt_output or args.output
+    output_path = output_arg.resolve() if output_arg else receipt_path_for_evidence(evidence_path)
     try:
         receipt = build_route_doc_receipt(
             playbook_root=playbook_root,

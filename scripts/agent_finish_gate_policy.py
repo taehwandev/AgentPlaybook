@@ -124,11 +124,31 @@ def _validate_route_docs_read(evidence: str) -> list[str]:
             "작업 전",
         )
     )
-    if has_read_action and names_route_docs and before_work:
+    applied_to_work = any(
+        phrase in text
+        for phrase in (
+            "applied",
+            "used",
+            "takeaway",
+            "takeaways",
+            "criterion",
+            "criteria",
+            "rule",
+            "policy",
+            "checked against",
+            "matched against",
+            "적용",
+            "반영",
+            "기준",
+            "규칙",
+        )
+    )
+    if has_read_action and names_route_docs and before_work and applied_to_work:
         return []
     return [
         "route docs read evidence must state that the routed skill/guidance docs "
-        "were read before code, implementation, or editing"
+        "were read before code, implementation, or editing, and name the applied "
+        "rule, criterion, or takeaway used for this task"
     ]
 
 

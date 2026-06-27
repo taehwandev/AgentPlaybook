@@ -61,6 +61,8 @@ def validate_route_contracts() -> list[str]:
         for gate in automatic_gates(command):
             if gate not in route["gates"]:
                 failures.append(f"{command}: automatic gate `{gate}` is missing")
+            if gate not in VALIDATED_GATES:
+                failures.append(f"{command}: automatic gate `{gate}` has no finish evidence validator")
 
         hooks = route.get("hooks")
         if not isinstance(hooks, list):

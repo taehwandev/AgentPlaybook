@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_finish_common import add_gate_signal, append_unique
 from agent_finish_gate_policy import ROUTE_DOCS_READ_GATE, validate_gate_evidence
 from agent_route_docs import read_route_doc_receipt, receipt_path_for_evidence, validate_route_doc_receipt
@@ -63,6 +64,8 @@ def check_required_gates(
     gate_signals: list[dict[str, str]],
     failures: list[str],
     route_docs_receipt: dict[str, Any] | None = None,
+    evidence_path: Path | None = None,
+    delegation_plan: dict[str, Any] | None = None,
 ) -> tuple[list[str], list[str], list[str]]:
     required_gates = route.get("gates") or []
     if not required_gates:
@@ -81,7 +84,15 @@ def check_required_gates(
 
     gate_policy_failures = validate_gate_evidence(gate_evidence, required_gates)
     gate_policy_failures.extend(
-        validate_route_docs_manifest_evidence(route, gate_evidence, route_docs_receipt or {})
+        validate_delegation_plan_evidence(required_gates, gate_evidence, delegation_plan or {})
+    )
+    gate_policy_failures.extend(
+        validate_route_docs_manifest_evidence(
+            route,
+            gate_evidence,
+            route_docs_receipt or {},
+            evidence_path,
+        )
     )
     for failure in gate_policy_failures:
         add_gate_signal(gate_signals, "FAIL", "gate evidence policy", "failed", failure)
@@ -97,6 +108,7 @@ def validate_route_docs_manifest_evidence(
     route: dict[str, Any],
     gate_evidence: dict[str, str],
     route_docs_receipt: dict[str, Any],
+    evidence_path: Path | None = None,
 ) -> list[str]:
     required_gates = route.get("gates") or []
     if ROUTE_DOCS_READ_GATE not in required_gates:
@@ -104,7 +116,7 @@ def validate_route_docs_manifest_evidence(
     evidence = gate_evidence.get(ROUTE_DOCS_READ_GATE, "")
     if not evidence:
         return []
-    return validate_route_doc_receipt(route, route_docs_receipt)
+    return validate_route_doc_receipt(route, route_docs_receipt, evidence_path)
 
 
 def check_request_intake(
