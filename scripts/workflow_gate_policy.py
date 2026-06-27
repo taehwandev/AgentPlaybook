@@ -15,6 +15,9 @@ WORK_PRODUCING_COMMANDS = {
     "task",
     "workflow-setup",
 }
+AGENTIC_RUN_STATE_COMMANDS = WORK_PRODUCING_COMMANDS | {
+    "multi-agent",
+}
 ROUTE_DOCS_READ_COMMANDS = WORK_PRODUCING_COMMANDS | {
     "docs",
     "docs-review",
@@ -69,6 +72,7 @@ TEST_GATE = "tests"
 BOUNDARY_PLAN_GATE = "boundary plan"
 MULTI_AGENT_GATE = "multi-agent split decision"
 SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
+AGENTIC_RUN_STATE_GATE = "agentic run state"
 
 
 def automatic_gates(command: str) -> list[str]:
@@ -79,6 +83,8 @@ def automatic_gates(command: str) -> list[str]:
         gates.extend([AMBIGUITY_GATE, DOCUMENTATION_GATE])
     if command in ALIGNMENT_BRIEF_COMMANDS:
         gates.append(ALIGNMENT_BRIEF_GATE)
+    if command in AGENTIC_RUN_STATE_COMMANDS:
+        gates.append(AGENTIC_RUN_STATE_GATE)
     if command in CODE_WORK_COMMANDS:
         gates.extend(
             [TEST_GATE, BOUNDARY_PLAN_GATE, MULTI_AGENT_GATE, SIDE_EFFECT_AUDIT_GATE]
@@ -110,6 +116,13 @@ def automatic_docs(command: str) -> list[str]:
         docs.append("workflows/multi-agent-collaboration.md")
     if SIDE_EFFECT_AUDIT_GATE in gates:
         docs.append("workflows/development-cycle.md")
+    if AGENTIC_RUN_STATE_GATE in gates:
+        docs.extend(
+            [
+                "workflows/agent-task-lifecycle.md",
+                "workflows/scripted-agent-workflow.md",
+            ]
+        )
     return docs
 
 
@@ -142,6 +155,7 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
                 result,
                 gate,
                 anchors=(
+                    "PRD/ARD applicability",
                     "PRD",
                     "PRD draft",
                     "ARD",
@@ -173,6 +187,12 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
                     "ask blockers",
                     "record assumptions",
                 ),
+            )
+        elif gate == AGENTIC_RUN_STATE_GATE:
+            _insert_after_any(
+                result,
+                gate,
+                anchors=(ALIGNMENT_BRIEF_GATE, AMBIGUITY_GATE, ROUTE_DOCS_READ_GATE, "orient"),
             )
         elif gate == BOUNDARY_PLAN_GATE:
             _insert_before_any(result, gate, anchors=before_implementation)

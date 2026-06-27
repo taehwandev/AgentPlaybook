@@ -188,6 +188,34 @@ def finish_hook(args: argparse.Namespace) -> int:
     )
 
 
+def docs_read_hook(args: argparse.Namespace) -> int:
+    command = [
+        sys.executable,
+        str(ROOT / "scripts" / "agent-docs-read.py"),
+        "--project",
+        str(args.project),
+        "--rules",
+        str(args.rules),
+    ]
+    if args.evidence:
+        command.extend(["--evidence", str(args.evidence)])
+    if args.output:
+        command.extend(["--output", str(args.output)])
+
+    result = run_command(command, args.project)
+    success = result["returncode"] == 0
+    details = ["route docs read receipt completed" if success else "route docs read receipt failed"]
+    details.extend(_summary_lines(result))
+    return finish_with_result(
+        "docs-read",
+        success,
+        details,
+        None,
+        {"docs_read": result},
+        args.retry_attempt,
+    )
+
+
 def _summary_lines(result: dict[str, Any]) -> list[str]:
     lines: list[str] = []
     for stream in ("stdout", "stderr"):
@@ -203,6 +231,9 @@ def _summary_lines(result: dict[str, Any]) -> list[str]:
                 "Retrospective required:",
                 "Retrospective lesson candidate:",
                 "Global lessons:",
+                "SUCCESS docs-read",
+                "- receipt:",
+                "- routed docs read:",
             )):
                 lines.append(stripped)
     return lines[:8]
@@ -277,7 +308,7 @@ def non_negative_int(value: str) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run essential AgentPlaybook hooks.")
-    parser.add_argument("hook", choices=("start", "review", "finish"))
+    parser.add_argument("hook", choices=("start", "docs-read", "review", "finish"))
     parser.add_argument("--project", type=existing_path, default=Path.cwd())
     parser.add_argument("--rules", type=existing_path, default=ROOT)
     parser.add_argument("--output", type=existing_path)
@@ -363,6 +394,8 @@ def main() -> int:
         return start_hook(args)
     if args.hook == "review":
         return review_hook(args, run_command, git_status, vibeguard_command, parse_overall, finish_with_result)
+    if args.hook == "docs-read":
+        return docs_read_hook(args)
     return finish_hook(args)
 
 

@@ -11,11 +11,32 @@ TEST_GATE = "tests"
 BOUNDARY_PLAN_GATE = "boundary plan"
 MULTI_AGENT_GATE = "multi-agent split decision"
 SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
+AGENTIC_RUN_STATE_GATE = "agentic run state"
+MULTI_AGENT_ROLES_GATE = "roles"
+MULTI_AGENT_WRITE_SCOPES_GATE = "write scopes"
+MULTI_AGENT_BRIEFS_GATE = "agent briefs"
+MULTI_AGENT_INTEGRATION_REVIEW_GATE = "integration review"
 WORKSPACE_SCOPE_CHECKPOINT_GATES = (
     "workspace scope checkpoint",
     "scope expansion checkpoint",
     "cross-repo scope checkpoint",
 )
+VALIDATED_GATES = {
+    ROUTE_DOCS_READ_GATE,
+    AMBIGUITY_GATE,
+    ALIGNMENT_BRIEF_GATE,
+    DOCUMENTATION_GATE,
+    TEST_GATE,
+    BOUNDARY_PLAN_GATE,
+    MULTI_AGENT_GATE,
+    SIDE_EFFECT_AUDIT_GATE,
+    AGENTIC_RUN_STATE_GATE,
+    MULTI_AGENT_ROLES_GATE,
+    MULTI_AGENT_WRITE_SCOPES_GATE,
+    MULTI_AGENT_BRIEFS_GATE,
+    MULTI_AGENT_INTEGRATION_REVIEW_GATE,
+    *WORKSPACE_SCOPE_CHECKPOINT_GATES,
+}
 
 
 def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[str]) -> list[str]:
@@ -37,6 +58,20 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
         failures.extend(_validate_multi_agent(gate_evidence.get(MULTI_AGENT_GATE, "")))
     if SIDE_EFFECT_AUDIT_GATE in required:
         failures.extend(_validate_side_effect_audit(gate_evidence.get(SIDE_EFFECT_AUDIT_GATE, "")))
+    if AGENTIC_RUN_STATE_GATE in required:
+        failures.extend(_validate_agentic_run_state(gate_evidence.get(AGENTIC_RUN_STATE_GATE, "")))
+    if MULTI_AGENT_ROLES_GATE in required:
+        failures.extend(_validate_multi_agent_roles(gate_evidence.get(MULTI_AGENT_ROLES_GATE, "")))
+    if MULTI_AGENT_WRITE_SCOPES_GATE in required:
+        failures.extend(_validate_multi_agent_write_scopes(gate_evidence.get(MULTI_AGENT_WRITE_SCOPES_GATE, "")))
+    if MULTI_AGENT_BRIEFS_GATE in required:
+        failures.extend(_validate_multi_agent_briefs(gate_evidence.get(MULTI_AGENT_BRIEFS_GATE, "")))
+    if MULTI_AGENT_INTEGRATION_REVIEW_GATE in required:
+        failures.extend(
+            _validate_multi_agent_integration_review(
+                gate_evidence.get(MULTI_AGENT_INTEGRATION_REVIEW_GATE, "")
+            )
+        )
     for gate in WORKSPACE_SCOPE_CHECKPOINT_GATES:
         if gate in gate_evidence:
             failures.extend(_validate_workspace_scope_checkpoint(gate_evidence[gate]))
@@ -179,6 +214,9 @@ def _validate_alignment_brief(evidence: str) -> list[str]:
             "reported to user",
             "asked the user",
             "asked user",
+            "choice question",
+            "choices presented",
+            "presented choices",
             "confirmed with user",
             "shared with user",
             "sent to user",
@@ -302,7 +340,19 @@ def _validate_multi_agent(evidence: str) -> list[str]:
     text = evidence.lower()
     if not text:
         return []
-    has_decision = any(
+    serial = any(
+        phrase in text
+        for phrase in (
+            "serial",
+            "single-agent",
+            "single agent",
+            "not applicable",
+            "no subagent",
+            "no sub-agent",
+            "no parallel",
+        )
+    )
+    parallel = any(
         phrase in text
         for phrase in (
             "multi-agent",
@@ -310,29 +360,48 @@ def _validate_multi_agent(evidence: str) -> list[str]:
             "sub-agent",
             "parallel",
             "split",
-            "serial",
-            "single-agent",
-            "not applicable",
+            "worker",
         )
     )
-    has_scope_reason = any(
+    has_serial_reason = any(
         phrase in text
         for phrase in (
-            "owned",
-            "scope",
-            "disjoint",
             "small",
             "single-file",
             "same file",
             "contract",
+            "unstable",
+            "overlap",
+            "dirty worktree",
+            "migration",
+            "dependency",
+            "release",
             "not applicable",
+            "not safe",
         )
     )
-    if has_decision and has_scope_reason:
+    if serial and has_serial_reason:
+        return []
+    has_owned = "owned" in text or "owner" in text or "scope" in text
+    has_forbidden = "forbidden" in text or "do not touch" in text or "excluded" in text
+    has_contract = "contract" in text or "brief" in text or "input" in text or "output" in text
+    has_verification = any(
+        phrase in text
+        for phrase in (
+            "verification",
+            "verify",
+            "test",
+            "check",
+            "manual",
+            "smoke",
+        )
+    )
+    if parallel and has_owned and has_forbidden and has_contract and has_verification:
         return []
     return [
-        "multi-agent split decision evidence must state parallel/split or serial/single-agent, "
-        "with owned scopes or the reason parallel work is not applicable"
+        "multi-agent split decision evidence must state either serial/single-agent with a concrete "
+        "reason, or parallel/subagent work with owned scope, forbidden scope, contract/brief, and "
+        "verification"
     ]
 
 
@@ -375,6 +444,126 @@ def _validate_side_effect_audit(evidence: str) -> list[str]:
         "side-effect audit evidence must state that the final diff/side effects were checked "
         "and name unexpected changes, public-contract risk, generated/lockfile churn, or that none were found"
     ]
+
+
+def _validate_agentic_run_state(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_state = any(
+        phrase in text
+        for phrase in (
+            "run state",
+            "state:",
+            "state=",
+            "intake",
+            "oriented",
+            "scoped",
+            "acting",
+            "verifying",
+            "reviewing",
+            "done",
+            "blocked",
+            "retrospective",
+            "상태",
+        )
+    )
+    has_transition = any(
+        phrase in text
+        for phrase in (
+            "transition",
+            "next",
+            "entered",
+            "moved",
+            "from",
+            "to",
+            "resume",
+            "restart",
+            "다음",
+            "전환",
+            "재시작",
+            "이어",
+        )
+    )
+    has_evidence = any(
+        phrase in text
+        for phrase in (
+            "evidence",
+            "gate",
+            "command",
+            "check",
+            "test",
+            "hook",
+            "diff",
+            "verification",
+            "증거",
+            "게이트",
+            "검증",
+        )
+    )
+    if has_state and has_transition and has_evidence:
+        return []
+    return [
+        "agentic run state evidence must state the current run state, "
+        "the next transition or resume point, and the gate/command/check evidence"
+    ]
+
+
+def _validate_multi_agent_roles(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_lead = "lead" in text or "owner" in text
+    has_worker_or_verifier = any(phrase in text for phrase in ("worker", "builder", "verifier", "reviewer"))
+    if has_lead and has_worker_or_verifier:
+        return []
+    return ["roles evidence must name the lead/owner role and worker/builder/verifier roles"]
+
+
+def _validate_multi_agent_write_scopes(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_owned = any(phrase in text for phrase in ("owned", "owner", "write scope", "writes:", "scope:"))
+    has_forbidden = any(
+        phrase in text for phrase in ("forbidden", "do not touch", "excluded", "read-only", "readonly")
+    )
+    if has_owned and has_forbidden:
+        return []
+    return ["write scopes evidence must name owned write scope and forbidden/read-only scope"]
+
+
+def _validate_multi_agent_briefs(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    checks = {
+        "worker": any(phrase in text for phrase in ("worker", "agent", "task id")),
+        "role": "role" in text,
+        "owned": any(phrase in text for phrase in ("owned", "scope")),
+        "forbidden": any(phrase in text for phrase in ("forbidden", "do not touch", "excluded")),
+        "contract": any(phrase in text for phrase in ("contract", "input", "expected output", "output")),
+        "acceptance": "acceptance" in text,
+        "verification": any(phrase in text for phrase in ("verification", "verify", "test", "check", "smoke")),
+    }
+    if all(checks.values()):
+        return []
+    missing = ", ".join(name for name, present in checks.items() if not present)
+    return [f"agent briefs evidence must include worker id, role, owned scope, forbidden scope, contract/output, acceptance checks, and verification; missing: {missing}"]
+
+
+def _validate_multi_agent_integration_review(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_integration = any(phrase in text for phrase in ("integration", "merged", "merge", "combined"))
+    has_contract = any(phrase in text for phrase in ("contract", "drift", "schema", "route", "state model", "config"))
+    has_final_check = any(
+        phrase in text for phrase in ("verification", "verify", "test", "check", "smoke", "final")
+    )
+    if has_integration and has_contract and has_final_check:
+        return []
+    return ["integration review evidence must name integration/merge review, contract-drift check, and final verification"]
 
 
 def _validate_workspace_scope_checkpoint(evidence: str) -> list[str]:

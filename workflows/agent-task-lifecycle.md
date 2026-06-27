@@ -29,6 +29,25 @@ or task-specific workflow to load next.
   or PR creation
 - `index.md` to select only task-specific cards
 
+## Agentic Run State
+
+AgentPlaybook supports agentic coding by making the active agent's state,
+delegation decision, evidence, and recovery point explicit. Runtime-specific
+agents, subagents, or external launchers can use this state to continue,
+delegate, review, and recover work without guessing what already happened.
+
+Use this compact state model for multi-step work:
+
+```text
+intake -> oriented -> scoped -> acting -> verifying -> reviewing -> done
+                                   |-> blocked -> retrospective -> scoped/acting
+```
+
+Record the current state, the next transition, and the gate or command evidence
+that justified the transition. If the task is interrupted, transferred, or fails
+a gate, resume from the last evidenced state instead of reconstructing the work
+from memory.
+
 ## Steps
 
 1. Intake: identify the user goal, target project, task type, constraints, and
@@ -48,42 +67,48 @@ or task-specific workflow to load next.
 6. Route docs read: read the route's listed docs before editing, coding,
    reviewing, or running project-specific work. When the route includes
    `route docs read`, record evidence that the routed skill/guidance docs were
-   read before code, implementation, or edits.
+   read before code, implementation, or edits. The evidence must match the
+   `docs-read` receipt for the preflight route manifest; generic "docs checked"
+   wording is a missed gate.
 7. Gate ledger: create a ledger for every route gate, mark each gate when it is
    executed, and show a short `SUCCESS` or `FAIL` gate signal after each
    completed or failed gate or task step.
-8. Global lessons: when preflight includes accepted or promoted lessons from
+8. Agentic run state: record the current run state, next transition or resume
+   point, and the gate/command evidence. This is required before implementation
+   work on scripted work-producing routes and before delegating work to
+   subagents or parallel sessions.
+9. Global lessons: when preflight includes accepted or promoted lessons from
    `~/.agentplaybook/`, check whether any apply to the current task before
    editing or reviewing.
-9. Alignment brief: before requirements analysis or modification work, record
+10. Alignment brief: before requirements analysis or modification work, record
    the shared understanding, possible mismatches, and unsupported assumptions or
    minimal blocker questions. Do this even when the task is too small for a full
    PRD or Grill-Me session.
-10. Inspect: read existing code, docs, tests, commands, and current user changes
+11. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
-11. Decide: make a reasonable assumption when safe; ask only when ambiguity
+12. Decide: make a reasonable assumption when safe; ask only when ambiguity
    changes result or risk.
-12. Act: execute the scoped work with periodic progress updates for long tasks.
-13. Verify: collect evidence with the narrowest reliable command or manual
+13. Act: execute the scoped work with periodic progress updates for long tasks.
+14. Verify: collect evidence with the narrowest reliable command or manual
     check. For usage telemetry, distinguish setup, label, hook, and diagnostic
     evidence from exact queued/imported usage event evidence.
-14. Recover: when a command fails, diagnose stdout/stderr and make the smallest
+15. Recover: when a command fails, diagnose stdout/stderr and make the smallest
     correction before retrying.
-15. Ledger check: before finalizing, compare required gates against executed
+16. Ledger check: before finalizing, compare required gates against executed
     evidence and `SUCCESS`/`FAIL` state. Completion requires every required gate
     to be `🐱🟢 SUCCESS`. If any required gate is missing, blocked, failed, or
     lacks evidence, report `🐱🔴 FAIL` and follow missed-gate recovery in
     `workflows/scripted-agent-workflow.md`.
-16. Definition of Done: before final report, handoff, commit, release, or PR
+17. Definition of Done: before final report, handoff, commit, release, or PR
     creation, compare the final diff and evidence against
     `common/definition-of-done.md`.
-17. Retrospective restart: when finish-check sets `retrospective_required`, run
+18. Retrospective restart: when finish-check sets `retrospective_required`, run
     `workflows/retrospective-learning.md`, use or update the generated global
     lesson candidate when safe, then restart at the first missed gate or same
     failed scope.
-18. Review: inspect the final diff, output, or artifact against the request and
+19. Review: inspect the final diff, output, or artifact against the request and
     risks.
-19. Report: state what changed or was found, verification status, skipped
+20. Report: state what changed or was found, verification status, skipped
     checks, and residual risk.
 
 ## Route To
@@ -106,5 +131,7 @@ or task-specific workflow to load next.
 - Required repo-local instructions or referenced task documents are unavailable.
 - The user asked a direct question and it has not been answered.
 - The task requires external-state changes without clear user approval.
+- The current agentic run state, resume point, or responsible owner cannot be
+  identified after interruption, delegation, or failed-gate recovery.
 - The same blocker repeats and no meaningful progress is possible without user
   input or an external change.

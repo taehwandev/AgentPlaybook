@@ -11,16 +11,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_finish_gate_policy import validate_gate_evidence
-from agent_finish_check_steps import check_request_intake, validate_grill_me_skill_evidence
+from agent_finish_gate_policy import VALIDATED_GATES, validate_gate_evidence
+from agent_finish_check_steps import (
+    check_request_intake,
+    validate_grill_me_skill_evidence,
+    validate_route_docs_manifest_evidence,
+)
 from agent_global_lessons import lesson_summary, write_retrospective_candidate
 from agent_preflight_runtime import (
     AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
 )
+from agent_route_docs import route_fingerprint
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
 from support.permission_entries import codex_prefix_rule_entries
 from workflow_catalog import COMMANDS, CONCERNS
 from workflow_gate_policy import (
+    AGENTIC_RUN_STATE_GATE,
     AMBIGUITY_GATE,
     ALIGNMENT_BRIEF_GATE,
     BOUNDARY_PLAN_GATE,
@@ -146,6 +152,21 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("common/human-authored-writing.md", route["docs"])
         self.assertIn("common/writing-workspace.md", route["docs"])
 
+    def test_ambiguous_writing_style_rewrite_requires_triage(self) -> None:
+        request = (
+            "# AgentPlaybook: AI 에이전트의 작업 습관을 프로젝트 밖에 저장하기 "
+            "이거 작성 다시하자. 나는 ~했다. 뭐뭐다. 이다. "
+            "이런 투로 쓰는데 존대라서 이런건 어떻게 내 스타일로 쓰도록 가이드하지?"
+        )
+
+        classification = classify_request(request)
+
+        self.assertIn("writing", infer_concerns_from_request(request))
+        self.assertEqual("vague-action", classification["clarity"])
+        self.assertTrue(classification["grill_me"])
+        self.assertEqual("triage", classification["recommended_route"])
+        self.assertEqual("clarify_first", classification["response_mode"])
+
     def test_android_performance_route_loads_external_skill_manifest(self) -> None:
         route = resolve_docs(
             "workflow-setup",
@@ -199,6 +220,7 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertIn("workflow_gate_policy.py", entries)
         self.assertIn("workflow_concern_docs.py", entries)
+        self.assertIn("agent-docs-read.py", entries)
         self.assertIn("agent_finish_gate_policy.py", entries)
         self.assertIn("agent_finish_common.py", entries)
         self.assertIn("agent_finish_check_steps.py", entries)
@@ -238,6 +260,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             TEST_GATE,
             BOUNDARY_PLAN_GATE,
             MULTI_AGENT_GATE,
+            AGENTIC_RUN_STATE_GATE,
             SIDE_EFFECT_AUDIT_GATE,
         ):
             self.assertIn(gate, route["gates"])
@@ -255,6 +278,16 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
         self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index(AMBIGUITY_GATE))
         self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index("implementation"))
+        self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("implementation"))
+
+    def test_multi_agent_route_requires_agentic_run_state(self) -> None:
+        route = resolve_docs("multi-agent", None, [], request_classified=True)
+
+        self.assertIn(AGENTIC_RUN_STATE_GATE, route["gates"])
+        self.assertIn("workflows/scripted-agent-workflow.md", route["docs"])
+        self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("roles"))
+        for gate in ("roles", "write scopes", "agent briefs", "integration review"):
+            self.assertIn(gate, VALIDATED_GATES)
 
     def test_workspace_scope_checkpoint_evidence_is_validated_when_present(self) -> None:
         failures = validate_gate_evidence(
@@ -275,6 +308,51 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
         self.assertTrue(any("workspace scope checkpoint evidence" in failure for failure in failures))
+
+    def test_route_docs_read_evidence_must_match_preflight_doc_manifest(self) -> None:
+        route = {
+            "gates": [ROUTE_DOCS_READ_GATE],
+            "docs": [
+                "AGENTS.md",
+                "common/agent-operating-skill.md",
+                "workflows/scripted-agent-workflow.md",
+            ],
+        }
+
+        failures = validate_route_docs_manifest_evidence(
+            route,
+            {
+                ROUTE_DOCS_READ_GATE: (
+                    "read routed docs before edits: AGENTS.md and common/agent-operating-skill.md"
+                )
+            },
+            {},
+        )
+
+        self.assertTrue(any("route docs read receipt is missing" in failure for failure in failures))
+
+        failures = validate_route_docs_manifest_evidence(
+            route,
+            {ROUTE_DOCS_READ_GATE: "read all 3 routed docs from the preflight route manifest before edits"},
+            {},
+        )
+
+        self.assertTrue(any("route docs read receipt is missing" in failure for failure in failures))
+
+        failures = validate_route_docs_manifest_evidence(
+            route,
+            {ROUTE_DOCS_READ_GATE: "read routed docs before edits with docs-read receipt"},
+            {
+                "route_fingerprint": route_fingerprint(route),
+                "docs": [
+                    {"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"},
+                    {"path": "common/agent-operating-skill.md", "size_bytes": 1, "sha256": "def"},
+                    {"path": "workflows/scripted-agent-workflow.md", "size_bytes": 1, "sha256": "ghi"},
+                ],
+            },
+        )
+
+        self.assertEqual([], failures)
 
     def test_prd_and_product_routes_require_alignment_brief(self) -> None:
         prd_route = resolve_docs("prd", None, [], request_classified=True)
@@ -303,6 +381,10 @@ class WorkflowRoutingTests(unittest.TestCase):
     def test_feature_alignment_runs_before_acceptance_criteria(self) -> None:
         route = resolve_docs("feature", None, [], request_classified=True)
 
+        self.assertLess(
+            route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            route["gates"].index("PRD/ARD applicability"),
+        )
         self.assertLess(
             route["gates"].index(ALIGNMENT_BRIEF_GATE),
             route["gates"].index("acceptance criteria"),
@@ -425,8 +507,11 @@ class WorkflowRoutingTests(unittest.TestCase):
 
     def test_review_hook_command_requests_code_work_evidence(self) -> None:
         route = resolve_docs("feature", None, ["testing"], request_classified=True)
+        docs_read_hook = next(hook for hook in route["hooks"] if hook["hook"] == "docs-read")
         review_hook = next(hook for hook in route["hooks"] if hook["hook"] == "review")
 
+        self.assertTrue(docs_read_hook["required"])
+        self.assertIn("agent-hook.py docs-read", docs_read_hook["command"])
         self.assertIn("--boundary-plan-evidence", review_hook["command"])
         self.assertIn("--side-effect-audit-evidence", review_hook["command"])
 
@@ -466,6 +551,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 TEST_GATE: "done",
                 BOUNDARY_PLAN_GATE: "done",
                 MULTI_AGENT_GATE: "done",
+                AGENTIC_RUN_STATE_GATE: "done",
                 SIDE_EFFECT_AUDIT_GATE: "done",
             },
             [
@@ -476,11 +562,12 @@ class WorkflowRoutingTests(unittest.TestCase):
                 TEST_GATE,
                 BOUNDARY_PLAN_GATE,
                 MULTI_AGENT_GATE,
+                AGENTIC_RUN_STATE_GATE,
                 SIDE_EFFECT_AUDIT_GATE,
             ],
         )
 
-        self.assertEqual(8, len(failures))
+        self.assertEqual(9, len(failures))
 
     def test_alignment_evidence_requires_user_visible_checkpoint(self) -> None:
         failures = validate_gate_evidence(
@@ -494,6 +581,20 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
         self.assertTrue(any("user-visible checkpoint" in failure for failure in failures))
+
+    def test_alignment_evidence_accepts_choice_question_checkpoint(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                ALIGNMENT_BRIEF_GATE: (
+                    "same understanding: rewrite requested; possible differences: genre and point of view; "
+                    "unsupported assumptions: style cue alone does not choose retrospective mode; "
+                    "choice question presented before edits"
+                )
+            },
+            [ALIGNMENT_BRIEF_GATE],
+        )
+
+        self.assertEqual([], failures)
 
     def test_finish_policy_accepts_specific_evidence(self) -> None:
         failures = validate_gate_evidence(
@@ -511,7 +612,14 @@ class WorkflowRoutingTests(unittest.TestCase):
                 DOCUMENTATION_GATE: "updated workflows/README.md",
                 TEST_GATE: "unittest tests/test_workflow_routing.py passed",
                 BOUNDARY_PLAN_GATE: "existing workflow gate policy boundary; verification via unittest",
-                MULTI_AGENT_GATE: "no subagent split: small single-file policy change with same-file scope",
+                MULTI_AGENT_GATE: (
+                    "no subagent split: serial single-agent because small same-file policy change "
+                    "with same-file scope"
+                ),
+                AGENTIC_RUN_STATE_GATE: (
+                    "run state: scoped; next transition: scoped -> acting; "
+                    "evidence: boundary gate and unittest verification command recorded"
+                ),
                 SIDE_EFFECT_AUDIT_GATE: "final diff checked; no unexpected generated files or lockfile changes",
             },
             [
@@ -522,8 +630,83 @@ class WorkflowRoutingTests(unittest.TestCase):
                 TEST_GATE,
                 BOUNDARY_PLAN_GATE,
                 MULTI_AGENT_GATE,
+                AGENTIC_RUN_STATE_GATE,
                 SIDE_EFFECT_AUDIT_GATE,
             ],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_parallel_subagent_evidence_requires_contract_forbidden_scope_and_verification(self) -> None:
+        failures = validate_gate_evidence(
+            {MULTI_AGENT_GATE: "parallel subagent split with owned scope"},
+            [MULTI_AGENT_GATE],
+        )
+
+        self.assertTrue(any("owned scope, forbidden scope, contract/brief, and verification" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                MULTI_AGENT_GATE: (
+                    "parallel subagent split: worker docs owns workflows/*.md; "
+                    "forbidden scope: scripts/*.py; contract brief: report only doc gaps; "
+                    "verification: workflow validate"
+                )
+            },
+            [MULTI_AGENT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_multi_agent_route_gates_reject_done_only_evidence(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                "roles": "done",
+                "write scopes": "done",
+                "agent briefs": "done",
+                "integration review": "done",
+            },
+            ["roles", "write scopes", "agent briefs", "integration review"],
+        )
+
+        self.assertEqual(4, len(failures))
+
+    def test_multi_agent_route_gates_accept_specific_delegation_evidence(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                "roles": "lead owner: main agent; worker: docs verifier; verifier: main review",
+                "write scopes": "owned write scope: workflows/*.md; forbidden/read-only scope: scripts/*.py",
+                "agent briefs": (
+                    "worker docs-a role verifier; owned scope workflows/*.md; forbidden scope scripts/*.py; "
+                    "input contract route docs policy; expected output findings; acceptance checks listed; "
+                    "verification: workflow validate"
+                ),
+                "integration review": (
+                    "integration review after merge; contract drift check for route/schema/state model; "
+                    "final verification: unittest and workflow validate"
+                ),
+            },
+            ["roles", "write scopes", "agent briefs", "integration review"],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_agentic_run_state_evidence_requires_state_transition_and_evidence(self) -> None:
+        failures = validate_gate_evidence(
+            {AGENTIC_RUN_STATE_GATE: "state: scoped"},
+            [AGENTIC_RUN_STATE_GATE],
+        )
+
+        self.assertTrue(any("agentic run state evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                AGENTIC_RUN_STATE_GATE: (
+                    "run state: reviewing; next transition: reviewing -> done; "
+                    "evidence: review hook and validation check passed"
+                )
+            },
+            [AGENTIC_RUN_STATE_GATE],
         )
 
         self.assertEqual([], failures)

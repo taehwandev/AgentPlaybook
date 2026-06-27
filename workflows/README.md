@@ -123,6 +123,12 @@ the update.
 - `Start Hook`: run before work that needs routing or evidence. It records
   request classification, route, git status, and pre-work VibeGuard evidence.
   Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.
+- `Docs-Read Hook`: run after Start Hook and before edits when the route
+  includes `route docs read`. It reads every routed doc from the preflight
+  manifest and writes `.agentplaybook/route-docs-read.json` with path, size,
+  hash, and route fingerprint. Finish Hook rejects route-doc evidence when this
+  receipt is missing or mismatched. Use
+  `python3 scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>`.
 - `Review Hook`: the primary hook. Run it immediately after meaningful edits
   and before finish. It must record code review evidence and docs freshness
   evidence, then run structural review, local diff hygiene, workflow validation,

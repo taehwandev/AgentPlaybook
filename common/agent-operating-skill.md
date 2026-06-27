@@ -18,7 +18,9 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 6. Read the route's listed docs before editing, reviewing, coding, or running
    project-specific work. Record `route docs read` evidence when the route
    includes that gate; the evidence must name that routed skill/guidance docs
-   were read before code, implementation, or edits.
+   were read before code, implementation, or edits. Generic evidence such as
+   "docs read" is not enough; run the `docs-read` hook after preflight so the
+   finish check can compare the receipt against the preflight route manifest.
 7. For requirements analysis or modification work, give the user a compact
    alignment brief before drafting requirements or changing files. State shared
    understanding, possible mismatch, and unsupported assumptions or minimal
@@ -29,26 +31,30 @@ Use this before implementation, review, refactoring, debugging, documentation, o
    lessons from `~/.agentplaybook/` apply across repos unless repo-local
    instructions conflict.
 9. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
-10. Use `index.md` to load only relevant AgentPlaybook cards.
-11. Parallelize independent read-only orientation when the runtime supports it:
+10. For work-producing or delegated tasks, record the agentic run state:
+    current state, next transition or resume point, and the gate/command/check
+    evidence. Use it as the continuation and recovery anchor after interruption,
+    subagent delegation, failed verification, or missed-gate recovery.
+11. Use `index.md` to load only relevant AgentPlaybook cards.
+12. Parallelize independent read-only orientation when the runtime supports it:
     selected document reads, file searches, stack inspection, git status, and
     preflight evidence may run together after request intake is settled.
-12. Inspect existing code, docs, tests, and local conventions.
-13. For code or architecture work that crosses files, packages, folders, or
+13. Inspect existing code, docs, tests, and local conventions.
+14. For code or architecture work that crosses files, packages, folders, or
     modules, record a compact structure packet before editing: chosen boundary,
     package/folder map, file split, allowed imports, forbidden imports,
     callers/tests, and nearest verification.
-14. When a product alias or investigation crosses repositories, choose the
+15. When a product alias or investigation crosses repositories, choose the
     primary repo from the acceptance path and stop for a workspace scope
     checkpoint before writing to any secondary repo.
-15. Make the smallest change that genuinely addresses the request.
-16. For code work, record the multi-agent split decision before editing and use
+16. Make the smallest change that genuinely addresses the request.
+17. For code work, record the multi-agent split decision before editing and use
     parallel agents when scopes are disjoint and stable.
-17. Update/create affected docs and add/update/run the nearest useful test when
+18. Update/create affected docs and add/update/run the nearest useful test when
     code behavior or workflow policy changes.
-18. Verify with the narrowest reliable command first.
-19. Confirm the route gate ledger before reporting completion.
-20. Report what changed, what was verified, and what risk remains.
+19. Verify with the narrowest reliable command first.
+20. Confirm the route gate ledger before reporting completion.
+21. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -68,12 +74,20 @@ Before editing:
   PRD" as "no question or checkpoint"; when a PRD is skipped, state the skip
   reason, shared understanding, possible differences, unsupported assumptions,
   and the minimal blocker question or safe default before work starts.
+- For writing or documentation changes, do not infer genre, point of view, or
+  structure from a style cue such as plain endings, "not honorific", or "my
+  style". If multiple writing modes fit, ask a concrete choice question before
+  editing the draft.
 - Check repo-local `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or equivalent docs.
 - Check stack manifests, lockfiles, and config before running commands, adding dependencies, or using framework-specific APIs.
 - Read the route's `Read In Order` docs before code, implementation, review,
   or edit work. Do not treat the route output as a passive suggestion; if the
   route includes `route docs read`, finish evidence must state that routed
-  skill/guidance docs were read before work.
+  skill/guidance docs were read before work and the `docs-read` receipt must
+  match the preflight route manifest.
+- For work-producing and multi-agent routes, record `agentic run state`
+  evidence before implementation: current state, next transition or resume
+  point, and the gate/command/check evidence.
 - When implementation can add or move more than one file, package, folder, or
   module, write the structure packet first. Do not start by dumping all code
   into one feature, `common`, `shared`, `utils`, `helpers`, `services`, or

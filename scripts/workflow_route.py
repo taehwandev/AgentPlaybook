@@ -126,7 +126,7 @@ def route_gates(command: str) -> list[str]:
 
 def route_hooks(command: str) -> list[dict[str, object]]:
     review_required = command in REVIEW_HOOK_REQUIRED_COMMANDS
-    return [
+    hooks: list[dict[str, object]] = [
         {
             "hook": "start",
             "required": True,
@@ -137,6 +137,21 @@ def route_hooks(command: str) -> list[dict[str, object]]:
                 f"--command {command} --request \"<USER_REQUEST>\""
             ),
         },
+    ]
+    if "route docs read" in route_gates(command):
+        hooks.append(
+            {
+                "hook": "docs-read",
+                "required": True,
+                "when": "after start/preflight and after reading routed docs, before edits, reviews, commits, or completion reports",
+                "command": (
+                    "python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read "
+                    "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>"
+                ),
+            }
+        )
+    hooks.extend(
+        [
         {
             "hook": "review",
             "required": review_required,
@@ -161,7 +176,9 @@ def route_hooks(command: str) -> list[dict[str, object]]:
                 "--gate \"<gate>=<evidence>\""
             ),
         },
-    ]
+        ]
+    )
+    return hooks
 
 
 def _review_hook_timing(required: bool) -> str:

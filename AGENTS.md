@@ -210,6 +210,19 @@ options) will fail prefix matching and trigger repeated prompts.
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
+After preflight and before editing, reviewing, committing, or reporting
+completion, run the docs-read receipt hook whenever the route includes
+`route docs read`:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+```
+
+The docs-read hook reads each routed document from the preflight route manifest
+and writes `<TARGET_REPO>/.agentplaybook/route-docs-read.json`. Finish-check
+must reject `route docs read` evidence when this receipt is missing or does not
+match the current preflight route manifest.
+
 Before final report, commit, release, or handoff, run the finish check and pass
 evidence for every required route gate:
 

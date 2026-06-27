@@ -20,6 +20,21 @@ selects the workflow, platform cards, concern cards, and gates for a command.
 The agent then reads the generated route and performs the work in the target
 repo.
 
+## Agentic Control Plane
+
+The workflow script is the agentic coding control plane for AgentPlaybook. It
+gives the active agent a route manifest, required documents, required gates,
+run-state expectations, delegation policy, and evidence policy so Codex, Claude
+Code, Gemini CLI, GitHub Copilot coding agent, Cursor, Aider, Devin, Replit
+Agent, or another coding agent can work with the same operating discipline.
+
+Agentic behavior comes from connecting that manifest to execution: selecting
+the right route, recording run state, deciding whether to work serially or
+delegate to subagents, collecting evidence, recovering from missed gates, and
+updating durable lessons when the same failure repeats. When the runtime
+supports subagents or launchers, use the split decision and run-state evidence
+as the delegation contract.
+
 ## Default Script
 
 Run this shared router for every multi-step task when it exists:
@@ -218,6 +233,9 @@ forgets them:
   edit work, read the route's `docs` / `Read In Order` list. Evidence must say
   that the routed skill/guidance docs were read before work; merely listing
   documents in the route output is not evidence that the agent consumed them.
+  Run the `docs-read` hook after preflight and before edits so finish-check can
+  compare its receipt against the preflight route manifest. Generic wording such
+  as "checked docs" or "read guidance" is a missed gate.
 - `ambiguity check`: classify unknowns before implementation. If any blocker
   can change behavior, scope, risk, acceptance criteria, or verification, stop
   and ask the maintainer before editing. Do not continue with silent invented
@@ -237,6 +255,11 @@ forgets them:
   subagents/parallel workers. Use them when owned files/modules are disjoint and
   the shared contract is stable. If work stays serial, record why the change is
   too small, same-file, contract-bound, or otherwise not safe to split.
+- `agentic run state`: for work-producing or multi-agent routes, record the
+  current state, the next transition or resume point, and the gate/command
+  evidence that justifies that transition. This is the workflow's memory for
+  continuation, retry, review, delegation, and retrospective restart; route
+  output alone is not execution evidence.
 - `side-effect audit`: after implementation and before final verification or
   handoff, inspect the final diff for unexpected generated files, lockfiles,
   public-contract changes, external-state surfaces, broad formatting churn, and
@@ -303,6 +326,28 @@ Attempt for this gate: 1/2
 Do not wait until the final response to reconstruct the ledger from memory.
 Report a gate only when it succeeds or fails. Do not emit a public third state.
 
+## Run State Ledger
+
+For work-producing and multi-agent routes, keep a compact run-state line beside
+the gate ledger:
+
+```text
+run_state: scoped
+transition: scoped -> acting
+evidence: boundary plan + multi-agent split decision recorded
+next: implementation
+```
+
+Use these state names unless repo-local workflow defines a stricter model:
+`intake`, `oriented`, `scoped`, `acting`, `verifying`, `reviewing`, `done`,
+`blocked`, and `retrospective`. Update the state only when the transition has
+evidence. After a failed required gate, set the resume point to the first missed
+gate or same failed scope instead of restarting unrelated work.
+
+Do not use run-state notes to hide missing gate evidence. A run state is valid
+only when the named route gates, commands, checks, or manual observations also
+exist.
+
 ## Gate Signals
 
 Gate signals are part of the workflow gate ledger, not a separate report. Check
@@ -368,6 +413,18 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO>
 preflight evidence. Calling `agent-preflight.py` directly is acceptable only as
 a lower-level wrapper path when the start hook is unavailable.
 
+After preflight and before edits, reviews, commits, or completion reports, read
+the route's docs and write the route-doc receipt:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+```
+
+The docs-read hook reads each routed doc from the preflight manifest and writes
+`<TARGET_REPO>/.agentplaybook/route-docs-read.json` with path, size, hash, and
+route fingerprint. Finish-check treats a missing or mismatched receipt as a
+missed `route docs read` gate.
+
 Before final report, commit, release, or handoff:
 
 ```text
@@ -387,8 +444,11 @@ satisfies the policy:
   docs were not applicable or unchanged.
 - `boundary plan`: owned boundary/scope or contract, plus the nearest
   verification/check before implementation.
-- `multi-agent split decision`: serial/single-agent or parallel/split, with
-  owned scopes or the reason parallel work is not applicable.
+- `multi-agent split decision`: serial/single-agent with a concrete reason, or
+  parallel/subagent work with owned scope, forbidden scope, contract/brief, and
+  verification.
+- `agentic run state`: current state, next transition or resume point, and the
+  gate/command/check evidence that justified the transition.
 - `side-effect audit`: final diff and side effects checked, naming unexpected
   changes, public-contract risk, generated/lockfile churn, or that none were
   found.

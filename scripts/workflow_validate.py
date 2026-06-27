@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import sys
 
+from agent_finish_gate_policy import VALIDATED_GATES
 from workflow_catalog import COMMANDS, CONCERNS, CORE_DOCS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import (
     ATTEMPT_LIMIT,
@@ -30,6 +31,12 @@ STRICT_CARD_REQUIRED_HEADINGS = (
     "## Stop If",
     "## Verification",
 )
+MULTI_AGENT_VALIDATED_GATES = {
+    "roles",
+    "write scopes",
+    "agent briefs",
+    "integration review",
+}
 
 
 def validate_route_contracts() -> list[str]:
@@ -60,8 +67,11 @@ def validate_route_contracts() -> list[str]:
             failures.append(f"{command}: route hooks must be a list")
             hooks = []
         hook_names = [hook.get("hook") for hook in hooks if isinstance(hook, dict)]
-        if hook_names != ["start", "review", "finish"]:
-            failures.append(f"{command}: route hooks must be start, review, finish")
+        expected_hook_names = ["start", "review", "finish"]
+        if "route docs read" in route["gates"]:
+            expected_hook_names.insert(1, "docs-read")
+        if hook_names != expected_hook_names:
+            failures.append(f"{command}: route hooks must be {', '.join(expected_hook_names)}")
         hook_required = {
             hook.get("hook"): hook.get("required")
             for hook in hooks
@@ -69,6 +79,8 @@ def validate_route_contracts() -> list[str]:
         }
         if hook_required.get("start") is not True:
             failures.append(f"{command}: start hook must be required")
+        if "route docs read" in route["gates"] and hook_required.get("docs-read") is not True:
+            failures.append(f"{command}: docs-read hook must be required")
         if hook_required.get("finish") is not True:
             failures.append(f"{command}: finish hook must be required")
         expected_review_required = command in REVIEW_HOOK_REQUIRED_COMMANDS
@@ -78,6 +90,12 @@ def validate_route_contracts() -> list[str]:
             )
         if expected_review_required and "review hook" not in route["gates"]:
             failures.append(f"{command}: required review hook is missing from route gates")
+        if command == "multi-agent":
+            missing_validators = sorted(MULTI_AGENT_VALIDATED_GATES - VALIDATED_GATES)
+            if missing_validators:
+                failures.append(
+                    f"{command}: missing finish evidence validators for {', '.join(missing_validators)}"
+                )
 
         ledger = route["gate_ledger"]
         if len(ledger) != len(route["gates"]):

@@ -14,6 +14,7 @@ from agent_finish_check_steps import (
     check_preflight_vibeguard,
     check_request_intake,
     check_required_gates,
+    read_route_docs_receipt_for_preflight,
     read_preflight,
     resolve_paths,
 )
@@ -49,6 +50,7 @@ def build_result(
     gate_evidence: dict[str, str],
     gate_signals: list[dict[str, str]],
     missed_gates: list[str],
+    route_docs_receipt: dict[str, Any],
     grill_me_required: bool,
     retrospective_required: bool,
     validate: dict[str, Any],
@@ -70,6 +72,7 @@ def build_result(
         "gate_evidence": gate_evidence,
         "gate_signals": gate_signals,
         "missed_gates": missed_gates,
+        "route_docs_read_receipt": route_docs_receipt,
         "grill_me_required": grill_me_required,
         "question_drill_required": grill_me_required,
         "retrospective_required": retrospective_required,
@@ -107,6 +110,7 @@ def main() -> int:
     failures: list[str] = []
     preflight = read_preflight(evidence_path, failures)
     route = preflight.get("route") or {}
+    route_docs_receipt = read_route_docs_receipt_for_preflight(evidence_path)
     gate_evidence = dict(args.gate)
     gate_signals: list[dict[str, str]] = []
     required_gates, missed_gates, gate_policy_failures = check_required_gates(
@@ -114,6 +118,7 @@ def main() -> int:
         gate_evidence,
         gate_signals,
         failures,
+        route_docs_receipt,
     )
     grill_me_required = check_request_intake(
         route,
@@ -155,6 +160,7 @@ def main() -> int:
         gate_evidence=gate_evidence,
         gate_signals=gate_signals,
         missed_gates=missed_gates,
+        route_docs_receipt=route_docs_receipt,
         grill_me_required=grill_me_required,
         retrospective_required=retrospective_required,
         validate=validate,

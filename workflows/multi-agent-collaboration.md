@@ -115,6 +115,23 @@ If any of those cannot be named, keep the work serial until the boundary is
 clear. The lead agent remains responsible for integrating the result, resolving
 conflicts, and ensuring the final diff still satisfies the original request.
 
+## Delegation Decision Record
+
+Record the delegation decision before code work:
+
+- `serial`: state why the task is too small, same-file, contract-bound,
+  migration/dependency-sensitive, release-sensitive, or otherwise unsafe to
+  split.
+- `parallel`: list each worker, run state, owned files/modules, forbidden
+  files/modules, input contract, expected output, acceptance checks, and
+  verification command or manual scenario.
+
+Delegation is not a handoff of responsibility. The lead agent owns the shared
+contract, integration point, review of worker changes, side-effect audit, and
+final verification. If a worker changes the contract, route, schema, state
+model, or config outside its brief, stop integration and restart from the split
+decision.
+
 ## Agent Briefs
 
 Each brief should include:

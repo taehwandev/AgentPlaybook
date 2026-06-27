@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from agent_finish_common import add_gate_signal, append_unique
-from agent_finish_gate_policy import validate_gate_evidence
+from agent_finish_gate_policy import ROUTE_DOCS_READ_GATE, validate_gate_evidence
+from agent_route_docs import read_route_doc_receipt, receipt_path_for_evidence, validate_route_doc_receipt
 from workflow_request_patterns import GRILL_ME_REQUEST_PATTERNS
 
 
@@ -61,6 +62,7 @@ def check_required_gates(
     gate_evidence: dict[str, str],
     gate_signals: list[dict[str, str]],
     failures: list[str],
+    route_docs_receipt: dict[str, Any] | None = None,
 ) -> tuple[list[str], list[str], list[str]]:
     required_gates = route.get("gates") or []
     if not required_gates:
@@ -78,10 +80,31 @@ def check_required_gates(
         failures.append("missing required gate evidence: " + ", ".join(missed_gates))
 
     gate_policy_failures = validate_gate_evidence(gate_evidence, required_gates)
+    gate_policy_failures.extend(
+        validate_route_docs_manifest_evidence(route, gate_evidence, route_docs_receipt or {})
+    )
     for failure in gate_policy_failures:
         add_gate_signal(gate_signals, "FAIL", "gate evidence policy", "failed", failure)
         failures.append(failure)
     return required_gates, missed_gates, gate_policy_failures
+
+
+def read_route_docs_receipt_for_preflight(evidence_path: Path) -> dict[str, Any]:
+    return read_route_doc_receipt(receipt_path_for_evidence(evidence_path))
+
+
+def validate_route_docs_manifest_evidence(
+    route: dict[str, Any],
+    gate_evidence: dict[str, str],
+    route_docs_receipt: dict[str, Any],
+) -> list[str]:
+    required_gates = route.get("gates") or []
+    if ROUTE_DOCS_READ_GATE not in required_gates:
+        return []
+    evidence = gate_evidence.get(ROUTE_DOCS_READ_GATE, "")
+    if not evidence:
+        return []
+    return validate_route_doc_receipt(route, route_docs_receipt)
 
 
 def check_request_intake(
