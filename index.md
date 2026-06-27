@@ -46,6 +46,9 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Accessibility, localization, dates, numbers, UI text: `common/accessibility-i18n.md`
 - Human-authored prose, voice fidelity, and AI-writing signal cleanup:
   `common/human-authored-writing.md`
+- Blog/article draft workspace, publishing-target separation, and shared
+  writing source-of-truth:
+  `common/writing-workspace.md`
 - AgentPlaybook card anatomy, anti-rationalization, red flags, and evidence
   sections: `common/agent-skill-card-anatomy.md`
 - Architecture choice/change: `common/architecture-selection.md`

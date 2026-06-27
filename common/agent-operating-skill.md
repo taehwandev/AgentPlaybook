@@ -172,6 +172,9 @@ Before finishing:
 - Release, deployment, packaging, signing, rollout, rollback, versioning, or tags: `common/release-deployment.md` and `common/release-versioning.md`.
 - User-facing text, forms, controls, dates, numbers, or localization: `common/accessibility-i18n.md`.
 - User-facing prose, documentation tone, release notes, marketing copy, emails, voice fidelity, or AI-writing signal cleanup: `common/human-authored-writing.md`.
+- Blog posts, articles, essays, publishable long-form prose, or user-author
+  writing consistency across agents: `common/writing-workspace.md` plus
+  `common/human-authored-writing.md`.
 - SEO, AI search visibility, AEO/GEO claims, sitemap, robots, metadata, Open Graph, short links, canonical URLs, or public discovery feeds: `common/public-discovery.md`.
 - UI layout, interaction, text overflow, responsive behavior, or accessibility-visible state: `common/ui-visual-verification.md`.
 - Refactoring: `common/refactoring.md`.

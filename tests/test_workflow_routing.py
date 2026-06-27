@@ -128,6 +128,24 @@ class WorkflowRoutingTests(unittest.TestCase):
             with self.subTest(request=request):
                 self.assertIn(concern, infer_concerns_from_request(request))
 
+    def test_writing_requests_infer_human_authored_writing_concern(self) -> None:
+        examples = (
+            "AgentPlaybook 소개하는 글을 써줘. 바이브가드도 같이 소개해줘.",
+            "블로그 글 써달라고 하면 공유 writing workspace에 초안을 저장하게 해줘.",
+            "AI 티 덜 나게 문체를 다듬어줘.",
+            "Write an article introducing AgentPlaybook and VibeGuard.",
+            "Draft release notes with a less AI-sounding tone.",
+        )
+
+        for request in examples:
+            with self.subTest(request=request):
+                concerns = infer_concerns_from_request(request)
+                self.assertIn("writing", concerns)
+
+        route = resolve_docs("docs", None, ["writing"], request_classified=True)
+        self.assertIn("common/human-authored-writing.md", route["docs"])
+        self.assertIn("common/writing-workspace.md", route["docs"])
+
     def test_android_performance_route_loads_external_skill_manifest(self) -> None:
         route = resolve_docs(
             "workflow-setup",
