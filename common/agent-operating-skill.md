@@ -18,9 +18,11 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 6. Read the route's listed docs before editing, reviewing, coding, or running
    project-specific work. Record `route docs read` evidence when the route
    includes that gate; the evidence must name that routed skill/guidance docs
-   were read before code, implementation, or edits. Generic evidence such as
+   were read before code, implementation, or edits, and must name the applied
+   rule, criterion, or takeaway used for this task. Generic evidence such as
    "docs read" is not enough; run the `docs-read` hook after preflight so the
-   finish check can compare the receipt against the preflight route manifest.
+   finish check can compare the receipt against the current preflight evidence,
+   route manifest, and routed document count.
 7. For requirements analysis or modification work, give the user a compact
    alignment brief before drafting requirements or changing files. State shared
    understanding, possible mismatch, and unsupported assumptions or minimal
@@ -83,8 +85,9 @@ Before editing:
 - Read the route's `Read In Order` docs before code, implementation, review,
   or edit work. Do not treat the route output as a passive suggestion; if the
   route includes `route docs read`, finish evidence must state that routed
-  skill/guidance docs were read before work and the `docs-read` receipt must
-  match the preflight route manifest.
+  skill/guidance docs were read before work, name the applied rule/criterion or
+  takeaway, and the `docs-read` receipt must match the current preflight
+  evidence file, route manifest, and routed document count.
 - For work-producing and multi-agent routes, record `agentic run state`
   evidence before implementation: current state, next transition or resume
   point, and the gate/command/check evidence.
@@ -119,7 +122,10 @@ While editing:
 - For larger implementation work, split work across parallel agents only when
   the owned files, packages, contracts, and forbidden files are explicit and do
   not overlap. Serialize shared contracts, generated files, migrations,
-  dependency changes, release config, and architecture boundaries.
+  dependency changes, release config, and architecture boundaries. When work is
+  actually delegated or parallelized, write
+  `.agentplaybook/agent-delegation-plan.json` before workers start and keep the
+  lead agent responsible for integration review and final verification.
 
 Before finishing:
 

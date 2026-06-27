@@ -221,7 +221,11 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_R
 The docs-read hook reads each routed document from the preflight route manifest
 and writes `<TARGET_REPO>/.agentplaybook/route-docs-read.json`. Finish-check
 must reject `route docs read` evidence when this receipt is missing or does not
-match the current preflight route manifest.
+match the current preflight evidence file, route manifest, and document count.
+The finish gate evidence must also name the rule, criterion, or takeaway from
+the routed docs that was applied to the current task; "docs read" or "checked
+docs" is not enough. Use `--receipt-output` only when a non-default receipt
+path is required; `--output` is a legacy docs-read alias.
 
 Before final report, commit, release, or handoff, run the finish check and pass
 evidence for every required route gate:

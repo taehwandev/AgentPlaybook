@@ -132,6 +132,42 @@ final verification. If a worker changes the contract, route, schema, state
 model, or config outside its brief, stop integration and restart from the split
 decision.
 
+When work is actually delegated or run in parallel, write a structured local
+plan before workers start:
+
+```text
+<TARGET_REPO>/.agentplaybook/agent-delegation-plan.json
+```
+
+Use this schema:
+
+```json
+{
+  "schema_version": 1,
+  "mode": "parallel",
+  "workers": [
+    {
+      "id": "docs-a",
+      "role": "docs reviewer",
+      "owned_scope": ["workflows/*.md"],
+      "forbidden_scope": ["scripts/*.py"],
+      "contract": "report documentation gaps only",
+      "acceptance": ["findings include file and rule"],
+      "verification": ["python3 scripts/workflow.py validate"]
+    }
+  ],
+  "integration_review": {
+    "contract_drift_check": "compare worker findings with route gate policy",
+    "final_verification": ["python3 -m unittest discover tests"]
+  }
+}
+```
+
+Finish-check treats parallel/subagent evidence or the `multi-agent` route's
+role/write-scope/brief/integration gates as incomplete without this plan. The
+plan is local runtime evidence; do not commit it unless the repo explicitly
+tracks agent execution artifacts.
+
 ## Agent Briefs
 
 Each brief should include:

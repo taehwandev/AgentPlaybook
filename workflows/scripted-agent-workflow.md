@@ -231,11 +231,14 @@ forgets them:
 
 - `route docs read`: after routing and before code, implementation, review, or
   edit work, read the route's `docs` / `Read In Order` list. Evidence must say
-  that the routed skill/guidance docs were read before work; merely listing
-  documents in the route output is not evidence that the agent consumed them.
+  that the routed skill/guidance docs were read before work and name the
+  applied rule, criterion, or takeaway used for this task; merely listing
+  documents in the route output is not evidence that the agent consumed or used
+  them.
   Run the `docs-read` hook after preflight and before edits so finish-check can
-  compare its receipt against the preflight route manifest. Generic wording such
-  as "checked docs" or "read guidance" is a missed gate.
+  compare its receipt against the current preflight evidence file, route
+  manifest, and routed document count. Generic wording such as "checked docs"
+  or "read guidance" is a missed gate.
 - `ambiguity check`: classify unknowns before implementation. If any blocker
   can change behavior, scope, risk, acceptance criteria, or verification, stop
   and ask the maintainer before editing. Do not continue with silent invented
@@ -421,9 +424,12 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_R
 ```
 
 The docs-read hook reads each routed doc from the preflight manifest and writes
-`<TARGET_REPO>/.agentplaybook/route-docs-read.json` with path, size, hash, and
-route fingerprint. Finish-check treats a missing or mismatched receipt as a
-missed `route docs read` gate.
+`<TARGET_REPO>/.agentplaybook/route-docs-read.json` with path, size, doc hash,
+route fingerprint, document count, and the current preflight evidence hash. Use
+`--receipt-output` only when the receipt must be written to a non-default path;
+`--output` is a legacy alias for that docs-read receipt path. Finish-check
+treats a missing, stale, or mismatched receipt as a missed `route docs read`
+gate.
 
 Before final report, commit, release, or handoff:
 
@@ -435,6 +441,9 @@ Write finish evidence for the validator, not only for a human summary. When a
 route includes these gates, the evidence must name the actual check that
 satisfies the policy:
 
+- `route docs read`: routed skill/guidance docs read before work, the applied
+  rule/criterion/takeaway used for this task, and a matching docs-read receipt
+  for the current preflight evidence.
 - `ambiguity check`: no blockers, blockers resolved, questions asked,
   clarified decision, or explicit safe assumption.
 - `alignment brief`: shared understanding, possible differences, unsupported
@@ -446,7 +455,10 @@ satisfies the policy:
   verification/check before implementation.
 - `multi-agent split decision`: serial/single-agent with a concrete reason, or
   parallel/subagent work with owned scope, forbidden scope, contract/brief, and
-  verification.
+  verification. Parallel or multi-agent route evidence must also have a
+  structured `.agentplaybook/agent-delegation-plan.json` with worker roles,
+  owned and forbidden scopes, contract, acceptance checks, verification, and
+  integration review.
 - `agentic run state`: current state, next transition or resume point, and the
   gate/command/check evidence that justified the transition.
 - `side-effect audit`: final diff and side effects checked, naming unexpected

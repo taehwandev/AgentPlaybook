@@ -126,9 +126,10 @@ the update.
 - `Docs-Read Hook`: run after Start Hook and before edits when the route
   includes `route docs read`. It reads every routed doc from the preflight
   manifest and writes `.agentplaybook/route-docs-read.json` with path, size,
-  hash, and route fingerprint. Finish Hook rejects route-doc evidence when this
-  receipt is missing or mismatched. Use
-  `python3 scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>`.
+  doc hash, route fingerprint, document count, and preflight evidence hash.
+  Finish Hook rejects route-doc evidence when this receipt is missing, stale,
+  or mismatched. Use `--receipt-output` only for a non-default receipt path.
+  Use `python3 scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>`.
 - `Review Hook`: the primary hook. Run it immediately after meaningful edits
   and before finish. It must record code review evidence and docs freshness
   evidence, then run structural review, local diff hygiene, workflow validation,
