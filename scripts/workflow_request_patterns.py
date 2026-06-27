@@ -35,6 +35,10 @@ QUESTION_ACTION_PATTERNS = (
     "\uba85\uc2dc\ud574\uc918",
     "\ub123\uc5b4\uc918",
     "\ub2f4\uc544\uc918",
+    "\uc791\uc131\ud558\uc790",
+    r"\uc791\uc131\s*\ub2e4\uc2dc\s*\ud558\uc790",
+    r"\ub2e4\uc2dc\s*(\uc791\uc131|\uc4f0|\uc815\ub9ac)\ud558\uc790",
+    "\uc815\ub9ac\ud558\uc790",
     "\uc801\uc6a9",
     "\ub2e4\uc2dc \uc801\uc6a9",
     "\ucee4\ubc0b\ud574\uc918",
@@ -45,7 +49,7 @@ QUESTION_ACTION_PATTERNS = (
 )
 EXACT_PATTERNS = (
     r"`[^`]+`",
-    r"(?:^|\s)(?:~|\.{1,2}|/)[\w./-]+",
+    r"(?:^|\s)(?:~/|\.{1,2}/|/)[A-Za-z0-9_./-]+",
     r"\b[\w./-]+\.(kt|swift|tsx|ts|jsx|js|py|go|rs|java|md|json|yml|yaml|toml)\b",
     r":\d+\b",
     r"\b(error|exception|traceback|stack trace|compiler|lint|test failed|failing test)\b",
@@ -65,7 +69,17 @@ RISKY_PATTERNS = (
 )
 VAGUE_PATTERNS = (
     r"\b(fix|improve|clean up|make better|change|update|adjust|modify)\b",
+    r"\b(rewrite|rework|revise|redraft|rephrase|polish|tighten)\b",
     r"\b(button|home|screen|ui|layout|style)\b",
+    r"\ub2e4\uc2dc\s*(\uc791\uc131|\uc4f0|\uc815\ub9ac)",
+    r"\uc791\uc131\s*\ub2e4\uc2dc",
+    "\uc7ac\uc791\uc131",
+    "\ubb38\uccb4",
+    "\ub9d0\ud22c",
+    "\uc5b4\ud22c",
+    "\uc2a4\ud0c0\uc77c",
+    "\ub0b4 \uc2a4\ud0c0\uc77c",
+    "\uc874\ub300",
 )
 GRILL_ME_REQUEST_PATTERNS = (
     r"\bgrill me\b",

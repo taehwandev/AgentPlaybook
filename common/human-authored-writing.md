@@ -34,8 +34,15 @@ is part of the source-of-truth discovery step, not a post-processing filter.
 - Any supplied draft, outline, examples, quotes, claims, citations, product
   names, numbers, dates, legal or policy text, and SEO keywords that must
   survive unchanged.
+- The requested writing mode: explanatory guide, personal stance, build log,
+  announcement, tutorial, reference note, retrospective, or another genre. If
+  the mode is not explicit and changing it would reshape the draft, ask before
+  rewriting.
 - Two or three nearby voice samples when available, such as existing docs,
   posts, release notes, emails, or the user's own draft fragments.
+- For Korean author voice work, inspect phrase-level habits as well as endings:
+  connective frames, concrete maintenance wording, preferred technical nouns,
+  translation-like metaphors, and phrases the user explicitly rejected.
 - The configured writing workspace when drafting blog posts, articles, essays,
   or publishable long-form prose.
 - Repo-local writing, brand, accessibility, localization, disclosure, or public
@@ -49,6 +56,12 @@ Treat "human-authored" as a fidelity and clarity pass, not as detector evasion.
 The edit should make the piece sound like a person with a reason to write it:
 clear intent, concrete judgment, appropriate evidence, natural rhythm, and a
 voice that matches the genre.
+
+Do not infer the genre from one surface cue. A user saying they prefer plain
+endings such as "I did X" or "X is Y" may be asking for a non-honorific
+explanatory style, not a retrospective, diary, marketing story, or first-person
+confession. If several valid modes fit, present a small choice set and wait for
+the user's selection before rewriting the draft.
 
 When in doubt, preserve meaning over style. If a more natural sentence would
 change facts, author position, legal meaning, citations, claims, product policy,
@@ -79,20 +92,31 @@ or disclosure obligations, keep the original meaning and report the constraint.
 2. If available, inspect two or three paragraphs of the author's own writing for
    sentence rhythm, formality, contractions, transitions, punctuation habits,
    and vocabulary preferences.
-3. Mark protected content: facts, names, numbers, quotes, citations, URLs,
+3. If the user asks for "my style", "not honorific", "less AI-sounding",
+   "rewrite this", or similar direction but the genre or point of view is
+   unclear, ask a choice-framed style question before broad rewriting. Offer
+   concrete modes with consequences, such as plain explanatory, first-person
+   technical note, opinion/stance article, or retrospective, and do not continue
+   until the selected mode is known or the user explicitly accepts a safe
+   default.
+4. Mark protected content: facts, names, numbers, quotes, citations, URLs,
    product terms, keywords, legal/policy text, and any sentence whose meaning
    must not drift.
-4. Audit the draft for specific signals. Note the span, category, severity, and
+5. Audit the draft for specific signals. Note the span, category, severity, and
    intended edit before rewriting broad sections.
-5. Rewrite only the flagged spans or the smallest paragraph needed for flow.
-6. Run a fidelity check against the original: facts, claims, numbers, names,
+6. For Korean prose, run a phrase-level voice pass. Check not only honorific
+   endings, but also plausible phrases that the author would not naturally use,
+   such as abstract metaphors, stock AI transitions, or wording the user already
+   flagged as unnatural.
+7. Rewrite only the flagged spans or the smallest paragraph needed for flow.
+8. Run a fidelity check against the original: facts, claims, numbers, names,
    quotes, citations, ordering, tone, and required format.
-7. Read the result aloud or scan for rhythm: sentence lengths should vary, but
+9. Read the result aloud or scan for rhythm: sentence lengths should vary, but
    the prose should not become choppy, cute, or performatively casual.
-8. Run an "obviously generated" second pass for residual tells: formulaic
+10. Run an "obviously generated" second pass for residual tells: formulaic
    framing, repetitive transitions, fake balance, unsupported grand claims,
    chatbot closers, and tidy-but-empty summaries.
-9. Report the categories changed and any places intentionally left unchanged.
+11. Report the categories changed and any places intentionally left unchanged.
 
 ## Audit Passes
 
@@ -121,7 +145,7 @@ Use these passes when the writing task is more than a one-line copy edit.
 
 | Surface | Signals to inspect | Preferred fix |
 | --- | --- | --- |
-| Korean prose | Translationese, overformal connective adverbs, passive or nominalized phrasing, mechanical numbered structure, excessive headings or decoration, overuse of English in parentheses, repeated endings, formal nouns such as "것/점/수/바" when they only pad the sentence | Rewrite into natural Korean idiom while preserving the original claim and register |
+| Korean prose | Translationese, overformal connective adverbs, passive or nominalized phrasing, mechanical numbered structure, excessive headings or decoration, overuse of English in parentheses, repeated endings, formal nouns such as "것/점/수/바" when they only pad the sentence, stock connective frames such as "핵심은", "중요한 점은", "반대로", or "이 글에서는" when the author's style would be more direct, and plausible but non-authorial metaphors such as "금방 갈라진다" when concrete maintenance wording fits better | Rewrite into natural Korean idiom while preserving the original claim and register |
 | English prose | Inflated significance, generic enthusiasm, promotional adjectives, shallow participial clauses, excessive hedging, repeated signposting, symmetric sentence rhythm, overuse of em dashes or paired contrasts, rule-of-three lists, synonym cycling, false ranges | Replace with specific claims, direct verbs, sourced detail, varied rhythm, and simpler punctuation |
 | Documentation | Polished filler, unsupported value claims, unnecessary summaries, "this guide explores" framing, duplicated overview bullets, diff-anchored narration, inline header lists where the heading repeats the sentence | Start with the action path, keep constraints explicit, and remove decorative framing |
 | Marketing or product copy | Vague benefits, buzzwords, "unlock/transform/revolutionize" language, claims without proof | Tie copy to concrete user outcomes, product evidence, and a clear audience |
@@ -151,6 +175,8 @@ Use these passes when the writing task is more than a one-line copy edit.
 | "The user only asked for an article, so the writing card can be applied later." | Load this card before drafting; writing style affects structure and source selection, not only final wording. |
 | "It sounds polished, so it is better." | Check whether polish removed specificity, stance, or natural rhythm. |
 | "Adding a personal line makes it more human." | Add personal texture only when the source material supports it. |
+| "The user gave first-person or plain-ending examples, so the piece should become a retrospective." | Treat those examples as style evidence only. Ask the user to choose the writing mode before changing genre, point of view, or article structure. |
+| "The Korean sentence is grammatical, so it matches the author." | Check whether the phrase belongs to the author's observed wording. Replace plausible but non-authorial phrases with concrete wording from the draft, samples, or user feedback. |
 | "Detector score is the goal." | Refuse detector-bypass promises; improve clarity, fidelity, voice, and responsible use. |
 | "Every AI tell must be banned everywhere." | Apply genre and channel judgment. Technical docs, legal text, and formal reports can be restrained without sounding robotic. |
 
@@ -163,6 +189,11 @@ Use these passes when the writing task is more than a one-line copy edit.
 - Lists come in neat threes without a real reason.
 - A conclusion summarizes instead of adding a decision, next action, or grounded
   final claim.
+- A Korean draft passes honorific-ending checks but still contains generic AI
+  frames, translated metaphors, or phrases the user has already rejected.
+- The agent labels the target as retrospective, essay, announcement, tutorial,
+  or marketing copy when the user only described sentence endings, honorific
+  level, or broad "my style" cues.
 - The edit changes authorial stance, adds lived experience, or hides uncertainty.
 - A "humanized" version is longer but no more specific.
 - The output claims or implies it will bypass AI detectors.
@@ -182,6 +213,9 @@ Use these passes when the writing task is more than a one-line copy edit.
 - Rewrite the whole piece when a span-level edit would solve the issue.
 - Make an institutional document sound casual only because casual writing feels
   more human.
+- Convert an article into a retrospective, build log, marketing page, tutorial,
+  or opinion piece unless the user explicitly requested that mode or selected it
+  from a clarification choice.
 - Turn a sparse draft into a confident essay by adding unsupported examples,
   market claims, expert consensus, or invented lived experience.
 - Treat third-party humanizer repos as source text to copy. Extract reusable
@@ -195,6 +229,9 @@ Use these passes when the writing task is more than a one-line copy edit.
   contractual, or policy meaning without an approved source.
 - There is no source for required claims, examples, numbers, citations, or
   personal experience, and the piece depends on them.
+- The requested voice/style could reasonably produce multiple genres or points
+  of view, and the choice would change the outline, opening, or author stance.
+  Ask a choice-framed question before rewriting.
 - The rewrite would exceed the requested scope by changing more than about one
   third of the draft without approval.
 - Voice ownership is unclear and no sample exists, but the user asks for a

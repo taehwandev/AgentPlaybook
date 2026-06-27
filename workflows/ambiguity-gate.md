@@ -62,6 +62,9 @@ Stop and ask when any of these are unclear:
 
 - user problem or intended outcome
 - scope and explicit non-goals
+- writing genre, point of view, honorific level, audience, or voice target when
+  the task drafts or rewrites prose and the choice would change the outline,
+  author stance, or acceptance criteria
 - visible UI behavior, entry point, or state model
 - success, empty, loading, unavailable, permission-denied, and failure behavior
 - persistence, destructive changes, migrations, rollback, or compatibility
@@ -74,6 +77,9 @@ Stop and ask when any of these are unclear:
 - Ask one to three concise questions by default.
 - Ask up to five only when multiple high-risk blockers exist.
 - Each question should name the decision being made and why it matters.
+- Prefer concrete choices when the ambiguity is about direction, taste, voice,
+  genre, scope, or architecture. Name the consequence of each option instead of
+  asking the maintainer to invent the frame.
 - Do not ask preference questions already settled by repo docs, product docs, architecture docs, existing UI, or platform constraints.
 - Ask one Grill-Me question at a time with its recommended answer when the
   runtime supports that interaction pattern. Do not proceed into PRD, ARD, or

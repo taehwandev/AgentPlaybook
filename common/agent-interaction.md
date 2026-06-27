@@ -48,6 +48,10 @@ When a question is needed:
 - State the tradeoff or consequence for each option.
 - Name the default assumption if the user does not answer and it is safe to
   continue.
+- For writing, product, UI, architecture, or workflow direction where several
+  valid interpretations would change the result, ask for a choice before
+  editing. Do not convert a style cue into a genre, architecture, or scope
+  decision by yourself.
 
 Use this shape:
 

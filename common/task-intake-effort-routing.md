@@ -73,6 +73,10 @@ alignment brief and from Grill-Me.
   agent will use.
 - Grill-Me is a clarification skill for blocker questions, but it does not imply
   a PRD by itself.
+- For writing or documentation work, unclear genre, point of view, honorific
+  level, audience, or voice target is still an alignment blocker when the choice
+  would change the outline or rewrite strategy. Ask with concrete options before
+  editing; do not infer the mode from a single style example.
 - Create a new PRD when the requested deliverable is explicitly a PRD/product
   requirements note, or when work introduces a new product capability, flow,
   multi-screen behavior, data model, API contract, auth/permission/billing
@@ -121,6 +125,11 @@ the answer changes behavior, risk, architecture, acceptance criteria, or
 verification; otherwise state the default assumption. Do not satisfy this only
 with private notes or finish-check evidence after the fact; the checkpoint must
 be visible in the conversation before the work starts.
+
+For prose work, the alignment brief must distinguish style evidence from genre
+selection. Examples such as plain Korean endings, "not honorific", or "my
+style" are not enough to choose retrospective, announcement, technical guide,
+or opinion-piece structure unless the user says so or selects that option.
 
 Grill-Me rules:
 
