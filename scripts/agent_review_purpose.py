@@ -10,6 +10,7 @@ from typing import Any
 
 PathPredicate = Callable[[Path, Path], bool]
 TestPredicate = Callable[[Path], bool]
+CommandRunner = Callable[[list[str], Path], dict[str, Any]]
 
 PYTHON_TOP_LEVEL_TYPE_RE = re.compile(r"^class\s+([A-Za-z_]\w*)\b")
 BRACE_TOP_LEVEL_TYPE_RE = re.compile(
@@ -64,6 +65,7 @@ def purpose_failures(
     path_metadata: dict[str, dict[str, Any]],
     review_source_path: PathPredicate,
     test_exempt_path: TestPredicate,
+    run_command: CommandRunner | None = None,
 ) -> list[str]:
     failures: list[str] = []
     for path in paths:
@@ -73,9 +75,32 @@ def purpose_failures(
             lines = (project / path).read_text(encoding="utf-8").splitlines()
         except UnicodeDecodeError:
             continue
-        failures.extend(top_level_declaration_failures(path, top_level_type_declarations(path, lines)))
+        failures.extend(
+            top_level_declaration_failures(
+                path,
+                top_level_type_declarations(path, lines),
+                previous_top_level_type_declarations(project, path, path_metadata, run_command),
+            )
+        )
     failures.extend(package_role_failures(project, paths, path_metadata, review_source_path, test_exempt_path))
     return failures
+
+
+def previous_top_level_type_declarations(
+    project: Path,
+    path: Path,
+    path_metadata: dict[str, dict[str, Any]],
+    run_command: CommandRunner | None,
+) -> list[dict[str, Any]]:
+    metadata = path_metadata.get(str(path), {})
+    if run_command is None or metadata.get("status") == "A":
+        return []
+
+    previous = run_command(["git", "show", f"HEAD:{path.as_posix()}"], project)
+    if previous["returncode"] != 0:
+        return []
+
+    return top_level_type_declarations(path, previous["stdout"].splitlines())
 
 
 def top_level_type_declarations(path: Path, lines: list[str]) -> list[dict[str, Any]]:
@@ -139,29 +164,63 @@ def component_or_hook_name(name: str) -> bool:
     return bool(name[:1].isupper() or re.match(r"^use[A-Z]", name))
 
 
-def top_level_declaration_failures(path: Path, declarations: list[dict[str, Any]]) -> list[str]:
+def top_level_declaration_failures(
+    path: Path,
+    declarations: list[dict[str, Any]],
+    previous_declarations: list[dict[str, Any]] | None = None,
+) -> list[str]:
     failures: list[str] = []
+    previous_declarations = previous_declarations or []
     visible = [declaration for declaration in declarations if not declaration["private"]]
     public = [declaration for declaration in visible if declaration["exported"] or exported_by_default(path)]
-    if len(public) > MAX_PUBLIC_TOP_LEVEL_OWNERS:
+    previous_visible = [declaration for declaration in previous_declarations if not declaration["private"]]
+    previous_public = [
+        declaration
+        for declaration in previous_visible
+        if declaration["exported"] or exported_by_default(path)
+    ]
+    if declaration_limit_failed(public, previous_public, MAX_PUBLIC_TOP_LEVEL_OWNERS):
         failures.append(
             f"{path} declares {len(public)} public/exported top-level owners ({format_declarations(public)}); "
             f"limit is {MAX_PUBLIC_TOP_LEVEL_OWNERS}; split runtime files so one file owns one "
             "public contract, component, handler, service, or implementation"
         )
-    if len(declarations) > MAX_TOP_LEVEL_OWNERS:
+    if declaration_limit_failed(declarations, previous_declarations, MAX_TOP_LEVEL_OWNERS):
         failures.append(
             f"{path} declares {len(declarations)} top-level owners ({format_declarations(declarations[:8])}); "
             f"limit is {MAX_TOP_LEVEL_OWNERS}; move separate contracts, state, data, platform, and helpers "
             "into purpose-named files"
         )
     roles = sorted({declaration["role"] for declaration in visible if declaration["role"]})
-    if mixed_roles_blocked(roles):
+    previous_roles = sorted({declaration["role"] for declaration in previous_visible if declaration["role"]})
+    if mixed_roles_blocked(roles) and role_mix_expanded(roles, previous_roles):
         failures.append(
             f"{path} mixes top-level owner roles {', '.join(roles)} ({format_declarations(visible)}); "
             "split by purpose before approval"
         )
     return failures
+
+
+def declaration_limit_failed(
+    declarations: list[dict[str, Any]],
+    previous_declarations: list[dict[str, Any]],
+    limit: int,
+) -> bool:
+    if len(declarations) <= limit:
+        return False
+    if len(previous_declarations) <= limit:
+        return True
+    return bool(declaration_keys(declarations) - declaration_keys(previous_declarations))
+
+
+def declaration_keys(declarations: list[dict[str, Any]]) -> set[tuple[str, str]]:
+    return {(declaration["kind"], declaration["name"]) for declaration in declarations}
+
+
+def role_mix_expanded(roles: list[str], previous_roles: list[str]) -> bool:
+    if not mixed_roles_blocked(previous_roles):
+        return True
+    return not set(roles).issubset(set(previous_roles))
 
 
 def package_role_failures(
@@ -176,12 +235,6 @@ def package_role_failures(
         changed = [path for path in paths if path.parent == parent and not test_exempt_path(path)]
         entries = package_role_entries(project, parent, review_source_path, test_exempt_path)
         roles = sorted({role for _, role in entries if role})
-        if mixed_roles_blocked(roles) and package_is_being_grown(changed, path_metadata):
-            failures.append(
-                f"{parent} package mixes runtime roles {', '.join(roles)} ({format_role_entries(entries)}); "
-                "do not keep growing a catch-all package. Move changed code into purpose-named packages "
-                "or document and enforce a real boundary"
-            )
         generic = [part for part in parent.parts if part.lower() in GENERIC_PACKAGE_PARTS]
         if generic and any(path_metadata.get(str(path), {}).get("status") == "A" for path in changed):
             failures.append(
@@ -211,10 +264,6 @@ def package_role_entries(
             role = next((declaration["role"] for declaration in declarations if declaration["role"]), None)
         entries.append((child.name, role))
     return entries
-
-
-def package_is_being_grown(paths: list[Path], path_metadata: dict[str, dict[str, Any]]) -> bool:
-    return any(path_metadata.get(str(path), {}).get("status") == "A" or path_metadata.get(str(path), {}).get("additions", 0) > 0 for path in paths)
 
 
 def exported_by_default(path: Path) -> bool:

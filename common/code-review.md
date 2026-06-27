@@ -130,9 +130,11 @@ as a read-only gate:
   documentation, and other docs are excluded from these code-size hard gates
   unless a repo-local rule explicitly treats them as runtime source.
 - Enforce these default hard gates only on development source/style files: a new
-  file over 400 lines fails; a file adding more than 200 lines fails; an
-  existing file already over 400 lines must not grow; a function, component,
-  hook, handler, script-step, or style block over 120 lines fails.
+  file over 400 lines fails; a file adding more than 200 lines fails; a
+  function, component, hook, handler, script-step, or style block over 120 lines
+  fails. An existing oversized file that grows should require structure-review
+  evidence and fail only when the current change expands the public owner
+  surface, adds another unclear responsibility, or crosses another hard gate.
 - Enforce purpose-based file ownership, not only line count. A runtime file
   should expose one public/exported top-level class, interface, component,
   hook, handler, service, repository, adapter, DTO, mapper, validator, command,
@@ -149,11 +151,12 @@ as a read-only gate:
   because they are small, feature-local, or convenient to create in one pass.
   Extensibility review must check whether future callers can extend, replace,
   test, or preview one owner without importing unrelated owners.
-- Fail package or folder growth that keeps adding runtime files to a catch-all
-  package such as `utils`, `helpers`, `common`, `shared`, `misc`, `manager`, or
-  `service`, or to a package that already mixes unrelated UI/state/data/domain/
-  platform roles without an enforced boundary. A package is an ownership and
-  import boundary, not a storage bin.
+- Fail new runtime files added under grab-bag package names such as `utils`,
+  `helpers`, `common`, `shared`, `misc`, `manager`, or `service`. Treat
+  pre-existing mixed-role packages as review pressure: require boundary evidence
+  for new packages or new runtime files, and fail only when the current change
+  expands the package's public owner surface or adds another unclear grab-bag
+  boundary. A package is an ownership and import boundary, not a storage bin.
 - When a change creates a new runtime package/folder or grows a package across
   purpose roles, require structured boundary evidence before approval. The
   hook must fail unless `--structure-review-evidence` explicitly names owner,

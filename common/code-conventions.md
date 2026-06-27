@@ -120,8 +120,10 @@ gates but still need clear ownership and reviewable structure:
   about 120 lines fails review by default.
 - A new development source/style file over about 400 lines fails review by
   default.
-- An existing development source/style file already over about 400 lines must
-  not grow; split the new responsibility first.
+- An existing development source/style file already over about 400 lines should
+  not grow by adding a new responsibility. If the current change only edits an
+  existing owner without expanding the public owner surface, require structure
+  review evidence instead of failing solely on the pre-existing size.
 - More than about 200 added lines in one development source/style file fails
   review by default.
 

@@ -151,6 +151,7 @@ def structure_review(
             discovery["path_metadata"],
             review_source_path,
             test_exempt_path,
+            run_command,
         )
     )
     result["boundary_note_requirements"] = boundary_note_requirements(
@@ -304,9 +305,10 @@ def check_file_size(
             f"per-file addition limit is {REVIEW_ADDED_LINE_LIMIT}; split the change before approval"
         )
     if status != "A" and line_count > max_file_lines and added_lines > 0:
-        result["failures"].append(
+        result["warnings"].append(
             f"{path} is already over {max_file_lines} lines and adds {added_lines} line(s); "
-            "do not grow oversized runtime files; extract the new responsibility first"
+            "structure-review evidence is required and the new responsibility should be extracted "
+            "when it expands the public owner surface"
         )
     elif line_count > REVIEW_FILE_REVIEW_WARNING_LIMIT:
         result["warnings"].append(

@@ -84,10 +84,12 @@ them in:
   a hard review failure unless repo-local policy explicitly sets a different
   limit.
 - Development source/style files should have one primary owner and one
-  responsibility cluster. A new file over about 400 lines fails review, and an
-  existing file already over about 400 lines must not grow. More than about 200
-  added lines in one development file fails review because it is usually a
-  "dump it all here" signal.
+  responsibility cluster. A new file over about 400 lines fails review. An
+  existing file already over about 400 lines must not gain another public owner,
+  unclear responsibility, or hard-gate violation; when the change only edits an
+  existing owner, require structure-review evidence instead of failing solely on
+  pre-existing size. More than about 200 added lines in one development file
+  fails review because it is usually a "dump it all here" signal.
 - CSS and style files follow the same ownership rule. Do not group tokens,
   primitives, component variants, page layout overrides, and one-off fixes in
   one file only because they are all styles.
