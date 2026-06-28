@@ -38,7 +38,7 @@ choices only when they are allowed by the active runtime and helpful for the
 decision.
 
 Use `task-intake-effort-routing.md` to decide whether the request needs the
-Grill-Me skill or can proceed with quick/standard effort.
+Grill-Me protocol or can proceed with quick/standard effort.
 
 When a question is needed:
 
@@ -63,17 +63,20 @@ Decision needed:
 Default if safe:
 ```
 
-## Grill-Me Skill
+## Grill-Me Protocol
 
-Grill-Me is the skill used to run a `/grilling` session that turns a vague
-request into blocker questions and captured decisions. Use it only when the user
-asks for Grill-Me or requirements discovery, or when ambiguity changes behavior,
-risk, scope, or verification.
+Grill-Me is the blocker-question protocol used to run a `/grilling` session
+that turns a vague or broad product request into blocker questions and captured
+decisions. Prefer an installed Grill-Me skill when available; otherwise use the
+built-in protocol from `common/task-intake-effort-routing.md`. Use it when the
+user asks for Grill-Me or requirements discovery, when a broad product or
+architecture request lacks known acceptance criteria, or when ambiguity changes
+behavior, risk, scope, acceptance criteria, or verification.
 
 - Do not invoke Grill-Me when the request names a file, symbol, error, or exact
   behavior and local inspection can answer the remaining details.
-- If the Grill-Me skill is unavailable when required, report that blocker
-  instead of silently asking manual replacement questions.
+- If an external Grill-Me skill is unavailable when required, run the built-in
+  Grill-Me protocol instead of skipping the gate.
 - Ask one Grill-Me question at a time with the recommended answer when the
   runtime supports that interaction pattern.
 - Do not ask more than one pass of questions unless the user's answer creates a

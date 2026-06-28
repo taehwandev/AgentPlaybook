@@ -52,6 +52,10 @@ repo was written, pass it as `workspace scope checkpoint=<evidence>`,
 `scope expansion checkpoint=<evidence>`, or
 `cross-repo scope checkpoint=<evidence>`.
 Use the shared index only to select the smallest relevant document set.
+Do not create repo-local skill documents merely to copy shared AgentPlaybook
+behavior. Keep repo-local skills, workflows, wiki pages, or runbooks only when
+they contain product-specific facts, commands, domain policy, or verification
+that cannot be shared safely.
 VibeGuard is required before documentation, code, config, dependency, data,
 deployment, or credential changes. Apply the current VibeGuard package command
 flow with <AGENTPLAYBOOK_ROOT> as the rule source before editing and again
@@ -96,8 +100,9 @@ evidence or missing route gate evidence is
 non-compliant even when the final files look correct. VibeGuard `Needs review`
 must be reported explicitly and can pass the finish check only with an
 `--allow-vibeguard-review` reason. `--request-classified` must include
-`--classification-evidence`; if a request asks for Grill-Me, missing Grill-Me
-`/grilling` session evidence is 🐱🔴 FAIL and requires missed-gate recovery.
+`--classification-evidence`; if a request asks for Grill-Me or classification
+returns `grill_me: true`, missing Grill-Me protocol or `/grilling` session
+evidence is 🐱🔴 FAIL and requires missed-gate recovery.
 Do not load every shared document by default.
 Replace `<AGENTPLAYBOOK_ROOT>` with a portable root reference. In committed
 repo-local instructions, use `${AGENTPLAYBOOK_HOME}` for shared local installs
@@ -139,9 +144,15 @@ Agent entry manifest: <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
 Project discovery: <AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
 Preflight evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
 Finish evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
+Android architecture: <AGENTPLAYBOOK_ROOT>/platforms/android/android-architecture.md
 Android Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/android/android-compose-ui.md
 Android module/package structure: <AGENTPLAYBOOK_ROOT>/platforms/android/android-module-structure.md
 Android ViewModel/state: <AGENTPLAYBOOK_ROOT>/platforms/android/android-viewmodel-state.md
+Android state/data: <AGENTPLAYBOOK_ROOT>/platforms/android/android-state-data.md
+Android DataStore persistence: <AGENTPLAYBOOK_ROOT>/platforms/android/references/android-datastore.md
+Android background work: <AGENTPLAYBOOK_ROOT>/platforms/android/android-background-work.md
+Android security: <AGENTPLAYBOOK_ROOT>/platforms/android/android-security.md
+Android review: <AGENTPLAYBOOK_ROOT>/platforms/android/android-review.md
 KMP architecture: <AGENTPLAYBOOK_ROOT>/platforms/kmp/kmp-architecture.md
 KMP module/source-set structure: <AGENTPLAYBOOK_ROOT>/platforms/kmp/kmp-module-structure.md
 KMP Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/kmp/kmp-compose-ui.md

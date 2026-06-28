@@ -344,6 +344,14 @@ Codex:
   `-lc` strings; once the absolute script path is a separate argv item, long
   trailing workflow arguments such as repeated `--gate` values are
   suffix-matched by the runtime policy and should not prompt again.
+- When a Codex tool call needs escalation, request the persistent permission
+  with `prefix_rule=["python3", "/absolute/path/to/AgentPlaybook/scripts/<name>.py"]`.
+  Do not include changing arguments such as `--project`, `--request`, `--gate`,
+  `$(pwd)`, or user-provided text in the saved prefix.
+- `setup-agent-hooks.py` should leave only absolute, parameter-free
+  AgentPlaybook script prefix rules in the managed Codex block and remove stale
+  AgentPlaybook rules that were saved with `$HOME`, `${HOME}`, `~`, relative
+  script paths, shell `-lc`, or command-specific arguments.
 - Keep Codex-specific commands or sandbox notes in the target repo, not in the
   shared playbook.
 
@@ -359,6 +367,11 @@ Claude:
 - AgentPlaybook command permissions belong in the user-level
   `~/.claude/settings.json`, not repo-local `.claude/settings.json`, because
   the AgentPlaybook `scripts/*.py` entrypoints are shared across projects.
+- Claude AgentPlaybook permissions should be absolute wrapper command prefixes
+  with the runtime's trailing wildcard form for arguments, for example
+  `Bash(python3 /absolute/path/to/AgentPlaybook/scripts/agent-hook.py *)`.
+  Do not approve or document `$HOME`, `${HOME}`, `~`, relative
+  `scripts/<name>.py`, or argument-specific variants for shared wrappers.
 
 Antigravity:
 
@@ -379,6 +392,11 @@ Antigravity:
   `~/.gemini/config/config.json` or the legacy
   `~/.gemini/antigravity-cli/settings.json`, depending on the active AGY
   runtime. Runtime hooks remain in `~/.gemini/config/hooks.json`.
+- AGY AgentPlaybook permissions follow the same absolute-wrapper rule as
+  Claude, using the AGY permission key shape, for example
+  `command(python3 /absolute/path/to/AgentPlaybook/scripts/agent-hook.py *)`.
+  Avoid `$HOME`, `${HOME}`, `~`, relative script paths, and saved prefixes that
+  include task-specific arguments.
 
 Generic agents:
 

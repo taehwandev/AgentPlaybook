@@ -10,6 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+from support.permission_entries import codex_prefix_rule_entries
+from support.setup_config_files import merge_codex_prefix_rules, merge_permissions_allow
 from support.setup_agent_hooks_impl import ensure_local_claude_excluded
 
 
@@ -47,6 +49,73 @@ class SetupAgentHooksTests(unittest.TestCase):
 
             self.assertEqual("ok", status)
             self.assertNotIn(".claude/", (project / ".git" / "info" / "exclude").read_text())
+
+    def test_codex_merge_removes_argument_specific_agentplaybook_prefix_rules(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "default.rules"
+            target.write_text(
+                "\n".join(
+                    [
+                        'prefix_rule(pattern=["python3", "$HOME/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-preflight.py", "--project", "$(pwd)"], decision="allow")',
+                        'prefix_rule(pattern=["python3", "scripts/agent-hook.py", "docs-read", "--project", "$(pwd)"], decision="allow")',
+                        'prefix_rule(pattern=["/bin/zsh", "-lc", "python3 \\"$HOME/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-hook.py\\" finish --project \\"$(pwd)\\" --gate \\"verify=done\\""], decision="allow")',
+                        "",
+                    ]
+                )
+            )
+
+            status = merge_codex_prefix_rules(
+                target,
+                codex_prefix_rule_entries(ROOT / "scripts"),
+                dry_run=False,
+            )
+
+            text = target.read_text()
+            self.assertEqual("installed", status)
+            self.assertIn("# agentplaybook-hooks:begin", text)
+            self.assertIn(str(ROOT / "scripts" / "agent-preflight.py"), text)
+            self.assertNotIn("$HOME", text)
+            self.assertNotIn("$(pwd)", text)
+            self.assertNotIn("--project", text)
+            self.assertNotIn("--gate", text)
+
+    def test_permission_merge_removes_argument_specific_agentplaybook_allow_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "settings.json"
+            target.write_text(
+                """{
+  "permissions": {
+    "allow": [
+      "command(python3 ~/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-hook.py finish --project \\"$(pwd)\\" --gate \\"verify=done\\")",
+      "command(python3 ~/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-hook\\\\.py review --project \\"$(pwd)\\")",
+      "command(python3 /Users/example/Other/scripts/custom.py --project keep)"
+    ]
+  }
+}
+"""
+            )
+            entries = [
+                f"command(python3 {ROOT / 'scripts' / 'agent-hook.py'})",
+                f"command(python3 {ROOT / 'scripts' / 'agent-hook.py'} *)",
+            ]
+            cleanup_entries = [
+                "command(python3 ~/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-hook.py)",
+            ]
+
+            status = merge_permissions_allow(
+                target,
+                entries,
+                dry_run=False,
+                cleanup_entries=cleanup_entries,
+            )
+
+            text = target.read_text()
+            self.assertEqual("installed", status)
+            self.assertIn(str(ROOT / "scripts" / "agent-hook.py"), text)
+            self.assertIn("Other/scripts/custom.py", text)
+            self.assertNotIn("$(pwd)", text)
+            self.assertNotIn("--gate", text)
+            self.assertNotIn("agent-hook\\.py", text)
 
     def _git(self, project: Path, *args: str) -> None:
         subprocess.run(

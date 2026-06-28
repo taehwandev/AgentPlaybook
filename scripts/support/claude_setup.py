@@ -8,7 +8,6 @@ from pathlib import Path
 from support.permission_entries import (
     claude_legacy_permission_entries,
     claude_permission_entries,
-    claude_project_permission_entries,
 )
 from support.setup_config_files import merge_permissions_allow, quote, read_json, write_json
 
@@ -20,7 +19,6 @@ _BASELINE_COMMAND_RE = re.compile(
 def configure_claude(
     dry_run: bool,
     *,
-    root: Path,
     scripts_dir: Path,
     workflow_script: Path,
     spill_available: bool = True,
@@ -51,21 +49,7 @@ def configure_claude(
 
     status = _set_claude_env(target, dry_run) if spill_available else _remove_claude_env(target, dry_run)
     results.append({"tool": "claude", "hook": "env.SPILL_AI_TOOL", "status": status, "path": str(target)})
-    results += _configure_claude_project(root, scripts_dir, dry_run, spill_available=spill_available)
     return results
-
-
-def _configure_claude_project(
-    root: Path,
-    scripts_dir: Path,
-    dry_run: bool,
-    *,
-    spill_available: bool = True,
-) -> list[dict]:
-    target = root / ".claude" / "settings.json"
-    entries = claude_project_permission_entries(scripts_dir, spill_available=spill_available)
-    status = merge_permissions_allow(target, entries, dry_run)
-    return [{"tool": "claude", "hook": "permissions.project", "status": status, "path": str(target)}]
 
 
 def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) -> str:

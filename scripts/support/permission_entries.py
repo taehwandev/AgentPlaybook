@@ -12,7 +12,7 @@ from support.spill_permissions import spill_helper_permission_commands as _spill
 def claude_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
     for script in _agentplaybook_python_scripts(scripts_dir):
-        for command in _python_entrypoint_commands(script, "claude", include_legacy=True, include_spill_env=spill_available):
+        for command in _python_entrypoint_commands(script, "claude", include_spill_env=spill_available):
             _add_permission_command_entries(entries, "Bash", command)
     if spill_available:
         for command in _spill_helper_permission_commands("claude"):
@@ -30,15 +30,9 @@ def claude_legacy_permission_entries(scripts_dir: Path) -> list[str]:
 
 def claude_project_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
-    env_prefixes = [""]
-    if spill_available:
-        env_prefixes += ["SPILL_AI_TOOL=claude ", "SPILL_TOKEN_USAGE_AI_TOOL=claude "]
     for script in _agentplaybook_python_scripts(scripts_dir):
-        rel_path = str(Path("scripts") / script.name)
-        for prefix in env_prefixes:
-            _add_permission_command_entries(entries, "Bash", f"{prefix}python3 {rel_path}")
-            _add_permission_command_entries(entries, "Bash", f"{prefix}python {rel_path}")
-            _add_permission_command_entries(entries, "Bash", f"{prefix}{rel_path}")
+        for command in _python_entrypoint_commands(script, "claude", include_spill_env=spill_available):
+            _add_permission_command_entries(entries, "Bash", command)
     for subcommand in ("log", "status", "diff", "show", "branch"):
         entries.append(f"Bash(git -C * {subcommand} *)")
     return entries
@@ -47,7 +41,7 @@ def claude_project_permission_entries(scripts_dir: Path, *, spill_available: boo
 def agy_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
     for script in _agentplaybook_python_scripts(scripts_dir):
-        for command in _python_entrypoint_commands(script, "antigravity", include_legacy=True, include_spill_env=spill_available):
+        for command in _python_entrypoint_commands(script, "antigravity", include_spill_env=spill_available):
             _add_permission_command_entries(entries, "command", command)
     if spill_available:
         for command in _spill_helper_permission_commands("antigravity"):
@@ -68,10 +62,10 @@ def agy_legacy_permission_entries(scripts_dir: Path) -> list[str]:
 def codex_prefix_rule_entries(scripts_dir: Path) -> list[str]:
     entries: list[str] = []
     for script in _agentplaybook_python_scripts(scripts_dir):
-        for path in _legacy_entrypoint_path_variants(script):
-            entries.append(_codex_prefix_rule(["python3", path]))
-            entries.append(_codex_prefix_rule(["python", path]))
-            entries.append(_codex_prefix_rule([path]))
+        path = str(script.resolve())
+        entries.append(_codex_prefix_rule(["python3", path]))
+        entries.append(_codex_prefix_rule(["python", path]))
+        entries.append(_codex_prefix_rule([path]))
     return entries
 
 
@@ -107,18 +101,16 @@ def _python_entrypoint_commands(
 
 
 def _entrypoint_path_variants(script: Path) -> list[str]:
-    raw = str(script)
-    return _dedupe([
-        raw,
-        quote(raw),
-        _double_quote(raw),
-    ])
+    raw = str(script.resolve())
+    return [raw]
 
 
 def _legacy_entrypoint_path_variants(script: Path) -> list[str]:
-    raw = str(script)
+    raw = str(script.resolve())
     variants = [
         *_entrypoint_path_variants(script),
+        quote(raw),
+        _double_quote(raw),
         str(Path("scripts") / script.name),
     ]
     home = str(Path.home())

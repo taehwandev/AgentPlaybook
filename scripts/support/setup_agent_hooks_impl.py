@@ -58,7 +58,6 @@ def main() -> None:
     if _has_claude():
         results += configure_claude(
             dry_run,
-            root=ROOT,
             scripts_dir=SCRIPTS_DIR,
             workflow_script=WORKFLOW_SCRIPT,
             spill_available=spill_available,

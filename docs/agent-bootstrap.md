@@ -258,7 +258,10 @@ that subsystem.
 4. Confirm the required VibeGuard gate passed or stopped with a reported
    blocker.
 5. Add a short AgentPlaybook routing block with the selected root path to the
-   canonical instruction file.
+   canonical instruction file. Do not create repo-local skill documents only to
+   mirror shared AgentPlaybook guidance; keep repo-local skill or workflow docs
+   only when they encode product-specific facts, commands, domain policy, or
+   verification that cannot live in the shared library.
 6. Update existing runtime-specific files in the same pass by adding the same
    short pointer or by pointing them back to `AGENTS.md`.
 7. Do not create new runtime-specific instruction files when the runtime already
@@ -269,6 +272,8 @@ that subsystem.
    `/Users/.../AgentPlaybook`; use those only in shell env setup, one-shot
    prompts, or uncommitted user-level runtime bridges.
 9. Link only `AGENTS.md`, `index.md`, and any direct route cards the repo wants.
+   Prefer shared route cards over per-repo skill copies unless the repo has a
+   genuine local skill surface.
 10. Do not paste the full AgentPlaybook library into repo-local files.
 11. For multi-step setup or migration work, run
    `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route ... --request
