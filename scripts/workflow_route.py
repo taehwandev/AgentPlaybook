@@ -50,6 +50,7 @@ def resolve_docs(
     concerns: list[str],
     request_classification: Optional[dict[str, object]] = None,
     request_classified: bool = False,
+    classification_evidence: str = "",
 ) -> dict[str, object]:
     profile = COMMANDS[command]
     docs: list[str] = [*CORE_DOCS, *profile.docs]
@@ -83,6 +84,8 @@ def resolve_docs(
         notes.append(
             "Caller asserted the request was already classified or answered; record that evidence for the request intake gate."
         )
+        if classification_evidence:
+            notes.append("Request classification evidence was provided to the route command.")
 
     return {
         "root": str(ROOT),
@@ -91,6 +94,7 @@ def resolve_docs(
         "concerns": concerns,
         "request_classification": request_classification,
         "request_classified": request_classified,
+        "classification_evidence": classification_evidence,
         "docs": unique(docs),
         "gates": gates,
         "hooks": route_hooks(command),

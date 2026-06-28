@@ -37,6 +37,10 @@ MULTI_AGENT_VALIDATED_GATES = {
     "agent briefs",
     "integration review",
 }
+PROFILE_VALIDATED_GATES = {
+    "docs-review": {"review readiness"},
+    "product": {"platform selection"},
+}
 
 
 def validate_route_contracts() -> list[str]:
@@ -98,6 +102,11 @@ def validate_route_contracts() -> list[str]:
                 failures.append(
                     f"{command}: missing finish evidence validators for {', '.join(missing_validators)}"
                 )
+        for gate in sorted(PROFILE_VALIDATED_GATES.get(command, set())):
+            if gate not in route["gates"]:
+                failures.append(f"{command}: validated profile gate `{gate}` is not in route gates")
+            if gate not in VALIDATED_GATES:
+                failures.append(f"{command}: validated profile gate `{gate}` has no finish evidence validator")
 
         ledger = route["gate_ledger"]
         if len(ledger) != len(route["gates"]):

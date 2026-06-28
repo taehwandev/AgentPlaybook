@@ -65,6 +65,7 @@ COMMANDS: Dict[str, Profile] = {
             "common/architecture-design.md",
         ),
         gates=(
+            "platform selection",
             "PRD",
             "ARD",
             "pre-code review",
@@ -188,7 +189,14 @@ COMMANDS: Dict[str, Profile] = {
             "common/code-review.md",
             "common/llm-wiki-documentation.md",
         ),
-        gates=("source review", "structure review", "link/path check", "verification", "handoff"),
+        gates=(
+            "review readiness",
+            "source review",
+            "structure review",
+            "link/path check",
+            "verification",
+            "handoff",
+        ),
         notes=("Use for reviewing durable docs, wiki pages, playbooks, and runbooks.",),
     ),
     "planning": Profile(

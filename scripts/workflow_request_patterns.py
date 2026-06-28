@@ -59,6 +59,16 @@ SCOPED_PATTERNS = (
     r"\b[A-Z][A-Za-z0-9]*(Screen|View|ViewModel|Controller|Route|Page|Component|Service|Repository|UseCase)",
     r"\b(home|settings|profile|checkout|billing|invite|member|login|signup)\b.*\b(button|form|screen|page|modal|dialog|tab)\b",
 )
+INSPECTION_PATTERNS = (
+    r"\b(audit|review|inspect|check|verify|status|summarize|report)\b",
+    "\uc0c1\ud0dc",
+    "\uc810\uac80",
+    "\uac80\ud1a0",
+    "\ud655\uc778",
+    "\uccb4\ud06c",
+    "\ud30c\uc545",
+    "\uc815\ub9ac",
+)
 BROAD_PATTERNS = (
     r"\b(build|implement|design|create|add|plan)\b.*\b(feature|flow|system|architecture|prd|ard|product)\b",
     r"\b(auth|rbac|permission|billing|entitlement|invite|tenant|migration|release|deployment)\b",

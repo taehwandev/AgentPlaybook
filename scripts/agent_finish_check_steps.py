@@ -166,10 +166,10 @@ def check_request_intake(
             "FAIL",
             "grill-me",
             "missed",
-            "request classification required the Grill-Me skill but no Grill-Me evidence was provided",
+            "request classification required the Grill-Me protocol but no Grill-Me evidence was provided",
         )
         failures.append(
-            "Grill-Me skill was required by request classification but no Grill-Me gate evidence was provided"
+            "Grill-Me protocol was required by request classification but no Grill-Me gate evidence was provided"
         )
     return grill_me_required
 
@@ -250,8 +250,8 @@ def validate_grill_me_skill_evidence(evidence: str) -> list[str]:
     if names_skill and names_session and names_outcome:
         return []
     return [
-        "Grill-Me evidence must name the Grill-Me skill or /grilling session and its output; "
-        "manual blocker questions alone are not enough"
+        "Grill-Me evidence must name the Grill-Me protocol, skill, or /grilling session and its output; "
+        "unstructured manual blocker questions alone are not enough"
     ]
 
 

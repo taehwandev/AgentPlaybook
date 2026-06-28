@@ -23,40 +23,49 @@ Use this before implementation, review, refactoring, debugging, documentation, o
    "docs read" is not enough; run the `docs-read` hook after preflight so the
    finish check can compare the receipt against the current preflight evidence,
    route manifest, and routed document count.
-7. For requirements analysis or modification work, give the user a compact
+7. For feature, product, build, release, or other behavior-changing work, search
+   for repo-local PRD, spec, ARD, issue, design note, task doc, or documented
+   source of truth before implementation or edits. If one exists, open it and
+   use it as the acceptance source. If none exists, record the search evidence
+   and decide whether a PRD/spec must be created before code or whether the
+   current user request is sufficient for the slice.
+8. For requirements analysis or modification work, give the user a compact
    alignment brief before drafting requirements or changing files. State shared
    understanding, possible mismatch, and unsupported assumptions or minimal
    blocker questions. Do this even when the work is not PRD-sized. If no PRD is
    created, this PRD-skip checkpoint is still required and must be visible to
    the user, not only recorded internally.
-8. Check preflight's global lesson summary when available. Accepted or promoted
+9. Check preflight's global lesson summary when available. Accepted or promoted
    lessons from `~/.agentplaybook/` apply across repos unless repo-local
    instructions conflict.
-9. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
-10. For work-producing or delegated tasks, record the agentic run state:
+10. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
+11. For work-producing or delegated tasks, record the agentic run state:
     current state, next transition or resume point, and the gate/command/check
     evidence. Use it as the continuation and recovery anchor after interruption,
     subagent delegation, failed verification, or missed-gate recovery.
-11. Use `index.md` to load only relevant AgentPlaybook cards.
-12. Parallelize independent read-only orientation when the runtime supports it:
+12. Use `index.md` to load only relevant AgentPlaybook cards.
+13. Parallelize independent read-only orientation when the runtime supports it:
     selected document reads, file searches, stack inspection, git status, and
     preflight evidence may run together after request intake is settled.
-13. Inspect existing code, docs, tests, and local conventions.
-14. For code or architecture work that crosses files, packages, folders, or
+14. Inspect existing code, docs, tests, and local conventions.
+15. For code or architecture work that crosses files, packages, folders, or
     modules, record a compact structure packet before editing: chosen boundary,
     package/folder map, file split, allowed imports, forbidden imports,
     callers/tests, and nearest verification.
-15. When a product alias or investigation crosses repositories, choose the
+16. When a product alias or investigation crosses repositories, choose the
     primary repo from the acceptance path and stop for a workspace scope
     checkpoint before writing to any secondary repo.
-16. Make the smallest change that genuinely addresses the request.
-17. For code work, record the multi-agent split decision before editing and use
+17. Make the smallest change that genuinely addresses the request.
+18. For code work, record the multi-agent split decision before editing and use
     parallel agents when scopes are disjoint and stable.
-18. Update/create affected docs and add/update/run the nearest useful test when
-    code behavior or workflow policy changes.
-19. Verify with the narrowest reliable command first.
-20. Confirm the route gate ledger before reporting completion.
-21. Report what changed, what was verified, and what risk remains.
+19. Update or create affected docs whenever behavior, workflow policy, public
+    contract, durable acceptance criteria, operator action, or source-of-truth
+    meaning changes. If no doc file changes, record the exact source-of-truth
+    checked and why docs are intentionally unchanged or not applicable.
+20. Add/update/run the nearest useful test when code behavior or workflow policy changes.
+21. Verify with the narrowest reliable command first.
+22. Confirm the route gate ledger before reporting completion.
+23. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -88,6 +97,11 @@ Before editing:
   skill/guidance docs were read before work, name the applied rule/criterion or
   takeaway, and the `docs-read` receipt must match the current preflight
   evidence file, route manifest, and routed document count.
+- For feature, product, build, release, or other behavior-changing work, search
+  and open repo-local PRD/spec/ARD/source-of-truth docs before implementation.
+  Finish evidence must say whether those docs were found and read, or whether
+  none were found, and how that source affected the work or documentation
+  decision.
 - For work-producing and multi-agent routes, record `agentic run state`
   evidence before implementation: current state, next transition or resume
   point, and the gate/command/check evidence.
@@ -132,6 +146,9 @@ Before finishing:
 - Confirm every required workflow route gate has ledger evidence when a scripted route was used.
 - Confirm alignment evidence names the user-visible checkpoint, not only an
   internal note reconstructed after the work.
+- Confirm documentation evidence names the decision, affected source-of-truth
+  doc path or doc class, and the reason for update/create/unchanged/not
+  applicable. "Docs checked" or "updated docs" is not enough.
 - Run the most relevant test, build, typecheck, lint, or smoke check.
 - For code work, include evidence for ambiguity handling, docs freshness,
   tests, and multi-agent split decision when the route requires them.

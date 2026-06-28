@@ -46,6 +46,10 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Assert the current request was already classified or answered before routing.",
     )
+    route.add_argument(
+        "--classification-evidence",
+        help="Required with --request-classified; describes the prior classification or answer-first handling.",
+    )
     route.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
     classify = subparsers.add_parser("classify", help="Classify request clarity and effort.")
@@ -100,6 +104,12 @@ def print_request_classification(args: argparse.Namespace) -> int:
 
 
 def print_route(args: argparse.Namespace) -> int:
+    if args.request_classified and not args.classification_evidence:
+        print(
+            "Route --request-classified requires --classification-evidence so request intake cannot be skipped silently.",
+            file=sys.stderr,
+        )
+        return 2
     request_classification = classify_request(args.request) if args.request else None
     if not request_classification and not args.request_classified:
         print(
@@ -131,6 +141,7 @@ def print_route(args: argparse.Namespace) -> int:
         concerns,
         request_classification=request_classification,
         request_classified=args.request_classified,
+        classification_evidence=args.classification_evidence or "",
     )
     if newly_inferred:
         route["inferred_concerns"] = newly_inferred

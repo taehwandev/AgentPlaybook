@@ -7,7 +7,7 @@ type: human-reviewed-needed
 # Task Intake And Effort Routing
 
 Use at the start of an agent conversation or task when deciding whether the
-request is clear enough, whether Grill-Me skill clarification is required, and
+request is clear enough, whether Grill-Me protocol clarification is required, and
 how much model effort, context loading, and workflow depth the task deserves.
 
 The goal is to use the lowest capable effort level without skipping safety,
@@ -16,13 +16,17 @@ verification, or repo-local rules.
 ## Intake Decision
 
 Classify the request before loading many documents or doing deep reasoning.
+Do not rely only on a fixed phrase such as "Grill-Me", "feature", or "PRD".
+Classify the request from the missing decision surface: target, intended
+behavior, acceptance criteria, data/security/cost/external-state risk,
+verification, and whether existing docs or code can answer the unknown.
 
 | Class | Signal | Default Action |
 | --- | --- | --- |
 | `direct-question` | Asks for an explanation, timing, policy, status, or meaning without asking the agent to change files or run work. | Answer first. Do not start workflow routing, editing, or project-specific commands unless a separate action remains. If the question asks how to start app, product, or feature work, the answer must include the PRD -> ARD -> implementation path before lower-level coding steps. |
 | `clear-exact` | Names a file, symbol, command, error, stack trace, failing test, or precise behavior. | Use quick or standard effort; inspect the named target first. |
 | `clear-scoped` | Names a screen/component/feature and intended change, but local context is needed. | Use standard effort; inspect local code and route to the matching platform card. |
-| `vague-action` | Says "fix", "improve", "clean up", "make better", or similar without target behavior. | Use ambiguity gate or the Grill-Me skill before implementation. |
+| `vague-action` | Asks the agent to act but lacks a precise target, intended behavior, inspection target, or acceptance criteria. This includes, but is not limited to, wording like "fix", "improve", "clean up", or "make better". | Use ambiguity gate or the Grill-Me protocol before implementation. |
 | `broad-product` | Asks for a new feature, architecture, PRD, multi-screen flow, data model, billing/auth, or release behavior. | Use product/PRD route and deeper effort. |
 | `risky-unclear` | Could affect data, security, money, permissions, destructive changes, migrations, deploys, or external state. | Stop for blocker questions or approval. |
 
@@ -33,6 +37,11 @@ Examples:
   VibeGuard block, otherwise audit current guardrails.
 - "Change the button on home" -> `vague-action`; ask which button, state, and
   expected behavior unless the repo has one obvious home button.
+- "Add profile saving and avatar presets" -> `vague-action` or
+  `broad-product` unless an existing PRD/spec/code owner already answers
+  storage, API, loading, error, and acceptance questions.
+- "Check the overall documentation status" -> `clear-scoped`; audit the docs
+  because the deliverable is inspection/status, not invented product behavior.
 - "Improve the X button in `HomeScreen`" -> `clear-scoped`; inspect
   `HomeScreen`, nearby UI patterns, and platform UI cards.
 - "Fix this compiler error: <error output>" -> `clear-exact`; inspect the
@@ -57,6 +66,12 @@ answer and keep the answer as request-intake evidence.
 Do not downgrade effort only because a task names one file. If that file is a
 composition point, public contract, migration, release config, app shell, or
 security boundary, inspect the owner boundary and escalate.
+
+Do not skip questions only because the request resembles a previously handled
+phrase. If local context cannot determine user-visible behavior, acceptance
+criteria, data ownership, permission/security handling, cost impact, or
+verification, stop at triage or ambiguity and ask the smallest blocker
+question.
 
 ## PRD Creation Boundary
 
@@ -107,14 +122,17 @@ Do not default to the strongest model, longest reasoning, or full-document
 loading when the request is clear and low risk. Escalate when evidence shows the
 task is broader or riskier than first classified.
 
-## Grill-Me Skill
+## Grill-Me Protocol
 
-Grill-Me is a skill that runs a `/grilling` session to pressure-test a plan or
-design. It asks one question at a time, gives a recommended answer, waits for
-feedback, and continues until the decision tree is resolved. It is not the
-default for every request. Use it when the user asks for Grill-Me, wants
-requirements discovery, the request is `vague-action`, or unknowns can change
-behavior, scope, risk, or verification.
+Grill-Me is the blocker-question protocol for pressure-testing a plan or
+design before PRD, ARD, or implementation. Prefer an installed Grill-Me skill
+when one exists; otherwise use the built-in protocol from this card. A
+`/grilling` session asks one question at a time, gives a recommended answer,
+waits for feedback, and continues until the decision tree is resolved. It is
+not the default for every request. Use it when the user asks for Grill-Me,
+wants requirements discovery, the request is `vague-action`, the request is
+broad product or architecture work without already-known acceptance criteria,
+or unknowns can change behavior, scope, risk, or verification.
 
 For requirements analysis and modification routes, always provide a compact
 alignment brief before drafting requirements or changing files. This is not the
@@ -133,10 +151,14 @@ or opinion-piece structure unless the user says so or selects that option.
 
 Grill-Me rules:
 
-- Invoke the actual Grill-Me skill when it is available. Do not silently
-  replace it with agent-written questions.
-- If the Grill-Me skill is unavailable, stop and report the missing skill
-  instead of treating manual questions as completed Grill-Me evidence.
+- Invoke the actual Grill-Me skill when it is available.
+- If an external Grill-Me skill is unavailable, run this built-in protocol
+  instead of skipping the gate: state `Grill-Me protocol /grilling session`,
+  ask the blocker question, include the recommended answer and tradeoff, wait
+  for feedback, and record the decision/output as gate evidence.
+- Do not treat unstructured ad hoc questions as Grill-Me evidence. The session
+  must name Grill-Me or `/grilling`, include its output, and capture the
+  blocker question or no-blocker decision.
 - Feed Grill-Me only the minimum safe task summary and public or repo-safe facts
   needed to ask blocker questions.
 - If an answer can be found by inspecting the codebase, inspect the code instead
@@ -154,7 +176,8 @@ Grill-Me rules:
 - Prefer concrete choices with tradeoffs and a recommended default when the
   runtime allows structured choices.
 - Stop Grill-Me when the task can be classified as `clear-exact`,
-  `clear-scoped`, or `broad-product` with known acceptance criteria.
+  `clear-scoped`, or `broad-product` with existing PRD/spec/ARD/source docs or
+  known acceptance criteria.
 - Do not invoke Grill-Me to delay a clear low-risk task.
 - Do not ask questions that repo-local docs, code, tests, PRD/ARD docs, or error
   output can answer.
@@ -164,11 +187,12 @@ requirements", or equivalent wording, use Grill-Me as the deliverable until
 enough decisions are captured. Treat "그릴미" as an explicit Grill-Me request.
 When wrapper evidence is available, a route classification with
 `grill_me: true` or legacy `question_drill: true` must finish with Grill-Me
-skill evidence such as `grill-me if needed=</grilling session/output evidence>`.
+protocol evidence such as `grill-me if needed=</grilling session/output
+evidence>`.
 Legacy `question drill if needed=<evidence>` is accepted only when the evidence
-still names the Grill-Me skill or `/grilling` session and output. Missing Grill-Me
-evidence is `🐱🔴 FAIL` and requires missed-gate recovery plus the retrospective
-workflow before final report, commit, release, or handoff.
+still names the Grill-Me protocol, skill, or `/grilling` session and output.
+Missing Grill-Me evidence is `🐱🔴 FAIL` and requires missed-gate recovery plus
+the retrospective workflow before final report, commit, release, or handoff.
 
 ## Token Controls
 
@@ -211,7 +235,7 @@ Intake is verified when the route and effort explain:
 
 - why the request is answer-only, exact, scoped, vague, broad, or risky
 - which repo-local or AgentPlaybook documents must be read before work
-- which gate or Grill-Me skill use blocks implementation, if any
+- which gate or Grill-Me protocol use blocks implementation, if any
 - which verification surface will prove the request when work is complete
 
 When a scripted route is used, the route output and wrapper preflight evidence

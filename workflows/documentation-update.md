@@ -24,14 +24,67 @@ Use when creating, reviewing, or restructuring docs, guides, specs, READMEs, age
 
  1. Identify the document audience, purpose, source of truth, and expected action.
  2. Check existing docs for overlap before adding a new page or section.
- 3. Apply the commonization test before changing shared docs: the guidance must remain correct after removing one repo, product, service, vendor, customer, team, environment, or account context.
- 4. Do not set the shared baseline from a specific service's workflow, API shape, naming scheme, role model, permission policy, deployment model, provider setup, or product policy.
- 5. Keep repo-specific commands, paths, role matrices, and domain terms in repo-local docs.
- 6. Write shared agent library guidance in English. Localize only public-facing site copy or repo-local docs that intentionally target another locale.
- 7. Link to shared cards instead of copying full guidance.
- 8. For prose cleanup, preserve the original factual commitments and report when a style edit would change meaning, genre, or voice ownership.
- 9. Verify examples, links, file paths, commands, and metadata where practical.
-10. Report what changed, what was verified, and any stale or missing source material.
+ 3. For feature, product, workflow-policy, architecture, or public-contract
+    changes, search and open PRD, spec, ARD, issue, design note, task doc, or
+    source-of-truth docs before deciding what to write. If no source exists,
+    record that absence and decide whether a PRD/spec must be created.
+ 4. Apply the commonization test before changing shared docs: the guidance must remain correct after removing one repo, product, service, vendor, customer, team, environment, or account context.
+ 5. Do not set the shared baseline from a specific service's workflow, API shape, naming scheme, role model, permission policy, deployment model, provider setup, or product policy.
+ 6. Keep repo-specific commands, paths, role matrices, and domain terms in repo-local docs.
+ 7. Write shared agent library guidance in English. Localize only public-facing site copy or repo-local docs that intentionally target another locale.
+ 8. Link to shared cards instead of copying full guidance.
+ 9. For prose cleanup, preserve the original factual commitments and report when a style edit would change meaning, genre, or voice ownership.
+10. Verify examples, links, file paths, commands, and metadata where practical.
+11. Report what changed, what was verified, and any stale or missing source material.
+
+## Documentation Impact Checkpoint
+
+For every work-producing task, make the documentation impact decision before
+code, implementation, install/repair, or other edit work starts. This is the
+prompt that keeps agents from treating docs as an afterthought.
+
+Record:
+
+- affected doc path or doc class, such as `AGENTS.md`, `README.md`, PRD/spec,
+  ARD, runbook, platform card, workflow card, API reference, or "no durable doc
+  class affected"
+- intended decision: `updated`, `created`, `unchanged`, or `not applicable`
+- why the changed behavior, workflow policy, public contract, operator action,
+  or acceptance criteria do or do not require a documentation update
+
+This checkpoint does not replace the final documentation decision. If the
+implementation changes meaning, revisit the checkpoint and update the final
+documentation evidence.
+
+## Documentation Decision
+
+For every work-producing task, record one of these decisions before completion:
+
+| Decision | Use When | Evidence Must Name |
+| --- | --- | --- |
+| `updated` | Existing source-of-truth docs changed because behavior, workflow policy, public contract, operator action, or acceptance criteria changed. | Doc path, changed source, and reason. |
+| `created` | No suitable source existed and the work introduced durable product, architecture, workflow, or operational meaning. | New doc path, owner/audience, and reason. |
+| `unchanged` | Existing docs were inspected and already covered the change. | Doc path/class inspected and why no edit was needed. |
+| `not applicable` | The task was answer-only or purely local/mechanical with no durable behavior, policy, contract, or operator meaning. | Checked doc class and why docs are out of scope. |
+
+"Updated docs", "checked docs", or "no docs needed" is not enough finish
+evidence. The evidence must say which document or document class was considered
+and why that decision is correct.
+
+## Review Readiness
+
+For documentation review, do not stop at link and frontmatter validity. Report
+the reviewed Markdown scope's readiness distribution:
+
+- frontmatter missing or malformed count
+- `status` values such as `draft`, `review`, `stable`, or `deprecated`
+- `type` values such as `ai-generated`, `human-reviewed-needed`, or
+  `human-reviewed`
+- human-review queue count and the highest-risk docs still needing review
+
+This readiness check is required for `docs-review` routes. A large
+`human-reviewed-needed` queue is not a broken link, but it is a workflow risk
+because agents may treat active guidance as more mature than it is.
 
 ## Minimum Card Maturity
 

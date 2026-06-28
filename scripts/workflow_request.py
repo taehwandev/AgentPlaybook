@@ -12,6 +12,7 @@ from workflow_request_patterns import (
     DIRECT_QUESTION_PATTERNS,
     GRILL_ME_REQUEST_PATTERNS,
     EXACT_PATTERNS,
+    INSPECTION_PATTERNS,
     QUESTION_ACTION_PATTERNS,
     RISKY_PATTERNS,
     SCOPED_PATTERNS,
@@ -60,20 +61,28 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
     has_broad = _matches(BROAD_PATTERNS, lowered)
     has_risky = _matches(RISKY_PATTERNS, lowered)
     has_vague = _matches(VAGUE_PATTERNS, lowered)
+    has_inspection = _matches(INSPECTION_PATTERNS, lowered)
     has_direct_question = _matches(DIRECT_QUESTION_PATTERNS, lowered)
     asks_agent_action = _matches(QUESTION_ACTION_PATTERNS, lowered)
     short_without_target = len(normalized.split()) <= 8 and not (has_exact or has_scoped)
     asks_drill = _matches(GRILL_ME_REQUEST_PATTERNS, lowered)
+    underspecified_action = (
+        asks_agent_action
+        and not (has_exact or has_scoped or has_inspection)
+        and not (has_direct_question and not asks_agent_action)
+    )
     return {
         "has_exact": has_exact,
         "has_scoped": has_scoped,
         "has_broad": has_broad,
         "has_risky": has_risky,
         "has_vague": has_vague,
+        "has_inspection": has_inspection,
         "has_direct_question": has_direct_question,
         "asks_agent_action": asks_agent_action,
         "short_without_target": short_without_target,
         "asks_drill": asks_drill,
+        "underspecified_action": underspecified_action,
     }
 
 
@@ -83,6 +92,7 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
     has_scoped = bool(flags["has_scoped"])
     has_risky = bool(flags["has_risky"])
     has_vague = bool(flags["has_vague"])
+    has_inspection = bool(flags["has_inspection"])
     asks_drill = bool(flags["asks_drill"])
 
     if flags["has_direct_question"] and not flags["asks_agent_action"]:
@@ -98,11 +108,16 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
     if asks_drill:
         flags["clarity"] = "vague-action"
         flags["effort"] = "deep" if has_broad or has_risky else "standard"
-        return "triage", True, "clarify_first", "The request explicitly asks for the Grill-Me skill before work."
+        return "triage", True, "clarify_first", "The request explicitly asks for the Grill-Me protocol before work."
     if has_broad and not has_exact:
         flags["clarity"] = "broad-product"
         flags["effort"] = "deep"
-        return "product", False, "work", "The request appears to define product or architecture behavior."
+        return (
+            "product",
+            True,
+            "clarify_first",
+            "Broad product or architecture work needs Grill-Me blocker-question discovery before PRD, ARD, or implementation unless existing acceptance criteria are already known.",
+        )
     if has_exact:
         flags["clarity"] = "clear-exact"
         flags["effort"] = "quick"
@@ -111,10 +126,14 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
         flags["clarity"] = "clear-scoped"
         flags["effort"] = "standard"
         return "feature", False, "work", "The request names a scoped UI, code, or feature owner."
-    if asks_drill or has_vague or flags["short_without_target"]:
+    if has_inspection and not has_risky:
+        flags["clarity"] = "clear-scoped"
+        flags["effort"] = "standard"
+        return "task", False, "work", "The request asks for inspection, review, status, or documentation summary work with an inspectable target."
+    if asks_drill or has_vague or flags["short_without_target"] or flags["underspecified_action"]:
         flags["clarity"] = "vague-action"
         flags["effort"] = "standard"
-        return "triage", True, "clarify_first", "The request asks for action but lacks a precise target or acceptance criteria."
+        return "triage", True, "clarify_first", "The request asks for action but lacks a precise target, inspection target, or acceptance criteria."
     flags["clarity"] = "clear-scoped"
     flags["effort"] = "standard"
     return "task", False, "work", "No high-risk ambiguity was detected, but local context is still needed."
@@ -139,7 +158,7 @@ def print_classification(result: dict[str, object]) -> None:
     print(f"Clarity: `{result['clarity']}`")
     print(f"Effort: `{result['effort']}`")
     print(f"Recommended route: `{result['recommended_route']}`")
-    print(f"Grill-Me skill: `{str(result['grill_me']).lower()}`")
+    print(f"Grill-Me protocol: `{str(result['grill_me']).lower()}`")
     print(f"Response mode: `{result['response_mode']}`")
     print()
     print(f"Reason: {result['reason']}")
@@ -152,8 +171,8 @@ def print_classification(result: dict[str, object]) -> None:
         print("- Do not start a workflow route, edit files, or run project-specific work unless a separate action remains.")
     elif result["question_drill"]:
         print("- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route triage --request \"<request text>\"`.")
-        print("- Use the Grill-Me skill's `/grilling` session after checking available local context.")
-        print("- If the skill is unavailable, report that blocker instead of substituting manual questions.")
+        print("- Use the Grill-Me `/grilling` protocol after checking available local context.")
+        print("- If an external Grill-Me skill is unavailable, run the built-in blocker-question protocol and record its output.")
     else:
         print(
             f"- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route {result['recommended_route']} "
@@ -177,15 +196,15 @@ def route_block_reason(
         if classification["recommended_route"] == "product":
             reason += " Include PRD -> ARD -> implementation gates before lower-level coding steps."
         return reason
+    if classification["question_drill"] and command not in QUESTION_ROUTE_COMMANDS:
+        return (
+            f"The current request needs clarification before route `{command}`. "
+            "Use `triage` or `ambiguity`, run the Grill-Me `/grilling` protocol, "
+            "and rerun the work route only after the request is clear."
+        )
     if classification["recommended_route"] == "product" and command == "feature":
         return (
             "The current request is broad app/product/feature work. Use route `product` "
             "so PRD and ARD gates run before implementation; do not route it as `feature`."
-        )
-    if classification["question_drill"] and command not in QUESTION_ROUTE_COMMANDS:
-        return (
-            f"The current request needs clarification before route `{command}`. "
-            "Use `triage` or `ambiguity`, run the Grill-Me skill's `/grilling` session, "
-            "and rerun the work route only after the request is clear."
         )
     return None

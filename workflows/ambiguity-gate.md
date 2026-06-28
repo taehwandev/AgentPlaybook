@@ -8,8 +8,13 @@ type: human-reviewed-needed
 
 Use before PRD, ARD, task breakdown, implementation plan, or code work when the request has unknowns that could change behavior, scope, risk, or verification.
 
-For initial request clarity, effort level, token budget, and Grill-Me skill
+For initial request clarity, effort level, token budget, and Grill-Me protocol
 decisions, also use `../common/task-intake-effort-routing.md`.
+
+When this route is executed through `scripts/workflow.py`, run the route's
+`docs-read` hook before classifying unknowns or asking blockers. Ambiguity
+handling is not a memory-only step; the current routed guidance must be read
+before turning an unknown into an assumption.
 
 ## Core Rule
 
@@ -35,10 +40,13 @@ When a blocker exists, asking is mandatory. Continuing into PRD, ARD, planning,
 implementation, review, or commit without blocker-question evidence is a
 workflow failure.
 
-## Grill-Me Skill
+## Grill-Me Protocol
 
-Use the Grill-Me skill when the user asks the agent to refine the request, or
-when the request is too vague to classify without inventing behavior.
+Use the Grill-Me protocol when the user asks the agent to refine the request,
+when broad product or architecture work lacks known acceptance criteria, or
+when the request is too vague to classify without inventing behavior. Prefer an
+installed Grill-Me skill when available; otherwise run the built-in
+blocker-question protocol from `common/task-intake-effort-routing.md`.
 
 Examples:
 

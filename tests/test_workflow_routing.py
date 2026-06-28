@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -11,7 +12,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_finish_gate_policy import VALIDATED_GATES, validate_gate_evidence
+from agent_finish_gate_policy import (
+    PLATFORM_SELECTION_GATE,
+    REVIEW_READINESS_GATE,
+    VALIDATED_GATES,
+    validate_gate_evidence,
+)
 from agent_finish_check_steps import (
     check_request_intake,
     validate_grill_me_skill_evidence,
@@ -24,22 +30,25 @@ from agent_preflight_runtime import (
 )
 from agent_route_docs import preflight_evidence_sha256, route_fingerprint
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
-from support.permission_entries import codex_prefix_rule_entries
+from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
 from workflow_catalog import COMMANDS, CONCERNS
 from workflow_gate_policy import (
     AGENTIC_RUN_STATE_GATE,
     AMBIGUITY_GATE,
     ALIGNMENT_BRIEF_GATE,
     BOUNDARY_PLAN_GATE,
+    DOCUMENTATION_IMPACT_GATE,
     DOCUMENTATION_GATE,
     MULTI_AGENT_GATE,
     ROUTE_DOCS_READ_GATE,
     SIDE_EFFECT_AUDIT_GATE,
+    SOURCE_DOCS_GATE,
     TEST_GATE,
     ALIGNMENT_BRIEF_COMMANDS,
 )
 from workflow_request import infer_concerns_from_request
 from workflow_request import classify_request
+from workflow_request import route_block_reason
 from workflow_route import resolve_docs
 from workflow_spill import spill_tool_label
 from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS
@@ -192,6 +201,19 @@ class WorkflowRoutingTests(unittest.TestCase):
 
                 self.assertIn("platforms/android/android-external-skill-source-coverage.md", route["docs"])
 
+    def test_android_persistence_route_loads_datastore_reference(self) -> None:
+        for concern in ("persistence", "cache"):
+            with self.subTest(concern=concern):
+                route = resolve_docs(
+                    "feature",
+                    "android",
+                    [concern],
+                    request_classified=True,
+                )
+
+                self.assertIn("platforms/android/android-state-data.md", route["docs"])
+                self.assertIn("platforms/android/references/android-datastore.md", route["docs"])
+
     def test_retrospective_candidate_writes_safe_global_lesson(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             os.environ["AGENTPLAYBOOK_STATE_HOME"] = temp_dir
@@ -227,8 +249,30 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("agent_finish_common.py", entries)
         self.assertIn("agent_finish_check_steps.py", entries)
         self.assertIn("agent_finish_final_checks.py", entries)
-        self.assertIn("$AGENTPLAYBOOK_HOME/scripts/agent-hook.py", entries)
-        self.assertIn("${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py", entries)
+        self.assertIn(
+            f'prefix_rule(pattern=["python3", "{ROOT / "scripts" / "agent-hook.py"}"], decision="allow")',
+            entries,
+        )
+        self.assertNotIn("$HOME", entries)
+        self.assertNotIn("${HOME}", entries)
+        self.assertNotIn("$AGENTPLAYBOOK_HOME", entries)
+        self.assertNotIn("~/", entries)
+        self.assertNotIn('", "scripts/', entries)
+        self.assertNotIn("--project", entries)
+        self.assertNotIn("--request", entries)
+
+    def test_setup_permissions_use_absolute_agentplaybook_paths_for_claude_and_agy(self) -> None:
+        for entries in (
+            "\n".join(claude_permission_entries(ROOT / "scripts", spill_available=False)),
+            "\n".join(agy_permission_entries(ROOT / "scripts", spill_available=False)),
+        ):
+            self.assertIn(str(ROOT / "scripts" / "agent-hook.py"), entries)
+            self.assertNotIn("$HOME", entries)
+            self.assertNotIn("${HOME}", entries)
+            self.assertNotIn("$AGENTPLAYBOOK_HOME", entries)
+            self.assertNotIn("~/", entries)
+            self.assertNotIn("python3 scripts/", entries)
+            self.assertNotIn("python scripts/", entries)
 
     def test_agy_runtime_bridge_requires_project_discovery_entry(self) -> None:
         required = [
@@ -257,7 +301,9 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         for gate in (
             ROUTE_DOCS_READ_GATE,
+            SOURCE_DOCS_GATE,
             AMBIGUITY_GATE,
+            DOCUMENTATION_IMPACT_GATE,
             DOCUMENTATION_GATE,
             TEST_GATE,
             BOUNDARY_PLAN_GATE,
@@ -269,6 +315,8 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertIn("workflows/ambiguity-gate.md", route["docs"])
         self.assertIn("workflows/documentation-update.md", route["docs"])
+        self.assertIn("common/product-spec-to-implementation.md", route["docs"])
+        self.assertIn("common/source-driven-development.md", route["docs"])
         self.assertIn("common/testing.md", route["docs"])
         self.assertIn("common/verification-policy.md", route["docs"])
         self.assertIn("common/code-structure-ownership.md", route["docs"])
@@ -278,9 +326,30 @@ class WorkflowRoutingTests(unittest.TestCase):
             route["gates"].index(ROUTE_DOCS_READ_GATE),
             route["gates"].index("PRD/ARD applicability"),
         )
+        self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index(AMBIGUITY_GATE))
+        self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index(DOCUMENTATION_IMPACT_GATE))
+        self.assertLess(route["gates"].index(DOCUMENTATION_IMPACT_GATE), route["gates"].index("implementation"))
+        self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index(AMBIGUITY_GATE))
         self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("implementation"))
+
+    def test_source_docs_gate_covers_policy_and_repair_workflows(self) -> None:
+        for command in ("bugfix", "code-simplify", "refactor", "workflow-setup"):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(SOURCE_DOCS_GATE, route["gates"])
+                self.assertIn(DOCUMENTATION_IMPACT_GATE, route["gates"])
+                self.assertIn("common/source-driven-development.md", route["docs"])
+                implementation_anchor = (
+                    "install or repair" if "install or repair" in route["gates"] else AMBIGUITY_GATE
+                )
+                self.assertLess(
+                    route["gates"].index(DOCUMENTATION_IMPACT_GATE),
+                    route["gates"].index(implementation_anchor),
+                )
+                self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index(AMBIGUITY_GATE))
 
     def test_multi_agent_route_requires_agentic_run_state(self) -> None:
         route = resolve_docs("multi-agent", None, [], request_classified=True)
@@ -399,6 +468,11 @@ class WorkflowRoutingTests(unittest.TestCase):
         prd_route = resolve_docs("prd", None, [], request_classified=True)
         product_route = resolve_docs("product", None, [], request_classified=True)
 
+        self.assertIn(PLATFORM_SELECTION_GATE, product_route["gates"])
+        self.assertLess(
+            product_route["gates"].index(PLATFORM_SELECTION_GATE),
+            product_route["gates"].index("PRD"),
+        )
         self.assertIn(ALIGNMENT_BRIEF_GATE, prd_route["gates"])
         self.assertLess(
             prd_route["gates"].index(ALIGNMENT_BRIEF_GATE),
@@ -441,24 +515,51 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertEqual("triage", classification["recommended_route"])
         self.assertIn("grill-me if needed", route["gates"])
 
+    def test_broad_product_request_requires_grill_me_before_work_route(self) -> None:
+        classification = classify_request("프로필 설정 기능을 구현해줘")
+
+        self.assertEqual("broad-product", classification["clarity"])
+        self.assertEqual("product", classification["recommended_route"])
+        self.assertTrue(classification["grill_me"])
+        self.assertEqual("clarify_first", classification["response_mode"])
+        self.assertIn("needs clarification", route_block_reason("product", classification) or "")
+        self.assertIn("Grill-Me", route_block_reason("feature", classification) or "")
+
+    def test_underspecified_action_requires_self_judged_triage(self) -> None:
+        classification = classify_request("프로필 저장하고 아바타 프리셋도 추가해줘")
+
+        self.assertEqual("vague-action", classification["clarity"])
+        self.assertEqual("triage", classification["recommended_route"])
+        self.assertTrue(classification["grill_me"])
+        self.assertEqual("clarify_first", classification["response_mode"])
+        self.assertIn("lacks a precise target", classification["reason"])
+
+    def test_inspection_request_is_not_blocked_like_product_work(self) -> None:
+        classification = classify_request("문서 전체 상태 체크해줘")
+
+        self.assertEqual("clear-scoped", classification["clarity"])
+        self.assertEqual("task", classification["recommended_route"])
+        self.assertFalse(classification["grill_me"])
+        self.assertEqual("work", classification["response_mode"])
+
     def test_grill_me_policy_mention_does_not_require_grill_session(self) -> None:
         classification = classify_request("`scripts/workflow_request.py`의 grill-me skill evidence policy를 수정해줘")
 
         self.assertFalse(classification["grill_me"])
         self.assertEqual("work", classification["response_mode"])
 
-    def test_grill_me_evidence_requires_skill_session(self) -> None:
+    def test_grill_me_evidence_requires_protocol_session(self) -> None:
         self.assertEqual(
             [
-                "Grill-Me evidence must name the Grill-Me skill or /grilling session and its output; "
-                "manual blocker questions alone are not enough"
+                "Grill-Me evidence must name the Grill-Me protocol, skill, or /grilling session and its output; "
+                "unstructured manual blocker questions alone are not enough"
             ],
             validate_grill_me_skill_evidence("asked blocker questions manually"),
         )
         self.assertEqual(
             [],
             validate_grill_me_skill_evidence(
-                "Grill-Me skill /grilling session output completed: asked one blocker question "
+                "Grill-Me protocol /grilling session output completed: asked one blocker question "
                 "with recommended answer and decisions resolved"
             ),
         )
@@ -480,7 +581,7 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertTrue(required)
         self.assertIn("grill-me", missed_gates)
-        self.assertTrue(any("manual blocker questions alone are not enough" in failure for failure in failures))
+        self.assertTrue(any("unstructured manual blocker questions alone are not enough" in failure for failure in failures))
 
     def test_grill_me_policy_classification_evidence_does_not_require_session(self) -> None:
         gate_signals: list[dict[str, str]] = []
@@ -505,7 +606,7 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertFalse(required)
         self.assertNotIn("grill-me", missed_gates)
-        self.assertFalse(any("Grill-Me skill was required" in failure for failure in failures))
+        self.assertFalse(any("Grill-Me protocol was required" in failure for failure in failures))
 
     def test_grill_me_classification_boolean_requires_finish_evidence(self) -> None:
         gate_signals: list[dict[str, str]] = []
@@ -526,7 +627,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertTrue(classification["grill_me"])
         self.assertTrue(required)
         self.assertIn("grill-me", missed_gates)
-        self.assertTrue(any("Grill-Me skill was required" in failure for failure in failures))
+        self.assertTrue(any("Grill-Me protocol was required" in failure for failure in failures))
 
     def test_analysis_and_setup_alignment_runs_before_work_gates(self) -> None:
         planning_route = resolve_docs("planning", None, [], request_classified=True)
@@ -556,10 +657,68 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("--boundary-plan-evidence", review_hook["command"])
         self.assertIn("--side-effect-audit-evidence", review_hook["command"])
 
-    def test_triage_does_not_get_code_work_gates(self) -> None:
+    def test_triage_and_ambiguity_read_route_docs_without_code_work_gates(self) -> None:
+        for command in ("triage", "ambiguity"):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
+                self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index(ALIGNMENT_BRIEF_GATE))
+                self.assertNotIn(TEST_GATE, route["gates"])
+                self.assertNotIn(MULTI_AGENT_GATE, route["gates"])
+
+    def test_docs_review_checks_review_readiness(self) -> None:
+        route = resolve_docs("docs-review", None, [], request_classified=True)
+
+        self.assertIn(REVIEW_READINESS_GATE, route["gates"])
+        self.assertLess(route["gates"].index(REVIEW_READINESS_GATE), route["gates"].index("source review"))
+
+    def test_route_request_classified_requires_evidence(self) -> None:
+        missing = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "route",
+                "review",
+                "--request-classified",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(2, missing.returncode)
+        self.assertIn("--classification-evidence", missing.stderr)
+
+        supplied = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "route",
+                "review",
+                "--request-classified",
+                "--classification-evidence",
+                "direct question was answered and user asked for review",
+                "--format",
+                "json",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(0, supplied.returncode, supplied.stderr)
+        route = json.loads(supplied.stdout)
+        self.assertTrue(route["request_classified"])
+        self.assertEqual("direct question was answered and user asked for review", route["classification_evidence"])
+
+    def test_question_routes_do_not_get_code_work_gates(self) -> None:
         route = resolve_docs("triage", None, [], request_classified=True)
 
-        self.assertNotIn(ROUTE_DOCS_READ_GATE, route["gates"])
         self.assertNotIn(TEST_GATE, route["gates"])
         self.assertNotIn(MULTI_AGENT_GATE, route["gates"])
 
@@ -588,7 +747,11 @@ class WorkflowRoutingTests(unittest.TestCase):
                 ROUTE_DOCS_READ_GATE: "done",
                 AMBIGUITY_GATE: "done",
                 ALIGNMENT_BRIEF_GATE: "done",
+                DOCUMENTATION_IMPACT_GATE: "done",
                 DOCUMENTATION_GATE: "done",
+                SOURCE_DOCS_GATE: "done",
+                PLATFORM_SELECTION_GATE: "done",
+                REVIEW_READINESS_GATE: "done",
                 TEST_GATE: "done",
                 BOUNDARY_PLAN_GATE: "done",
                 MULTI_AGENT_GATE: "done",
@@ -599,7 +762,11 @@ class WorkflowRoutingTests(unittest.TestCase):
                 ROUTE_DOCS_READ_GATE,
                 AMBIGUITY_GATE,
                 ALIGNMENT_BRIEF_GATE,
+                DOCUMENTATION_IMPACT_GATE,
                 DOCUMENTATION_GATE,
+                SOURCE_DOCS_GATE,
+                PLATFORM_SELECTION_GATE,
+                REVIEW_READINESS_GATE,
                 TEST_GATE,
                 BOUNDARY_PLAN_GATE,
                 MULTI_AGENT_GATE,
@@ -608,7 +775,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             ],
         )
 
-        self.assertEqual(9, len(failures))
+        self.assertEqual(13, len(failures))
 
     def test_alignment_evidence_requires_user_visible_checkpoint(self) -> None:
         failures = validate_gate_evidence(
@@ -651,7 +818,26 @@ class WorkflowRoutingTests(unittest.TestCase):
                     "unsupported assumptions: default MVP unless blocker question changes it; "
                     "user-visible checkpoint told the user before edits"
                 ),
-                DOCUMENTATION_GATE: "updated workflows/README.md",
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before implementation documentation impact decision: update workflows/README.md "
+                    "because workflow policy changed"
+                ),
+                DOCUMENTATION_GATE: (
+                    "updated workflows/README.md because workflow policy changed; "
+                    "source-of-truth updated for durable agent behavior"
+                ),
+                SOURCE_DOCS_GATE: (
+                    "searched PRD/spec/ARD source-of-truth docs before implementation; "
+                    "none found; used user request as source of truth"
+                ),
+                PLATFORM_SELECTION_GATE: (
+                    "selected platform: ios; loaded platforms/ios/ios-architecture.md "
+                    "before PRD/ARD architecture work"
+                ),
+                REVIEW_READINESS_GATE: (
+                    "review readiness checked markdown frontmatter status/type counts; "
+                    "human-reviewed-needed review queue found"
+                ),
                 TEST_GATE: "unittest tests/test_workflow_routing.py passed",
                 BOUNDARY_PLAN_GATE: "existing workflow gate policy boundary; verification via unittest",
                 MULTI_AGENT_GATE: (
@@ -668,13 +854,128 @@ class WorkflowRoutingTests(unittest.TestCase):
                 ROUTE_DOCS_READ_GATE,
                 AMBIGUITY_GATE,
                 ALIGNMENT_BRIEF_GATE,
+                DOCUMENTATION_IMPACT_GATE,
                 DOCUMENTATION_GATE,
+                SOURCE_DOCS_GATE,
+                PLATFORM_SELECTION_GATE,
+                REVIEW_READINESS_GATE,
                 TEST_GATE,
                 BOUNDARY_PLAN_GATE,
                 MULTI_AGENT_GATE,
                 AGENTIC_RUN_STATE_GATE,
                 SIDE_EFFECT_AUDIT_GATE,
             ],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_source_docs_evidence_requires_prd_spec_discovery_before_work(self) -> None:
+        failures = validate_gate_evidence(
+            {SOURCE_DOCS_GATE: "checked docs"},
+            [SOURCE_DOCS_GATE],
+        )
+
+        self.assertTrue(any("PRD/spec/ARD/source-of-truth" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "searched PRD/spec/ARD source-of-truth docs before implementation; "
+                    "found docs/prd.md and read it; applied acceptance criteria to the work"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_platform_selection_evidence_requires_platform_or_not_applicable_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {PLATFORM_SELECTION_GATE: "done"},
+            [PLATFORM_SELECTION_GATE],
+        )
+
+        self.assertTrue(any("platform selection evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                PLATFORM_SELECTION_GATE: (
+                    "selected platform: web; loaded platforms/web/web-architecture.md "
+                    "before PRD/ARD architecture work"
+                )
+            },
+            [PLATFORM_SELECTION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+        failures = validate_gate_evidence(
+            {
+                PLATFORM_SELECTION_GATE: (
+                    "not applicable because workflow-only docs change has no platform-specific runtime"
+                )
+            },
+            [PLATFORM_SELECTION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_review_readiness_evidence_requires_status_type_queue(self) -> None:
+        failures = validate_gate_evidence(
+            {REVIEW_READINESS_GATE: "checked docs"},
+            [REVIEW_READINESS_GATE],
+        )
+
+        self.assertTrue(any("review readiness evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                REVIEW_READINESS_GATE: (
+                    "review readiness checked markdown frontmatter status/type counts; "
+                    "human-reviewed-needed review queue found under common/ and workflows/"
+                )
+            },
+            [REVIEW_READINESS_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_evidence_requires_target_and_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {DOCUMENTATION_GATE: "updated docs"},
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("documentation decision" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "updated docs/prd.md because acceptance criteria changed; "
+                    "source-of-truth updated for durable behavior"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_impact_evidence_requires_pre_edit_decision(self) -> None:
+        failures = validate_gate_evidence(
+            {DOCUMENTATION_IMPACT_GATE: "will think about docs later"},
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("documentation impact evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: update workflows/README.md "
+                    "because workflow policy changed"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
         )
 
         self.assertEqual([], failures)

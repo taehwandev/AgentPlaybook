@@ -42,36 +42,45 @@ the command manifest and keep the implementation inside its listed gates.
    the default assumption or blocker questions. If this route does not create a
    PRD, treat this as the PRD-skip checkpoint; it must be user-visible before
    edits, not only recorded in finish evidence.
-3. Agentic run state: record the current state, next transition or resume
+3. Source docs: before implementation, search for and open relevant PRD, spec,
+   ARD, issue, design note, task doc, or source-of-truth docs. If the change is
+   feature-sized and no source exists, stop to create or update a PRD/spec
+   unless the user request already contains enough acceptance criteria for the
+   slice and the PRD-skip decision is recorded.
+4. Agentic run state: record the current state, next transition or resume
    point, and gate/command/check evidence before implementation. Use this
    state as the recovery anchor after interruption, delegation, failed
    verification, or retrospective restart.
-4. Scope: name the requested behavior, acceptance criteria, non-goals, and the
+5. Scope: name the requested behavior, acceptance criteria, non-goals, and the
    smallest safe slice.
-5. Boundary plan: choose state, domain, data, platform, contract, security, and
+6. Boundary plan: choose state, domain, data, platform, contract, security, and
    ownership boundaries. Name the owned files/modules, caller-facing contracts,
    allowed or forbidden dependency direction when relevant, and the nearest
    verification path before editing.
-6. Workspace scope checkpoint: when a product spans multiple repos and
+7. Workspace scope checkpoint: when a product spans multiple repos and
    orientation shows that another repo is the source of truth or must be
    written, stop before that write. State the starting primary repo,
    secondary/source-of-truth repo, selected mode, write scope, session model,
    and cross-repo verification.
-7. Slice plan: choose vertical, contract-first, risk-first, test-first, or
+8. Slice plan: choose vertical, contract-first, risk-first, test-first, or
    UI-state slicing when the work is non-trivial. Do not broaden beyond the
    first useful slice until it has evidence or an explicit residual-risk note.
-8. Implement: change only the scoped files and keep generated, dependency,
+9. Implement: change only the scoped files and keep generated, dependency,
    formatting, and release churn separate when possible.
-9. Verify: run the narrowest reliable check that proves the changed surface.
-10. Side-effect audit: inspect the final diff and affected call paths for behavior
+10. Documentation: update the source-of-truth docs affected by the change, or
+    record the exact doc path/class checked and why it is intentionally
+    unchanged. Documentation evidence must explain the reason, not only say
+    "docs checked."
+11. Verify: run the narrowest reliable check that proves the changed surface.
+12. Side-effect audit: inspect the final diff and affected call paths for behavior
    outside the requested slice.
-11. Doubt pass when needed: challenge the weakest assumption before handoff when
+13. Doubt pass when needed: challenge the weakest assumption before handoff when
    the work touches data, auth, billing, release, migration, external state,
    security, privacy, observability, or architecture.
-12. Broaden only if needed: run wider checks when the narrow check cannot cover
+14. Broaden only if needed: run wider checks when the narrow check cannot cover
    shared contracts, auth, persistence, platform integration, release, or user
    flow risk.
-13. Handoff: report changed files, verification evidence, skipped checks, side
+15. Handoff: report changed files, verification evidence, skipped checks, side
    effects considered, and residual risk.
 
 ## Parallel Implementation

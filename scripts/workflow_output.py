@@ -22,7 +22,7 @@ def print_markdown(route: dict[str, object]) -> None:
         print(f"- Effort: `{classification['effort']}`")
         print(f"- Recommended route: `{classification['recommended_route']}`")
         grill_me = classification.get("grill_me", classification["question_drill"])
-        print(f"- Grill-Me skill: `{str(grill_me).lower()}`")
+        print(f"- Grill-Me protocol: `{str(grill_me).lower()}`")
         print(f"- Response mode: `{classification['response_mode']}`")
         print(f"- Reason: {classification['reason']}")
         print()

@@ -12,10 +12,19 @@ Use when turning a product request, PRD, design note, or vague feature idea into
 
 - Identify the user outcome, not only the requested UI.
 - Separate known facts, assumptions, and open decisions.
-- Find repo-local product docs before inventing behavior.
+- Find and open repo-local PRD, spec, ARD, issue, design note, task doc, or
+  product source-of-truth before inventing behavior or editing code.
+- Treat this as a pre-edit hard gate. Do not implement first and reconstruct
+  the PRD/spec/ARD search afterward.
 - Ask only when ambiguity changes the result or risk.
 - Use `workflows/ambiguity-gate.md` when an unknown might change behavior,
   architecture, security, release risk, or verification.
+
+If no product source exists and the work introduces a new capability, flow,
+multi-screen behavior, data model, API contract, auth/permission/billing policy,
+release behavior, or durable acceptance criteria, create or update a PRD/spec
+before implementation. If the work is a narrow slice that can proceed without a
+PRD, record the PRD-skip reason and the acceptance criteria source.
 
 ## Define The Contract
 

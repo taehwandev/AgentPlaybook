@@ -596,8 +596,8 @@ to miss: `🐱🟢 SUCCESS` and `🐱🔴 FAIL`. The JSON evidence keeps the pla
 values for automation.
 When `--request-classified` is used, pass `--classification-evidence`; otherwise
 request intake is treated as skipped. If route classification or stored request
-text asks for a question drill, the finish check must receive drill evidence
-such as `question drill if needed=<evidence>` or `ask blockers=<evidence>`.
+text asks for Grill-Me, the finish check must receive Grill-Me protocol evidence
+such as `grill-me if needed=</grilling session/output evidence>`.
 
 If final VibeGuard is `Needs review`, the agent must report that state and pass
 `--allow-vibeguard-review "<reason>"` only when the review state is acceptable.
@@ -731,7 +731,7 @@ This is the core design: small cards, loaded only when relevant.
 - Use `workflows/agent-task-lifecycle.md` for multi-step agent work of any kind.
 - Use `workflows/request-triage.md` and
   `common/task-intake-effort-routing.md` when deciding whether to ask
-  questions, run a question drill, or lower/raise effort.
+  blocker questions, run the Grill-Me protocol, or lower/raise effort.
 - Use `workflows/product-architecture-delivery.md` for product work that needs
   PRD, architecture, implementation, verification, UI tests, and commit gates.
 - Use `workflows/development-cycle.md` for lower-level multi-step implementation

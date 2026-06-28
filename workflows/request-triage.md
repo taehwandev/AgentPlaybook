@@ -12,6 +12,11 @@ before planning or implementation.
 
 ## Read
 
+When this route is executed through `scripts/workflow.py`, run the route's
+`docs-read` hook before the triage decision. Triage is the decision point that
+prevents bad work from starting, so it must not rely only on memory of these
+rules.
+
 - `common/task-intake-effort-routing.md`
 - `common/agent-interaction.md`
 - `workflows/ambiguity-gate.md` when blockers remain

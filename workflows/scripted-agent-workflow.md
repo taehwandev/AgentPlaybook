@@ -45,9 +45,12 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> --request "<USE
 
 The route command requires request intake evidence. Pass the current user
 request with `--request`, or pass `--request-classified` only after the request
-was already classified or answered. If the request is a direct question, the
-script blocks routing so the agent answers before editing or running project
-commands.
+was already classified or answered and include `--classification-evidence`
+with the prior classification, answer-first handling, or user-visible alignment
+checkpoint. Direct `workflow.py route --request-classified` without
+classification evidence is a workflow failure. If the request is a direct
+question, the script blocks routing so the agent answers before editing or
+running project commands.
 
 When the request clarity or correct command profile is uncertain, classify first:
 
@@ -56,15 +59,17 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<request text>"
 ```
 
 `classify` outputs the clarity label, effort level, recommended route command,
-whether the Grill-Me skill is needed, response mode, and a short reason. Use
+whether the Grill-Me protocol is needed, response mode, and a short reason. Use
 the recommended route as the `<command>` argument to `route`. If `response_mode:
 answer_first`, answer the user before routing or editing. When an answer-first
 question asks how to start app, product, or feature work, the answer must include
 PRD -> ARD -> implementation gates before lower-level coding steps. If
 `grill_me: true` or legacy `question_drill: true`, run the recommended route
 (typically `triage` or `ambiguity`) with `--request`, run a Grill-Me
-`/grilling` session, and ask only the missing blocker questions before
-proceeding.
+`/grilling` session before implementation, and ask only the missing blocker
+questions before proceeding. Prefer an installed Grill-Me skill when available;
+otherwise use the built-in protocol from `common/task-intake-effort-routing.md`
+and record its output.
 
 Discover the supported values from the script itself:
 
@@ -229,26 +234,52 @@ Work-producing, documentation, release, review, and retrospective routes must
 include the relevant common gates below even when an individual command profile
 forgets them:
 
-- `route docs read`: after routing and before code, implementation, review, or
-  edit work, read the route's `docs` / `Read In Order` list. Evidence must say
-  that the routed skill/guidance docs were read before work and name the
-  applied rule, criterion, or takeaway used for this task; merely listing
-  documents in the route output is not evidence that the agent consumed or used
-  them.
+- `route docs read`: after routing and before code, implementation, review,
+  edit, triage, or ambiguity work, read the route's `docs` / `Read In Order`
+  list. Evidence must say that the routed skill/guidance docs were read before
+  work and name the applied rule, criterion, or takeaway used for this task;
+  merely listing documents in the route output is not evidence that the agent
+  consumed or used them.
   Run the `docs-read` hook after preflight and before edits so finish-check can
   compare its receipt against the current preflight evidence file, route
   manifest, and routed document count. Generic wording such as "checked docs"
   or "read guidance" is a missed gate.
+- `source docs`: before feature, product, build, bugfix, refactor,
+  simplification, workflow-setup, release, shipping, or general task
+  implementation, search for repo-local PRD, spec, ARD, issue, design note,
+  task doc, or product/source-of-truth documents. Open and read any matching
+  source before code or edits. If none exists, record that no
+  PRD/spec/ARD/source-of-truth was found and decide whether a PRD/spec must be
+  created before code or whether the current user request is enough for the
+  slice. Evidence must name the discovered source or the no-source result and
+  say how it affected the work or documentation decision.
+  This is a pre-edit hard gate. Do not start implementation first and
+  reconstruct the source-doc search afterward.
+- `documentation impact`: before code, implementation, install/repair, or other
+  edit work, decide whether the requested change affects durable documentation.
+  This is the thinking checkpoint, not the final doc-update proof. Evidence
+  must name the affected doc path or doc class, the intended decision
+  (`updated`, `created`, `unchanged`, or `not applicable`), and why the changed
+  behavior, workflow policy, public contract, operator action, or acceptance
+  criteria do or do not require a documentation update. Do not wait until finish
+  to discover that docs were relevant.
 - `ambiguity check`: classify unknowns before implementation. If any blocker
   can change behavior, scope, risk, acceptance criteria, or verification, stop
   and ask the maintainer before editing. Do not continue with silent invented
   assumptions.
+- `platform selection`: before PRD, ARD, architecture, or product
+  implementation work, choose the affected platform card(s) or record why no
+  platform is applicable. Do not write ARD or implementation plans while the
+  platform surface is only a note.
 - `alignment brief`: before requirements analysis, PRD/product delivery, or
   modification work, show the user a compact same/different/assumption summary.
-  This is required even when the Grill-Me skill is not needed. It should
+  This is required even when the Grill-Me protocol is not needed. It should
   reduce later rework, not become a long questionnaire.
 - `documentation`: update or create the relevant source-of-truth docs, or record
-  why docs are not applicable or intentionally unchanged.
+  why docs are not applicable or intentionally unchanged. Evidence must name the
+  documentation decision, the affected source-of-truth doc path or doc class,
+  and the reason the decision matches the behavior, workflow policy, public
+  contract, operator action, or durable acceptance criteria changed.
 - `tests`: add, update, or run the closest useful test/check for code work. A
   skipped test must include the command skipped, reason, and residual risk.
 - `boundary plan`: before code edits, name the owned boundary, file/module
@@ -270,6 +301,10 @@ forgets them:
   gate, or pass/fail interpretation change, pause for a meaning checkpoint
   before editing unless the fix is mechanical and already covered by explicit
   tests.
+- `review readiness`: for docs-review routes, report the reviewed Markdown
+  scope's frontmatter readiness, `status`/`type` distribution, and
+  human-review queue. Link/frontmatter validity alone is not enough when the
+  review is meant to judge whether guidance is ready for broad agent use.
 
 `agent-finish-check.py` validates evidence for these gates. Missing evidence or
 empty phrases such as "done" are not enough.
@@ -412,6 +447,14 @@ Before editing, reviewing, committing, or reporting completion:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
+The command includes task-specific arguments, but persistent runtime permission
+prefixes must not. For Codex escalation, request only
+`["python3", "/absolute/path/to/AgentPlaybook/scripts/agent-hook.py"]` as the
+saved `prefix_rule`; for Claude and AGY, allow only the equivalent absolute
+wrapper command plus the runtime's trailing argument wildcard. Never save
+`--project`, `--request`, `--gate`, `$HOME`, `$(pwd)`, or user text in the
+permission prefix.
+
 `agent-hook.py start` delegates to `agent-preflight.py` and writes the same
 preflight evidence. Calling `agent-preflight.py` directly is acceptable only as
 a lower-level wrapper path when the start hook is unavailable.
@@ -443,14 +486,31 @@ satisfies the policy:
 
 - `route docs read`: routed skill/guidance docs read before work, the applied
   rule/criterion/takeaway used for this task, and a matching docs-read receipt
-  for the current preflight evidence.
+  for the current preflight evidence. Write this evidence as a validator-ready
+  sentence that includes all four ideas explicitly: the docs were read, they
+  were routed or guidance docs, they were read before edits/implementation, and
+  the applied rule, criterion, or takeaway. Example:
+  `read routed guidance docs before edits; applied docs/agent-bootstrap.md rule
+  to keep AGENTS.md canonical and keep runtime files as thin pointers`.
 - `ambiguity check`: no blockers, blockers resolved, questions asked,
   clarified decision, or explicit safe assumption.
 - `alignment brief`: shared understanding, possible differences, unsupported
   assumptions or unknowns, and the user-visible checkpoint before requirement
   analysis or modification work.
-- `documentation`: docs updated, docs created, source-of-truth checked, or why
-  docs were not applicable or unchanged.
+- `source docs`: PRD/spec/ARD/source-of-truth docs searched and opened/read
+  before implementation, or none found, plus how that source affected the work
+  or documentation decision.
+- `documentation impact`: pre-code/pre-edit documentation impact decision,
+  affected doc path or doc class, and why behavior, workflow policy, public
+  contract, operator action, or acceptance criteria do or do not require a doc
+  update.
+- `platform selection`: selected platform(s) and platform card/docs read before
+  PRD/ARD/architecture work, or no platform applicable with a reason.
+- `review readiness`: Markdown/frontmatter `status`/`type` readiness or
+  human-review queue results for the reviewed doc scope.
+- `documentation`: documentation decision, affected source-of-truth doc path or
+  doc class, and why the decision matches the changed behavior, workflow
+  policy, public contract, operator action, or durable acceptance criteria.
 - `boundary plan`: owned boundary/scope or contract, plus the nearest
   verification/check before implementation.
 - `multi-agent split decision`: serial/single-agent with a concrete reason, or
@@ -459,6 +519,10 @@ satisfies the policy:
   structured `.agentplaybook/agent-delegation-plan.json` with worker roles,
   owned and forbidden scopes, contract, acceptance checks, verification, and
   integration review.
+
+After a retrospective restart for finish evidence policy failure, reread this
+gate list and make the next finish attempt use the exact required terms for the
+failed gate instead of a looser human summary.
 - `agentic run state`: current state, next transition or resume point, and the
   gate/command/check evidence that justified the transition.
 - `side-effect audit`: final diff and side effects checked, naming unexpected
@@ -486,12 +550,12 @@ It also writes `gate_signals`, `missed_gates`, and
 `retrospective_required`. When `retrospective_required` is true, it writes a
 safe lesson candidate under `~/.agentplaybook/lessons/inbox/` when permitted.
 If the route classification or stored request text requires Grill-Me, the finish
-check must receive Grill-Me skill evidence through a gate such as
+check must receive Grill-Me protocol evidence through a gate such as
 `grill-me if needed=</grilling session/output evidence>`. Legacy
 `question drill if needed=<evidence>` is accepted only when it still names the
-Grill-Me skill or `/grilling` session and output. Missing Grill-Me evidence is a
-`🐱🔴 FAIL` signal and blocks completion until missed-gate recovery and
-retrospective learning run.
+Grill-Me protocol, skill, or `/grilling` session and output. Missing Grill-Me
+evidence is a `🐱🔴 FAIL` signal and blocks completion until missed-gate
+recovery and retrospective learning run.
 Human-visible wrapper output uses only `🐱🟢 SUCCESS` and `🐱🔴 FAIL`.
 
 Treat missing wrapper evidence as non-compliant. If the wrappers are unavailable,

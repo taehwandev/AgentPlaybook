@@ -151,12 +151,14 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> --request "<USE
 
 Use the script output as a document and gate manifest, then execute the task with
 the target repo's local commands. The route command must receive the current
-user request or `--request-classified` after the request was already classified
-or answered. If the request is a direct question, answer it before editing,
+user request or `--request-classified --classification-evidence "<evidence>"`
+after the request was already classified or answered. Do not use
+`--request-classified` to bypass direct-question, ambiguity, or Grill-Me
+handling. If the request is a direct question, answer it before editing,
 routing, or running project-specific work. If the script is unavailable, cannot
-run, or the route is missing a clearly relevant concern, stop and report the gap
-before continuing. Use `index.md` as a fallback only for simple answer-only work
-or after the user explicitly accepts the fallback.
+run, or the route is missing a clearly relevant concern, stop and report the
+gap before continuing. Use `index.md` as a fallback only for simple answer-only
+work or after the user explicitly accepts the fallback.
 Discover valid commands, platforms, and concerns with:
 
 ```text
@@ -205,6 +207,13 @@ script path prefix (e.g., `python3 /absolute/path/to/script.py` or `node /absolu
 instead of the full command with changing arguments. If a permission is saved
 with arguments, any change to those arguments (e.g., different project paths or
 options) will fail prefix matching and trigger repeated prompts.
+For Codex `exec_command` escalations, set `prefix_rule` to only the executable
+and resolved wrapper path, such as
+`["python3", "/absolute/path/to/AgentPlaybook/scripts/agent-hook.py"]`; never
+include `--project`, `--request`, `--gate`, `$(pwd)`, `$HOME`, or other runtime
+arguments in the saved prefix. Claude and AGY permission allowlists must follow
+the same shape with only an absolute wrapper command plus a trailing argument
+wildcard when the runtime permission syntax requires one.
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
@@ -226,6 +235,14 @@ The finish gate evidence must also name the rule, criterion, or takeaway from
 the routed docs that was applied to the current task; "docs read" or "checked
 docs" is not enough. Use `--receipt-output` only when a non-default receipt
 path is required; `--output` is a legacy docs-read alias.
+
+For work-producing tasks, do not wait until final reporting to think about
+documentation. Treat `documentation impact` as a pre-code/pre-edit checkpoint:
+name the affected doc path or doc class, choose `updated`, `created`,
+`unchanged`, or `not applicable`, and state why the changed behavior, workflow
+policy, public contract, operator action, or acceptance criteria does or does
+not require a doc update. The later `documentation` gate must then prove the
+actual update or unchanged/not-applicable decision.
 
 Before final report, commit, release, or handoff, run the finish check and pass
 evidence for every required route gate:
@@ -249,11 +266,11 @@ correct. `agent-preflight.py --request-classified` must include
 `--classification-evidence`; otherwise request intake is treated as skipped.
 If route classification or stored request text says `grill_me: true`, legacy
 `question_drill: true`, or explicitly asks for Grill-Me, `agent-finish-check.py`
-must receive Grill-Me skill evidence such as
+must receive Grill-Me protocol evidence such as
 `grill-me if needed=</grilling session/output evidence>`. Legacy
 `question drill if needed=<evidence>` or `ask blockers=<evidence>` is accepted
-only when the evidence still names the Grill-Me skill or `/grilling` session
-and output.
+only when the evidence still names the Grill-Me protocol, skill, or
+`/grilling` session and output.
 Missing Grill-Me evidence is `🐱🔴 FAIL` and sets
 `retrospective_required: true`.
 

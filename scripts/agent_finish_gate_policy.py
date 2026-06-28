@@ -2,16 +2,27 @@
 
 from __future__ import annotations
 
+from agent_finish_gate_validators import (
+    validate_documentation_impact_evidence,
+    validate_platform_selection_evidence,
+    validate_review_readiness_evidence,
+    validate_source_docs_evidence,
+)
+
 
 AMBIGUITY_GATE = "ambiguity check"
 ROUTE_DOCS_READ_GATE = "route docs read"
 ALIGNMENT_BRIEF_GATE = "alignment brief"
+DOCUMENTATION_IMPACT_GATE = "documentation impact"
 DOCUMENTATION_GATE = "documentation"
 TEST_GATE = "tests"
 BOUNDARY_PLAN_GATE = "boundary plan"
 MULTI_AGENT_GATE = "multi-agent split decision"
 SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 AGENTIC_RUN_STATE_GATE = "agentic run state"
+SOURCE_DOCS_GATE = "source docs"
+PLATFORM_SELECTION_GATE = "platform selection"
+REVIEW_READINESS_GATE = "review readiness"
 MULTI_AGENT_ROLES_GATE = "roles"
 MULTI_AGENT_WRITE_SCOPES_GATE = "write scopes"
 MULTI_AGENT_BRIEFS_GATE = "agent briefs"
@@ -25,12 +36,16 @@ VALIDATED_GATES = {
     ROUTE_DOCS_READ_GATE,
     AMBIGUITY_GATE,
     ALIGNMENT_BRIEF_GATE,
+    DOCUMENTATION_IMPACT_GATE,
     DOCUMENTATION_GATE,
     TEST_GATE,
     BOUNDARY_PLAN_GATE,
     MULTI_AGENT_GATE,
     SIDE_EFFECT_AUDIT_GATE,
     AGENTIC_RUN_STATE_GATE,
+    SOURCE_DOCS_GATE,
+    PLATFORM_SELECTION_GATE,
+    REVIEW_READINESS_GATE,
     MULTI_AGENT_ROLES_GATE,
     MULTI_AGENT_WRITE_SCOPES_GATE,
     MULTI_AGENT_BRIEFS_GATE,
@@ -48,8 +63,20 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
         failures.extend(_validate_ambiguity(gate_evidence.get(AMBIGUITY_GATE, "")))
     if ALIGNMENT_BRIEF_GATE in required:
         failures.extend(_validate_alignment_brief(gate_evidence.get(ALIGNMENT_BRIEF_GATE, "")))
+    if DOCUMENTATION_IMPACT_GATE in required:
+        failures.extend(
+            validate_documentation_impact_evidence(
+                gate_evidence.get(DOCUMENTATION_IMPACT_GATE, "")
+            )
+        )
     if DOCUMENTATION_GATE in required:
         failures.extend(_validate_documentation(gate_evidence.get(DOCUMENTATION_GATE, "")))
+    if SOURCE_DOCS_GATE in required:
+        failures.extend(validate_source_docs_evidence(gate_evidence.get(SOURCE_DOCS_GATE, "")))
+    if PLATFORM_SELECTION_GATE in required:
+        failures.extend(validate_platform_selection_evidence(gate_evidence.get(PLATFORM_SELECTION_GATE, "")))
+    if REVIEW_READINESS_GATE in required:
+        failures.extend(validate_review_readiness_evidence(gate_evidence.get(REVIEW_READINESS_GATE, "")))
     if TEST_GATE in required:
         failures.extend(_validate_tests(gate_evidence.get(TEST_GATE, "")))
     if BOUNDARY_PLAN_GATE in required:
@@ -264,7 +291,7 @@ def _validate_documentation(evidence: str) -> list[str]:
     text = evidence.lower()
     if not text:
         return []
-    documented = any(
+    has_decision = any(
         phrase in text
         for phrase in (
             "updated",
@@ -272,18 +299,63 @@ def _validate_documentation(evidence: str) -> list[str]:
             "added",
             "not applicable",
             "unchanged",
-            "no docs",
-            "docs freshness",
-            "source of truth",
+            "no doc update",
+            "no docs update",
+            "docs unchanged",
+            "source-of-truth updated",
+            "source of truth updated",
         )
     )
-    if documented:
+    names_target = any(
+        phrase in text
+        for phrase in (
+            ".md",
+            "readme",
+            "agents",
+            "prd",
+            "spec",
+            "ard",
+            "runbook",
+            "wiki",
+            "source-of-truth",
+            "source of truth",
+            "docs/",
+            "workflows/",
+            "common/",
+            "platforms/",
+            "product-patterns/",
+        )
+    )
+    explains_reason = any(
+        phrase in text
+        for phrase in (
+            "because",
+            "reason",
+            "why",
+            "due to",
+            "changed",
+            "no durable",
+            "no user-visible",
+            "workflow policy",
+            "public contract",
+            "acceptance criteria",
+            "behavior",
+            "architecture",
+            "operator action",
+            "왜",
+            "이유",
+            "변경",
+            "문서 영향",
+        )
+    )
+    if has_decision and names_target and explains_reason:
         return []
     return [
-        "documentation evidence must state docs updated, docs created, source-of-truth checked, "
-        "or why docs are not applicable/unchanged"
+        "documentation evidence must name the documentation decision "
+        "(updated/created/unchanged/not applicable), the affected source-of-truth "
+        "doc path or doc class, and why that decision matches the behavior, "
+        "workflow policy, public contract, or durable acceptance criteria changed"
     ]
-
 
 def _validate_tests(evidence: str) -> list[str]:
     text = evidence.lower()

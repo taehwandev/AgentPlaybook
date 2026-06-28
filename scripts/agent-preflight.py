@@ -91,7 +91,7 @@ def route_command(args: argparse.Namespace, playbook_root: Path) -> list[str]:
         "json",
     ]
     if args.request_classified:
-        command.append("--request-classified")
+        command.extend(["--request-classified", "--classification-evidence", args.classification_evidence])
     else:
         command.extend(["--request", args.request])
     for platform in args.platform:

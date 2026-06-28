@@ -19,6 +19,7 @@ AGENTIC_RUN_STATE_COMMANDS = WORK_PRODUCING_COMMANDS | {
     "multi-agent",
 }
 ROUTE_DOCS_READ_COMMANDS = WORK_PRODUCING_COMMANDS | {
+    "ambiguity",
     "docs",
     "docs-review",
     "multi-agent",
@@ -29,6 +30,7 @@ ROUTE_DOCS_READ_COMMANDS = WORK_PRODUCING_COMMANDS | {
     "review",
     "spec",
     "test",
+    "triage",
     "webperf",
 }
 CODE_WORK_COMMANDS = {
@@ -67,20 +69,37 @@ ALIGNMENT_BRIEF_COMMANDS = {
 AMBIGUITY_GATE = "ambiguity check"
 ROUTE_DOCS_READ_GATE = "route docs read"
 ALIGNMENT_BRIEF_GATE = "alignment brief"
+DOCUMENTATION_IMPACT_GATE = "documentation impact"
 DOCUMENTATION_GATE = "documentation"
 TEST_GATE = "tests"
 BOUNDARY_PLAN_GATE = "boundary plan"
 MULTI_AGENT_GATE = "multi-agent split decision"
 SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 AGENTIC_RUN_STATE_GATE = "agentic run state"
+SOURCE_DOCS_GATE = "source docs"
+
+SOURCE_DOCS_COMMANDS = {
+    "build",
+    "bugfix",
+    "code-simplify",
+    "feature",
+    "product",
+    "refactor",
+    "release",
+    "ship",
+    "task",
+    "workflow-setup",
+}
 
 
 def automatic_gates(command: str) -> list[str]:
     gates: list[str] = []
     if command in ROUTE_DOCS_READ_COMMANDS:
         gates.append(ROUTE_DOCS_READ_GATE)
+    if command in SOURCE_DOCS_COMMANDS:
+        gates.append(SOURCE_DOCS_GATE)
     if command in WORK_PRODUCING_COMMANDS:
-        gates.extend([AMBIGUITY_GATE, DOCUMENTATION_GATE])
+        gates.extend([AMBIGUITY_GATE, DOCUMENTATION_IMPACT_GATE, DOCUMENTATION_GATE])
     if command in ALIGNMENT_BRIEF_COMMANDS:
         gates.append(ALIGNMENT_BRIEF_GATE)
     if command in AGENTIC_RUN_STATE_COMMANDS:
@@ -106,8 +125,15 @@ def automatic_docs(command: str) -> list[str]:
         )
         if command in {"prd", "product", "spec"}:
             docs.append("workflows/prd-creation.md")
-    if DOCUMENTATION_GATE in gates:
+    if DOCUMENTATION_GATE in gates or DOCUMENTATION_IMPACT_GATE in gates:
         docs.append("workflows/documentation-update.md")
+    if SOURCE_DOCS_GATE in gates:
+        docs.extend(
+            [
+                "common/product-spec-to-implementation.md",
+                "common/source-driven-development.md",
+            ]
+        )
     if TEST_GATE in gates:
         docs.extend(["common/testing.md", "common/verification-policy.md"])
     if BOUNDARY_PLAN_GATE in gates:
@@ -144,11 +170,23 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
                 _insert_after_any(result, gate, anchors=("orient",))
             else:
                 result.insert(0, gate)
+        elif gate == SOURCE_DOCS_GATE:
+            _insert_after_any(
+                result,
+                gate,
+                anchors=(ROUTE_DOCS_READ_GATE, "orient"),
+            )
         elif gate == AMBIGUITY_GATE:
             _insert_after_any(
                 result,
                 gate,
-                anchors=(ROUTE_DOCS_READ_GATE, "orient", "PRD/ARD applicability", "reproduce"),
+                anchors=(SOURCE_DOCS_GATE, ROUTE_DOCS_READ_GATE, "orient", "PRD/ARD applicability", "reproduce"),
+            )
+        elif gate == DOCUMENTATION_IMPACT_GATE:
+            _insert_after_any(
+                result,
+                gate,
+                anchors=(SOURCE_DOCS_GATE, ROUTE_DOCS_READ_GATE, "orient"),
             )
         elif gate == ALIGNMENT_BRIEF_GATE:
             _insert_before_any(
