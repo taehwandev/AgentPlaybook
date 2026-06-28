@@ -123,6 +123,40 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("common/design-system.md", CONCERNS["tokens"])
         self.assertNotIn("common/local-tools.md", CONCERNS["tokens"])
 
+    def test_number_unit_display_concerns_route_to_accessibility_i18n(self) -> None:
+        for concern in (
+            "i18n",
+            "localization",
+            "number-format",
+            "number",
+            "numbers",
+            "numeric",
+            "unit",
+            "units",
+            "measurement",
+            "measurements",
+            "currency",
+            "display-value",
+            "display-values",
+        ):
+            with self.subTest(concern=concern):
+                self.assertIn(concern, CONCERNS)
+                self.assertIn("common/accessibility-i18n.md", CONCERNS[concern])
+
+        examples = (
+            "Fix visible number and unit display in metric cards",
+            "Format storage size units and duration labels",
+            "숫자 표기와 단위를 화면 표시 기준으로 처리해줘",
+        )
+
+        for request in examples:
+            with self.subTest(request=request):
+                concerns = infer_concerns_from_request(request)
+                self.assertIn("accessibility", concerns)
+
+        route = resolve_docs("docs", None, ["units"], request_classified=True)
+        self.assertIn("common/accessibility-i18n.md", route["docs"])
+
     def test_spill_request_infers_metering_concern(self) -> None:
         concerns = infer_concerns_from_request("Preserve Spill workflow label bridge data")
 

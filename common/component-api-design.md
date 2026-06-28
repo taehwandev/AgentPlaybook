@@ -41,9 +41,11 @@ Avoid:
   caller when there is no stable second use or explicit design-system contract.
 - Moving feature-specific product policy into a component only to reduce the
   caller's line count.
-- Accepting raw numbers for visible counts, currency, percentages, rates, or
-  measurements without either a typed formatting policy or a caller-owned
-  formatted display string.
+- Accepting raw numbers for visible counts, currency, percentages, rates,
+  units, measurements, storage sizes, durations, or metric summaries without
+  either a typed formatting policy or a caller-owned formatted display string.
+  A reusable component should not guess grouping, precision, unit labels, or
+  accessibility text from a bare number.
 
 ## Controlled State
 
@@ -151,7 +153,8 @@ Add edge examples when affected:
 - selected and unselected
 - long text and localization
 - grouped and decimal numeric values when the component displays counts,
-  currency, percentages, rates, measurements, or metric summaries
+  currency, percentages, rates, units, measurements, storage sizes, durations,
+  or metric summaries
 - missing media or icon
 - permission denied or read-only
 - small screen or constrained container

@@ -72,10 +72,10 @@ Use the lowest layer that owns the decision:
 - Prefer wrappers around platform UI libraries when the wrapper encodes a real
   product contract such as typography scale, touch target, loading behavior,
   accessibility semantics, or design tokens. Do not wrap only to rename an API.
-- Treat visible number formatting as a product UI contract. Shared metric,
+- Treat visible number and unit display as a product UI contract. Shared metric,
   table, chart, badge, and summary components should receive formatted display
-  strings or a typed numeric format policy instead of each caller inventing
-  grouping and decimal precision.
+  strings or a typed numeric format policy that owns value, unit, scale,
+  grouping, decimal precision, locale, and missing/invalid states.
 - Keep design-system modules free of routes, feature ids, analytics names,
   permission policy, billing or entitlement rules, repository calls, fake data,
   and product-specific copy.
@@ -144,9 +144,10 @@ API.
 - Do not use boolean flags or nullable option bags to force unrelated product
   variants through one component. Split the component, keep it feature-local, or
   model the state explicitly.
-- Do not let reusable UI primitives format counts, currency, percentages, or
-  calculated metrics ad hoc. Use the shared locale-aware formatter or require a
-  caller-owned display value.
+- Do not let reusable UI primitives format counts, currency, percentages,
+  units, measurements, or calculated metrics ad hoc. Use the shared
+  locale-aware formatter or require a caller-owned display value that already
+  includes the intended unit semantics.
 - Do not replace multiple UI surfaces with a new primitive until the primitive
   has examples, previews, fixtures, stories, snapshots, or focused tests for the
   affected states.
@@ -180,8 +181,9 @@ A reusable component API should define:
 - caller-owned actions and callbacks
 - slot ownership for leading/trailing/media/action content
 - accessibility labels, roles, focus behavior, and touch/click targets
-- visible number formatting ownership for counts, currency, percentages, rates,
-  measurements, and accessibility labels that announce numeric values
+- visible number and unit display ownership for counts, currency, percentages,
+  rates, measurements, metric summaries, and accessibility labels that announce
+  numeric values
 - long text, localization, small screen, dark mode, and high-contrast behavior
 - replacement guidance when it supersedes an older pattern
 

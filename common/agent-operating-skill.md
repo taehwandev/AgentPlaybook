@@ -214,7 +214,8 @@ Before finishing:
   webhook endpoints, CORS origins, or asset hosts:
   `common/runtime-url-configuration.md`.
 - Release, deployment, packaging, signing, rollout, rollback, versioning, or tags: `common/release-deployment.md` and `common/release-versioning.md`.
-- User-facing text, forms, controls, dates, numbers, or localization: `common/accessibility-i18n.md`.
+- User-facing text, forms, controls, dates, numbers, units, measurements,
+  display values, or localization: `common/accessibility-i18n.md`.
 - User-facing prose, documentation tone, release notes, marketing copy, emails, voice fidelity, or AI-writing signal cleanup: `common/human-authored-writing.md`.
 - Blog posts, articles, essays, publishable long-form prose, or user-author
   writing consistency across agents: `common/writing-workspace.md` plus
