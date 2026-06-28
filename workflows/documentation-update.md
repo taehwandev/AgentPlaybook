@@ -24,10 +24,13 @@ Use when creating, reviewing, or restructuring docs, guides, specs, READMEs, age
 
  1. Identify the document audience, purpose, source of truth, and expected action.
  2. Check existing docs for overlap before adding a new page or section.
- 3. For feature, product, workflow-policy, architecture, or public-contract
-    changes, search and open PRD, spec, ARD, issue, design note, task doc, or
-    source-of-truth docs before deciding what to write. If no source exists,
-    record that absence and decide whether a PRD/spec must be created.
+ 3. For feature, product, workflow-policy, architecture, module, API, data,
+    release, operational, or public-contract changes, search and open the
+    relevant source docs before deciding what to write. Source docs may be PRD,
+    spec, ARD, issue, design note, task doc, ADR/RFC, module README, API
+    contract, runbook, migration note, release note, test plan, skill/platform
+    card, workflow card, or agent instruction. If no source exists, record that
+    absence and decide which smallest artifact must be created before code.
  4. Apply the commonization test before changing shared docs: the guidance must remain correct after removing one repo, product, service, vendor, customer, team, environment, or account context.
  5. Do not set the shared baseline from a specific service's workflow, API shape, naming scheme, role model, permission policy, deployment model, provider setup, or product policy.
  6. Keep repo-specific commands, paths, role matrices, and domain terms in repo-local docs.
@@ -43,14 +46,33 @@ For every work-producing task, make the documentation impact decision before
 code, implementation, install/repair, or other edit work starts. This is the
 prompt that keeps agents from treating docs as an afterthought.
 
+Start by selecting the artifact class. Do not reduce this step to "PRD or no
+docs"; different work types need different durable documentation.
+
+| Work Type | Artifact Candidates |
+| --- | --- |
+| New product behavior, broad feature, or unclear acceptance criteria | PRD, feature spec, acceptance criteria note |
+| Architecture, ownership, dependency, or data-flow decision | ARD, ADR, RFC, architecture note |
+| New module, package, public component, or reusable boundary | module/package README, component API note, platform card |
+| API route, event, DTO, schema, auth, or integration contract | API contract, schema note, integration spec, product-pattern card |
+| Persistence, migration, background job, release, deployment, or operator action | migration note, runbook, release note, rollback note |
+| Test strategy, scenario coverage, QA workflow, or verification harness | test plan, QA checklist, verification runbook |
+| Shared agent behavior, workflow rule, review rule, or platform guidance | AgentPlaybook common card, workflow card, skill card, platform card, repo `AGENTS.md` |
+| Local command, repo path, product policy, domain term, or service-specific rule | repo-local `AGENTS.md`, `README.md`, wiki, runbook, or task doc |
+
 Record:
 
-- affected doc path or doc class, such as `AGENTS.md`, `README.md`, PRD/spec,
-  ARD, runbook, platform card, workflow card, API reference, or "no durable doc
-  class affected"
+- selected artifact class and affected doc path or doc class
 - intended decision: `updated`, `created`, `unchanged`, or `not applicable`
 - why the changed behavior, workflow policy, public contract, operator action,
   or acceptance criteria do or do not require a documentation update
+
+For new durable behavior, `not applicable` is not the default. It is valid only
+when the evidence states a no-durable-doc reason such as answer-only,
+purely local, mechanical, no runtime behavior, no public contract, no operator
+action, or no acceptance criteria. If no source doc exists and the work changes
+durable behavior, create the smallest useful artifact from the table instead of
+continuing with "no docs."
 
 This checkpoint does not replace the final documentation decision. If the
 implementation changes meaning, revisit the checkpoint and update the final

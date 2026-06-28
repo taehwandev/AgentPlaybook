@@ -246,23 +246,31 @@ forgets them:
   or "read guidance" is a missed gate.
 - `source docs`: before feature, product, build, bugfix, refactor,
   simplification, workflow-setup, release, shipping, or general task
-  implementation, search for repo-local PRD, spec, ARD, issue, design note,
-  task doc, or product/source-of-truth documents. Open and read any matching
-  source before code or edits. If none exists, record that no
-  PRD/spec/ARD/source-of-truth was found and decide whether a PRD/spec must be
-  created before code or whether the current user request is enough for the
-  slice. Evidence must name the discovered source or the no-source result and
-  say how it affected the work or documentation decision.
+  implementation, search for repo-local source-of-truth documents that match
+  the work type. Sources may be PRD, spec, ARD, issue, design note, task doc,
+  ADR/RFC, module README, API contract, runbook, migration note, release note,
+  test plan, skill/platform/workflow card, agent instruction, or equivalent
+  product/source-of-truth document. Open and read any matching source before
+  code or edits. If none exists, record the no-source result and decide whether
+  the smallest useful artifact must be created before code or whether the
+  current user request is enough for a no-durable-doc slice. Evidence must name
+  the discovered source or the no-source result and say how it affected the
+  work or documentation artifact decision.
   This is a pre-edit hard gate. Do not start implementation first and
   reconstruct the source-doc search afterward.
 - `documentation impact`: before code, implementation, install/repair, or other
   edit work, decide whether the requested change affects durable documentation.
   This is the thinking checkpoint, not the final doc-update proof. Evidence
-  must name the affected doc path or doc class, the intended decision
-  (`updated`, `created`, `unchanged`, or `not applicable`), and why the changed
-  behavior, workflow policy, public contract, operator action, or acceptance
-  criteria do or do not require a documentation update. Do not wait until finish
-  to discover that docs were relevant.
+  must name the selected artifact class, affected doc path or doc class, the
+  intended decision (`updated`, `created`, `unchanged`, or `not applicable`),
+  and why the changed behavior, workflow policy, public contract, operator
+  action, or acceptance criteria do or do not require a documentation update.
+  `Not applicable`, `unchanged`, or `no docs` is valid only with a
+  no-durable-doc reason such as answer-only, purely local, mechanical, no
+  public contract, no operator action, or no acceptance criteria. If source
+  docs are missing and the task changes durable behavior, create or update the
+  smallest useful artifact instead of treating documentation as absent. Do not
+  wait until finish to discover that docs were relevant.
 - `ambiguity check`: classify unknowns before implementation. If any blocker
   can change behavior, scope, risk, acceptance criteria, or verification, stop
   and ask the maintainer before editing. Do not continue with silent invented
@@ -497,13 +505,16 @@ satisfies the policy:
 - `alignment brief`: shared understanding, possible differences, unsupported
   assumptions or unknowns, and the user-visible checkpoint before requirement
   analysis or modification work.
-- `source docs`: PRD/spec/ARD/source-of-truth docs searched and opened/read
-  before implementation, or none found, plus how that source affected the work
-  or documentation decision.
-- `documentation impact`: pre-code/pre-edit documentation impact decision,
-  affected doc path or doc class, and why behavior, workflow policy, public
-  contract, operator action, or acceptance criteria do or do not require a doc
-  update.
+- `source docs`: matching source-of-truth docs searched and opened/read before
+  implementation, or none found, plus how that source affected the work or
+  documentation artifact decision. Sources can include PRD/spec/ARD, ADR/RFC,
+  module README, API contract, runbook, migration note, release note, test
+  plan, skill/platform/workflow card, or agent instruction.
+- `documentation impact`: pre-code/pre-edit documentation artifact selection,
+  impact decision, affected doc path or doc class, and why behavior, workflow
+  policy, public contract, operator action, or acceptance criteria do or do not
+  require a doc update. Non-creation decisions must include a no-durable-doc
+  reason.
 - `platform selection`: selected platform(s) and platform card/docs read before
   PRD/ARD/architecture work, or no platform applicable with a reason.
 - `review readiness`: Markdown/frontmatter `status`/`type` readiness or

@@ -238,10 +238,17 @@ path is required; `--output` is a legacy docs-read alias.
 
 For work-producing tasks, do not wait until final reporting to think about
 documentation. Treat `documentation impact` as a pre-code/pre-edit checkpoint:
-name the affected doc path or doc class, choose `updated`, `created`,
-`unchanged`, or `not applicable`, and state why the changed behavior, workflow
-policy, public contract, operator action, or acceptance criteria does or does
-not require a doc update. The later `documentation` gate must then prove the
+select the artifact class first, name the affected doc path or doc class, choose
+`updated`, `created`, `unchanged`, or `not applicable`, and state why the
+changed behavior, workflow policy, public contract, operator action, or
+acceptance criteria does or does not require a doc update. Artifact classes can
+include PRD/spec/ARD, ADR/RFC, module README, API contract, runbook, migration
+note, release note, test plan, skill/platform/workflow card, repo
+`AGENTS.md`, or another source-of-truth class that fits the work. Do not treat
+PRD as the only documentation shape. `Unchanged`, `not applicable`, or `no
+docs` is valid only when the evidence states a no-durable-doc reason such as
+answer-only, purely local, mechanical, no public contract, no operator action,
+or no acceptance criteria. The later `documentation` gate must then prove the
 actual update or unchanged/not-applicable decision.
 
 Before final report, commit, release, or handoff, run the finish check and pass
