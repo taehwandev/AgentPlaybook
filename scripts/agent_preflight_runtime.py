@@ -17,6 +17,9 @@ from support.permission_entries import (
 
 
 BASELINE_HOOK_RE = re.compile(r"workflow\.py.*route.*triage.*--request-classified")
+CLASSIFIED_HOOK_EVIDENCE_RE = re.compile(
+    r"workflow\.py.*route.*triage.*--request-classified.*--classification-evidence"
+)
 AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
 AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = [
     "Antigravity reads AGENTS.md",
@@ -121,16 +124,27 @@ def _claude_warnings(playbook_root: Path, *, spill_available: bool) -> list[str]
 def _claude_spill_warnings(config: dict[str, Any], playbook_root: Path) -> list[str]:
     warnings: list[str] = []
     groups = config.get("hooks", {}).get("UserPromptSubmit", [])
-    has_baseline = any(
-        BASELINE_HOOK_RE.search(h.get("command", ""))
-        and "SPILL_AI_TOOL=claude" in h.get("command", "")
+    managed_commands = [
+        h.get("command", "")
         for g in groups
         for h in g.get("hooks", [])
+        if BASELINE_HOOK_RE.search(h.get("command", ""))
+        and "SPILL_AI_TOOL=claude" in h.get("command", "")
+    ]
+    has_classification_evidence = any(
+        CLASSIFIED_HOOK_EVIDENCE_RE.search(command)
+        for command in managed_commands
     )
-    if not has_baseline:
+    if not managed_commands:
         warnings.append(
             "Claude Code UserPromptSubmit Spill workflow label hook is missing. "
             f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+        )
+    elif not has_classification_evidence:
+        warnings.append(
+            "Claude Code UserPromptSubmit Spill workflow label hook is missing "
+            "--classification-evidence. Run: "
+            f"python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
         )
     spill_tool = config.get("env", {}).get("SPILL_AI_TOOL", "")
     if spill_tool != "claude":

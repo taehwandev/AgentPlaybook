@@ -27,9 +27,11 @@ from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_global_lessons import lesson_summary, write_retrospective_candidate
 from agent_preflight_runtime import (
     AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
+    _claude_spill_warnings,
 )
 from agent_route_docs import preflight_evidence_sha256, route_fingerprint
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
+from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
 from workflow_catalog import COMMANDS, CONCERNS
 from workflow_gate_policy import (
@@ -161,6 +163,65 @@ class WorkflowRoutingTests(unittest.TestCase):
         concerns = infer_concerns_from_request("Preserve Spill workflow label bridge data")
 
         self.assertIn("metering", concerns)
+
+    def test_claude_user_prompt_hook_requires_classification_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "settings.json"
+            old_command = (
+                "SPILL_AI_TOOL=claude python3 '/tmp/AgentPlaybook/scripts/workflow.py' "
+                "route triage --request-classified"
+            )
+            target.write_text(json.dumps({
+                "hooks": {
+                    "UserPromptSubmit": [
+                        {
+                            "matcher": "",
+                            "hooks": [{"type": "command", "command": old_command, "timeout": 5}],
+                        }
+                    ]
+                }
+            }))
+            new_command = (
+                "SPILL_AI_TOOL=claude python3 '/tmp/AgentPlaybook/scripts/workflow.py' "
+                "route triage --request-classified --classification-evidence "
+                f"'{_CLASSIFICATION_EVIDENCE}'"
+            )
+
+            status = _merge_claude_user_prompt_submit(target, new_command, dry_run=False)
+            config = json.loads(target.read_text())
+            commands = [
+                hook["command"]
+                for group in config["hooks"]["UserPromptSubmit"]
+                for hook in group["hooks"]
+            ]
+
+        self.assertEqual("installed", status)
+        self.assertNotIn(old_command, commands)
+        self.assertIn(new_command, commands)
+
+    def test_preflight_warns_for_claude_hook_without_classification_evidence(self) -> None:
+        config = {
+            "hooks": {
+                "UserPromptSubmit": [
+                    {
+                        "hooks": [
+                            {
+                                "command": (
+                                    "SPILL_AI_TOOL=claude python3 "
+                                    "'/tmp/AgentPlaybook/scripts/workflow.py' "
+                                    "route triage --request-classified"
+                                )
+                            }
+                        ]
+                    }
+                ]
+            },
+            "env": {"SPILL_AI_TOOL": "claude"},
+        }
+
+        warnings = _claude_spill_warnings(config, Path("/tmp/AgentPlaybook"))
+
+        self.assertTrue(any("--classification-evidence" in warning for warning in warnings))
 
     def test_agent_skills_gap_requests_infer_new_concerns(self) -> None:
         examples = (

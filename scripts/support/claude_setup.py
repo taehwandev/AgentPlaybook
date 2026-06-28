@@ -14,6 +14,10 @@ from support.setup_config_files import merge_permissions_allow, quote, read_json
 _BASELINE_COMMAND_RE = re.compile(
     r"workflow\.py.*route.*triage.*--request-classified"
 )
+_CLASSIFICATION_EVIDENCE = (
+    "Claude UserPromptSubmit hook records safe request-intake evidence for "
+    "workflow label setup; no prompt content is passed."
+)
 
 
 def configure_claude(
@@ -27,6 +31,7 @@ def configure_claude(
     baseline_cmd = (
         f"SPILL_AI_TOOL=claude python3 {quote(str(workflow_script))}"
         " route triage --request-classified"
+        f" --classification-evidence {quote(_CLASSIFICATION_EVIDENCE)}"
     )
     results = []
 
@@ -57,13 +62,17 @@ def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) 
     hooks = config.get("hooks", {})
     groups: list = hooks.get("UserPromptSubmit", [])
 
+    has_managed_command = False
     for group in groups:
         for hook in group.get("hooks", []):
-            if _is_managed_claude_spill_bridge_command(hook.get("command", "")):
+            hook_command = hook.get("command", "")
+            if hook_command == command:
                 return "ok"
+            if _is_managed_claude_spill_bridge_command(hook_command):
+                has_managed_command = True
 
     if dry_run:
-        return "missing"
+        return "would_update" if has_managed_command else "missing"
 
     cleaned = [
         group for group in groups

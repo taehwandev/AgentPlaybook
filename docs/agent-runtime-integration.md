@@ -372,6 +372,12 @@ Claude:
   `Bash(python3 /absolute/path/to/AgentPlaybook/scripts/agent-hook.py *)`.
   Do not approve or document `$HOME`, `${HOME}`, `~`, relative
   `scripts/<name>.py`, or argument-specific variants for shared wrappers.
+- The managed Claude `UserPromptSubmit` workflow label hook must not call
+  `workflow.py route ... --request-classified` without
+  `--classification-evidence`. That hook is allowed to use a safe generic
+  classification evidence string because it is only refreshing local workflow
+  label context and must not pass prompt content. `setup-agent-hooks.py` should
+  replace stale managed Claude hooks that omit the evidence flag.
 
 Antigravity:
 
