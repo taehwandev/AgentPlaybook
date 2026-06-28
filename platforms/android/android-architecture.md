@@ -260,6 +260,81 @@ initializer, deep-link contributor, or launch handler. If handler order can
 change behavior, make the contract exact-type-only or add explicit priority
 metadata; do not depend on incidental `Set` iteration order.
 
+## Hilt Runtime Composition
+
+When a repo has adopted Hilt, the Activity or app root should not manually
+compose runtime dependencies. It may connect injected coordinators to Compose
+content, but Hilt modules own environment-backed choices and concrete object
+creation.
+
+Move these out of Activity/AppRoot code:
+
+- BuildConfig-backed runtime config and flavor/environment selection
+- network clients and qualified clients for separate backends
+- repositories, data-source selection, and fake/static/API implementation
+  switches
+- auth gateways, token providers, credential adapters, and secure storage
+  adapters
+- route graphs, router factories, launch-handler registries, deep-link
+  registries, and app initializers
+- ViewModel factories for ViewModels that can be constructor-injected
+
+Use `@HiltViewModel` for app or feature ViewModels that need repositories,
+use cases, effect delegates, dispatchers, or runtime policies. Keep a direct
+constructor only when tests need to pass recording fakes; production should use
+Hilt's default ViewModel factory instead of a hand-written
+`ViewModelProvider.Factory` in the Activity.
+
+Example:
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+object RuntimeModule {
+    @Provides
+    @Singleton
+    fun provideContentRepository(
+        source: ContentSource,
+        @Api client: NetworkClient,
+    ): ContentRepository {
+        return when (source) {
+            ContentSource.Static -> StaticContentRepository()
+            ContentSource.Api -> ApiContentRepository(client)
+        }
+    }
+}
+
+@HiltViewModel
+class FeedViewModel @Inject constructor(
+    private val repository: ContentRepository,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+) : ViewModel()
+
+@AndroidEntryPoint
+class MainActivity : BaseActivity() {
+    @Inject lateinit var routerFactory: AppRouterFactory
+
+    @Composable
+    override fun Content() {
+        val viewModel: FeedViewModel = viewModel()
+        val router = rememberAppRouter(routerFactory)
+        AppRoot(router = router, state = viewModel.state)
+    }
+}
+```
+
+Use qualifiers when multiple clients, dispatchers, URLs, or string config values
+share the same Kotlin type. Prefer `SingletonComponent` for process-wide
+clients, repositories, and config; `ActivityComponent` for Activity context,
+window, launcher, and result-bound adapters; and `ViewModelComponent` for
+ViewModel-scoped collaborators.
+
+Manual construction can remain local for UI state that is inherently Compose or
+Activity-owned, such as `SnackbarHostState`, `ToastHostState`, camera/webview
+controllers created with `remember`, and activity-result launchers. Those
+objects are not graph services. Do not use this exception for repositories,
+network clients, auth providers, route graphs, or ViewModel creation.
+
 ## Reusable WebView Surface
 
 For WebView-backed destinations, make the reusable surface Compose content first

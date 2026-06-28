@@ -413,6 +413,31 @@ too. Use a route graph, router factory, coordinator, or registry class with an
 state. Pure route keys and deep-link specs can be `object` values; product graph
 assembly and runtime creation should not be object singletons.
 
+Hilt adoption should remove app-shell manual construction, not only add
+annotations to a few handlers. Put environment, network, repository, auth, and
+runtime graph decisions in Hilt modules at the boundary that owns the concrete
+implementation:
+
+```text
+app/di                       BuildConfig config, app-wide repository selection,
+                             auth gateway selection, qualified network clients
+core/runtime/di              runtime adapters that need Android APIs
+feature/<name>/impl/di       feature-owned @IntoSet handlers and route entries
+feature/api or core/domain   pure contracts, no Hilt annotations
+```
+
+Activity/AppRoot code must not call constructors for network clients,
+repositories, auth gateways, token providers, credential providers, route
+graphs, router factories, or production ViewModel factories. It should inject a
+small set of coordinators and let Hilt create `@HiltViewModel` instances through
+the default Compose/ViewModel integration. If tests need direct construction,
+keep that constructor test-friendly while production still uses Hilt.
+
+Use qualifiers for same-type values such as API URLs, `String` client ids,
+network clients, and dispatchers. A module that provides two `NetworkClient`
+instances without qualifiers is incomplete even when it compiles by accident in
+the current app shape.
+
 Example:
 
 ```kotlin
@@ -447,6 +472,10 @@ Do not:
 - keep a central app-shell `listOf(...)` that casts every feature route event
   family, Activity route handler, initializer, or route-entry provider; that
   list becomes a module-boundary failure as soon as growth is expected
+- construct network clients, repositories, auth gateways, token providers,
+  credential providers, route graphs, router factories, or production
+  ViewModelProvider factories in the Activity or app root after Hilt is the
+  repo baseline
 - add Metro beside Hilt without a repo-level migration plan and equivalence test
 
 ## Split Decision
