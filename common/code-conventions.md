@@ -37,6 +37,46 @@ and retry/recovery behavior, use `common/error-modeling.md`.
 3. Language and platform idioms.
 4. This shared baseline.
 
+## Strict Static Quality Profile
+
+Use this profile when a repo has no stricter local formatter, linter, or static
+analysis policy. Repo-local tool configuration still wins, but do not use a
+missing config as permission to write loose code. Treat these as review
+defaults and CI candidates for new projects:
+
+| Concern | Strict Baseline |
+| --- | --- |
+| Formatter ownership | Formatting belongs to the repo formatter. Do not hand-align code against the formatter or reformat unrelated files. |
+| Line length | Prefer 100-120 columns for readable code. Treat 160 columns as a hard maximum for source code unless the language formatter or repo-local config sets a lower limit. Do not use long lines to hide complex expressions. |
+| Wrapping | When a call, declaration, generic clause, builder, modifier chain, SQL/query builder, or object literal wraps, use one argument/property per line and a trailing comma where the language/tool supports it. |
+| Naming | Types and modules are nouns or capability names. Functions and commands are verbs or verb phrases. Boolean values read as predicates. Avoid vague names such as `manager`, `helper`, `util`, `data`, `temp`, `doStuff`, or caller-specific abbreviations. |
+| Parameters | Keep public functions and components to about five parameters or fewer. Prefer a typed request/options object only when the fields are a real caller-facing contract, not a dumping bag. |
+| Complexity | Keep cyclomatic/cognitive complexity low enough that one branch can be reviewed in one pass. More than about 10 decision points, nested depth over 3, or several unrelated branches is split pressure. |
+| Function size | Normal units should fit in about 40-80 lines. Runtime units over about 120 lines fail review by default unless a local policy has a documented exception. |
+| File ownership | Runtime source files default to one primary importable owner. New development files over about 400 lines or more than about 200 added lines in one file fail review by default. |
+| Imports | Imports are formatter-sorted and boundary-safe. Do not use wildcard imports, deep implementation imports, or barrel/index imports that hide forbidden dependencies unless the repo documents that pattern. |
+| Suppressions | Lint suppressions, `// swiftlint:disable`, `@Suppress`, `eslint-disable`, `# noqa`, or equivalent require a short reason and the narrowest scope. Do not suppress file-wide to make new code pass. |
+
+Language/tool defaults for strict review:
+
+| Stack | Formatter | Linter/static analysis | Extra checks |
+| --- | --- | --- | --- |
+| Android/Kotlin | `ktlint` or `ktfmt` | `detekt`, Android Lint | Compose compiler/stability checks when Compose state or performance changed. |
+| KMP/Kotlin server | `ktlint` or `ktfmt` | `detekt` | Dependency direction and source-set boundary checks when modules move. |
+| Swift/iOS/macOS | `swift-format` or SwiftFormat | SwiftLint, Swift compiler warnings | `Sendable`, actor isolation, access control, target membership, and package boundary checks. |
+| Web/TypeScript | Prettier | ESLint, TypeScript compiler, framework lint | Import-boundary lint, hooks rules, accessibility lint, and route/build checks when available. |
+| Python/server scripts | Ruff formatter or Black | Ruff lint, mypy or pyright when typed | Import cycles, typed public APIs, async/resource cleanup, and packaging checks. |
+| Go | `gofmt` / `goimports` | `go vet`, staticcheck when configured | Race, context cancellation, and error wrapping checks for concurrent or server code. |
+| Rust | `rustfmt` | Clippy | Ownership/lifetime, error handling, feature flag, and unsafe-boundary checks. |
+
+For existing repos, first discover the local commands and config files:
+`detekt.yml`, `.editorconfig`, `.swiftlint.yml`, `.swift-format`, `.eslintrc`,
+`eslint.config.*`, `prettier.config.*`, `pyproject.toml`, `ruff.toml`,
+`mypy.ini`, `tsconfig.json`, `go.mod`, `Cargo.toml`, or the repo's wrapper
+scripts. If a tool is configured, run it or explain why it was not run. If no
+tool is configured, apply the strict baseline in review and document the gap
+instead of inventing a one-off style.
+
 ## Rules
 
 - Make code easy to delete, move, and test.

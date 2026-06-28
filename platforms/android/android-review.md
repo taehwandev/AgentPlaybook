@@ -59,7 +59,10 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 
 ## Tools
 
-- Static: Gradle lint, ktlint/detekt if configured.
+- Static: Gradle lint, `ktlint` or `ktfmt` for formatting, and `detekt` for
+  naming, complexity, size, and maintainability when configured. If the repo has
+  no tool config, review against the strict static quality profile in
+  `common/code-conventions.md` and document the missing automation.
 - Unit: JVM tests for mapper, validator, policy, ViewModel state.
 - Instrumented: AndroidJUnitRunner for framework-dependent behavior.
 - UI: Compose UI Test or Espresso for screen interactions.

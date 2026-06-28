@@ -72,8 +72,11 @@ changes.
 
 ## Tools
 
-- Static: Swift compiler, SwiftLint, SwiftFormat, or repo-local wrapper when
-  configured.
+- Static: Swift compiler, `swift-format` or SwiftFormat, SwiftLint, or
+  repo-local wrapper. Use SwiftLint-style checks for line length, naming,
+  cyclomatic complexity, function/type/file body length, force unwraps, force
+  casts, unused code, and access-control hygiene when configured; otherwise
+  apply the strict static quality profile in `common/code-conventions.md`.
 - Unit: XCTest or Swift Testing for mappers, policies, use cases, reducers,
   state owners, adapters, and style/token mapping.
 - UI: XCUITest or repo-local smoke checks for navigation, forms, permissions,

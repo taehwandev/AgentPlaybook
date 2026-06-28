@@ -20,6 +20,10 @@ ANDROID_PLATFORM_SURFACE_DOCS = (
     "platforms/android/android-review.md",
     *ANDROID_EXTERNAL_SKILL_DOCS,
 )
+ANDROID_PERSISTENCE_DOCS = (
+    "platforms/android/android-state-data.md",
+    "platforms/android/references/android-datastore.md",
+)
 
 
 PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
@@ -52,6 +56,8 @@ PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
     ("android", "structure"): ANDROID_STRUCTURE_DOCS,
     ("android", "module"): ANDROID_STRUCTURE_DOCS,
     ("android", "background"): ("platforms/android/android-background-work.md",),
+    ("android", "cache"): ANDROID_PERSISTENCE_DOCS,
+    ("android", "persistence"): ANDROID_PERSISTENCE_DOCS,
     ("android", "devtools"): ANDROID_PLATFORM_SURFACE_DOCS,
     ("android", "dependency"): ANDROID_PLATFORM_SURFACE_DOCS,
     ("android", "release"): ANDROID_PLATFORM_SURFACE_DOCS,

@@ -81,9 +81,9 @@ Choose the smallest track that makes ownership and testing clear:
 | Track | Use When | Shape |
 | --- | --- | --- |
 | Simple SwiftUI | Local screen state, no domain workflow, no persistence, no external service. | `View -> local @State` |
-| MVVM | Loading, form submission, async fetch, navigation state, permission state, or reusable screen logic. | `View -> @MainActor ViewModel -> Repository/Client` |
-| Clean Architecture | Domain policy, offline/sync, auth/tenant/billing, multiple clients, multiple callers, or complex test boundary. | `View -> ViewModel -> UseCase -> Repository protocol -> Adapter/Client` |
-| Unidirectional State | Many events, state transitions, optimistic updates, replayable actions, or reducer tests. | `View -> Store/Reducer -> Effects/UseCases -> Repositories` |
+| TCA / Unidirectional State | Default for non-trivial SwiftUI: API effects, navigation, shared state, optimistic updates, replayable actions, reducer tests, or composed child features. | `View -> Store -> Reducer -> Effects/UseCases -> Repositories` |
+| MVVM | Simple or legacy-constrained loading, form submission, async fetch, navigation state, permission state, or reusable screen logic. | `View -> Action/Intent -> @MainActor ViewModel -> Repository/Client -> State` |
+| Clean Architecture | Domain policy, offline/sync, auth/tenant/billing, multiple clients, multiple callers, or complex test boundary. | `View -> Store/ViewModel -> UseCase -> Repository protocol -> Adapter/Client` |
 
 Do not add use cases, repositories, reducers, or protocols only for ceremony.
 Add them when they isolate a real product rule, side effect, or test boundary.
@@ -91,9 +91,15 @@ Add them when they isolate a real product rule, side effect, or test boundary.
 For modern SwiftUI, simple screens can stay Model-View: a small view owns
 presentation `@State`, reads services or shared models from the environment,
 models reachable states explicitly, and uses `.task` for lifecycle-bound async
-work. Add a ViewModel or store when the screen needs reusable state ownership,
-complex transitions, cancellation, navigation output, product rules, or focused
-tests. Do not create a ViewModel only because a view file exists.
+work. Add TCA before ad hoc MVVM when the screen needs reusable state ownership,
+complex transitions, cancellation, navigation output, product rules, child
+composition, or focused reducer tests. Use MVVM only when it stays
+UDF-constrained and the repo already has that pattern or the feature is small.
+Do not create a ViewModel only because a view file exists.
+
+TCA is the preferred iOS SwiftUI implementation track in AgentPlaybook. A
+repo-local TCA skill may add commands and examples, but this card remains the
+shared source of truth for when TCA should be used.
 
 ## ViewModel Rule
 
@@ -102,6 +108,8 @@ View models or observable state owners should:
 - Be `@MainActor` when they publish UI state.
 - Own screen-level `UiState`, user actions, async task coordination, and
   user-visible errors.
+- Keep mutation behind a single UDF entry path, such as `send(_:)`, typed
+  action handlers, or intent methods that all update the same state model.
 - Depend on protocols or small client interfaces for API, persistence, keychain,
   files, permissions, notifications, and external SDKs.
 - Convert DTO/domain models into display models before the view renders them.
@@ -115,6 +123,25 @@ Views should not:
 - Own business rules in `body`, `.task`, `.onAppear`, or button handlers.
 - Store server state in `@State` when a ViewModel should own the lifecycle.
 - Switch on raw API errors or transport DTOs.
+
+## TCA Feature Shape
+
+When using TCA, keep the feature shape explicit:
+
+```text
+ProfileFeature.State      loading/content/empty/error/navigation state
+ProfileFeature.Action     appeared, retryTapped, response, child actions
+ProfileFeature.Reducer    pure state transitions plus effect requests
+ProfileFeature.Dependency API, persistence, clock, uuid, analytics, crash hooks
+ProfileScreen             observes store state and sends actions only
+```
+
+Use child reducers for independently testable child workflows. Keep product
+copy, analytics names, permission policy, and navigation contracts at the
+feature or route boundary, not inside design-system primitives. Do not use TCA
+as permission to put every feature in one reducer file; split state, actions,
+dependencies, views, fixtures, and reducer tests when they are independently
+reviewable.
 
 ## UiState Shape
 
@@ -148,6 +175,9 @@ Rules:
 
 - Loading, empty, error, permission denied, offline, disabled, and submitted
   states must be representable.
+- API-backed loading should preserve the current page shape when possible:
+  render stable navigation, toolbar, card/list density, and section positions
+  with skeleton or redacted placeholders before replacing them with content.
 - Keep one-off events separate from persistent state. Use navigation state,
   callback output, or a typed effect channel instead of hiding navigation inside
   random booleans.
@@ -198,7 +228,7 @@ struct ProfileScreen: View {
     var body: some View {
         switch state {
         case .loading:
-            ProgressView()
+            ProfileSkeleton()
         case .content(let data):
             ProfileContent(data: data, onEdit: onEdit)
         case .empty:
@@ -254,11 +284,12 @@ A feature can use:
 Features/Profile/
   ProfileRoute.swift          navigation and dependency wiring
   ProfileScreen.swift         pure screen rendering
-  ProfileViewModel.swift      state owner and intents
-  ProfileUiState.swift        state, display models, actions, effects
+  ProfileFeature.swift        TCA state, actions, reducer, effects
+  ProfileViewModel.swift      only for MVVM tracks
+  ProfileUiState.swift        display state for non-TCA tracks
   Components/                 feature-local views
   PreviewData/                deterministic preview fixtures
-  ProfileViewModelTests.swift
+  ProfileFeatureTests.swift   or ProfileViewModelTests.swift
 ```
 
 Shared UI can use:
@@ -285,9 +316,9 @@ Previews should:
 - Target pure screen/section/component views, not dependency-heavy route views.
 - Use deterministic sample state from `PreviewData`, fixtures, or static
   factory methods.
-- Cover changed states such as content, loading, empty, error, permission
-  denied, offline, disabled, long text, Dynamic Type, and dark mode when
-  affected.
+- Cover changed states such as content, skeleton loading, refreshing with stale
+  content, empty, error, permission denied, offline, disabled, retry, long
+  text, Dynamic Type, and dark mode when affected.
 - Avoid network, persistence, keychain, random data, current time, real
   credentials, and device-only services.
 
@@ -299,6 +330,8 @@ Choose the closest checks configured in the repo:
 
 - ViewModel tests for state transitions, user intents, loading, error, retry,
   permission denial, and cancellation.
+- Reducer tests for TCA state transitions, effect output, dependency failures,
+  navigation state, retry, cancellation, and stale response suppression.
 - Mapper tests for DTO/domain to display-state conversion.
 - Use case tests when product rules move out of the ViewModel.
 - XCUITest for navigation, forms, permissions, and critical flows.

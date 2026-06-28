@@ -132,6 +132,172 @@ handoff, environment access, and extension hooks. It must not own product route
 registration, feature screen mapping, repositories, ViewModel construction,
 analytics policy, or screen-specific UI state.
 
+## Runtime Boundary Example Stops
+
+Shared Android runtime design needs at least one small example before
+implementation. Add the example to the task doc, skill card, PRD, or review
+summary whenever the design introduces a reusable Activity/AppRoot template,
+route coordinator, ActivityRoute launcher, notice host, permission host, WebView
+runtime, credential adapter, or generated DI/route discovery.
+
+The example must show:
+
+- the pure contract a ViewModel, feature, or app coordinator imports
+- the Android/Compose runtime adapter that implements the contract
+- the feature or app caller that benefits from the split
+- the Android/framework imports that are forbidden in the pure contract
+- the verification path for state, route, permission, notice, or launcher behavior
+
+Minimal runtime contract example:
+
+```kotlin
+interface ActivityRouteLauncher {
+    fun launch(request: ActivityRouteRequest)
+}
+
+data class ActivityRouteRequest(
+    val route: ActivityRoute,
+    val resultKey: String? = null,
+)
+```
+
+Minimal runtime implementation boundary:
+
+```kotlin
+class AndroidActivityRouteLauncher(
+    private val activity: ComponentActivity,
+) : ActivityRouteLauncher {
+    override fun launch(request: ActivityRouteRequest) {
+        activity.startActivity(request.route.toIntent(activity))
+    }
+}
+```
+
+Keep `ActivityRouteLauncher` free of `Activity`, `Context`, `Intent`, Compose,
+and `NavController` when it is meant to be a pure caller contract. Keep
+`AndroidActivityRouteLauncher` in an app, app-runtime, or Android-specific
+implementation boundary. If the design cannot show a caller, a forbidden import,
+and a focused verification path, keep the launch local to the feature or ask for
+the missing source example instead of inventing a shared runtime module.
+
+When the repo uses Hilt, register feature-owned launch adapters with
+multibindings instead of constructing them manually in the Activity or app root.
+The Activity should inject one launcher or coordinator; feature implementation
+modules contribute only their own handlers.
+
+Example:
+
+```kotlin
+class DefaultActivityRouteLauncher @Inject constructor(
+    @param:ActivityContext private val context: Context,
+    private val handlers: Set<@JvmSuppressWildcards ActivityRouteLaunchHandler>,
+) : ActivityRouteLauncher {
+    override fun launch(request: ActivityRouteRequest) {
+        handlers.firstOrNull { it.canHandle(request.route) }?.launch(request)
+    }
+}
+
+@Module
+@InstallIn(ActivityComponent::class)
+abstract class WebViewActivityRouteModule {
+    @Binds
+    @IntoSet
+    abstract fun bindWebViewActivityRouteLaunchHandler(
+        impl: WebViewActivityRouteLaunchHandler,
+    ): ActivityRouteLaunchHandler
+}
+```
+
+Use `ActivityComponent` when the launcher needs an Activity context or Activity
+lifecycle. Use `SingletonComponent` only for pure registries that do not hold
+Activity, window, launcher, or Compose state. Do not make route handlers global
+singletons simply to reduce Activity boilerplate.
+
+Apply the same rule to route event planning. A product shell may own the route
+graph, host/base-path policy, and cross-feature stack shape, but it must not
+grow a hand-written list that casts every feature event type. Each feature or
+product-slice implementation should contribute its own `RouteEventHandler` via
+DI multibinding, and the app/root coordinator should consume only
+`Set<RouteEventHandler>` or a registry abstraction.
+
+The route graph or product route factory should also be a DI-managed class,
+factory, or coordinator. Do not leave product route graphs as Kotlin `object`
+singletons after adopting DI; otherwise the handler set is injectable but the
+route policy remains a hidden service locator. Route keys and stateless
+`DeepLinkSpec` values may stay as `object` values when they are pure immutable
+contracts, but graph assembly, route planning, handler-set composition, and
+runtime factory creation should be injected.
+
+Example:
+
+```kotlin
+class FeedRouteEventHandler @Inject constructor() : RouteEventHandler {
+    override fun planFor(event: RouteEvent): RoutePlan? {
+        return when (event) {
+            is FeedRouteEvent.ClipRequested -> RoutePlan.compose(
+                RouteStack.of(FeedRoute, ClipDetailRoute(event.clipId)),
+            )
+            else -> null
+        }
+    }
+}
+
+@Module
+@InstallIn(ActivityComponent::class)
+abstract class FeedRouteEventModule {
+    @Binds
+    @IntoSet
+    abstract fun bindFeedRouteEventHandler(
+        impl: FeedRouteEventHandler,
+    ): RouteEventHandler
+}
+```
+
+Use an explicit list only inside a small unit-test fixture or temporary
+prototype. Stop and introduce multibinding or code-generated discovery when the
+app shell would otherwise add one entry per feature, route event family,
+initializer, deep-link contributor, or launch handler. If handler order can
+change behavior, make the contract exact-type-only or add explicit priority
+metadata; do not depend on incidental `Set` iteration order.
+
+## Reusable WebView Surface
+
+For WebView-backed destinations, make the reusable surface Compose content first
+and let execution shells wrap it.
+
+Use this shape when the same web destination may appear from an Activity route,
+a Compose navigation entry, a modal/sheet, or a future app-shell wrapper:
+
+```text
+WebViewRouteData
+  -> reusable Compose WebView content/controller
+  -> Activity wrapper for external task, result, or manifest ownership
+  -> Compose route wrapper when the app navigation stack owns the destination
+```
+
+Rules:
+
+- Keep URL validation, allowlists, JavaScript policy, file access policy, and
+  external-browser fallback in the WebView runtime or feature owner before a
+  page is loaded.
+- Keep the WebView body reusable as a Composable or controller-backed surface.
+  An Activity should install that content; it should not fork a second WebView
+  implementation.
+- Use an Activity-backed route when the destination needs manifest metadata,
+  task/back-stack isolation, Activity result integration, external app entry, or
+  a WebView lifecycle boundary that should outlive the app Compose stack.
+- Use a Compose route when the destination is part of the in-app navigation
+  stack and does not need a separate Activity contract.
+- Keep `Intent`, `Activity`, `WebView`, `WebSettings`, JavaScript bridges, and
+  AndroidX Activity Result types out of pure route contracts. Put them in the
+  runtime adapter, Activity wrapper, or Android-specific feature implementation.
+- Do not put product copy, network error mapping, auth policy, or feature route
+  registration into a generic WebView base.
+
+If a WebView design cannot show the route data, reusable Compose content,
+Activity or Compose wrapper, security policy, and verification path, keep the
+WebView local until that example exists.
+
 ## Navigation 3 Advanced Deep Links
 
 For Navigation 3-style Compose apps, treat deep links as an app-entry concern

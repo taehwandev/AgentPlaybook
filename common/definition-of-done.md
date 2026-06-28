@@ -28,7 +28,10 @@ the answer claims a verified state.
 
 - Current user request and any acceptance criteria.
 - Route gates and finish-check evidence when a scripted route was used.
-- Repo-local instructions, PRD/ARD, issue, design note, or source of truth.
+- Repo-local instructions, PRD/spec/ARD, issue, design note, task doc, or source
+  of truth. For feature/product/build/release work, completion evidence must
+  show these sources were searched and read before implementation, or that none
+  were found.
 - Final diff, changed files, generated artifacts, lockfiles, and config.
 - Verification output and skipped-check reasons.
 - User-owned dirty files that must not be included in the claim.
@@ -51,7 +54,7 @@ completion. A missing or vague gate is `🐱🔴 FAIL`, not a warning.
 | Requirements | Known facts, assumptions, open decisions, and non-goals are visible when behavior is non-trivial. |
 | Architecture | New or changed boundaries have owners, allowed imports, forbidden imports, callers, and nearest verification when relevant. |
 | Code | Implementation follows local style, avoids speculative abstractions, and keeps responsibilities reviewable. |
-| Docs | Durable behavior, workflow policy, public contract, or operator action changes are reflected in the relevant docs. |
+| Docs | Durable behavior, workflow policy, public contract, operator action, or acceptance-criteria changes are reflected in the relevant docs, or the unchanged/not-applicable decision names the checked doc path/class and reason. |
 | Tests | The nearest useful automated or manual check ran, or the skip reason and residual risk are explicit. |
 | Security | Secrets, private data, permissions, tenant, billing, and external-state risks were checked when touched. |
 | Release | Packaging, migration, rollout, rollback, and monitoring are covered when release-sensitive work changed. |
@@ -63,6 +66,7 @@ completion. A missing or vague gate is `🐱🔴 FAIL`, not a warning.
 | --- | --- |
 | "The diff looks right." | Run or report the nearest verification and inspect side effects. |
 | "Tests passed, so docs are unnecessary." | Update docs when durable behavior, workflow policy, or public contracts changed. |
+| "I did not see a PRD, so none exists." | Search the expected PRD/spec/ARD/source-of-truth locations and record the no-source result before implementation. |
 | "Only docs changed." | Still run frontmatter, link, route, or diff checks when available. |
 | "The remaining issue is unrelated." | State the unrelated dirty file or failing check and why it is out of scope. |
 | "The hook warned but the work is fine." | A required gate or hook failure must be recovered before completion. |

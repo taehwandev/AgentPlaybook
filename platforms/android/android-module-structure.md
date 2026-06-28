@@ -208,6 +208,61 @@ whole shape. Distill the reference into the current repo's scale:
   as authority over state, DI, security, or product policy when repo-local rules
   differ.
 
+## Example-First Boundary Documentation
+
+When a task uses a large reference app or external codebase to design Android
+module structure, write an example packet before asking another agent to
+implement the shape. The packet must be concrete enough that the agent can copy
+the boundary pattern without inventing source names, packages, modules, or
+missing contracts.
+
+Include all of these fields:
+
+```text
+transferable lesson:
+target boundary:
+lowest acceptable ownership level:
+minimal file/module sketch:
+allowed imports:
+forbidden imports:
+first caller or test:
+nearest verification:
+collapse rule:
+```
+
+Example packet:
+
+```text
+transferable lesson: keep route contracts pure; execute Activity launches in runtime
+target boundary: feature/settings/api + feature/settings/impl + core/route/runtime
+lowest acceptable ownership level: feature-local until a second caller needs route data
+minimal file/module sketch: SettingsRouteKey in api, SettingsRouteHolder in impl,
+  ActivityRouteLauncher in runtime
+allowed imports: api -> Kotlin value types; impl -> own api + Compose; runtime -> Android
+forbidden imports: api -> Activity, Context, Intent, NavController, Compose UI
+first caller or test: app route coordinator imports SettingsRouteKey only
+nearest verification: compile api/impl/runtime and run route assertion tests
+collapse rule: if no caller needs SettingsRouteKey without impl, keep one feature module
+```
+
+Stop instead of generating structure when the packet cannot name a real caller,
+forbidden import, verification path, and collapse rule. In that case keep the
+code local, add a TODO with the missing evidence, or ask for the source example
+that proves the split. Do not fill gaps by copying a reference app's full module
+tree, broad base classes, generated registries, DI graph, or source-specific
+package names.
+
+Use examples at these boundaries before creating shared modules:
+
+| Boundary | Minimum Example Required | Collapse Or Stop When |
+| --- | --- | --- |
+| `feature-api` plus implementation | One route key/event or public port, one implementation file, one caller that should avoid implementation dependencies. | The API has no caller without the implementation. |
+| Repository `api` plus implementation | One stable entity or repository port, one DTO/cache mapper kept inside implementation, one feature or use case caller. | Callers would still import DTOs, SDK types, or concrete data sources. |
+| `assertions` module | Fixture, recording fake, and assertion subject that depend on `api` only. | Only one test needs the helper, or the fake imports production `impl`. |
+| App-runtime helper | One small contract, one runtime adapter/host, and one caller that should not know Android/Compose details. | The helper starts owning product route policy, repositories, analytics, or screen state. |
+| Activity/deep-link route execution | Pure route or plan object, runtime launcher or entry mapping, and explicit Back/Up/result expectation. | The design hides parsing, planning, and execution inside `BaseActivity`. |
+| Convention plugin | Two modules sharing the same build setup and one before/after dependency sketch. | Only one module needs the setup or the plugin would encode product behavior. |
+
 ## Module Families
 
 Use repo-local names first. A large Android app commonly separates these module
@@ -225,6 +280,32 @@ families:
 | `feature` / `feature-impl` | Route holders, stateless screens, ViewModels, feature-local components, UI mappers, feature DI. | Shared design primitives or cross-feature data contracts. |
 | `feature-common` / `holder` | Reused product UI or workflow holders with a named owner and stable caller contract. | Dumping ground for unrelated screen fragments. |
 | `dev` / `testing` / `assertions` | Dev-only screens, reusable fakes, recording adapters, fixture builders, assertion DSLs, and contract test helpers. | Production-only behavior that callers need at runtime, or dependencies on production implementation modules by default. |
+
+## Core Is A Capability Namespace
+
+Do not treat `core` as a promise that every module under it is pure Kotlin.
+Treat it as a stable capability namespace whose Gradle plugin and dependencies
+must match the capability it exports.
+
+Choose the module type by import contract:
+
+- Use pure Kotlin modules for platform-free value types, route keys, repository
+  ports, domain rules, error models, fakes, fixtures, and assertion DSLs.
+- Use Android library modules for contracts or adapters that need resources,
+  `Context`, `ActivityResultRegistry`, system services, WebView, credentials,
+  permissions, notifications, or Android SDK types.
+- Use Compose-enabled Android library modules for reusable composables, state
+  holders, app roots, notice hosts, design-system primitives, or lifecycle-aware
+  Compose effects.
+- Use names such as `kotlin-extensions`, `compose-extensions`, `runtime`,
+  `base`, or `designsystem` only when the exported capability and forbidden
+  imports are clear. Otherwise prefer a capability name such as `notice`,
+  `router`, `permission`, `webview`, `activity`, or `resource`.
+
+Review should stop when a module is called `core`, `common`, `shared`,
+`extensions`, or `base` but callers cannot tell whether it is safe for pure
+Kotlin, Android runtime, Compose runtime, tests, or app-shell code. Split the
+module, rename it, or keep the helper local until the import surface is clear.
 
 If the repo already uses convention plugins, apply the nearest plugin instead of
 copying dependency blocks by hand. If no convention exists, update or add one
@@ -285,6 +366,88 @@ conventions. Keep convention plugins responsible for:
 Do not put product routes, DI graph decisions, repository bindings, signing
 secrets, flavor policy, generated module discovery, or one-off module behavior
 inside a shared convention plugin.
+
+## Android DI Build Logic
+
+When an Android repo chooses Hilt, treat it as the default Android DI baseline
+until the repo explicitly migrates. Do not mix Hilt and Metro in one object
+graph. Metro can be recorded as a future migration candidate only after the repo
+accepts the ecosystem, annotation-processing, and migration risk.
+
+Apply DI through a small additive convention plugin instead of repeating Gradle
+setup in each module:
+
+```text
+<repo>.android.hilt
+```
+
+That plugin may own only DI tool wiring:
+
+- apply the Hilt Gradle plugin
+- apply the active annotation processor plugin, usually KSP for AGP built-in
+  Kotlin projects and KAPT only when the repo already supports KAPT
+- add `hilt-android` and the matching Hilt compiler dependency
+
+Keep product bindings out of `build-logic`. Product graph decisions still live
+in app, runtime, data, or feature implementation modules through Hilt modules.
+
+Use this placement:
+
+```text
+app                         @HiltAndroidApp, @AndroidEntryPoint activities
+core/runtime or core-app     runtime bindings such as ActivityRouteLauncher
+feature/<name>/impl          feature-owned @IntoSet entries and adapters
+core/domain or feature/api   pure contracts with no Hilt dependency
+build-logic                  the <repo>.android.hilt convention only
+```
+
+Prefer Hilt multibindings for additive registrations such as activity route
+launch handlers, route event handlers, deep-link specs, app initializers,
+notice renderers, and route entry providers. The app shell should inject a
+`Set<Handler>` or registry contract instead of manually constructing
+`listOf(FeatureHandler())`.
+
+When a handler set is injected, keep the owner that consumes the set injectable
+too. Use a route graph, router factory, coordinator, or registry class with an
+`@Inject` constructor instead of a Kotlin `object` that reaches into static
+state. Pure route keys and deep-link specs can be `object` values; product graph
+assembly and runtime creation should not be object singletons.
+
+Example:
+
+```kotlin
+@Module
+@InstallIn(ActivityComponent::class)
+abstract class ActivityRouteLauncherModule {
+    @Binds
+    abstract fun bindActivityRouteLauncher(
+        impl: DefaultActivityRouteLauncher,
+    ): ActivityRouteLauncher
+}
+
+@Module
+@InstallIn(ActivityComponent::class)
+abstract class WebViewActivityRouteModule {
+    @Binds
+    @IntoSet
+    abstract fun bindWebViewActivityRouteLaunchHandler(
+        impl: WebViewActivityRouteLaunchHandler,
+    ): ActivityRouteLaunchHandler
+}
+```
+
+Do not:
+
+- make every `core` module a Kotlin-only module by default when the capability
+  requires Android context, Activity, Compose, resource, or lifecycle APIs
+- put Hilt annotations in pure API modules
+- use a singleton object or manual service locator to avoid multibinding
+- keep the product route graph or router factory as a Kotlin `object` while
+  only the handlers are DI-managed
+- keep a central app-shell `listOf(...)` that casts every feature route event
+  family, Activity route handler, initializer, or route-entry provider; that
+  list becomes a module-boundary failure as soon as growth is expected
+- add Metro beside Hilt without a repo-level migration plan and equivalence test
 
 ## Split Decision
 

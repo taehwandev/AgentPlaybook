@@ -139,7 +139,11 @@ public output contract.
 
 ## Tools
 
-- Static: TypeScript, ESLint, framework lint.
+- Static: TypeScript, ESLint, framework lint, and Prettier. Use ESLint for
+  naming, complexity, hook rules, import boundaries, unsafe async patterns,
+  accessibility lint, unused code, and no-floating-promises when configured. If
+  no config exists, review against `common/code-conventions.md` and document the
+  missing lint/typecheck automation.
 - Structure: import-boundary lint, route snapshots, or final import inspection
   when the repo lacks automated boundary checks.
 - Unit: Vitest or Jest for policy, mapper, hook, reducer.

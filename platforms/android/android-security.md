@@ -44,6 +44,13 @@ release-channel config.
   constrained; do not pass caller-controlled SQL fragments or broad file URI
   grants through unchecked.
 - Keep WebView JavaScript bridges narrow, typed, and unavailable to untrusted content.
+- For reusable WebView surfaces, define the allowlisted origin policy, JavaScript
+  enablement, mixed-content policy, file/content access policy, external-browser
+  fallback, and bridge availability before sharing the component across Activity
+  and Compose wrappers.
+- Do not let arbitrary server content enable a JavaScript bridge. Bind bridges
+  only for trusted origins and keep bridge methods typed, minimal, and free of
+  secrets, tokens, raw files, and direct navigation execution.
 - Prefer platform photo picker and scoped storage over broad file permissions.
 - Keep cleartext traffic disabled unless the repo documents an accepted debug-only exception.
 

@@ -20,6 +20,9 @@ For Jetpack DataStore persistence, migration, corruption handling, and
 Preferences-vs-typed-vs-Room decisions, also read
 `references/android-datastore.md`.
 
+For cross-platform persistence, cache, source-of-truth, storage-tier, migration,
+and cleanup rules, also use `../../common/data-persistence-sync.md`.
+
 ## Defaults
 
 - Composable renders state and sends events.

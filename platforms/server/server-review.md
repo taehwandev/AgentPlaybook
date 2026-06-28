@@ -47,7 +47,13 @@ Use for API, worker, database, auth, tenancy, migration, and integration review.
 
 ## Tools
 
-- Static: compiler/typecheck, lint, schema validation.
+- Static: compiler/typecheck, lint, formatter, schema validation, and
+  language-specific analyzers. For Python use Ruff formatter or Black, Ruff
+  lint, and mypy/pyright when typed; for TypeScript use Prettier, ESLint, and
+  `tsc`; for Kotlin use `ktlint`/`ktfmt` and `detekt`; for Go use
+  `gofmt`/`goimports`, `go vet`, and staticcheck when configured. If no repo
+  config exists, review against `common/code-conventions.md` and document the
+  missing automation.
 - Unit: services, policies, validators, mappers.
 - Integration: database, cache, queue, external client fakes.
 - Contract: API request/response, OpenAPI, GraphQL schema, webhook payloads.

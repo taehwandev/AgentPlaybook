@@ -126,6 +126,35 @@ state transition; the delegate only owns the reusable capability it represents.
 Do not create a `BaseViewModel` only to inherit notice, routing, permission, or
 coroutine helpers. Inject small interfaces or delegates instead.
 
+## Stream Primitive Selection
+
+Choose `StateFlow`, `SharedFlow`, `Channel`, `suspend`, or cold `Flow` by
+delivery contract. Do not copy a primitive from a reference app without naming
+what replay, buffering, ordering, and lifecycle behavior the screen needs.
+
+| Primitive | Use For | Avoid When |
+| --- | --- | --- |
+| `StateFlow` | Durable, replayable latest UI state with a synchronous current value. Use for screen state, selected ids, loading/error/content state, permission state, and form availability. | One-off navigation, toast/snackbar, permission launches, Activity launches, or events that must not replay after rotation. |
+| `SharedFlow(replay = 0)` | Broadcast one-off effects where zero replay is intentional, such as notice, route, analytics-safe UI effect, or runtime host events collected by one or more lifecycle owners. Set buffer/overflow explicitly. | A reducer/action queue where every input must be serialized, or a durable state that a late collector must see. |
+| `Channel` / `receiveAsFlow()` | Single-consumer ordered work or action queues, actor-style reducers, and one-off effects where a single collector owns consumption. Use when backpressure and serialization matter. | Broadcast events to multiple collectors, durable UI state, or events that must survive process death/configuration by replay. |
+| `suspend` | One-shot caller-owned work such as load, submit, save, retry, refresh, repository calls, and platform adapter calls invoked from a ViewModel action handler. | Long-lived observation, shared state, callback-style event buses, or work whose lifecycle owner is hidden inside the callee. |
+| cold `Flow` | Continuous data, subscriptions, paging windows, callback adapters, repository streams, and platform signals whose collection lifecycle is owned by the caller. | A single request/response command that is simpler and safer as `suspend`. |
+
+View to ViewModel input should normally be a typed `Action` method such as
+`onAction(action)`. A direct method is enough when the caller is already on the
+main thread and the ViewModel can branch immediately. Add a `Channel` or actor
+only when actions must be queued, serialized, cancelled, coalesced, or tested as
+an input stream. Keep the public API typed either way; the UI should not send
+raw strings, Android objects, or generic event maps.
+
+ViewModel to View output has two lanes: `UiState` for durable renderable state,
+and typed side effects for work the renderer/runtime performs once. Use state
+instead of side effects when a late collector, rotation, or process recreation
+must still show the information. Use a side-effect stream when repeating it
+would be wrong. If a side effect must survive recreation, model it as durable
+pending state with an id and explicit consume/acknowledge behavior instead of
+replaying a blind effect.
+
 For runtime permissions, prefer Compose-first request gates when the permission
 is local to a screen. The Composable or route holder owns
 `rememberLauncherForActivityResult`, rationale UI, duplicate request guards, and

@@ -56,7 +56,7 @@ Choose one track explicitly for non-trivial Swift work:
 | Local Swift | One target, local state, no risky side effect, no shared domain rule. | `View/Controller -> local state/helper` |
 | State Owner / MVVM | Loading, form submit, async fetch, navigation, permission, or reusable screen logic needs an owner. | `View/Controller -> @MainActor ViewModel/Model -> Client` |
 | Use Case Boundary | Product rule, permission, sync, persistence, mutation, or external integration needs focused tests. | `State Owner -> UseCase/Policy -> Repository protocol` |
-| Reducer / State Machine | Many events, optimistic updates, replayable transitions, wizard flows, or concurrency races. | `State -> Action -> Reducer/Machine -> Effect` |
+| Reducer / State Machine | Many events, optimistic updates, replayable transitions, wizard flows, or concurrency races. For non-trivial iOS SwiftUI, prefer TCA as this track. | `State -> Action -> Reducer/Machine -> Effect` |
 | Modular Package | Multiple app targets, extensions, widgets, packages, or owners need stable contracts. | `App target -> feature/domain/data/platform packages` |
 
 Do not add use cases, protocols, reducers, packages, or factories only for
@@ -69,9 +69,11 @@ For modern SwiftUI targets, start with Model-View before adding MVVM ceremony:
 
 - Keep simple screens as small views with local `@State`, environment-provided
   services, explicit `UiState`, and `.task` or `.onChange` orchestration.
-- Promote to a `@MainActor` observable model, ViewModel, store, reducer, or use
-  case only when loading, mutation, navigation, permissions, cancellation,
-  reuse, or product rules need a named owner and tests.
+- Promote to TCA/store/reducer before ad hoc MVVM when loading, mutation,
+  navigation, permissions, cancellation, reuse, child composition, or product
+  rules need deterministic state ownership and reducer tests. Use a
+  `@MainActor` observable model or ViewModel when the repo is already MVVM or
+  the workflow is simple enough that TCA would add more ceremony than safety.
 - Use `@Observable` for shared SwiftUI state on iOS 17 and newer when repo
   deployment targets allow it. Keep legacy `ObservableObject` for older targets
   or existing architecture that already depends on it.
@@ -85,6 +87,9 @@ For modern SwiftUI targets, start with Model-View before adding MVVM ceremony:
 - Keep views and controllers render-focused. They send intent and render
   explicit state; they do not own repository calls, credential access, file I/O,
   permission checks, or product rules.
+- Keep SwiftUI data flow unidirectional. Views send actions/intents; stores,
+  reducers, observable models, or ViewModels publish the next state; effects
+  call use cases, repositories, and adapters.
 - Use `@MainActor` for observable state that publishes UI changes. Keep heavy
   work, blocking I/O, and long-running processing off the main actor.
 - Prefer value types for immutable state and display models. Use reference types

@@ -110,6 +110,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Android Compose UI structure, stateful/stateless split, previews, packages:
   `platforms/android/android-compose-ui.md`
 - Android state/data: `platforms/android/android-state-data.md`
+- Android DataStore persistence reference:
+  `platforms/android/references/android-datastore.md`
 - Android background work: `platforms/android/android-background-work.md`
 - Android security: `platforms/android/android-security.md`
 - Android review: `platforms/android/android-review.md`

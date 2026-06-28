@@ -56,6 +56,28 @@ Add instrumentation only when it answers a concrete support, operations, or
 product reliability question. Do not add noisy logs or metrics because they are
 easy to emit.
 
+## Crash Reporting
+
+Production client apps should have crash reporting or a documented exception
+for privacy, regulatory, offline-only, cost, or product-stage reasons. Choose
+one primary crash source of truth by default. Adding multiple crash providers
+requires a written reason, because duplicate SDKs increase binary, privacy,
+alerting, and cost surfaces.
+
+Crash reporting setup must define:
+
+- provider and release/channel mapping
+- which user, device, breadcrumb, attachment, screenshot, and custom-key data is
+  collected
+- PII and secret scrubbing rules
+- sampling, retention, quota, and current pricing or cost limit
+- how crash reports connect to user-visible errors, logs, traces, and release
+  health
+
+Do not send access tokens, refresh tokens, private payloads, raw server
+responses, local file paths, secrets, prompts, customer content, or unrestricted
+logs to crash reports.
+
 ## Exception Handling
 
 - Do not write empty catch blocks.
