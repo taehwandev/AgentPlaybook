@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from agent_finish_gate_validators import (
     validate_documentation_impact_evidence,
+    validate_documentation_source_to_artifact_evidence,
     validate_platform_selection_evidence,
     validate_review_readiness_evidence,
     validate_source_docs_evidence,
@@ -73,6 +74,13 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
         failures.extend(_validate_documentation(gate_evidence.get(DOCUMENTATION_GATE, "")))
     if SOURCE_DOCS_GATE in required:
         failures.extend(validate_source_docs_evidence(gate_evidence.get(SOURCE_DOCS_GATE, "")))
+    if SOURCE_DOCS_GATE in required and DOCUMENTATION_IMPACT_GATE in required:
+        failures.extend(
+            validate_documentation_source_to_artifact_evidence(
+                gate_evidence.get(SOURCE_DOCS_GATE, ""),
+                gate_evidence.get(DOCUMENTATION_IMPACT_GATE, ""),
+            )
+        )
     if PLATFORM_SELECTION_GATE in required:
         failures.extend(validate_platform_selection_evidence(gate_evidence.get(PLATFORM_SELECTION_GATE, "")))
     if REVIEW_READINESS_GATE in required:

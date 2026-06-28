@@ -819,8 +819,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                     "user-visible checkpoint told the user before edits"
                 ),
                 DOCUMENTATION_IMPACT_GATE: (
-                    "before implementation documentation impact decision: update workflows/README.md "
-                    "because workflow policy changed"
+                    "before implementation documentation impact decision: "
+                    "artifact: workflow card; update workflows/README.md because workflow policy changed"
                 ),
                 DOCUMENTATION_GATE: (
                     "updated workflows/README.md because workflow policy changed; "
@@ -869,19 +869,19 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertEqual([], failures)
 
-    def test_source_docs_evidence_requires_prd_spec_discovery_before_work(self) -> None:
+    def test_source_docs_evidence_requires_source_artifact_discovery_before_work(self) -> None:
         failures = validate_gate_evidence(
             {SOURCE_DOCS_GATE: "checked docs"},
             [SOURCE_DOCS_GATE],
         )
 
-        self.assertTrue(any("PRD/spec/ARD/source-of-truth" in failure for failure in failures))
+        self.assertTrue(any("source-of-truth docs" in failure for failure in failures))
 
         failures = validate_gate_evidence(
             {
                 SOURCE_DOCS_GATE: (
-                    "searched PRD/spec/ARD source-of-truth docs before implementation; "
-                    "found docs/prd.md and read it; applied acceptance criteria to the work"
+                    "searched source-of-truth docs before implementation; "
+                    "found docs/module/README.md and read it; applied module boundary to the work"
                 )
             },
             [SOURCE_DOCS_GATE],
@@ -971,11 +971,71 @@ class WorkflowRoutingTests(unittest.TestCase):
         failures = validate_gate_evidence(
             {
                 DOCUMENTATION_IMPACT_GATE: (
-                    "before code documentation impact decision: update workflows/README.md "
-                    "because workflow policy changed"
+                    "before code documentation impact decision: artifact: workflow card; "
+                    "update workflows/README.md because workflow policy changed"
                 )
             },
             [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_impact_rejects_non_creation_without_no_durable_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "not applicable because new feature changed behavior"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(
+            any("cannot use unchanged/not-applicable/no-docs" in failure for failure in failures)
+        )
+
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "not applicable because answer-only with no durable behavior"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_missing_source_docs_requires_artifact_creation_or_no_durable_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "searched PRD/spec/ARD source-of-truth docs before implementation; "
+                    "none found; used user request as source of truth"
+                ),
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: module README; "
+                    "not applicable because new module changed behavior"
+                ),
+            },
+            [SOURCE_DOCS_GATE, DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("when source docs are missing" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "searched PRD/spec/ARD source-of-truth docs before implementation; "
+                    "none found; used user request as source of truth"
+                ),
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: module README; "
+                    "create docs/module/README.md because new module behavior changed"
+                ),
+            },
+            [SOURCE_DOCS_GATE, DOCUMENTATION_IMPACT_GATE],
         )
 
         self.assertEqual([], failures)
