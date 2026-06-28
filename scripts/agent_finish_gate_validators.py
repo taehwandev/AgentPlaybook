@@ -163,6 +163,36 @@ def validate_documentation_source_to_artifact_evidence(
     return []
 
 
+PRD_CONTENT_PHRASES = (
+    "acceptance criteria", "given", "when", "then",
+    "in scope", "out of scope", "actor", "outcome", "user story",
+    "states", "open decisions", "desired outcome", "proposed behavior",
+    "요구사항", "수용 기준", "범위", "액터", "결과", "수락 기준",
+)
+
+
+def validate_prd_draft_evidence(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_created = has_any(
+        text,
+        (
+            "created", "drafted", "written", "saved", "wrote",
+            "file", ".md", "doc path", "path:", "artifact", "document",
+            "생성", "작성", "저장", "파일",
+        ),
+    )
+    has_prd_content = has_any(text, PRD_CONTENT_PHRASES)
+    if has_created and has_prd_content:
+        return []
+    return [
+        "PRD draft evidence must confirm the PRD was created or drafted (name the file "
+        "path or artifact) and include content evidence such as acceptance criteria, "
+        "scope, actor/outcome, states, or open decisions"
+    ]
+
+
 def validate_platform_selection_evidence(evidence: str) -> list[str]:
     text = evidence.lower()
     if not text:

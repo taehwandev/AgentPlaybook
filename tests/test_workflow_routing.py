@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from agent_finish_gate_policy import (
     PLATFORM_SELECTION_GATE,
+    PRD_DRAFT_GATE,
     REVIEW_READINESS_GATE,
     VALIDATED_GATES,
     validate_gate_evidence,
@@ -581,6 +582,70 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("workflows/prd-creation.md", prd_route["docs"])
         self.assertIn("workflows/prd-creation.md", product_route["docs"])
 
+    def test_prd_and_spec_routes_get_documentation_enforcement_gates(self) -> None:
+        for command in ("prd", "spec"):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(SOURCE_DOCS_GATE, route["gates"])
+                self.assertIn(DOCUMENTATION_IMPACT_GATE, route["gates"])
+                self.assertIn(DOCUMENTATION_GATE, route["gates"])
+                self.assertIn(PRD_DRAFT_GATE, route["gates"])
+                self.assertLess(
+                    route["gates"].index(SOURCE_DOCS_GATE),
+                    route["gates"].index("PRD draft"),
+                )
+                self.assertLess(
+                    route["gates"].index(DOCUMENTATION_IMPACT_GATE),
+                    route["gates"].index("PRD draft"),
+                )
+                self.assertLess(
+                    route["gates"].index(ALIGNMENT_BRIEF_GATE),
+                    route["gates"].index("PRD draft"),
+                )
+                self.assertLess(
+                    route["gates"].index("PRD draft"),
+                    route["gates"].index(DOCUMENTATION_GATE),
+                )
+                self.assertIn("workflows/documentation-update.md", route["docs"])
+
+    def test_docs_route_gets_documentation_enforcement_gates(self) -> None:
+        route = resolve_docs("docs", None, [], request_classified=True)
+
+        self.assertIn(SOURCE_DOCS_GATE, route["gates"])
+        self.assertIn(DOCUMENTATION_IMPACT_GATE, route["gates"])
+        self.assertIn(DOCUMENTATION_GATE, route["gates"])
+        self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index("edit"))
+        self.assertLess(route["gates"].index(DOCUMENTATION_IMPACT_GATE), route["gates"].index("edit"))
+        self.assertIn("common/source-driven-development.md", route["docs"])
+
+    def test_prd_draft_evidence_requires_artifact_and_content(self) -> None:
+        failures = validate_gate_evidence(
+            {PRD_DRAFT_GATE: "PRD draft completed"},
+            [PRD_DRAFT_GATE],
+        )
+
+        self.assertTrue(any("PRD draft evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {PRD_DRAFT_GATE: "discussed acceptance criteria and scope in conversation"},
+            [PRD_DRAFT_GATE],
+        )
+
+        self.assertTrue(any("PRD draft evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                PRD_DRAFT_GATE: (
+                    "created docs/prd-login.md; in scope: login screen; "
+                    "acceptance criteria: given valid credentials when submit then navigate home"
+                )
+            },
+            [PRD_DRAFT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
     def test_modify_and_analysis_routes_require_alignment_brief(self) -> None:
         for command in sorted(ALIGNMENT_BRIEF_COMMANDS):
             with self.subTest(command=command):
@@ -847,6 +912,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 SOURCE_DOCS_GATE: "done",
                 PLATFORM_SELECTION_GATE: "done",
                 REVIEW_READINESS_GATE: "done",
+                PRD_DRAFT_GATE: "done",
                 TEST_GATE: "done",
                 BOUNDARY_PLAN_GATE: "done",
                 MULTI_AGENT_GATE: "done",
@@ -862,6 +928,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 SOURCE_DOCS_GATE,
                 PLATFORM_SELECTION_GATE,
                 REVIEW_READINESS_GATE,
+                PRD_DRAFT_GATE,
                 TEST_GATE,
                 BOUNDARY_PLAN_GATE,
                 MULTI_AGENT_GATE,
@@ -870,7 +937,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             ],
         )
 
-        self.assertEqual(13, len(failures))
+        self.assertEqual(14, len(failures))
 
     def test_alignment_evidence_requires_user_visible_checkpoint(self) -> None:
         failures = validate_gate_evidence(
@@ -933,6 +1000,10 @@ class WorkflowRoutingTests(unittest.TestCase):
                     "review readiness checked markdown frontmatter status/type counts; "
                     "human-reviewed-needed review queue found"
                 ),
+                PRD_DRAFT_GATE: (
+                    "created docs/prd-login.md; in scope: login screen with email/password; "
+                    "acceptance criteria: given valid credentials when submit then navigate home"
+                ),
                 TEST_GATE: "unittest tests/test_workflow_routing.py passed",
                 BOUNDARY_PLAN_GATE: "existing workflow gate policy boundary; verification via unittest",
                 MULTI_AGENT_GATE: (
@@ -954,6 +1025,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 SOURCE_DOCS_GATE,
                 PLATFORM_SELECTION_GATE,
                 REVIEW_READINESS_GATE,
+                PRD_DRAFT_GATE,
                 TEST_GATE,
                 BOUNDARY_PLAN_GATE,
                 MULTI_AGENT_GATE,

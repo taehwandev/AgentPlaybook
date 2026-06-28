@@ -6,6 +6,7 @@ from agent_finish_gate_validators import (
     validate_documentation_impact_evidence,
     validate_documentation_source_to_artifact_evidence,
     validate_platform_selection_evidence,
+    validate_prd_draft_evidence,
     validate_review_readiness_evidence,
     validate_source_docs_evidence,
 )
@@ -24,6 +25,7 @@ AGENTIC_RUN_STATE_GATE = "agentic run state"
 SOURCE_DOCS_GATE = "source docs"
 PLATFORM_SELECTION_GATE = "platform selection"
 REVIEW_READINESS_GATE = "review readiness"
+PRD_DRAFT_GATE = "PRD draft"
 MULTI_AGENT_ROLES_GATE = "roles"
 MULTI_AGENT_WRITE_SCOPES_GATE = "write scopes"
 MULTI_AGENT_BRIEFS_GATE = "agent briefs"
@@ -47,6 +49,7 @@ VALIDATED_GATES = {
     SOURCE_DOCS_GATE,
     PLATFORM_SELECTION_GATE,
     REVIEW_READINESS_GATE,
+    PRD_DRAFT_GATE,
     MULTI_AGENT_ROLES_GATE,
     MULTI_AGENT_WRITE_SCOPES_GATE,
     MULTI_AGENT_BRIEFS_GATE,
@@ -81,6 +84,8 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
                 gate_evidence.get(DOCUMENTATION_IMPACT_GATE, ""),
             )
         )
+    if PRD_DRAFT_GATE in required:
+        failures.extend(validate_prd_draft_evidence(gate_evidence.get(PRD_DRAFT_GATE, "")))
     if PLATFORM_SELECTION_GATE in required:
         failures.extend(validate_platform_selection_evidence(gate_evidence.get(PLATFORM_SELECTION_GATE, "")))
     if REVIEW_READINESS_GATE in required:
