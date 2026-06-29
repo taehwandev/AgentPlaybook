@@ -476,6 +476,28 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertTrue(any("workspace scope checkpoint evidence" in failure for failure in failures))
 
+    def test_finish_evidence_examples_for_doc_impact_and_multi_agent_pass(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "pre-code/pre-edit artifact selection: workflow card and README; "
+                    "impact decision: unchanged; reason: no durable behavior, "
+                    "no workflow policy, no public contract, no operator action, "
+                    "and no acceptance criteria changed, so this does not require "
+                    "creating/updating that artifact"
+                ),
+                MULTI_AGENT_GATE: (
+                    "serial/single-agent decision; concrete reason: small "
+                    "same-file/same-boundary scope with overlapping contract risk, "
+                    "so parallel subagents were not safe; verification: workflow "
+                    "validate plus focused unit tests"
+                ),
+            },
+            [DOCUMENTATION_IMPACT_GATE, MULTI_AGENT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
     def test_route_docs_read_evidence_must_match_preflight_doc_manifest(self) -> None:
         route = {
             "gates": [ROUTE_DOCS_READ_GATE],

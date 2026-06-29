@@ -514,7 +514,11 @@ satisfies the policy:
   impact decision, affected doc path or doc class, and why behavior, workflow
   policy, public contract, operator action, or acceptance criteria do or do not
   require a doc update. Non-creation decisions must include a no-durable-doc
-  reason.
+  reason. Example:
+  `pre-code/pre-edit artifact selection: workflow card and README; impact
+  decision: unchanged; reason: no durable behavior, no workflow policy, no
+  public contract, no operator action, and no acceptance criteria changed, so
+  this does not require creating/updating that artifact`.
 - `platform selection`: selected platform(s) and platform card/docs read before
   PRD/ARD/architecture work, or no platform applicable with a reason.
 - `review readiness`: Markdown/frontmatter `status`/`type` readiness or
@@ -529,7 +533,10 @@ satisfies the policy:
   verification. Parallel or multi-agent route evidence must also have a
   structured `.agentplaybook/agent-delegation-plan.json` with worker roles,
   owned and forbidden scopes, contract, acceptance checks, verification, and
-  integration review.
+  integration review. Example:
+  `serial/single-agent decision; concrete reason: small same-file/same-boundary
+  scope with overlapping contract risk, so parallel subagents were not safe;
+  verification: workflow validate plus focused unit tests`.
 
 After a retrospective restart for finish evidence policy failure, reread this
 gate list and make the next finish attempt use the exact required terms for the
