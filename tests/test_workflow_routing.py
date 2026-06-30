@@ -783,6 +783,56 @@ class WorkflowRoutingTests(unittest.TestCase):
             ),
         )
 
+    def test_request_triage_grill_me_output_uses_protocol_session_shape(self) -> None:
+        triage_doc = (ROOT / "workflows" / "request-triage.md").read_text()
+
+        self.assertIn("Grill-Me protocol /grilling session", triage_doc)
+        self.assertIn("Stop here until the user answers", triage_doc)
+        self.assertIn("grill-me if needed=Grill-Me protocol /grilling session output", triage_doc)
+        self.assertIn("Do not present a casual clarification question as Grill-Me", triage_doc)
+
+    def test_classification_output_tells_agents_to_start_grilling_session(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "classify",
+                "그릴미 해줘",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("Grill-Me protocol: `true`", result.stdout)
+        self.assertIn("Start the user-visible clarification with `Grill-Me protocol /grilling session`", result.stdout)
+        self.assertIn("grill-me if needed=</grilling session/output evidence>", result.stdout)
+
+    def test_route_output_tells_agents_to_start_grilling_session(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "route",
+                "triage",
+                "--request",
+                "그릴미 해줘",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("Grill-Me protocol: `true`", result.stdout)
+        self.assertIn("Required next action: run a user-visible `Grill-Me protocol /grilling session`", result.stdout)
+        self.assertIn("grill-me if needed=</grilling session/output evidence>", result.stdout)
+
     def test_invalid_grill_me_finish_evidence_is_missed_gate(self) -> None:
         gate_signals: list[dict[str, str]] = []
         missed_gates: list[str] = []

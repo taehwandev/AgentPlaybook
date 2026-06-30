@@ -256,7 +256,12 @@ def print_classification(result: dict[str, object]) -> None:
     elif result["question_drill"]:
         print("- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route triage --request \"<request text>\"`.")
         print("- Use the Grill-Me `/grilling` protocol after checking available local context.")
+        print(
+            "- Start the user-visible clarification with `Grill-Me protocol /grilling session`, "
+            "ask one blocker question with a recommended answer and tradeoff, then wait for feedback before work."
+        )
         print("- If an external Grill-Me skill is unavailable, run the built-in blocker-question protocol and record its output.")
+        print("- Record finish evidence as `grill-me if needed=</grilling session/output evidence>`.")
     else:
         print(
             f"- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route {result['recommended_route']} "

@@ -62,7 +62,10 @@ rules.
 Use when clarification is the deliverable or blockers prevent safe work:
 
 ```text
+Grill-Me protocol /grilling session
 Intake: vague-action / effort: deep-until-clarified
+Blocking unknown:
+- <the behavior, scope, risk, acceptance, or verification decision that blocks work>
 
 Decision needed:
 - A: <recommended concrete direction> - <tradeoff>
@@ -70,7 +73,21 @@ Decision needed:
 
 Why this matters:
 - <behavior, risk, verification, or scope impact>
+
+Wait:
+- Stop here until the user answers. Do not route to implementation, PRD, ARD,
+  review, commit, or editing while this blocker remains open.
+
+Evidence to record:
+- grill-me if needed=Grill-Me protocol /grilling session output: <question,
+  recommended answer, user decision, and resolved/no-blocker outcome>
 ```
+
+Do not present a casual clarification question as Grill-Me. When the external
+Grill-Me skill is unavailable, the built-in output must still name
+`Grill-Me protocol /grilling session`, include a recommended answer and
+tradeoff, wait for feedback, and leave finish-check evidence using the
+`grill-me if needed=</grilling session/output evidence>` shape.
 
 ## Stop If
 

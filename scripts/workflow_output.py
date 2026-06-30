@@ -25,6 +25,13 @@ def print_markdown(route: dict[str, object]) -> None:
         print(f"- Grill-Me protocol: `{str(grill_me).lower()}`")
         print(f"- Response mode: `{classification['response_mode']}`")
         print(f"- Reason: {classification['reason']}")
+        if grill_me:
+            print(
+                "- Required next action: run a user-visible `Grill-Me protocol /grilling session` "
+                "before implementation, ask one blocker question with a recommended answer and "
+                "tradeoff, wait for feedback, and record "
+                "`grill-me if needed=</grilling session/output evidence>`."
+            )
         print()
     elif route["request_classified"]:
         print("## Request Classification")
