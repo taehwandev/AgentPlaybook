@@ -9,6 +9,12 @@ type: ai-generated
 Use when choosing, adding, reviewing, or reporting tests, fixtures, snapshots,
 manual smoke checks, or verification evidence.
 
+When writing or meaningfully reviewing test code, also open
+`common/scenario-driven-testing.md`. Test cases should be framed as actor
+scenario -> action -> response condition -> observable success, failure,
+exception, or recovery result before dropping down to framework-specific
+Arrange/Act/Assert code.
+
 Test behavior users or other code depend on.
 
 ## Decision Rule

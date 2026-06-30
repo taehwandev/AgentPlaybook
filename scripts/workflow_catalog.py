@@ -130,6 +130,7 @@ COMMANDS: Dict[str, Profile] = {
     "test": Profile(
         docs=(
             "common/testing.md",
+            "common/scenario-driven-testing.md",
             "common/verification-policy.md",
             "common/browser-runtime-testing.md",
         ),

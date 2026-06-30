@@ -71,6 +71,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `common/state-modeling.md`
 - Refactor: `common/refactoring.md`
 - Testing or bug regression: `common/testing.md`
+- Scenario-driven test design and QA flow coverage:
+  `common/scenario-driven-testing.md`
 - Verification evidence: `common/verification-policy.md`
 - Completion checklist and Definition of Done:
   `common/definition-of-done.md`

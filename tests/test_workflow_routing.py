@@ -79,6 +79,7 @@ class WorkflowRoutingTests(unittest.TestCase):
     def test_testing_concern_is_registered(self) -> None:
         self.assertIn("testing", CONCERNS)
         self.assertIn("common/testing.md", CONCERNS["testing"])
+        self.assertIn("common/scenario-driven-testing.md", CONCERNS["testing"])
         self.assertIn("common/verification-policy.md", CONCERNS["testing"])
         self.assertIn("definition-of-done", CONCERNS)
         self.assertIn("common/definition-of-done.md", CONCERNS["definition-of-done"])
@@ -95,6 +96,9 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("common/incremental-implementation.md", resolve_docs("build", None, [], request_classified=True)["docs"])
         self.assertIn("common/web-performance-verification.md", resolve_docs("webperf", None, [], request_classified=True)["docs"])
         self.assertIn("common/ci-cd-automation.md", resolve_docs("ship", None, [], request_classified=True)["docs"])
+
+        test_route = resolve_docs("test", None, [], request_classified=True)
+        self.assertIn("common/scenario-driven-testing.md", test_route["docs"])
 
         webperf_route = resolve_docs("webperf", None, [], request_classified=True)
         self.assertLess(webperf_route["gates"].index(ROUTE_DOCS_READ_GATE), webperf_route["gates"].index("baseline"))
@@ -193,6 +197,17 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         route = resolve_docs("docs", None, ["units"], request_classified=True)
         self.assertIn("common/accessibility-i18n.md", route["docs"])
+
+    def test_scenario_testing_requests_infer_testing_concern(self) -> None:
+        examples = (
+            "Write scenario-driven tests for the checkout user flow",
+            "Add QA scenarios for UI success and failure states",
+            "사용자 흐름과 예외 처리를 시나리오 테스트로 정리해줘",
+        )
+
+        for request in examples:
+            with self.subTest(request=request):
+                self.assertIn("testing", infer_concerns_from_request(request))
 
     def test_spill_request_infers_metering_concern(self) -> None:
         concerns = infer_concerns_from_request("Preserve Spill workflow label bridge data")
@@ -457,6 +472,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("common/product-spec-to-implementation.md", route["docs"])
         self.assertIn("common/source-driven-development.md", route["docs"])
         self.assertIn("common/testing.md", route["docs"])
+        self.assertIn("common/scenario-driven-testing.md", route["docs"])
         self.assertIn("common/verification-policy.md", route["docs"])
         self.assertIn("common/code-structure-ownership.md", route["docs"])
         self.assertIn("workflows/cycle-contract.md", route["docs"])

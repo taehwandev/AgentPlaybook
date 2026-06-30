@@ -146,7 +146,13 @@ def automatic_docs(command: str) -> list[str]:
             ]
         )
     if TEST_GATE in gates:
-        docs.extend(["common/testing.md", "common/verification-policy.md"])
+        docs.extend(
+            [
+                "common/testing.md",
+                "common/scenario-driven-testing.md",
+                "common/verification-policy.md",
+            ]
+        )
     if BOUNDARY_PLAN_GATE in gates:
         docs.append("common/code-structure-ownership.md")
     if MULTI_AGENT_GATE in gates:
