@@ -86,6 +86,16 @@ instead of inventing a one-off style.
 - Keep caller-facing contracts narrow. Do not make a caller depend on a broad
   service, repository, context, component prop object, hook return type, SDK
   client, or module export when it needs only a role-sized subset.
+- For Kotlin, do not introduce `typealias`. Kotlin aliases are alternative
+  names for existing types, not new types, so they are poor contracts for
+  domain identifiers, callbacks, platform types, or import boundaries. Use
+  named value classes, interfaces/fun interfaces, data classes, or explicit
+  types when a concept needs a name.
+- Do not transfer the Kotlin `typealias` rule to Swift. Swift type aliases are
+  useful when they intentionally clarify a package/public API, protocol
+  associated type, or long generic shape. Still use a real Swift type when the
+  code needs identity, invariants, access-controlled storage, validation, or
+  security-sensitive separation.
 - Treat module public exports as interfaces. A module should expose a narrow
   contract for its consumers instead of forcing them to import implementation,
   platform, SDK, fixture, or unrelated feature details.

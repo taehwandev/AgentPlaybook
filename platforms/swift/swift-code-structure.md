@@ -22,6 +22,11 @@ Also use:
   boundary choices.
 - `swift-design-system.md` for shared SwiftUI/UIKit/AppKit UI packages.
 
+References:
+
+- Swift declarations:
+  `https://docs.swift.org/swift-book/documentation/the-swift-programming-language/declarations/`
+
 ## Default Boundary
 
 Start with the lowest owner boundary that works:
@@ -84,6 +89,22 @@ Do not keep multiple importable Swift types in one file because they are small,
 created together, or used by the same feature. Exceptions should be narrow:
 private helper types, a sealed-style enum/value family, or a tiny protocol
 conformance extension that cannot be imported or reviewed independently.
+
+## Type Aliases
+
+Swift `typealias` is allowed when it makes a real Swift API easier to read
+without hiding ownership:
+
+- long generic shapes, closure signatures, and dictionary/result forms that
+  would otherwise dominate call sites
+- protocol-associated type conveniences inside protocol declarations
+- package or public compatibility surfaces where callers already understand the
+  underlying type
+
+Do not use a Swift type alias when the concept needs a new nominal type,
+stored invariants, validation, identity, access-controlled data, protocol
+conformance, or security-sensitive separation. Use a `struct`, `enum`,
+protocol, actor, or wrapper type for those cases.
 
 ## Access Control
 

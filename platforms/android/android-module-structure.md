@@ -61,6 +61,10 @@ Do not:
   file because they all belong to one feature.
 - Keep multiple importable Kotlin/Java classes or objects in one file unless
   they are a small sealed/value family with one caller-facing contract.
+- Introduce Kotlin `typealias` in Android runtime code. In Kotlin 2.x, aliases
+  remain alternative names for existing types rather than new contracts. Prefer
+  named value classes, interfaces/fun interfaces, data classes, or explicit
+  types so domain, route, callback, and platform contracts stay reviewable.
 - Use nested classes, companion objects, or extension files to hide unrelated
   UI, state, data, platform, or testing responsibilities.
 - Create one-folder-per-type module structure without changing import rules;

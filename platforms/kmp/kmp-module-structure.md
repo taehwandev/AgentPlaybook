@@ -22,6 +22,10 @@ References:
   `https://kotlinlang.org/docs/multiplatform/multiplatform-project-configuration.html`
 - Advanced project structure:
   `https://kotlinlang.org/docs/multiplatform/multiplatform-advanced-project-structure.html`
+- Kotlin type aliases:
+  `https://kotlinlang.org/docs/type-aliases.html`
+- Swift export:
+  `https://kotlinlang.org/docs/native-swift-export.html`
 
 ## Default Rule
 
@@ -59,6 +63,12 @@ Do not:
   and repository implementation in one `commonMain` file.
 - Put multiple importable Kotlin classes or objects in one file unless they are
   a small sealed/value family with one stable contract.
+- Introduce Kotlin `typealias` in shared or target source sets. In Kotlin 2.x,
+  aliases can be nested and exported to Swift, but they still do not create new
+  types and nested aliases are not supported for KMP `expect`/`actual`
+  declarations. Prefer named value classes, interfaces/fun interfaces, data
+  classes, or explicit types so domain, route, callback, and platform contracts
+  stay reviewable.
 - Hide target-specific behavior in nested declarations inside a shared owner.
 - Split modules to compensate for files that should first be split by owner.
 
@@ -150,6 +160,25 @@ Add an umbrella module/framework when:
 
 Publish modules separately only when versioning, ownership, and migration notes
 are part of the workflow.
+
+## Kotlin 2.x Apple Surface Review
+
+Kotlin 2.x Apple interop is a version-sensitive surface. Before changing an
+iOS-exported KMP API, check the repo's Kotlin Gradle plugin version and the
+current Kotlin docs for Swift export, Swift package dependencies, generated
+module shape, and current limitations.
+
+Rules:
+
+- Treat Swift export as a moving interop surface unless the repo pins and
+  verifies the exact Kotlin version. As of Kotlin 2.4.0, Swift export is Alpha.
+- Do not create Kotlin `typealias` only because Swift export can preserve it.
+  If a Swift-facing concept needs identity, validation, or compatibility, model
+  it as a named Kotlin value class, data class, interface, or explicit exported
+  type.
+- When the exported Swift surface changes, verify the generated Swift modules,
+  package names, nullability, async/Flow mappings, and iOS framework or package
+  integration in the Apple target.
 
 ## Feature Module Shape
 
