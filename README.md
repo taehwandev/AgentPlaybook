@@ -599,6 +599,10 @@ When `--request-classified` is used, pass `--classification-evidence`; otherwise
 request intake is treated as skipped. If route classification or stored request
 text asks for Grill-Me, the finish check must receive Grill-Me protocol evidence
 such as `grill-me if needed=</grilling session/output evidence>`.
+Work routes require resolved-scope classification evidence such as
+`clear-exact`, `clear-scoped`, `answered ... separate actionable`, or
+`blockers resolved`; weak evidence such as `classified`, `done`, `clarified`,
+or `no blockers` does not open work routes by itself.
 
 If final VibeGuard is `Needs review`, the agent must report that state and pass
 `--allow-vibeguard-review "<reason>"` only when the review state is acceptable.

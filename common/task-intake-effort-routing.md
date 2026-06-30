@@ -37,6 +37,8 @@ Examples:
   VibeGuard block, otherwise audit current guardrails.
 - "Change the button on home" -> `vague-action`; ask which button, state, and
   expected behavior unless the repo has one obvious home button.
+- "check", "review", "확인", or "이거 확인해줘" without a named target ->
+  `vague-action`; ask what to inspect before routing work.
 - "Add profile saving and avatar presets" -> `vague-action` or
   `broad-product` unless an existing PRD/spec/code owner already answers
   storage, API, loading, error, and acceptance questions.
@@ -205,6 +207,21 @@ the retrospective workflow before final report, commit, release, or handoff.
   routes. If the script reports `direct-question`, answer before routing. If it
   reports `grill_me: true` or legacy `question_drill: true`, use `triage` or
   `ambiguity` and a Grill-Me `/grilling` session before work.
+- Use `--request-classified` only after the direct question was answered or the
+  ambiguity was actually resolved. Evidence that still says `vague-action`,
+  `broad-product`, `risky-unclear`, `direct-question`, `answer_first`,
+  `clarify_first`, `ambiguous`, `unclear`, `grill_me: true`, or
+  `question_drill: true` and their obvious hyphen/space variants must not open
+  a work route; route to `triage` or `ambiguity` first and record the answered
+  question or blocker-question outcome.
+- Work routes require a positive resolved-scope evidence phrase such as
+  `clear-exact`, `clear-scoped`, `answered ... separate actionable`, or
+  `blockers resolved`. Weak evidence such as `classified`, `done`, or `handled`
+  is not enough, and blocker-open wording such as `not clarified`,
+  `unresolved`, or `open questions` keeps the work route blocked. Generic
+  resolution markers such as `clarified` or `no blockers` are not enough unless
+  they name the resolved scope, decision, blocker-question outcome, or remaining
+  separate action.
 - Route after classification: load only the command/platform/concern cards that
   match the task.
 - For exact errors, read the error output, referenced files, and nearby code

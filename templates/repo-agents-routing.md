@@ -100,9 +100,12 @@ evidence or missing route gate evidence is
 non-compliant even when the final files look correct. VibeGuard `Needs review`
 must be reported explicitly and can pass the finish check only with an
 `--allow-vibeguard-review` reason. `--request-classified` must include
-`--classification-evidence`; if a request asks for Grill-Me or classification
-returns `grill_me: true`, missing Grill-Me protocol or `/grilling` session
-evidence is 🐱🔴 FAIL and requires missed-gate recovery.
+`--classification-evidence`; work routes require resolved-scope evidence such
+as `clear-scoped`, `answered ... separate actionable`, or `blockers resolved`,
+not weak markers such as `classified`, `done`, `clarified`, or `no blockers`.
+If a request asks for Grill-Me or classification returns `grill_me: true`,
+missing Grill-Me protocol or `/grilling` session evidence is 🐱🔴 FAIL and
+requires missed-gate recovery.
 Do not load every shared document by default.
 Replace `<AGENTPLAYBOOK_ROOT>` with a portable root reference. In committed
 repo-local instructions, use `${AGENTPLAYBOOK_HOME}` for shared local installs

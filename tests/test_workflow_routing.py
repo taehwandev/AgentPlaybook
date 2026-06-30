@@ -732,6 +732,35 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertFalse(classification["grill_me"])
         self.assertEqual("work", classification["response_mode"])
 
+    def test_targetless_inspection_request_requires_triage(self) -> None:
+        for request in ("확인", "check", "review", "이거 확인해줘"):
+            with self.subTest(request=request):
+                classification = classify_request(request)
+
+                self.assertEqual("vague-action", classification["clarity"])
+                self.assertEqual("triage", classification["recommended_route"])
+                self.assertTrue(classification["grill_me"])
+                self.assertEqual("clarify_first", classification["response_mode"])
+
+                blocked = subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / "scripts" / "workflow.py"),
+                        "route",
+                        "task",
+                        "--request",
+                        request,
+                    ],
+                    cwd=str(ROOT),
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+
+                self.assertEqual(2, blocked.returncode)
+                self.assertIn("needs clarification", blocked.stderr)
+
     def test_grill_me_policy_mention_does_not_require_grill_session(self) -> None:
         classification = classify_request("`scripts/workflow_request.py`의 grill-me skill evidence policy를 수정해줘")
 
@@ -797,6 +826,99 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertFalse(required)
         self.assertNotIn("grill-me", missed_gates)
         self.assertFalse(any("Grill-Me protocol was required" in failure for failure in failures))
+
+    def test_unresolved_classification_evidence_requires_grill_me_finish_evidence(self) -> None:
+        gate_signals: list[dict[str, str]] = []
+        missed_gates: list[str] = []
+        failures: list[str] = []
+
+        required = check_request_intake(
+            {"request_classified": True, "command": "feature"},
+            {
+                "request_classified": True,
+                "classification_evidence": "vague-action clarify_first needs clarification",
+            },
+            {},
+            {},
+            gate_signals,
+            missed_gates,
+            failures,
+        )
+
+        self.assertTrue(required)
+        self.assertIn("request intake", missed_gates)
+        self.assertIn("grill-me", missed_gates)
+        self.assertTrue(any("does not prove work can start" in failure for failure in failures))
+        self.assertTrue(any("Grill-Me protocol was required" in failure for failure in failures))
+
+    def test_unresolved_direct_question_evidence_fails_request_intake(self) -> None:
+        gate_signals: list[dict[str, str]] = []
+        missed_gates: list[str] = []
+        failures: list[str] = []
+
+        required = check_request_intake(
+            {"request_classified": True, "command": "feature"},
+            {
+                "request_classified": True,
+                "classification_evidence": "direct-question answer_first",
+            },
+            {},
+            {},
+            gate_signals,
+            missed_gates,
+            failures,
+        )
+
+        self.assertFalse(required)
+        self.assertIn("request intake", missed_gates)
+        self.assertTrue(any("does not prove work can start" in failure for failure in failures))
+
+    def test_resolved_direct_question_evidence_allows_request_intake(self) -> None:
+        gate_signals: list[dict[str, str]] = []
+        missed_gates: list[str] = []
+        failures: list[str] = []
+
+        required = check_request_intake(
+            {"request_classified": True, "command": "feature"},
+            {
+                "request_classified": True,
+                "classification_evidence": (
+                    "direct-question answered and separate actionable request remains: "
+                    "user asked for review"
+                ),
+            },
+            {},
+            {},
+            gate_signals,
+            missed_gates,
+            failures,
+        )
+
+        self.assertFalse(required)
+        self.assertNotIn("request intake", missed_gates)
+        self.assertFalse(any("does not prove work can start" in failure for failure in failures))
+
+    def test_question_resolution_route_allows_unresolved_classification_evidence(self) -> None:
+        gate_signals: list[dict[str, str]] = []
+        missed_gates: list[str] = []
+        failures: list[str] = []
+
+        required = check_request_intake(
+            {"request_classified": True, "command": "triage"},
+            {
+                "request_classified": True,
+                "classification_evidence": "vague-action clarify_first needs clarification",
+            },
+            {},
+            {},
+            gate_signals,
+            missed_gates,
+            failures,
+        )
+
+        self.assertTrue(required)
+        self.assertNotIn("request intake", missed_gates)
+        self.assertIn("grill-me", missed_gates)
 
     def test_grill_me_classification_boolean_requires_finish_evidence(self) -> None:
         gate_signals: list[dict[str, str]] = []
@@ -905,6 +1027,92 @@ class WorkflowRoutingTests(unittest.TestCase):
         route = json.loads(supplied.stdout)
         self.assertTrue(route["request_classified"])
         self.assertEqual("direct question was answered and user asked for review", route["classification_evidence"])
+
+    def test_request_classified_unresolved_ambiguity_cannot_open_work_route(self) -> None:
+        for evidence in (
+            "classified",
+            "done",
+            "vague-action grill_me: true needs clarification",
+            "direct-question answer_first",
+            "broad-product clarify_first user approved",
+            "direct_question answer-first; grill-me true; clarify first",
+            "question-drill true",
+            "not clarified but clarified",
+            "blockers unresolved but clarified",
+            "clarified",
+            "no blockers",
+        ):
+            with self.subTest(evidence=evidence):
+                blocked = subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / "scripts" / "workflow.py"),
+                        "route",
+                        "feature",
+                        "--request-classified",
+                        "--classification-evidence",
+                        evidence,
+                    ],
+                    cwd=str(ROOT),
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+
+                self.assertEqual(2, blocked.returncode)
+                self.assertIn("does not prove work can start", blocked.stderr)
+
+        base_command = [
+            sys.executable,
+            str(ROOT / "scripts" / "workflow.py"),
+            "route",
+        ]
+        triage = subprocess.run(
+            base_command + [
+                "triage",
+                "--request-classified",
+                "--classification-evidence",
+                "vague-action grill_me: true needs clarification",
+                "--format",
+                "json",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(0, triage.returncode, triage.stderr)
+
+        for evidence in (
+            "clear-scoped workflow policy update",
+            "direct question was answered and user asked for review",
+            "direct-question answered and separate actionable request remains: user asked for review",
+            "vague-action blockers resolved through Grill-Me protocol output",
+            "scope clarified after blocker-question protocol",
+            "no blockers remain after Grill-Me protocol output",
+            "직접 질문 해결 후 별도 작업 요청 남음",
+        ):
+            with self.subTest(resolved=evidence):
+                resolved = subprocess.run(
+                    base_command + [
+                        "feature",
+                        "--request-classified",
+                        "--classification-evidence",
+                        evidence,
+                        "--format",
+                        "json",
+                    ],
+                    cwd=str(ROOT),
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+
+                self.assertEqual(0, resolved.returncode, resolved.stderr)
 
     def test_question_routes_do_not_get_code_work_gates(self) -> None:
         route = resolve_docs("triage", None, [], request_classified=True)

@@ -37,10 +37,25 @@ rules.
 5. If `direct-question`, answer before workflow routing, editing, or
    project-specific commands. Stop unless a separate actionable request remains.
 6. If `clear-exact`, inspect the named target and avoid broad route loading.
-7. If `clear-scoped`, run the smallest matching workflow route.
-8. If `vague-action` or `risky-unclear`, run Grill-Me or use the ambiguity gate.
-9. If `broad-product`, use PRD/product workflow before implementation.
-10. Record the selected route only when it changes the work.
+7. If an inspection verb such as `check`, `review`, `확인`, or `검토` has no
+   named target, treat it as `vague-action` and ask what to inspect.
+8. If `clear-scoped`, run the smallest matching workflow route.
+9. If `vague-action` or `risky-unclear`, run Grill-Me or use the ambiguity gate.
+10. If `broad-product`, use PRD/product workflow before implementation.
+11. Do not reopen a work route with `--request-classified` while the stored
+    evidence still says `vague-action`, `broad-product`, `risky-unclear`,
+    `direct-question`, `answer_first`, `clarify_first`, `ambiguous`, `unclear`,
+    `grill_me: true`, or `question_drill: true`, including obvious
+    hyphen/space variants; capture the answered question or blocker-question
+    outcome first.
+12. For work routes, require positive evidence such as `clear-exact`,
+    `clear-scoped`, `answered ... separate actionable`, or `blockers resolved`.
+    Do not accept weak evidence such as `classified`, `done`, or `handled`, and
+    keep blocking when evidence says `not clarified`, `unresolved`, or
+    `open questions`. Generic resolution markers such as `clarified` or
+    `no blockers` are not enough unless they name the resolved scope, decision,
+    blocker-question outcome, or remaining separate action.
+13. Record the selected route only when it changes the work.
 
 ## Grill-Me Output
 

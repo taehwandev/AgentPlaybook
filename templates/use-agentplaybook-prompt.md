@@ -121,6 +121,10 @@ Rules:
     python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
     Missing wrapper evidence or missing route gate evidence is non-compliant.
     If `--request-classified` is used, include `--classification-evidence`.
+    Work routes require resolved-scope evidence such as `clear-scoped`,
+    `answered ... separate actionable`, or `blockers resolved`; weak markers
+    such as `classified`, `done`, `clarified`, or `no blockers` are not
+    sufficient.
     If the request asks for Grill-Me or classification returns `grill_me: true`,
     missing Grill-Me protocol or `/grilling` session evidence is `🐱🔴 FAIL`.
     If final VibeGuard is `Needs review`, report that state and pass

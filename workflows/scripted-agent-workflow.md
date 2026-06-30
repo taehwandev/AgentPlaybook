@@ -50,7 +50,12 @@ with the prior classification, answer-first handling, or user-visible alignment
 checkpoint. Direct `workflow.py route --request-classified` without
 classification evidence is a workflow failure. If the request is a direct
 question, the script blocks routing so the agent answers before editing or
-running project commands.
+running project commands. Work routes require evidence that proves the request
+is actionable, such as `clear-exact`, `clear-scoped`, `answered ... separate
+actionable`, or `blockers resolved`; weak evidence such as `classified` or
+`done` is not sufficient. Generic resolution markers such as `clarified` or
+`no blockers` are also insufficient unless they name the resolved scope,
+decision, blocker-question outcome, or remaining separate action.
 
 When the request clarity or correct command profile is uncertain, classify first:
 
@@ -561,6 +566,9 @@ It also records a content-free summary of accepted and promoted global lessons
 from `~/.agentplaybook/` when that local store exists.
 When `--request-classified` is used, it must also record
 `--classification-evidence`; otherwise request intake is treated as skipped.
+For work routes, that evidence must include a resolved-scope signal rather than
+a generic `classified`, `done`, `handled`, `clarified`, or `no blockers`
+marker.
 `agent-finish-check.py` requires evidence for every route gate, runs
 `workflow.py validate`, runs `git diff --check`, reruns VibeGuard, and writes
 `<TARGET_REPO>/.agentplaybook/finish.json`.

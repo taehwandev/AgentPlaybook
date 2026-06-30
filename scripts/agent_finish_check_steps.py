@@ -12,6 +12,8 @@ from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_finish_common import add_gate_signal, append_unique
 from agent_finish_gate_policy import ROUTE_DOCS_READ_GATE, validate_gate_evidence
 from agent_route_docs import read_route_doc_receipt, receipt_path_for_evidence, validate_route_doc_receipt
+from workflow_common import QUESTION_ROUTE_COMMANDS
+from workflow_request import classification_evidence_blocks_work, classification_evidence_requires_clarification
 from workflow_request_patterns import GRILL_ME_REQUEST_PATTERNS
 
 
@@ -128,7 +130,10 @@ def check_request_intake(
     missed_gates: list[str],
     failures: list[str],
 ) -> bool:
-    if route.get("request_classified") and not request_intake.get("classification_evidence"):
+    request_classified = bool(route.get("request_classified") or request_intake.get("request_classified"))
+    question_resolution_route = route.get("command") in QUESTION_ROUTE_COMMANDS
+
+    if request_classified and not request_intake.get("classification_evidence"):
         append_unique(missed_gates, "request intake")
         add_gate_signal(
             gate_signals,
@@ -139,8 +144,27 @@ def check_request_intake(
         )
         failures.append("--request-classified used without classification evidence")
 
-    grill_me_required = _classification_requires_grill_me(request_classification) or grill_me_requested(
-        _request_text(request_intake, request_classification)
+    if (
+        request_classified
+        and not question_resolution_route
+        and classification_evidence_blocks_work(request_intake.get("classification_evidence", ""))
+    ):
+        append_unique(missed_gates, "request intake")
+        add_gate_signal(
+            gate_signals,
+            "FAIL",
+            "request intake",
+            "failed",
+            "classification evidence does not prove work can start",
+        )
+        failures.append(
+            "classification evidence does not prove work can start before work route"
+        )
+
+    grill_me_required = (
+        _classification_requires_grill_me(request_classification)
+        or classification_evidence_requires_clarification(request_intake.get("classification_evidence", ""))
+        or grill_me_requested(_request_text(request_intake, request_classification))
     )
     grill_me_gate = next((gate for gate in GRILL_ME_EVIDENCE_GATES if gate_evidence.get(gate)), "")
     if grill_me_required and grill_me_gate:

@@ -19,6 +19,75 @@ from workflow_request_patterns import (
     VAGUE_PATTERNS,
 )
 
+UNRESOLVED_ANSWER_FIRST_PATTERNS = (
+    r"\bdirect-question\b",
+    r"\bdirect question\b",
+    r"\bdirect_question\b",
+    r"\banswer_first\b",
+    r"\banswer-first\b",
+    r"\banswer first\b",
+)
+UNRESOLVED_CLARIFICATION_PATTERNS = (
+    r"\bvague-action\b",
+    r"\bbroad-product\b",
+    r"\brisky-unclear\b",
+    r"\bclarify_first\b",
+    r"\bclarify-first\b",
+    r"\bclarify first\b",
+    r"\bneeds clarification\b",
+    r"\bambiguous\b",
+    r"\bunclear\b",
+    r"\bunknowns?\b",
+    r"\bblocker questions?\b",
+    r"\bask (the )?user\b",
+    r"\bneeds? (a )?question\b",
+    r"\bgrill_me\s*[:=]?\s*true\b",
+    r"\bgrill[- ]?me\s*[:=]?\s*true\b",
+    r"\bquestion_drill\s*[:=]?\s*true\b",
+    r"\bquestion[- ]drill\s*[:=]?\s*true\b",
+    r"\bquestion drill\s*[:=]?\s*true\b",
+    r"\b모호\b",
+    r"\b불명확\b",
+    r"\b불확실\b",
+    r"\b미정\b",
+    r"\b질문 필요\b",
+    r"\b확인 필요\b",
+    r"\b블로커\b",
+    r"\b그릴미\b",
+)
+EXPLICIT_UNRESOLVED_PATTERNS = (
+    r"\bnot\s+(?:yet\s+)?(?:answered|clarified|resolved)\b",
+    r"\bstill\s+(?:needs?|requires?)\s+(?:clarification|questions?|answers?|resolution)\b",
+    r"\bstill\s+(?:ambiguous|unclear|unresolved)\b",
+    r"\bunresolved\b",
+    r"\bpending\s+(?:clarification|questions?|answers?|resolution)\b",
+    r"(?<!\bno\s)\bopen\s+(?:questions?|blockers?)\b",
+    r"(?<!\bno\s)\bblockers?\s+(?:remain|pending|open|unresolved)\b",
+    r"\b아직\b.*(?:모호|불명확|불확실|미정|질문|확인|해결)",
+    r"\b미해결\b",
+    r"\b해결\s*(?:안|되지\s*않)",
+)
+CLASSIFICATION_RESOLVED_PATTERNS = (
+    r"\bclear-exact\b",
+    r"\bclear-scoped\b",
+    r"\banswered\b.*\buser asked\b",
+    r"\banswered\b.*\bseparate actionable\b",
+    r"\banswered\b.*\bseparate action\b",
+    r"\bblockers?\s+resolved\b",
+    r"\bresolved blockers?\b",
+    r"\bambiguity resolved\b",
+    r"\bunknowns? resolved\b",
+    r"\bno open (?:questions?|blockers?)\b",
+    r"\bno blockers?\s+remain\b",
+    r"\bscope clarified\b",
+    r"\bdecisions? clarified\b",
+    r"\bclarified decisions?\b",
+    r"명확(?:한)?\s*(?:범위|스코프)",
+    r"(?:질문|직접\s*질문)\s*해결.*(?:별도|추가)\s*(?:작업|요청)",
+    r"(?:블로커|차단|막힌)\s*(?:질문|사항)?\s*해결",
+    r"(?:모호성|불명확성|미정사항)\s*해결",
+)
+
 
 def infer_concerns_from_request(text: str) -> list[str]:
     normalized = " ".join(text.strip().split())
@@ -62,6 +131,7 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
     has_risky = _matches(RISKY_PATTERNS, lowered)
     has_vague = _matches(VAGUE_PATTERNS, lowered)
     has_inspection = _matches(INSPECTION_PATTERNS, lowered)
+    inspection_lacks_target = has_inspection and _inspection_lacks_target(lowered)
     has_direct_question = _matches(DIRECT_QUESTION_PATTERNS, lowered)
     asks_agent_action = _matches(QUESTION_ACTION_PATTERNS, lowered)
     short_without_target = len(normalized.split()) <= 8 and not (has_exact or has_scoped)
@@ -78,6 +148,7 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
         "has_risky": has_risky,
         "has_vague": has_vague,
         "has_inspection": has_inspection,
+        "inspection_lacks_target": inspection_lacks_target,
         "has_direct_question": has_direct_question,
         "asks_agent_action": asks_agent_action,
         "short_without_target": short_without_target,
@@ -93,6 +164,7 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
     has_risky = bool(flags["has_risky"])
     has_vague = bool(flags["has_vague"])
     has_inspection = bool(flags["has_inspection"])
+    inspection_lacks_target = bool(flags["inspection_lacks_target"])
     asks_drill = bool(flags["asks_drill"])
 
     if flags["has_direct_question"] and not flags["asks_agent_action"]:
@@ -126,7 +198,7 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
         flags["clarity"] = "clear-scoped"
         flags["effort"] = "standard"
         return "feature", False, "work", "The request names a scoped UI, code, or feature owner."
-    if has_inspection and not has_risky:
+    if has_inspection and not has_risky and not inspection_lacks_target:
         flags["clarity"] = "clear-scoped"
         flags["effort"] = "standard"
         return "task", False, "work", "The request asks for inspection, review, status, or documentation summary work with an inspectable target."
@@ -150,6 +222,18 @@ def _direct_question_reason(has_broad: bool) -> str:
 
 def _matches(patterns: object, text: str, flags: int = 0) -> bool:
     return any(re.search(pattern, text, flags) for pattern in patterns)
+
+
+def _inspection_lacks_target(lowered: str) -> bool:
+    compact = lowered.strip(" .,!?:;")
+    if not compact:
+        return False
+    targetless_patterns = (
+        r"^(?:please\s+)?(?:check|review|inspect|verify|status|summarize|report)(?:\s+(?:it|this|that|please))?$",
+        r"^(?:can you|could you|would you)\s+(?:check|review|inspect|verify|summarize|report)(?:\s+(?:it|this|that))?$",
+        r"^(?:이거|그거|저거)?\s*(?:확인|체크|검토|점검|상태|파악|정리)\s*(?:해줘|해주세요|해줄래|좀)?$",
+    )
+    return _matches(targetless_patterns, compact)
 
 
 def print_classification(result: dict[str, object]) -> None:
@@ -208,3 +292,42 @@ def route_block_reason(
             "so PRD and ARD gates run before implementation; do not route it as `feature`."
         )
     return None
+
+
+def classified_route_block_reason(command: str, classification_evidence: str) -> Optional[str]:
+    """Block work routes unless --request-classified proves the request is actionable."""
+    if command in QUESTION_ROUTE_COMMANDS:
+        return None
+    if classification_evidence_allows_work(classification_evidence):
+        return None
+    return (
+        f"The prior request classification evidence does not prove work can start before route `{command}`. "
+        "Answer direct questions first, or use `triage`/`ambiguity` and run Grill-Me or the blocker-question protocol. "
+        "Rerun the work route only after evidence states clear scope, a separate actionable request, or resolved blockers."
+    )
+
+
+def classification_evidence_blocks_work(evidence: str) -> bool:
+    normalized = " ".join(evidence.strip().lower().split())
+    if not normalized:
+        return True
+    if _matches(EXPLICIT_UNRESOLVED_PATTERNS, normalized):
+        return True
+    return not _has_resolution_signal(normalized)
+
+
+def classification_evidence_allows_work(evidence: str) -> bool:
+    return not classification_evidence_blocks_work(evidence)
+
+
+def classification_evidence_requires_clarification(evidence: str) -> bool:
+    normalized = " ".join(evidence.strip().lower().split())
+    if not normalized:
+        return False
+    has_unresolved_signal = _matches(UNRESOLVED_CLARIFICATION_PATTERNS, normalized)
+    has_explicit_unresolved = _matches(EXPLICIT_UNRESOLVED_PATTERNS, normalized)
+    return has_explicit_unresolved or (has_unresolved_signal and not _has_resolution_signal(normalized))
+
+
+def _has_resolution_signal(normalized: str) -> bool:
+    return _matches(CLASSIFICATION_RESOLVED_PATTERNS, normalized)

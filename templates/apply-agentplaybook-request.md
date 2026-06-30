@@ -186,8 +186,11 @@ evidence or missing gate evidence is non-compliant even if the final files look
 correct. If final VibeGuard is Needs review, report it explicitly and pass
 --allow-vibeguard-review with a reason only when that review state is
 acceptable. If --request-classified is used, include classification evidence. If
-the request asks for Grill-Me or classification returns grill_me true, missing
-Grill-Me protocol or `/grilling` session evidence is 🐱🔴 FAIL.
+the route is a work route, that evidence must say clear-scoped, answered with a
+separate actionable request, or blockers resolved; classified/done/handled is
+not enough, and clarified/no blockers is too generic by itself. If the request
+asks for Grill-Me or classification returns grill_me true, missing Grill-Me
+protocol or `/grilling` session evidence is 🐱🔴 FAIL.
 
 After connecting it, verify that the referenced AgentPlaybook AGENTS.md and
 index.md files exist, confirm the VibeGuard gate is passing, then continue with

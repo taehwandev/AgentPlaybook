@@ -154,11 +154,25 @@ the target repo's local commands. The route command must receive the current
 user request or `--request-classified --classification-evidence "<evidence>"`
 after the request was already classified or answered. Do not use
 `--request-classified` to bypass direct-question, ambiguity, or Grill-Me
-handling. If the request is a direct question, answer it before editing,
+handling. Classification evidence that still says `vague-action`,
+`broad-product`, `risky-unclear`, `direct-question`, `answer_first`,
+`clarify_first`, `ambiguous`, `unclear`, `grill_me: true`, or
+`question_drill: true` and their obvious hyphen/space variants must route only
+to `triage` or `ambiguity` until the evidence states clear scope, a separate
+actionable request, or resolved blockers. For work routes, weak evidence such
+as `classified`, `done`, or `handled` is not enough; the evidence must contain
+a positive resolved-scope signal such as `clear-exact`, `clear-scoped`,
+`answered ... separate actionable`, or `blockers resolved`. Evidence that says
+`not clarified`, `unresolved`, `open questions`, or equivalent blocker-open
+language remains blocked even if it also contains a resolution word. Generic
+resolution markers such as `clarified` or `no blockers` are not enough unless
+they name the resolved scope, decision, blocker-question outcome, or remaining
+separate action. If the request is a direct question,
+answer it before editing,
 routing, or running project-specific work. If the script is unavailable, cannot
-run, or the route is missing a clearly relevant concern, stop and report the
-gap before continuing. Use `index.md` as a fallback only for simple answer-only
-work or after the user explicitly accepts the fallback.
+run, or the route is missing a clearly relevant concern, stop and report the gap
+before continuing. Use `index.md` as a fallback only for simple answer-only work
+or after the user explicitly accepts the fallback.
 Discover valid commands, platforms, and concerns with:
 
 ```text

@@ -14,6 +14,7 @@ import sys
 from workflow_catalog import COMMANDS, CONCERNS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import ROOT, unique
 from workflow_request import (
+    classified_route_block_reason,
     classify_request,
     infer_concerns_from_request,
     print_classification,
@@ -120,6 +121,8 @@ def print_route(args: argparse.Namespace) -> int:
         return 2
 
     block_reason = route_block_reason(args.command, request_classification)
+    if not block_reason and args.request_classified:
+        block_reason = classified_route_block_reason(args.command, args.classification_evidence or "")
     if block_reason:
         print(block_reason, file=sys.stderr)
         if request_classification:
