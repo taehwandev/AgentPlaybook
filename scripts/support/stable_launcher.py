@@ -1,0 +1,200 @@
+"""Install a stable AgentPlaybook launcher for user-level runtime hooks."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+
+LAUNCHER_NAME = "agentplaybook-hook"
+STATE_DIR_NAME = ".agentplaybook"
+ROOT_POINTER_NAME = "agentplaybook-root"
+
+
+def stable_launcher_path() -> Path:
+    return Path.home() / STATE_DIR_NAME / "bin" / LAUNCHER_NAME
+
+
+def stable_root_pointer_path() -> Path:
+    return Path.home() / STATE_DIR_NAME / ROOT_POINTER_NAME
+
+
+def ensure_stable_launcher(root: Path, dry_run: bool) -> list[dict]:
+    """Install or verify the home-stable launcher and root pointer."""
+    launcher_path = stable_launcher_path()
+    pointer_path = stable_root_pointer_path()
+    root_text = f"{root.resolve()}\n"
+    launcher_text = _launcher_script_text()
+
+    launcher_ok = (
+        launcher_path.exists()
+        and _read_text(launcher_path) == launcher_text
+        and _is_executable(launcher_path)
+    )
+    pointer_ok = pointer_path.exists() and _read_text(pointer_path) == root_text
+
+    if dry_run:
+        return [
+            {
+                "tool": "agentplaybook",
+                "hook": "stable_launcher",
+                "status": "ok" if launcher_ok else "missing",
+                "path": str(launcher_path),
+            },
+            {
+                "tool": "agentplaybook",
+                "hook": "root_pointer",
+                "status": "ok" if pointer_ok else "missing",
+                "path": str(pointer_path),
+            },
+        ]
+
+    launcher_status = "ok"
+    pointer_status = "ok"
+    if not launcher_ok:
+        launcher_path.parent.mkdir(parents=True, exist_ok=True)
+        launcher_path.write_text(launcher_text)
+        launcher_path.chmod(0o755)
+        launcher_status = "installed"
+    if not pointer_ok:
+        pointer_path.parent.mkdir(parents=True, exist_ok=True)
+        pointer_path.write_text(root_text)
+        pointer_status = "installed"
+
+    return [
+        {"tool": "agentplaybook", "hook": "stable_launcher", "status": launcher_status, "path": str(launcher_path)},
+        {"tool": "agentplaybook", "hook": "root_pointer", "status": pointer_status, "path": str(pointer_path)},
+    ]
+
+
+def stable_launcher_issue(root: Path) -> str:
+    """Return a preflight warning when the stable launcher is absent or stale."""
+    launcher_path = stable_launcher_path()
+    pointer_path = stable_root_pointer_path()
+    if not launcher_path.exists() or _read_text(launcher_path) != _launcher_script_text() or not _is_executable(launcher_path):
+        return (
+            "AgentPlaybook stable launcher is missing or stale. "
+            f"Run: python3 {root / 'scripts' / 'setup-agent-hooks.py'}"
+        )
+    if _read_text(pointer_path) != f"{root.resolve()}\n":
+        return (
+            "AgentPlaybook root pointer is missing or stale. "
+            f"Run: python3 {root / 'scripts' / 'setup-agent-hooks.py'}"
+        )
+    return ""
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text()
+    except OSError:
+        return ""
+
+
+def _is_executable(path: Path) -> bool:
+    return path.is_file() and os.access(path, os.X_OK)
+
+
+def _launcher_script_text() -> str:
+    return """#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+STATE_DIR_NAME = ".agentplaybook"
+ROOT_POINTER_NAME = "agentplaybook-root"
+REQUIRED_MARKERS = ("AGENTS.md", "index.md", "scripts/workflow.py")
+SCRIPT_ALIASES = {
+    "workflow": "workflow.py",
+    "agent-hook": "agent-hook.py",
+    "agent-preflight": "agent-preflight.py",
+    "agent-finish-check": "agent-finish-check.py",
+    "agent-entry": "agent-entry.py",
+    "project-discover": "project-discover.py",
+    "setup-agent-hooks": "setup-agent-hooks.py",
+}
+HOOK_ALIASES = {"start", "docs-read", "review", "finish"}
+
+def main():
+    if len(sys.argv) < 2:
+        return _soft_fail("missing AgentPlaybook script alias")
+
+    script_alias = sys.argv[1]
+    passthrough_args = list(sys.argv[2:])
+    if script_alias in HOOK_ALIASES:
+        script_name = "agent-hook.py"
+        passthrough_args.insert(0, script_alias)
+    else:
+        script_name = SCRIPT_ALIASES.get(script_alias)
+    if not script_name:
+        return _soft_fail(f"unsupported AgentPlaybook script alias: {script_alias}")
+
+    root = _find_root()
+    if root is None:
+        return _soft_fail(
+            "AgentPlaybook root is not configured. Run setup-agent-hooks.py from the current AgentPlaybook checkout."
+        )
+
+    script = root / "scripts" / script_name
+    if not script.is_file():
+        return _soft_fail(
+            "AgentPlaybook root pointer is stale. Run setup-agent-hooks.py from the current AgentPlaybook checkout."
+        )
+
+    env = os.environ.copy()
+    env.setdefault("AGENTPLAYBOOK_HOME", str(root))
+    result = subprocess.run([sys.executable, str(script), *passthrough_args], env=env, check=False)
+    if result.returncode and env.get("AGENTPLAYBOOK_HOOK_SOFT_FAIL") == "1":
+        return 0
+    return result.returncode
+
+def _find_root():
+    candidates: list[Path] = []
+    env_root = os.environ.get("AGENTPLAYBOOK_HOME", "").strip()
+    if env_root:
+        candidates.append(Path(env_root).expanduser())
+
+    pointer_path = Path.home() / STATE_DIR_NAME / ROOT_POINTER_NAME
+    try:
+        pointer = pointer_path.read_text().strip()
+    except OSError:
+        pointer = ""
+    if pointer:
+        candidates.append(Path(pointer).expanduser())
+
+    cwd = Path.cwd()
+    candidates.append(cwd)
+    candidates.extend(cwd.parents)
+    candidates.extend(
+        [
+            Path.home() / ".agent-playbook",
+            Path.home() / "AgentPlaybook",
+            Path.home() / "Documents" / "KeyFlowVault" / "AgentPlaybook",
+            Path.home() / "GitHub" / "AgentPlaybook",
+        ]
+    )
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            continue
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if _is_agentplaybook_root(resolved):
+            return resolved
+    return None
+
+def _is_agentplaybook_root(path):
+    return all((path / marker).exists() for marker in REQUIRED_MARKERS)
+
+def _soft_fail(message):
+    print(f"AgentPlaybook hook skipped: {message}", file=sys.stderr)
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+"""

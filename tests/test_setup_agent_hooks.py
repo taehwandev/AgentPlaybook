@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,9 +15,68 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from support.permission_entries import codex_prefix_rule_entries
 from support.setup_config_files import merge_codex_prefix_rules, merge_permissions_allow
 from support.setup_agent_hooks_impl import ensure_local_claude_excluded
+from support.stable_launcher import ensure_stable_launcher, stable_launcher_path, stable_root_pointer_path
 
 
 class SetupAgentHooksTests(unittest.TestCase):
+    def test_stable_launcher_records_current_root_under_user_home(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_home:
+            with patch.dict(os.environ, {"HOME": temp_home}):
+                results = ensure_stable_launcher(ROOT, dry_run=False)
+                launcher = stable_launcher_path()
+                pointer = stable_root_pointer_path()
+
+                self.assertTrue(launcher.exists())
+                self.assertTrue(os.access(launcher, os.X_OK))
+                self.assertEqual(f"{ROOT.resolve()}\n", pointer.read_text())
+                self.assertIn("scripts/workflow.py", launcher.read_text())
+                self.assertTrue(all(result["status"] == "installed" for result in results))
+
+                check = ensure_stable_launcher(ROOT, dry_run=True)
+
+        self.assertTrue(all(result["status"] == "ok" for result in check))
+
+    def test_stable_launcher_soft_fails_when_root_pointer_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_home:
+            with patch.dict(os.environ, {"HOME": temp_home}):
+                ensure_stable_launcher(ROOT, dry_run=False)
+                stable_root_pointer_path().write_text("/missing/AgentPlaybook\n")
+                launcher = stable_launcher_path()
+                env = os.environ.copy()
+                env["AGENTPLAYBOOK_HOOK_SOFT_FAIL"] = "1"
+
+                result = subprocess.run(
+                    [str(launcher), "workflow", "validate"],
+                    cwd=temp_home,
+                    env=env,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+
+        self.assertEqual(0, result.returncode)
+        self.assertIn("AgentPlaybook hook skipped", result.stderr)
+
+    def test_stable_launcher_supports_agent_hook_subcommand_aliases(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_home:
+            with patch.dict(os.environ, {"HOME": temp_home}):
+                ensure_stable_launcher(ROOT, dry_run=False)
+                launcher = stable_launcher_path()
+
+                result = subprocess.run(
+                    [str(launcher), "start", "--help"],
+                    cwd=str(ROOT),
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+
+        self.assertEqual(0, result.returncode)
+        self.assertNotIn("unsupported AgentPlaybook script alias: start", result.stderr)
+        self.assertIn("--request-classified", result.stdout)
+
     def test_external_project_claude_settings_are_excluded_locally(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)

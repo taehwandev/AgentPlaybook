@@ -7,13 +7,13 @@ from pathlib import Path
 
 from support.setup_config_files import quote
 from support.spill_permissions import spill_helper_permission_commands as _spill_helper_permission_commands
+from support.stable_launcher import stable_launcher_path
 
 
 def claude_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
-    for script in _agentplaybook_python_scripts(scripts_dir):
-        for command in _python_entrypoint_commands(script, "claude", include_spill_env=spill_available):
-            _add_permission_command_entries(entries, "Bash", command)
+    for command in _stable_launcher_commands("claude", include_spill_env=spill_available):
+        _add_permission_command_entries(entries, "Bash", command)
     if spill_available:
         for command in _spill_helper_permission_commands("claude"):
             _add_permission_command_entries(entries, "Bash", command)
@@ -30,9 +30,8 @@ def claude_legacy_permission_entries(scripts_dir: Path) -> list[str]:
 
 def claude_project_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
-    for script in _agentplaybook_python_scripts(scripts_dir):
-        for command in _python_entrypoint_commands(script, "claude", include_spill_env=spill_available):
-            _add_permission_command_entries(entries, "Bash", command)
+    for command in _stable_launcher_commands("claude", include_spill_env=spill_available):
+        _add_permission_command_entries(entries, "Bash", command)
     for subcommand in ("log", "status", "diff", "show", "branch"):
         entries.append(f"Bash(git -C * {subcommand} *)")
     return entries
@@ -98,6 +97,26 @@ def _python_entrypoint_commands(
             commands.append(f"{prefix}python {path}")
             commands.append(f"{prefix}{path}")
     return commands
+
+
+def _stable_launcher_commands(tool: str, *, include_spill_env: bool = True) -> list[str]:
+    commands: list[str] = []
+    env_prefixes = ("",)
+    if include_spill_env:
+        env_prefixes += (
+            f"SPILL_AI_TOOL={tool} ",
+            f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
+            f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL={tool} ",
+        )
+    for path in _stable_launcher_path_variants():
+        for prefix in env_prefixes:
+            commands.append(f"{prefix}{path}")
+    return commands
+
+
+def _stable_launcher_path_variants() -> list[str]:
+    raw = str(stable_launcher_path())
+    return _dedupe([raw, quote(raw), _double_quote(raw)])
 
 
 def _entrypoint_path_variants(script: Path) -> list[str]:

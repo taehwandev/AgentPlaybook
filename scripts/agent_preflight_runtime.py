@@ -14,11 +14,14 @@ from support.permission_entries import (
     claude_permission_entries,
     codex_prefix_rule_entries,
 )
+from support.stable_launcher import stable_launcher_issue
 
 
-BASELINE_HOOK_RE = re.compile(r"workflow\.py.*route.*triage.*--request-classified")
+BASELINE_HOOK_RE = re.compile(
+    r"(?:workflow\.py.*route|agentplaybook-hook.*workflow.*route).*triage.*--request-classified"
+)
 CLASSIFIED_HOOK_EVIDENCE_RE = re.compile(
-    r"workflow\.py.*route.*triage.*--request-classified.*--classification-evidence"
+    r"(?:workflow\.py.*route|agentplaybook-hook.*workflow.*route).*triage.*--request-classified.*--classification-evidence"
 )
 AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
 AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = [
@@ -107,6 +110,9 @@ def _claude_warnings(playbook_root: Path, *, spill_available: bool) -> list[str]
         return []
 
     warnings: list[str] = []
+    launcher_issue = stable_launcher_issue(playbook_root)
+    if launcher_issue:
+        warnings.append(launcher_issue)
     if spill_available:
         warnings.extend(_claude_spill_warnings(config, playbook_root))
     missing_permissions = _missing_allow_entries(

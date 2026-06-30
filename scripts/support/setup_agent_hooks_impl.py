@@ -11,13 +11,17 @@ from pathlib import Path
 
 from support.agy_setup import configure_agy
 from support.claude_setup import configure_claude
-from support.permission_entries import claude_project_permission_entries, codex_prefix_rule_entries
+from support.permission_entries import (
+    claude_legacy_permission_entries,
+    claude_project_permission_entries,
+    codex_prefix_rule_entries,
+)
 from support.project_type_detection import detect_project_permissions
 from support.setup_config_files import merge_codex_prefix_rules, merge_permissions_allow, print_results
+from support.stable_launcher import ensure_stable_launcher, stable_launcher_path
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = ROOT / "scripts"
-WORKFLOW_SCRIPT = SCRIPTS_DIR / "workflow.py"
 DEFAULT_SPILL_SETUP_HELPER = (
     Path.home()
     / "Library/Application Support/Spill/adapters/setup/spill-token-metering-setup.mjs"
@@ -54,12 +58,15 @@ def main() -> None:
     dry_run = args.dry_run or args.check
     spill_available = _has_spill_setup_helper()
     results: list[dict] = []
+    launcher_configured = False
 
     if _has_claude():
+        results += ensure_stable_launcher(ROOT, dry_run)
+        launcher_configured = True
         results += configure_claude(
             dry_run,
             scripts_dir=SCRIPTS_DIR,
-            workflow_script=WORKFLOW_SCRIPT,
+            launcher_path=stable_launcher_path(),
             spill_available=spill_available,
         )
 
@@ -80,6 +87,9 @@ def main() -> None:
         target_paths.append(Path(args.target).expanduser().resolve())
     if args.github_projects:
         target_paths += _find_github_projects()
+
+    if target_paths and not launcher_configured:
+        results += ensure_stable_launcher(ROOT, dry_run)
 
     for project_path in target_paths:
         results += configure_external_project(
@@ -148,7 +158,12 @@ def configure_external_project(
     target = project_path / ".claude" / "settings.json"
     entries = claude_project_permission_entries(scripts_dir, spill_available=spill_available)
     entries += detect_project_permissions(project_path)
-    status = merge_permissions_allow(target, entries, dry_run)
+    status = merge_permissions_allow(
+        target,
+        entries,
+        dry_run,
+        cleanup_entries=claude_legacy_permission_entries(scripts_dir),
+    )
     hook_label = f"permissions.project.{project_path.name}"
     exclude_status = ensure_local_claude_excluded(project_path, dry_run)
     return [

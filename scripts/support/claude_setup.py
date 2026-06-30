@@ -12,7 +12,7 @@ from support.permission_entries import (
 from support.setup_config_files import merge_permissions_allow, quote, read_json, write_json
 
 _BASELINE_COMMAND_RE = re.compile(
-    r"workflow\.py.*route.*triage.*--request-classified"
+    r"(?:workflow\.py.*route|agentplaybook-hook.*workflow.*route).*triage.*--request-classified"
 )
 _CLASSIFICATION_EVIDENCE = (
     "Claude UserPromptSubmit hook records safe request-intake evidence for "
@@ -24,12 +24,13 @@ def configure_claude(
     dry_run: bool,
     *,
     scripts_dir: Path,
-    workflow_script: Path,
+    launcher_path: Path,
     spill_available: bool = True,
 ) -> list[dict]:
     target = Path.home() / ".claude" / "settings.json"
     baseline_cmd = (
-        f"SPILL_AI_TOOL=claude python3 {quote(str(workflow_script))}"
+        f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude {quote(str(launcher_path))}"
+        " workflow"
         " route triage --request-classified"
         f" --classification-evidence {quote(_CLASSIFICATION_EVIDENCE)}"
     )

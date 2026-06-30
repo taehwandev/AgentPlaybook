@@ -211,9 +211,13 @@ For Codex `exec_command` escalations, set `prefix_rule` to only the executable
 and resolved wrapper path, such as
 `["python3", "/absolute/path/to/AgentPlaybook/scripts/agent-hook.py"]`; never
 include `--project`, `--request`, `--gate`, `$(pwd)`, `$HOME`, or other runtime
-arguments in the saved prefix. Claude and AGY permission allowlists must follow
-the same shape with only an absolute wrapper command plus a trailing argument
-wildcard when the runtime permission syntax requires one.
+arguments in the saved prefix. AGY permission allowlists must follow the same
+shape with only an absolute wrapper command plus a trailing argument wildcard
+when the runtime permission syntax requires one. Claude managed user-level
+hooks must use the stable launcher installed by `setup-agent-hooks.py` at
+`~/.agentplaybook/bin/agentplaybook-hook`; setup refreshes
+`~/.agentplaybook/agentplaybook-root` after moves or migrations so the Claude
+hook command does not point at a stale checkout path.
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]

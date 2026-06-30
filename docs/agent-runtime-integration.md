@@ -55,9 +55,13 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 ```
 
 This permission setup is global because the AgentPlaybook Python wrappers are
-shared by every target repo. Keep it narrow: allow only the current
-`<AGENTPLAYBOOK_ROOT>/scripts/*.py` files by exact path and suffix-aware
-runtime matcher. Do not broadly allow `python3`.
+shared by every target repo. Keep it narrow: allow only AgentPlaybook-managed
+entrypoints and suffix-aware runtime matchers. Do not broadly allow `python3`.
+For Claude, `setup-agent-hooks.py` installs a stable user-level launcher at
+`~/.agentplaybook/bin/agentplaybook-hook` and writes the current checkout to
+`~/.agentplaybook/agentplaybook-root`. Rerun setup after moving or migrating
+AgentPlaybook so the pointer is refreshed without changing the Claude hook
+command.
 When executing AgentPlaybook wrapper commands from an agent runtime, replace
 `<AGENTPLAYBOOK_ROOT>` with the resolved absolute path. Do not leave `$HOME`,
 `${HOME}`, `~`, or a relative path in the executable command.
@@ -367,17 +371,30 @@ Claude:
 - AgentPlaybook command permissions belong in the user-level
   `~/.claude/settings.json`, not repo-local `.claude/settings.json`, because
   the AgentPlaybook `scripts/*.py` entrypoints are shared across projects.
-- Claude AgentPlaybook permissions should be absolute wrapper command prefixes
-  with the runtime's trailing wildcard form for arguments, for example
-  `Bash(python3 /absolute/path/to/AgentPlaybook/scripts/agent-hook.py *)`.
-  Do not approve or document `$HOME`, `${HOME}`, `~`, relative
-  `scripts/<name>.py`, or argument-specific variants for shared wrappers.
+- Claude managed hooks should call the stable launcher
+  `~/.agentplaybook/bin/agentplaybook-hook`, not a moving checkout path such as
+  `/absolute/path/to/AgentPlaybook/scripts/workflow.py`. The setup script
+  refreshes `~/.agentplaybook/agentplaybook-root` to the current checkout and
+  removes stale managed hook commands that still point at old roots. The stable
+  launcher supports both script aliases such as `workflow` and direct
+  `agent-hook.py` subcommand aliases such as `start`, `docs-read`, `review`,
+  and `finish`; these aliases must execute the hook, not skip with success.
+- Claude AgentPlaybook permissions should allow only that stable launcher and
+  the narrow managed helper commands with the runtime's trailing wildcard form
+  for arguments, for example
+  `Bash(/absolute/home/.agentplaybook/bin/agentplaybook-hook *)`. Do not
+  approve or document broad `python3`, relative `scripts/<name>.py`, or
+  argument-specific variants for shared wrappers.
 - The managed Claude `UserPromptSubmit` workflow label hook must not call
-  `workflow.py route ... --request-classified` without
-  `--classification-evidence`. That hook is allowed to use a safe generic
-  classification evidence string because it is only refreshing local workflow
-  label context and must not pass prompt content. `setup-agent-hooks.py` should
-  replace stale managed Claude hooks that omit the evidence flag.
+  `workflow route ... --request-classified` without `--classification-evidence`.
+  That hook is allowed to use a safe generic classification evidence string
+  only when it routes to `triage` for local label context and must not pass
+  prompt content. Work routes must use resolved-scope evidence such as
+  `clear-scoped`, `answered ... separate actionable`, or `blockers resolved`;
+  `classified`, `done`, `handled`, `clarified`, or `no blockers` is not enough
+  by itself. `setup-agent-hooks.py` should replace stale managed Claude hooks
+  that omit the evidence flag. The hook should fail soft when the root pointer
+  is stale so Claude startup is not blocked before the user can repair setup.
 
 Antigravity:
 

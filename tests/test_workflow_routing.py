@@ -34,6 +34,7 @@ from agent_route_docs import preflight_evidence_sha256, route_fingerprint
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
 from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
+from support.stable_launcher import stable_launcher_path
 from workflow_catalog import COMMANDS, CONCERNS
 from workflow_gate_policy import (
     AGENTIC_RUN_STATE_GATE,
@@ -183,7 +184,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 }
             }))
             new_command = (
-                "SPILL_AI_TOOL=claude python3 '/tmp/AgentPlaybook/scripts/workflow.py' "
+                f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude '{stable_launcher_path()}' workflow "
                 "route triage --request-classified --classification-evidence "
                 f"'{_CLASSIFICATION_EVIDENCE}'"
             )
@@ -357,18 +358,25 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertNotIn("--project", entries)
         self.assertNotIn("--request", entries)
 
-    def test_setup_permissions_use_absolute_agentplaybook_paths_for_claude_and_agy(self) -> None:
-        for entries in (
-            "\n".join(claude_permission_entries(ROOT / "scripts", spill_available=False)),
-            "\n".join(agy_permission_entries(ROOT / "scripts", spill_available=False)),
-        ):
-            self.assertIn(str(ROOT / "scripts" / "agent-hook.py"), entries)
-            self.assertNotIn("$HOME", entries)
-            self.assertNotIn("${HOME}", entries)
-            self.assertNotIn("$AGENTPLAYBOOK_HOME", entries)
-            self.assertNotIn("~/", entries)
-            self.assertNotIn("python3 scripts/", entries)
-            self.assertNotIn("python scripts/", entries)
+    def test_setup_permissions_use_stable_launcher_for_claude(self) -> None:
+        entries = "\n".join(claude_permission_entries(ROOT / "scripts", spill_available=False))
+
+        self.assertIn(str(stable_launcher_path()), entries)
+        self.assertIn("agentplaybook-hook", entries)
+        self.assertNotIn(str(ROOT / "scripts" / "agent-hook.py"), entries)
+        self.assertNotIn("python3 scripts/", entries)
+        self.assertNotIn("python scripts/", entries)
+
+    def test_setup_permissions_use_absolute_agentplaybook_paths_for_agy(self) -> None:
+        entries = "\n".join(agy_permission_entries(ROOT / "scripts", spill_available=False))
+
+        self.assertIn(str(ROOT / "scripts" / "agent-hook.py"), entries)
+        self.assertNotIn("$HOME", entries)
+        self.assertNotIn("${HOME}", entries)
+        self.assertNotIn("$AGENTPLAYBOOK_HOME", entries)
+        self.assertNotIn("~/", entries)
+        self.assertNotIn("python3 scripts/", entries)
+        self.assertNotIn("python scripts/", entries)
 
     def test_agy_runtime_bridge_requires_project_discovery_entry(self) -> None:
         required = [

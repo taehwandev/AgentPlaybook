@@ -450,13 +450,14 @@ file or a pasted prompt.
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check`, then run
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py` after approval if
   user-level hooks or permissions are missing. This writes global runtime
-  config only for the current `<AGENTPLAYBOOK_ROOT>/scripts/*.py` files by
-  exact absolute-path `python3 <script>` entrypoint; it does not broadly allow
-  `python3`. Agents should invoke these wrappers as direct argv commands using
-  the resolved absolute AgentPlaybook path, not `$HOME`, `~`, relative paths,
-  or shell `-lc` strings. With the script path as a literal argv item, changing
-  trailing evidence such as repeated `--gate` values does not create a new
-  permission prompt.
+  config only for AgentPlaybook-managed entrypoints; it does not broadly allow
+  `python3`. Codex and AGY direct wrapper permissions use the resolved absolute
+  AgentPlaybook path, not `$HOME`, `~`, relative paths, or shell `-lc` strings.
+  Claude managed hooks use `~/.agentplaybook/bin/agentplaybook-hook` plus a
+  refreshed `~/.agentplaybook/agentplaybook-root` pointer so moving or
+  migrating the checkout does not leave `~/.claude/settings.json` pointing at
+  a stale `scripts/workflow.py` path. Rerun setup after moving AgentPlaybook to
+  refresh that pointer and repair stale managed hooks.
 - Spill token metering is optional and separate. AgentPlaybook does not install
   token-usage event hooks. If the local Spill setup helper is present,
   `setup-agent-hooks.py` may wire a safe workflow label bridge; if the helper is

@@ -69,15 +69,19 @@ user-level runtime config, then run:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 
-This setup is global by design. It allows only the current AgentPlaybook Python
-entrypoints under `<AGENTPLAYBOOK_ROOT>/scripts/*.py` by exact path and
-suffix-aware runtime matcher. It must not broadly allow `python3`.
+This setup is global by design. It allows only AgentPlaybook-managed
+entrypoints with suffix-aware runtime matchers. It must not broadly allow
+`python3`.
 For Codex, update `~/.codex/rules/default.rules` with direct `python3 <script>`
 argv prefixes for the same scripts using resolved absolute paths only. Do not
 use `$HOME`, `${HOME}`, `~`, relative paths, or shell `-lc` wrappers for
 AgentPlaybook Python wrappers: those forms can be treated as shell expansion or
 a single shell string before the runtime permission matcher sees the trusted
-script path. For Claude Code, update `~/.claude/settings.json`. For
+script path. For Claude Code, update `~/.claude/settings.json` so managed hooks
+call `~/.agentplaybook/bin/agentplaybook-hook`, and refresh
+`~/.agentplaybook/agentplaybook-root` to the selected AgentPlaybook checkout so
+moves or migrations do not leave Claude pointing at a stale `workflow.py`
+absolute path. For
 AGY/Antigravity, support both
 `~/.gemini/config/config.json` and
 `~/.gemini/antigravity-cli/settings.json`; hooks remain in
@@ -208,9 +212,11 @@ runtime config and then run:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 
-Keep the permission allowlist narrow: allow only the current AgentPlaybook
-`scripts/*.py` files by exact path and suffix-aware runtime matcher, not broad
-`python3`.
+Keep the permission allowlist narrow: allow only AgentPlaybook-managed
+entrypoints by suffix-aware runtime matcher, not broad `python3`. For Claude
+managed hooks, prefer the stable `~/.agentplaybook/bin/agentplaybook-hook`
+launcher plus the refreshed root pointer over a moving checkout's absolute
+`scripts/workflow.py` path.
 
 Update the active user-level file for the runtime I choose:
 Codex -> ~/.codex/AGENTS.md
