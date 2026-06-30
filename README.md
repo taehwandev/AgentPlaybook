@@ -511,17 +511,19 @@ Supported commands are `ambiguity`, `bugfix`, `docs`, `docs-review`, `feature`,
 
 Supported platforms are `android`, `application`, `flutter`, `ios`, `kmp`,
 `server`, and `web`. Supported concerns are `accessibility`, `aeo`, `ai-mode`,
-`ai-overviews`, `ai-search`, `ai-search-optimization`, `answer-engine`,
-`answer-engine-optimization`, `api`, `asset`, `assets`, `auth`, `background`,
-`billing`, `cache`, `canonical`, `channel`, `component`, `component-api`,
-`compose`, `config`, `copy`, `defensive`, `dependency`, `desktop`, `discovery`,
-`effort`, `error`, `errors`, `failure`, `generated`, `generative-ai`,
-`generative-ai-search`, `geo`, `intake`, `interaction`, `invite`, `llms`,
-`llms-txt`, `module`, `observability`, `open-graph`, `persistence`, `platform`,
-`prose`, `react`, `release`, `reusability`, `robots`, `runtime-url`,
-`security`, `seo`,
-`sitemap`, `stack`, `state`, `structure`, `structured-data`, `swiftui`, `ui`,
-`uikit`, `url`, `voice`, `widget`, `wiki`, `worktree`, and `writing`.
+`ai-overviews`, `ai-search`, `ai-search-optimization`, `agent-credentials`,
+`answer-engine`, `answer-engine-optimization`, `api`, `asset`, `assets`,
+`auth`, `background`, `billing`, `brokered-credentials`, `cache`, `canonical`,
+`capability-token`,
+`channel`, `component`, `component-api`, `compose`, `config`, `copy`,
+`credential-broker`, `defensive`, `dependency`, `desktop`, `discovery`,
+`effort`, `egress-control`, `error`, `errors`, `failure`, `generated`,
+`generative-ai`, `generative-ai-search`, `geo`, `intake`, `interaction`,
+`invite`, `llms`, `llms-txt`, `module`, `observability`, `open-graph`,
+`persistence`, `platform`, `prose`, `react`, `release`, `reusability`, `robots`,
+`runtime-url`, `security`, `seo`, `sitemap`, `stack`, `state`, `structure`,
+`structured-data`, `swiftui`, `ui`, `uikit`, `url`, `voice`, `widget`, `wiki`,
+`worktree`, and `writing`.
 
 Use `classify` before route selection when the request may be vague or when the
 agent runtime can choose model/reasoning effort. The classifier is intentionally
@@ -616,7 +618,7 @@ AGENTS.md         Shared entrypoint for agent runtimes
 index.md          Routing map for selecting the smallest useful document set
 common/           Platform-neutral engineering guidance
 platforms/        Android, KMP, Flutter, iOS, web, server, and application tracks
-product-patterns/ Reusable product mechanics such as auth, invite, and billing
+product-patterns/ Reusable product mechanics such as auth, invite, billing, and agent credentials
 workflows/        Repeatable agent work paths
 scripts/          Executable workflow routers, preflight checks, and validators
 templates/        Repo-local routing snippets
@@ -681,7 +683,9 @@ where state should live, and what evidence proves the work.
   state, effects, retries, and user-visible failure states.
 - Product implementation: product-pattern implementation cards cover concrete
   auth/RBAC, invitation, and billing/entitlement models, state machines,
-  enforcement layers, side effects, and tests.
+  enforcement layers, side effects, and tests. Product-pattern ideation cards
+  cover reusable choices such as agent credential brokering before a project
+  commits to one implementation.
 - Human-authored writing: `common/human-authored-writing.md` covers preserving
   meaning and voice while reducing generic AI-writing signals in prose,
   documentation, release notes, marketing copy, and email.

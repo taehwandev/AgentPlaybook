@@ -127,6 +127,31 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("common/design-system.md", CONCERNS["tokens"])
         self.assertNotIn("common/local-tools.md", CONCERNS["tokens"])
 
+    def test_credential_broker_concern_routes_to_product_pattern(self) -> None:
+        doc = "product-patterns/agent-credential-broker-ideation.md"
+        for concern in (
+            "credential-broker",
+            "agent-credentials",
+            "brokered-credentials",
+            "capability-token",
+            "egress-control",
+        ):
+            with self.subTest(concern=concern):
+                self.assertIn(concern, CONCERNS)
+                self.assertIn(doc, CONCERNS[concern])
+
+        examples = (
+            "Compare credential broker patterns for an AI coding agent",
+            "Design brokered credentials and capability token access for agents",
+            "에이전트 자격 증명 브로커 아이디에이션을 정리해줘",
+        )
+        for request in examples:
+            with self.subTest(request=request):
+                self.assertIn("credential-broker", infer_concerns_from_request(request))
+
+        route = resolve_docs("planning", None, ["credential-broker"], request_classified=True)
+        self.assertIn(doc, route["docs"])
+
     def test_number_unit_display_concerns_route_to_accessibility_i18n(self) -> None:
         for concern in (
             "i18n",

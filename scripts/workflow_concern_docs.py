@@ -123,6 +123,11 @@ CONCERNS: Dict[str, Tuple[str, ...]] = {
         "product-patterns/billing-entitlements.md",
         "product-patterns/billing-entitlements-implementation.md",
     ),
+    "credential-broker": ("product-patterns/agent-credential-broker-ideation.md",),
+    "agent-credentials": ("product-patterns/agent-credential-broker-ideation.md",),
+    "brokered-credentials": ("product-patterns/agent-credential-broker-ideation.md",),
+    "capability-token": ("product-patterns/agent-credential-broker-ideation.md",),
+    "egress-control": ("product-patterns/agent-credential-broker-ideation.md",),
 }
 
 

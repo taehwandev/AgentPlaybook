@@ -182,6 +182,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Billing/entitlements/quota: `product-patterns/billing-entitlements.md`
 - Billing/entitlements implementation:
   `product-patterns/billing-entitlements-implementation.md`
+- Agent credential broker ideation:
+  `product-patterns/agent-credential-broker-ideation.md`
 
 ## Workflow
 
