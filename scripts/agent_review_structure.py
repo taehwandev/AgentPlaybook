@@ -9,6 +9,7 @@ from typing import Any
 
 from agent_review_boundary import boundary_note_requirements
 from agent_review_purpose import purpose_failures
+from agent_structure_rules import structure_rule_review
 from agent_workspace_policy import is_writing_workspace
 
 
@@ -155,6 +156,16 @@ def structure_review(
             run_command,
         )
     )
+    structure_rules = structure_rule_review(
+        project,
+        paths,
+        discovery["path_metadata"],
+        review_source_path,
+        test_exempt_path,
+    )
+    result["structure_rules"] = structure_rules
+    result["failures"].extend(structure_rules["failures"])
+    result["warnings"].extend(structure_rules["warnings"])
     result["boundary_note_requirements"] = boundary_note_requirements(
         project,
         paths,

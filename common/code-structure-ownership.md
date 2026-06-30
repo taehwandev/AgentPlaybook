@@ -57,6 +57,11 @@ callers/tests:
 nearest verification:
 ```
 
+Treat this packet as a pre-code gate. If an agent cannot name the owner,
+allowed imports, forbidden imports, callers/tests, and nearest verification for
+the changed boundary, it must stop before adding files or moving code. Do not
+let implementation discover the package structure by trial and error.
+
 Do not start by putting every new file under one feature folder, `common`,
 `shared`, `utils`, `helpers`, or another broad bucket and relying on future
 cleanup. A feature folder is acceptable only when its child files or subfolders
@@ -361,6 +366,57 @@ consumer need, not by mechanical file count:
 If the package boundary note cannot explain the allowed imports and who
 benefits, keep the code in the existing package and split only files or
 file-private helpers as needed.
+
+### Hook And Repo-Local Structure Rules
+
+Use three layers for package-structure discipline:
+
+1. Pre-code route discipline: the `boundary plan` gate must name the chosen
+   package/folder map, allowed imports, forbidden imports, callers/tests, and
+   nearest verification before implementation.
+2. Review-hook detection: the AgentPlaybook review hook checks changed runtime
+   files for broad-package signals, new package boundary-note requirements, and
+   repo-local structure rules. Treat hook failure as a structure bug, not as a
+   reason to loosen the hook.
+3. Repo-local rule files: each repo can define concrete package rules in
+   `.agents/structure-rules.json`. A local-only override can live in
+   `.agentplaybook/structure-rules.json`; this is useful while tuning rules but
+   should not be the only source of truth for team workflows.
+
+Supported rule shape:
+
+```json
+{
+  "schema_version": 1,
+  "allowed_new_paths": ["src/features/**", "src/domain/**", "src/platform/**"],
+  "forbidden_new_paths": ["**/utils/**", "**/helpers/**", "**/misc/**"],
+  "rules": [
+    {
+      "name": "domain_stays_out_of_ui",
+      "paths": ["src/domain/**"],
+      "forbidden_imports": ["src/ui/**", "@/ui/**"]
+    },
+    {
+      "name": "feature_api_stays_narrow",
+      "paths": ["src/features/*/api/**"],
+      "project_import_prefixes": ["src/**", "@/**"],
+      "allowed_imports": ["src/features/*/api/**", "src/domain/**", "@/domain/**"]
+    }
+  ]
+}
+```
+
+Prefer `forbidden_imports` and `forbidden_new_paths` first because they are less
+noisy. Use `allowed_new_paths` only when the repo has a stable source layout.
+Use `allowed_imports` only with `project_import_prefixes` when the repo can
+define a complete project-local import allowlist; otherwise external package
+imports may create false failures.
+
+The hook is intentionally read-only. It should report package and import
+violations; the implementation agent must repair the structure or update the
+repo-local rule with an explicit boundary decision. Do not hide structure drift
+by moving the rule to an ignored local file or by removing the boundary-plan
+gate evidence.
 
 ### Module-Level SOLID / ISP
 
