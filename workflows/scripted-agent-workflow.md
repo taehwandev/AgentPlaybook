@@ -307,6 +307,12 @@ forgets them:
   evidence that justifies that transition. This is the workflow's memory for
   continuation, retry, review, delegation, and retrospective restart; route
   output alone is not execution evidence.
+- `cycle contract`: for work-producing routes, state the current cycle type,
+  input/source scope, allowed and forbidden changes, acceptance or verification
+  method, stop condition, and next cycle/checkpoint before editing. This turns
+  the task into one bounded cycle instead of an open-ended loop. Code review is
+  a separate review cycle; implementation work may prepare for review, but must
+  not claim that review happened unless a review route actually ran.
 - `side-effect audit`: after implementation and before final verification or
   handoff, inspect the final diff for unexpected generated files, lockfiles,
   public-contract changes, external-state surfaces, broad formatting churn, and
@@ -490,71 +496,29 @@ gate.
 Before final report, commit, release, or handoff:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
 ```
 
-Write finish evidence for the validator, not only for a human summary. When a
-route includes these gates, the evidence must name the actual check that
-satisfies the policy:
+Do not wait until finish to write all gate evidence by hand. The default path
+is a structured gate ledger at
+`<TARGET_REPO>/.agentplaybook/gate-evidence.json`, bound to the current
+preflight evidence hash and route fingerprint. `agent-hook.py finish` reads
+that ledger first, then applies any explicit `--gate "<gate>=<evidence>"`
+arguments as compatibility overrides.
 
-- `route docs read`: routed skill/guidance docs read before work, the applied
-  rule/criterion/takeaway used for this task, and a matching docs-read receipt
-  for the current preflight evidence. Write this evidence as a validator-ready
-  sentence that includes all four ideas explicitly: the docs were read, they
-  were routed or guidance docs, they were read before edits/implementation, and
-  the applied rule, criterion, or takeaway. Example:
-  `read routed guidance docs before edits; applied docs/agent-bootstrap.md rule
-  to keep AGENTS.md canonical and keep runtime files as thin pointers`.
-- `ambiguity check`: no blockers, blockers resolved, questions asked,
-  clarified decision, or explicit safe assumption.
-- `alignment brief`: shared understanding, possible differences, unsupported
-  assumptions or unknowns, and the user-visible checkpoint before requirement
-  analysis or modification work.
-- `source docs`: matching source-of-truth docs searched and opened/read before
-  implementation, or none found, plus how that source affected the work or
-  documentation artifact decision. Sources can include PRD/spec/ARD, ADR/RFC,
-  module README, API contract, runbook, migration note, release note, test
-  plan, skill/platform/workflow card, or agent instruction.
-- `documentation impact`: pre-code/pre-edit documentation artifact selection,
-  impact decision, affected doc path or doc class, and why behavior, workflow
-  policy, public contract, operator action, or acceptance criteria do or do not
-  require a doc update. Non-creation decisions must include a no-durable-doc
-  reason. Example:
-  `pre-code/pre-edit artifact selection: workflow card and README; impact
-  decision: unchanged; reason: no durable behavior, no workflow policy, no
-  public contract, no operator action, and no acceptance criteria changed, so
-  this does not require creating/updating that artifact`.
-- `platform selection`: selected platform(s) and platform card/docs read before
-  PRD/ARD/architecture work, or no platform applicable with a reason.
-- `review readiness`: Markdown/frontmatter `status`/`type` readiness or
-  human-review queue results for the reviewed doc scope.
-- `documentation`: documentation decision, affected source-of-truth doc path or
-  doc class, and why the decision matches the changed behavior, workflow
-  policy, public contract, operator action, or durable acceptance criteria.
-- `boundary plan`: owned boundary/scope or contract, plus the nearest
-  verification/check before implementation.
-- `multi-agent split decision`: serial/single-agent with a concrete reason, or
-  parallel/subagent work with owned scope, forbidden scope, contract/brief, and
-  verification. Parallel or multi-agent route evidence must also have a
-  structured `.agentplaybook/agent-delegation-plan.json` with worker roles,
-  owned and forbidden scopes, contract, acceptance checks, verification, and
-  integration review. Example:
-  `serial/single-agent decision; concrete reason: small same-file/same-boundary
-  scope with overlapping contract risk, so parallel subagents were not safe;
-  verification: workflow validate plus focused unit tests`.
+The `start`, `docs-read`, and `review` hooks record their own successful gate
+evidence in the ledger. For gates that only the active agent can prove, record
+structured fields as soon as the gate is executed:
 
-After a retrospective restart for finish evidence policy failure, reread this
-gate list and make the next finish attempt use the exact required terms for the
-failed gate instead of a looser human summary.
-- `agentic run state`: current state, next transition or resume point, and the
-  gate/command/check evidence that justified the transition.
-- `side-effect audit`: final diff and side effects checked, naming unexpected
-  changes, public-contract risk, generated/lockfile churn, or that none were
-  found.
-- `workspace scope checkpoint`, `scope expansion checkpoint`, or
-  `cross-repo scope checkpoint`: starting primary repo, secondary or
-  source-of-truth repo, chosen mode, and cross-repo verification before writing
-  to a secondary repo.
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py gate --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-name "cycle contract" --field cycle_type=workflow_setup --field input_scope=<safe-source-scope> --field allowed_changes=<safe-scope> --field forbidden_changes=<safe-boundary> --field acceptance_criteria=<safe-criteria> --field verification=<check> --field stop_condition=<condition> --field checkpoint=<handoff-or-next-cycle>
+```
+
+Use this ledger to capture what happened, not to craft magic validator prose.
+If a structured entry is missing required fields, finish-check should fail and
+the recovery is to complete or record the missing gate fact, not to add a vague
+sentence. Manual `--gate` arguments are acceptable for one-off fallback or
+override, but they should not become the normal finish path.
 
 `agent-hook.py finish` delegates to `agent-finish-check.py`. Calling
 `agent-finish-check.py` directly is acceptable only as a lower-level wrapper path

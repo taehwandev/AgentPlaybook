@@ -38,34 +38,41 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 9. Check preflight's global lesson summary when available. Accepted or promoted
    lessons from `~/.agentplaybook/` apply across repos unless repo-local
    instructions conflict.
-10. Keep a gate execution ledger for the route and mark each gate with evidence when it is executed. Show a short gate signal after each completed gate or task step.
+10. Keep a gate execution ledger for the route and mark each gate with
+    evidence when it is executed. Prefer structured
+    `.agentplaybook/gate-evidence.json` entries written by `agent-hook.py gate`
+    or by executable hooks over reconstructing validator-ready prose at finish.
+    Show a short gate signal after each completed gate or task step.
 11. For work-producing or delegated tasks, record the agentic run state:
     current state, next transition or resume point, and the gate/command/check
     evidence. Use it as the continuation and recovery anchor after interruption,
     subagent delegation, failed verification, or missed-gate recovery.
-12. Use `index.md` to load only relevant AgentPlaybook cards.
-13. Parallelize independent read-only orientation when the runtime supports it:
+12. For work-producing routes, record a cycle contract before editing: cycle
+    type, input/source scope, allowed and forbidden changes, acceptance or
+    verification method, stop condition, and checkpoint or next cycle.
+13. Use `index.md` to load only relevant AgentPlaybook cards.
+14. Parallelize independent read-only orientation when the runtime supports it:
     selected document reads, file searches, stack inspection, git status, and
     preflight evidence may run together after request intake is settled.
-14. Inspect existing code, docs, tests, and local conventions.
-15. For code or architecture work that crosses files, packages, folders, or
+15. Inspect existing code, docs, tests, and local conventions.
+16. For code or architecture work that crosses files, packages, folders, or
     modules, record a compact structure packet before editing: chosen boundary,
     package/folder map, file split, allowed imports, forbidden imports,
     callers/tests, and nearest verification.
-16. When a product alias or investigation crosses repositories, choose the
+17. When a product alias or investigation crosses repositories, choose the
     primary repo from the acceptance path and stop for a workspace scope
     checkpoint before writing to any secondary repo.
-17. Make the smallest change that genuinely addresses the request.
-18. For code work, record the multi-agent split decision before editing and use
+18. Make the smallest change that genuinely addresses the request.
+19. For code work, record the multi-agent split decision before editing and use
     parallel agents when scopes are disjoint and stable.
-19. Update or create affected docs whenever behavior, workflow policy, public
+20. Update or create affected docs whenever behavior, workflow policy, public
     contract, durable acceptance criteria, operator action, or source-of-truth
     meaning changes. If no doc file changes, record the exact source-of-truth
     checked and why docs are intentionally unchanged or not applicable.
-20. Add/update/run the nearest useful test when code behavior or workflow policy changes.
-21. Verify with the narrowest reliable command first.
-22. Confirm the route gate ledger before reporting completion.
-23. Report what changed, what was verified, and what risk remains.
+21. Add/update/run the nearest useful test when code behavior or workflow policy changes.
+22. Verify with the narrowest reliable command first.
+23. Confirm the route gate ledger before reporting completion.
+24. Report what changed, what was verified, and what risk remains.
 
 ## Mistake Prevention Checklist
 
@@ -105,6 +112,11 @@ Before editing:
 - For work-producing and multi-agent routes, record `agentic run state`
   evidence before implementation: current state, next transition or resume
   point, and the gate/command/check evidence.
+- For work-producing routes, record `cycle contract` evidence before editing:
+  cycle type, input/source scope, allowed and forbidden changes, acceptance or
+  verification method, stop condition, and checkpoint or next cycle. Keep code
+  review as a separate review cycle unless the user explicitly asks for
+  review-response implementation.
 - When implementation can add or move more than one file, package, folder, or
   module, write the structure packet first. Do not start by dumping all code
   into one feature, `common`, `shared`, `utils`, `helpers`, `services`, or
@@ -143,7 +155,10 @@ While editing:
 
 Before finishing:
 
-- Confirm every required workflow route gate has ledger evidence when a scripted route was used.
+- Confirm every required workflow route gate has structured ledger evidence
+  when a scripted route was used. Treat missing fields as missing work or
+  missing evidence to complete, not as a prompt to write vague pass-through
+  wording at finish.
 - Confirm alignment evidence names the user-visible checkpoint, not only an
   internal note reconstructed after the work.
 - Confirm documentation evidence names the decision, affected source-of-truth
@@ -168,6 +183,7 @@ Before finishing:
 - User questions, approval requests, and ambiguity communication: `common/agent-interaction.md`.
 - Any multi-step agent task: `workflows/agent-task-lifecycle.md`.
 - Interrupted or transferred work: `workflows/agent-handoff-continuation.md`.
+- Work-producing cycle contract and stop conditions: `workflows/cycle-contract.md`.
 - Ambiguous requests or blocker unknowns before PRD, ARD, task breakdown, or implementation: `workflows/ambiguity-gate.md`.
 - PRD or product requirements note: `workflows/prd-creation.md`.
 - App, product, or feature delivery that may continue into code: `workflows/product-architecture-delivery.md`. Use this before the lower-level feature workflow unless the request is already a trivial, scoped change.

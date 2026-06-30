@@ -114,7 +114,7 @@ SCRIPT_ALIASES = {
     "project-discover": "project-discover.py",
     "setup-agent-hooks": "setup-agent-hooks.py",
 }
-HOOK_ALIASES = {"start", "docs-read", "review", "finish"}
+HOOK_ALIASES = {"start", "docs-read", "gate", "review", "finish"}
 
 def main():
     if len(sys.argv) < 2:

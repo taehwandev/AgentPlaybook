@@ -201,6 +201,7 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Request triage: `workflows/request-triage.md`
 - Agent handoff/continuation: `workflows/agent-handoff-continuation.md`
 - Scripted workflow routing: `workflows/scripted-agent-workflow.md`
+- Cycle contract: `workflows/cycle-contract.md`
 - Ambiguity gate: `workflows/ambiguity-gate.md`
 - PRD creation: `workflows/prd-creation.md`
 - Product architecture delivery: `workflows/product-architecture-delivery.md`

@@ -8,6 +8,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from agent_gate_evidence import record_gate_evidence
 from agent_review_boundary import format_boundary_note_requirements, missing_boundary_note_fields
 from agent_review_structure import structure_review
 from agent_workspace_policy import is_git_status_review_only, is_writing_workspace, non_git_writing_workspace_note
@@ -115,8 +116,32 @@ def review_hook(
     elif status_after_lines != status_before_lines:
         failures.append("review hook changed the worktree; review hooks must stay read-only")
 
+    if not failures:
+        record_review_gate(args, checks)
+
     details = review_failure_details(failures, structure) if failures else review_success_details(structure)
     return finish_with_result("review", not failures, details, args.output, checks, args.retry_attempt)
+
+
+def record_review_gate(args: Any, checks: dict[str, Any]) -> None:
+    evidence_path = args.evidence if args.evidence else args.project / ".agentplaybook" / "preflight.json"
+    try:
+        preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    record_gate_evidence(
+        evidence_path=evidence_path,
+        preflight=preflight,
+        gate="review hook",
+        evidence="review hook completed successfully and left worktree unchanged",
+        fields={
+            "changed_path_count": str(checks.get("changed_path_count", "")),
+            "workflow_validate": str((checks.get("workflow_validate") or {}).get("returncode", "")),
+            "vibeguard": str((checks.get("vibeguard") or {}).get("overall", "")),
+        },
+        status="SUCCESS",
+        source="review",
+    )
 
 
 def structure_evidence_failures(structure: dict[str, Any], structure_evidence: str) -> list[str]:

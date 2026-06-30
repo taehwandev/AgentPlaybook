@@ -178,7 +178,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
             "command": (
                 "python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish "
                 "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
-                "--gate \"<gate>=<evidence>\""
+                "[--gate \"<gate>=<evidence override>\"]"
             ),
         },
         ]

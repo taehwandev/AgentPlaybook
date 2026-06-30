@@ -75,6 +75,7 @@ ALIGNMENT_BRIEF_GATE = "alignment brief"
 DOCUMENTATION_IMPACT_GATE = "documentation impact"
 DOCUMENTATION_GATE = "documentation"
 TEST_GATE = "tests"
+CYCLE_CONTRACT_GATE = "cycle contract"
 BOUNDARY_PLAN_GATE = "boundary plan"
 MULTI_AGENT_GATE = "multi-agent split decision"
 SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
@@ -105,11 +106,13 @@ def automatic_gates(command: str) -> list[str]:
     if command in SOURCE_DOCS_COMMANDS:
         gates.append(SOURCE_DOCS_GATE)
     if command in WORK_PRODUCING_COMMANDS:
-        gates.extend([AMBIGUITY_GATE, DOCUMENTATION_IMPACT_GATE, DOCUMENTATION_GATE])
+        gates.extend([AMBIGUITY_GATE, DOCUMENTATION_IMPACT_GATE])
     if command in ALIGNMENT_BRIEF_COMMANDS:
         gates.append(ALIGNMENT_BRIEF_GATE)
     if command in AGENTIC_RUN_STATE_COMMANDS:
         gates.append(AGENTIC_RUN_STATE_GATE)
+    if command in WORK_PRODUCING_COMMANDS:
+        gates.extend([CYCLE_CONTRACT_GATE, DOCUMENTATION_GATE])
     if command in CODE_WORK_COMMANDS:
         gates.extend(
             [TEST_GATE, BOUNDARY_PLAN_GATE, MULTI_AGENT_GATE, SIDE_EFFECT_AUDIT_GATE]
@@ -133,6 +136,8 @@ def automatic_docs(command: str) -> list[str]:
             docs.append("workflows/prd-creation.md")
     if DOCUMENTATION_GATE in gates or DOCUMENTATION_IMPACT_GATE in gates:
         docs.append("workflows/documentation-update.md")
+    if CYCLE_CONTRACT_GATE in gates:
+        docs.append("workflows/cycle-contract.md")
     if SOURCE_DOCS_GATE in gates:
         docs.extend(
             [
@@ -238,6 +243,8 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
                 gate,
                 anchors=(ALIGNMENT_BRIEF_GATE, AMBIGUITY_GATE, ROUTE_DOCS_READ_GATE, "orient"),
             )
+        elif gate == CYCLE_CONTRACT_GATE:
+            _insert_before_any(result, gate, anchors=before_implementation)
         elif gate == BOUNDARY_PLAN_GATE:
             _insert_before_any(result, gate, anchors=before_implementation)
         elif gate == MULTI_AGENT_GATE:

@@ -22,6 +22,11 @@ from agent_review_structure import (
     REVIEW_FUNCTION_LINE_LIMIT,
     REVIEW_SOURCE_FILE_LINE_LIMIT,
 )
+from agent_gate_evidence import (
+    parse_field,
+    record_gate_evidence,
+    reset_gate_evidence_ledger,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -128,6 +133,7 @@ def start_hook(args: argparse.Namespace) -> int:
     details.extend(_summary_lines(result))
     if success:
         details.extend(_hook_summary_from_preflight(_preflight_evidence_path(args)))
+        _reset_and_record_start_gate(args)
     return finish_with_result(
         "start",
         success,
@@ -207,6 +213,14 @@ def docs_read_hook(args: argparse.Namespace) -> int:
     success = result["returncode"] == 0
     details = ["route docs read receipt completed" if success else "route docs read receipt failed"]
     details.extend(_summary_lines(result))
+    if success:
+        _record_hook_gate(
+            args,
+            "route docs read",
+            "docs-read receipt completed",
+            {"takeaway": "route docs receipt matched the current preflight manifest"},
+            "docs-read",
+        )
     return finish_with_result(
         "docs-read",
         success,
@@ -214,6 +228,80 @@ def docs_read_hook(args: argparse.Namespace) -> int:
         None,
         {"docs_read": result},
         args.retry_attempt,
+    )
+
+
+def gate_hook(args: argparse.Namespace) -> int:
+    fields: dict[str, str] = {}
+    for raw_field in args.field:
+        try:
+            key, value = parse_field(raw_field)
+        except ValueError as error:
+            print_status("gate", False, [str(error)])
+            return 1
+        fields[key] = value
+    try:
+        entry = _record_hook_gate(
+            args,
+            args.gate_name,
+            args.gate_evidence or "",
+            fields,
+            args.source,
+            args.status,
+        )
+    except (OSError, json.JSONDecodeError) as error:
+        print_status("gate", False, [f"gate evidence ledger update failed: {error}"])
+        return 1
+    return finish_with_result(
+        "gate",
+        True,
+        [f"gate evidence recorded: {entry['gate']}"],
+        args.output,
+        {"gate_evidence": entry},
+        args.retry_attempt,
+    )
+
+
+def _record_hook_gate(
+    args: argparse.Namespace,
+    gate: str,
+    evidence: str,
+    fields: dict[str, str],
+    source: str,
+    status: str = "SUCCESS",
+) -> dict[str, Any]:
+    evidence_path = _preflight_evidence_path(args)
+    preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
+    return record_gate_evidence(
+        evidence_path=evidence_path,
+        preflight=preflight,
+        gate=gate,
+        evidence=evidence,
+        fields=fields,
+        status=status,
+        source=source,
+    )
+
+
+def _reset_and_record_start_gate(args: argparse.Namespace) -> None:
+    evidence_path = _preflight_evidence_path(args)
+    try:
+        preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    reset_gate_evidence_ledger(evidence_path, preflight)
+    classification_evidence = (
+        (preflight.get("request_intake") or {}).get("classification_evidence")
+        or "request provided to preflight"
+    )
+    record_gate_evidence(
+        evidence_path=evidence_path,
+        preflight=preflight,
+        gate="request intake",
+        evidence=f"preflight request intake completed: {classification_evidence}",
+        fields={"classification_evidence": str(classification_evidence)},
+        status="SUCCESS",
+        source="start",
     )
 
 
@@ -309,7 +397,7 @@ def non_negative_int(value: str) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run essential AgentPlaybook hooks.")
-    parser.add_argument("hook", choices=("start", "docs-read", "review", "finish"))
+    parser.add_argument("hook", choices=("start", "docs-read", "gate", "review", "finish"))
     parser.add_argument("--project", type=existing_path, default=Path.cwd())
     parser.add_argument("--rules", type=existing_path, default=ROOT)
     parser.add_argument(
@@ -393,6 +481,13 @@ def build_parser() -> argparse.ArgumentParser:
     finish = parser.add_argument_group("finish hook")
     finish.add_argument("--gate", action="append", default=[])
     finish.add_argument("--allow-vibeguard-review")
+
+    gate = parser.add_argument_group("gate evidence hook")
+    gate.add_argument("--gate-name", help="route gate name to record in the structured ledger")
+    gate.add_argument("--status", choices=("SUCCESS", "FAIL"), default="SUCCESS")
+    gate.add_argument("--source", default="manual")
+    gate.add_argument("--gate-evidence", default="")
+    gate.add_argument("--field", action="append", default=[], help="structured evidence field as key=value")
     return parser
 
 
@@ -409,6 +504,10 @@ def main() -> int:
         return review_hook(args, run_command, git_status, vibeguard_command, parse_overall, finish_with_result)
     if args.hook == "docs-read":
         return docs_read_hook(args)
+    if args.hook == "gate":
+        if not args.gate_name:
+            parser.error("gate requires --gate-name")
+        return gate_hook(args)
     return finish_hook(args)
 
 

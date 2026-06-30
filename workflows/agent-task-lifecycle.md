@@ -84,37 +84,43 @@ from memory.
    the shared understanding, possible mismatches, and unsupported assumptions or
    minimal blocker questions. Do this even when the task is too small for a full
    PRD or Grill-Me session.
-11. Inspect: read existing code, docs, tests, commands, and current user changes
+11. Cycle contract: for work-producing routes, record the cycle type,
+    input/source scope, allowed and forbidden changes, acceptance or
+    verification method, stop condition, and checkpoint or next cycle before
+    editing. Keep code review as a separate review cycle unless the current
+    route is explicitly review or review-response work.
+12. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
-12. Decide: make a reasonable assumption when safe; ask only when ambiguity
+13. Decide: make a reasonable assumption when safe; ask only when ambiguity
    changes result or risk.
-13. Act: execute the scoped work with periodic progress updates for long tasks.
-14. Verify: collect evidence with the narrowest reliable command or manual
+14. Act: execute the scoped work with periodic progress updates for long tasks.
+15. Verify: collect evidence with the narrowest reliable command or manual
     check. For usage telemetry, distinguish setup, label, hook, and diagnostic
     evidence from exact queued/imported usage event evidence.
-15. Recover: when a command fails, diagnose stdout/stderr and make the smallest
+16. Recover: when a command fails, diagnose stdout/stderr and make the smallest
     correction before retrying.
-16. Ledger check: before finalizing, compare required gates against executed
+17. Ledger check: before finalizing, compare required gates against executed
     evidence and `SUCCESS`/`FAIL` state. Completion requires every required gate
     to be `🐱🟢 SUCCESS`. If any required gate is missing, blocked, failed, or
     lacks evidence, report `🐱🔴 FAIL` and follow missed-gate recovery in
     `workflows/scripted-agent-workflow.md`.
-17. Definition of Done: before final report, handoff, commit, release, or PR
+18. Definition of Done: before final report, handoff, commit, release, or PR
     creation, compare the final diff and evidence against
     `common/definition-of-done.md`.
-18. Retrospective restart: when finish-check sets `retrospective_required`, run
+19. Retrospective restart: when finish-check sets `retrospective_required`, run
     `workflows/retrospective-learning.md`, use or update the generated global
     lesson candidate when safe, then restart at the first missed gate or same
     failed scope.
-19. Review: inspect the final diff, output, or artifact against the request and
+20. Review: inspect the final diff, output, or artifact against the request and
     risks.
-20. Report: state what changed or was found, verification status, skipped
+21. Report: state what changed or was found, verification status, skipped
     checks, and residual risk.
 
 ## Route To
 
 - Product or feature delivery with PRD/ARD gates: `workflows/product-architecture-delivery.md`
 - Request clarity, effort routing, or Grill-Me: `workflows/request-triage.md`
+- Bounded work cycles and stop conditions: `workflows/cycle-contract.md`
 - Lower-level coding work: `workflows/development-cycle.md`
 - Feature behavior: `workflows/feature-implementation.md`
 - Bug or regression: `workflows/bugfix-debugging.md`

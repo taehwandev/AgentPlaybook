@@ -21,6 +21,7 @@ from agent_finish_check_steps import (
 )
 from agent_finish_common import display_signal, parse_gate, write_json
 from agent_finish_final_checks import run_final_checks
+from agent_gate_evidence import merge_gate_evidence_from_ledger
 
 
 def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
@@ -51,6 +52,7 @@ def build_result(
     gate_evidence: dict[str, str],
     gate_signals: list[dict[str, str]],
     missed_gates: list[str],
+    gate_evidence_ledger: dict[str, Any],
     route_docs_receipt: dict[str, Any],
     delegation_plan: dict[str, Any],
     grill_me_required: bool,
@@ -72,6 +74,7 @@ def build_result(
         "request_classification": route.get("request_classification") or {},
         "required_gates": required_gates,
         "gate_evidence": gate_evidence,
+        "gate_evidence_ledger": gate_evidence_ledger,
         "gate_signals": gate_signals,
         "missed_gates": missed_gates,
         "route_docs_read_receipt": route_docs_receipt,
@@ -115,7 +118,12 @@ def main() -> int:
     route = preflight.get("route") or {}
     route_docs_receipt = read_route_docs_receipt_for_preflight(evidence_path)
     delegation_plan = read_delegation_plan(project)
-    gate_evidence = dict(args.gate)
+    gate_evidence, gate_evidence_ledger = merge_gate_evidence_from_ledger(
+        route=route,
+        evidence_path=evidence_path,
+        route_docs_receipt=route_docs_receipt,
+        cli_gate_evidence=dict(args.gate),
+    )
     gate_signals: list[dict[str, str]] = []
     required_gates, missed_gates, gate_policy_failures = check_required_gates(
         route,
@@ -166,6 +174,7 @@ def main() -> int:
         gate_evidence=gate_evidence,
         gate_signals=gate_signals,
         missed_gates=missed_gates,
+        gate_evidence_ledger=gate_evidence_ledger,
         route_docs_receipt=route_docs_receipt,
         delegation_plan=delegation_plan,
         grill_me_required=grill_me_required,

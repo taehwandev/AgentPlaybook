@@ -24,6 +24,12 @@ from agent_finish_check_steps import (
     validate_grill_me_skill_evidence,
     validate_route_docs_manifest_evidence,
 )
+from agent_gate_evidence import (
+    gate_evidence_path_for_preflight,
+    merge_gate_evidence_from_ledger,
+    record_gate_evidence,
+    reset_gate_evidence_ledger,
+)
 from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_global_lessons import lesson_summary, write_retrospective_candidate
 from agent_preflight_runtime import (
@@ -41,6 +47,7 @@ from workflow_gate_policy import (
     AMBIGUITY_GATE,
     ALIGNMENT_BRIEF_GATE,
     BOUNDARY_PLAN_GATE,
+    CYCLE_CONTRACT_GATE,
     DOCUMENTATION_IMPACT_GATE,
     DOCUMENTATION_GATE,
     MULTI_AGENT_GATE,
@@ -49,6 +56,7 @@ from workflow_gate_policy import (
     SOURCE_DOCS_GATE,
     TEST_GATE,
     ALIGNMENT_BRIEF_COMMANDS,
+    WORK_PRODUCING_COMMANDS,
 )
 from workflow_request import infer_concerns_from_request
 from workflow_request import classify_request
@@ -368,6 +376,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("agent-docs-read.py", entries)
         self.assertIn("agent_delegation_plan.py", entries)
         self.assertIn("agent_finish_gate_policy.py", entries)
+        self.assertIn("agent_gate_evidence.py", entries)
         self.assertIn("agent_finish_common.py", entries)
         self.assertIn("agent_finish_check_steps.py", entries)
         self.assertIn("agent_finish_final_checks.py", entries)
@@ -435,6 +444,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             DOCUMENTATION_IMPACT_GATE,
             DOCUMENTATION_GATE,
             TEST_GATE,
+            CYCLE_CONTRACT_GATE,
             BOUNDARY_PLAN_GATE,
             MULTI_AGENT_GATE,
             AGENTIC_RUN_STATE_GATE,
@@ -449,6 +459,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("common/testing.md", route["docs"])
         self.assertIn("common/verification-policy.md", route["docs"])
         self.assertIn("common/code-structure-ownership.md", route["docs"])
+        self.assertIn("workflows/cycle-contract.md", route["docs"])
         self.assertIn("workflows/multi-agent-collaboration.md", route["docs"])
         self.assertIn("workflows/development-cycle.md", route["docs"])
         self.assertLess(
@@ -462,22 +473,45 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index(AMBIGUITY_GATE))
         self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("implementation"))
+        self.assertLess(route["gates"].index(CYCLE_CONTRACT_GATE), route["gates"].index("implementation"))
+        self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index(CYCLE_CONTRACT_GATE))
+
+    def test_work_producing_routes_get_cycle_contract_but_review_stays_separate(self) -> None:
+        for command in sorted(WORK_PRODUCING_COMMANDS):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(CYCLE_CONTRACT_GATE, route["gates"])
+                self.assertIn("workflows/cycle-contract.md", route["docs"])
+
+        for command in ("review", "docs-review", "test", "multi-agent", "triage"):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertNotIn(CYCLE_CONTRACT_GATE, route["gates"])
 
     def test_source_docs_gate_covers_policy_and_repair_workflows(self) -> None:
+        implementation_anchors = {
+            "bugfix": "fix",
+            "code-simplify": "small refactor",
+            "refactor": "small refactor",
+            "workflow-setup": "install or repair",
+        }
         for command in ("bugfix", "code-simplify", "refactor", "workflow-setup"):
             with self.subTest(command=command):
                 route = resolve_docs(command, None, [], request_classified=True)
 
                 self.assertIn(SOURCE_DOCS_GATE, route["gates"])
                 self.assertIn(DOCUMENTATION_IMPACT_GATE, route["gates"])
+                self.assertIn(CYCLE_CONTRACT_GATE, route["gates"])
                 self.assertIn("common/source-driven-development.md", route["docs"])
-                implementation_anchor = (
-                    "install or repair" if "install or repair" in route["gates"] else AMBIGUITY_GATE
-                )
+                self.assertIn("workflows/cycle-contract.md", route["docs"])
+                implementation_anchor = implementation_anchors[command]
                 self.assertLess(
                     route["gates"].index(DOCUMENTATION_IMPACT_GATE),
                     route["gates"].index(implementation_anchor),
                 )
+                self.assertLess(route["gates"].index(CYCLE_CONTRACT_GATE), route["gates"].index(implementation_anchor))
                 self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index(AMBIGUITY_GATE))
 
     def test_multi_agent_route_requires_agentic_run_state(self) -> None:
@@ -530,6 +564,135 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
         self.assertEqual([], failures)
+
+    def test_cycle_contract_evidence_requires_bounded_cycle_details(self) -> None:
+        failures = validate_gate_evidence(
+            {CYCLE_CONTRACT_GATE: "cycle contract completed"},
+            [CYCLE_CONTRACT_GATE],
+        )
+
+        self.assertTrue(any("cycle contract evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                CYCLE_CONTRACT_GATE: (
+                    "cycle_type=workflow_setup; input_scope=router workflow policy; "
+                    "allowed_changes=workflow docs, route gates, finish-check validators, tests; "
+                    "forbidden_changes=unrelated dirty files, external runtime config, deploys; "
+                    "acceptance criteria=routes include a bounded cycle gate; "
+                    "verification=unit tests and workflow validate; "
+                    "stop condition=cycle gate is routed, documented, and validated; "
+                    "checkpoint=handoff for separate review cycle"
+                )
+            },
+            [CYCLE_CONTRACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_gate_evidence_ledger_synthesizes_structured_finish_evidence(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "docs": ["AGENTS.md"],
+            "gates": [ROUTE_DOCS_READ_GATE, CYCLE_CONTRACT_GATE],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": route}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            reset_gate_evidence_ledger(evidence_path, preflight)
+
+            record_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                gate=ROUTE_DOCS_READ_GATE,
+                fields={"takeaway": "use structured ledger evidence instead of manual finish prose"},
+                source="docs-read",
+            )
+            record_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                gate=CYCLE_CONTRACT_GATE,
+                fields={
+                    "cycle_type": "workflow_setup",
+                    "input_scope": "finish evidence workflow policy",
+                    "allowed_changes": "hook ledger, finish-check merge, tests, docs",
+                    "forbidden_changes": "unrelated dirty worktree and external state",
+                    "acceptance_criteria": "finish can read current structured gate ledger",
+                    "verification": "unit tests and workflow validate",
+                    "stop_condition": "ledger evidence is merged and validated",
+                    "checkpoint": "handoff",
+                },
+                source="manual",
+            )
+            receipt = {
+                "schema_version": 1,
+                "route_fingerprint": route_fingerprint(route),
+                "doc_count": 1,
+                "preflight_evidence": str(evidence_path),
+                "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
+                "docs": [{"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"}],
+            }
+
+            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+                route=route,
+                evidence_path=evidence_path,
+                route_docs_receipt=receipt,
+                cli_gate_evidence={},
+            )
+            route_docs_failures = validate_route_docs_manifest_evidence(
+                route,
+                gate_evidence,
+                receipt,
+                evidence_path,
+            )
+
+            self.assertTrue(gate_evidence_path_for_preflight(evidence_path).exists())
+            self.assertTrue(diagnostics["used"])
+            self.assertIn(ROUTE_DOCS_READ_GATE, gate_evidence)
+            self.assertIn(CYCLE_CONTRACT_GATE, gate_evidence)
+            self.assertEqual([], validate_gate_evidence(gate_evidence, route["gates"]))
+            self.assertEqual([], route_docs_failures)
+
+    def test_gate_evidence_ledger_ignores_stale_preflight(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "docs": ["AGENTS.md"],
+            "gates": [CYCLE_CONTRACT_GATE],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": route}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            reset_gate_evidence_ledger(evidence_path, preflight)
+            record_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                gate=CYCLE_CONTRACT_GATE,
+                fields={
+                    "cycle_type": "workflow_setup",
+                    "input_scope": "old route",
+                    "allowed_changes": "old changes",
+                    "forbidden_changes": "old forbidden scope",
+                    "acceptance_criteria": "old criteria",
+                    "verification": "old verification",
+                    "stop_condition": "old stop",
+                    "checkpoint": "old checkpoint",
+                },
+                source="manual",
+            )
+            stale_preflight = {"route": {**route, "gates": [CYCLE_CONTRACT_GATE, "verify"]}}
+            evidence_path.write_text(json.dumps(stale_preflight), encoding="utf-8")
+
+            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+                route=stale_preflight["route"],
+                evidence_path=evidence_path,
+                route_docs_receipt={},
+                cli_gate_evidence={},
+            )
+
+        self.assertEqual({}, gate_evidence)
+        self.assertIn("stale", " ".join(diagnostics["warnings"]))
 
     def test_route_docs_read_evidence_must_match_preflight_doc_manifest(self) -> None:
         route = {
