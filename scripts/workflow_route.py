@@ -21,6 +21,7 @@ from workflow_common import (
     unique,
 )
 from workflow_gate_policy import add_automatic_gates, automatic_docs
+from workflow_parallel import parallel_execution_plan
 
 
 REVIEW_HOOK_REQUIRED_COMMANDS = {
@@ -101,6 +102,7 @@ def resolve_docs(
         "attempt_limit": ATTEMPT_LIMIT,
         "retry_limit": RETRY_LIMIT,
         "retry_scope": RETRY_SCOPE,
+        "parallel_execution": parallel_execution_plan(command, gates),
         "gate_ledger": [
             {
                 "gate": gate,

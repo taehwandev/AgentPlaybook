@@ -15,6 +15,7 @@ from workflow_common import (
     ROOT,
 )
 from workflow_gate_policy import automatic_gates
+from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import REVIEW_HOOK_REQUIRED_COMMANDS, resolve_docs, route_gates
 from workflow_spill import validate_spill_label_contracts
 
@@ -56,6 +57,8 @@ def validate_route_contracts() -> list[str]:
             failures.append(f"{command}: retry_limit must be {RETRY_LIMIT}")
         if route["retry_scope"] != RETRY_SCOPE:
             failures.append(f"{command}: retry_scope must be {RETRY_SCOPE}")
+        for failure in validate_parallel_execution_plan(route.get("parallel_execution"), route["gates"]):
+            failures.append(f"{command}: {failure}")
 
         expected_gates = route_gates(command)
         if command not in QUESTION_ROUTE_COMMANDS:

@@ -46,6 +46,25 @@ def print_markdown(route: dict[str, object]) -> None:
     for gate in route["gates"]:
         print(f"- {gate}")
     print()
+    if route.get("parallel_execution"):
+        plan = route["parallel_execution"]
+        print("## Parallel Execution")
+        print(f"Strategy: `{plan['strategy']}`")
+        print()
+        for phase in plan["phases"]:
+            after = ", ".join(f"`{item}`" for item in phase["after"]) or "`start`"
+            gates = ", ".join(f"`{item}`" for item in phase["gates"])
+            print(f"- `{phase['id']}` - mode: `{phase['mode']}`, after: {after}")
+            if gates:
+                print(f"  gates: {gates}")
+            print(f"  tasks: {'; '.join(phase['tasks'])}")
+            print(f"  constraints: {'; '.join(phase['constraints'])}")
+        if plan.get("notes"):
+            print()
+            print("Parallel notes:")
+            for note in plan["notes"]:
+                print(f"- {note}")
+        print()
     print("## Required Hooks")
     for hook in route["hooks"]:
         required = "required" if hook["required"] else "conditional"

@@ -61,6 +61,7 @@ from workflow_gate_policy import (
 from workflow_request import infer_concerns_from_request
 from workflow_request import classify_request
 from workflow_request import route_block_reason
+from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import resolve_docs
 from workflow_spill import spill_tool_label
 from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS
@@ -491,6 +492,35 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(CYCLE_CONTRACT_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index(CYCLE_CONTRACT_GATE))
+
+    def test_routes_expose_parallel_execution_plan(self) -> None:
+        route = resolve_docs("feature", None, ["testing"], request_classified=True)
+        plan = route["parallel_execution"]
+        phases = {phase["id"]: phase for phase in plan["phases"]}
+
+        self.assertEqual(1, plan["schema_version"])
+        self.assertEqual([], validate_parallel_execution_plan(plan, route["gates"]))
+        self.assertEqual("parallel", phases["orientation"]["mode"])
+        self.assertIn(ROUTE_DOCS_READ_GATE, phases["orientation"]["gates"])
+        self.assertEqual("conditional_parallel", phases["implementation"]["mode"])
+        self.assertIn(MULTI_AGENT_GATE, phases["implementation"]["gates"])
+        self.assertEqual("serial", phases["integration_review"]["mode"])
+        self.assertIn("review hook", phases["integration_review"]["gates"])
+        self.assertEqual("parallel", phases["verification"]["mode"])
+        self.assertIn(TEST_GATE, phases["verification"]["gates"])
+
+    def test_multi_agent_route_exposes_worker_parallel_phase(self) -> None:
+        route = resolve_docs("multi-agent", None, [], request_classified=True)
+        phases = {phase["id"]: phase for phase in route["parallel_execution"]["phases"]}
+
+        self.assertEqual([], validate_parallel_execution_plan(route["parallel_execution"], route["gates"]))
+        self.assertEqual("serial", phases["scoping"]["mode"])
+        self.assertIn(AGENTIC_RUN_STATE_GATE, phases["scoping"]["gates"])
+        self.assertEqual("conditional_parallel", phases["worker_execution"]["mode"])
+        self.assertIn("roles", phases["worker_execution"]["gates"])
+        self.assertIn("write scopes", phases["worker_execution"]["gates"])
+        self.assertEqual("serial", phases["integration_review"]["mode"])
+        self.assertIn("integration review", phases["integration_review"]["gates"])
 
     def test_work_producing_routes_get_cycle_contract_but_review_stays_separate(self) -> None:
         for command in sorted(WORK_PRODUCING_COMMANDS):
