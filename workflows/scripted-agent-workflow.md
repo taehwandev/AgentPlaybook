@@ -223,6 +223,9 @@ The route output is the command manifest for the agent:
 - `gates`: use these as the task checklist and report against them.
 - `gate_ledger`: mark and show each gate as executed when it completes.
 - `signal`: public state for completed or failed gates: `SUCCESS` or `FAIL`.
+- `parallel_execution`: use this phase manifest to decide what can run in
+  parallel and what must stay serial. It is the executable hint for runtimes
+  that otherwise treat the gate list as one ordered chain.
 - `attempt_limit`: original execution plus one retry for the missed gate.
 - `retry_limit`: maximum recovery retries for the missed gate; this should be
   `1`.
@@ -351,13 +354,24 @@ private-content reconstruction.
 
 ## Parallel Consumption
 
-After `route` returns a document and gate manifest, optimize for parallel
-read-only work:
+After `route` returns a document and gate manifest, read the
+`parallel_execution` section before starting work. The `gates` list is the
+required checklist; `parallel_execution.phases` is the scheduling hint that
+shows which parts can overlap safely.
 
 - Read independent route documents in parallel when the runtime supports it.
   Do not serialize `sed`, `cat`, `rg`, `find`, stack inspection, git status, or
   other read-only commands unless one result decides whether another command is
   needed.
+- Treat `mode: parallel` phases as safe opportunities for concurrent read-only
+  orientation or independent verification, subject to repo-local tool limits.
+- Treat `mode: conditional_parallel` phases as parallel only after the route's
+  split-decision, role, owned-scope, forbidden-scope, contract, and verification
+  gates are recorded. If those cannot be named, execute that phase serially and
+  record the concrete reason.
+- Treat `mode: serial` phases as ordering barriers. Do not cross them with
+  writes, generated artifacts, dependency changes, release config, migrations,
+  shared contracts, same-file edits, or final reporting.
 - `agent-preflight.py` may run in parallel with read-only orientation after the
   request has been answered or classified. Treat it as a gate dependency:
   implementation, setup, update, fix, commit, push, release, migration, and

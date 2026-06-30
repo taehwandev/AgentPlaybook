@@ -51,6 +51,10 @@ readiness gates.
 ## Parallel Work
 
 Subagents or agents may edit in parallel only when write scopes are disjoint.
+When a scripted route is used, consult `parallel_execution.phases` before
+spawning workers. A `conditional_parallel` worker phase is permission to look
+for a split, not permission to skip roles, write scopes, briefs, or integration
+review.
 
 Rules:
 

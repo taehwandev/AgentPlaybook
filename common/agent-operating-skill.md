@@ -51,9 +51,11 @@ Use this before implementation, review, refactoring, debugging, documentation, o
     type, input/source scope, allowed and forbidden changes, acceptance or
     verification method, stop condition, and checkpoint or next cycle.
 13. Use `index.md` to load only relevant AgentPlaybook cards.
-14. Parallelize independent read-only orientation when the runtime supports it:
-    selected document reads, file searches, stack inspection, git status, and
-    preflight evidence may run together after request intake is settled.
+14. Use the route manifest's `parallel_execution.phases` before treating gates
+    as a serial checklist. Parallelize independent read-only orientation when
+    the runtime supports it: selected document reads, file searches, stack
+    inspection, git status, and preflight evidence may run together after
+    request intake is settled.
 15. Inspect existing code, docs, tests, and local conventions.
 16. For code or architecture work that crosses files, packages, folders, or
     modules, record a compact structure packet before editing: chosen boundary,
@@ -130,9 +132,10 @@ Before editing:
   starting primary, secondary/source of truth, selected mode, write scope,
   session model, and cross-repo verification.
 - Check for existing user changes in files you may touch.
-- After route selection, read independent route documents and run read-only
-  orientation commands in parallel when possible. Do not serialize document
-  reads unless one document determines whether another is needed.
+- After route selection, read `parallel_execution.phases`, then run independent
+  route documents and read-only orientation commands in parallel when possible.
+  Do not serialize document reads unless one document determines whether
+  another is needed.
 - `agent-preflight.py` may run in parallel with read-only orientation after the
   request is answered or classified, but no edit, setup, update, fix, commit,
   push, release, migration, or external-state change may start until preflight
