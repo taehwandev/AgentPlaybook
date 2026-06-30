@@ -43,6 +43,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Release, deployment, packaging, rollback: `common/release-deployment.md`
 - Release version, tag, artifact, build number, and deployment id scheme:
   `common/release-versioning.md`
+- Web deployment versioning, public release version versus deploy id, and
+  continuous deployment release history: `common/web-deployment-versioning.md`
 - Accessibility, localization, dates, numbers, units, measurements, display
   values, UI text: `common/accessibility-i18n.md`
 - Human-authored prose, voice fidelity, and AI-writing signal cleanup:

@@ -140,6 +140,23 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("common/design-system.md", CONCERNS["tokens"])
         self.assertNotIn("common/local-tools.md", CONCERNS["tokens"])
 
+    def test_web_deployment_versioning_routes_with_release_and_shipping(self) -> None:
+        doc = "common/web-deployment-versioning.md"
+
+        self.assertIn(doc, CONCERNS["release"])
+        self.assertIn(doc, CONCERNS["shipping"])
+        self.assertIn(doc, resolve_docs("docs", "web", ["release"], request_classified=True)["docs"])
+        self.assertIn(doc, resolve_docs("ship", "web", ["shipping"], request_classified=True)["docs"])
+
+        examples = (
+            "Define web deployment versioning for every main merge",
+            "Should web deploys bump SemVer or use deployment ids?",
+            "웹 배포 버전 체계를 정리해줘",
+        )
+        for request in examples:
+            with self.subTest(request=request):
+                self.assertIn("release", infer_concerns_from_request(request))
+
     def test_credential_broker_concern_routes_to_product_pattern(self) -> None:
         doc = "product-patterns/agent-credential-broker-ideation.md"
         for concern in (

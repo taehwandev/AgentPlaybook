@@ -61,6 +61,37 @@ https://agentplaybook.thdev.app/
 
 Korean update guide: [docs/ko/update-agentplaybook.md](docs/ko/update-agentplaybook.md)
 
+## Website Deployment Versioning
+
+The public website is a continuously deployed static site. Do not bump a public
+release version for every `main` merge. Track every deployed revision instead.
+
+- Release unit: continuous deployment from `main`.
+- Deployment source: GitHub Pages legacy source, `main` branch, `/docs` path.
+- Public release version: none by default. Use a tag or release note only when
+  a maintainer intentionally groups changes into a public AgentPlaybook release.
+- Source revision: the exact Git commit SHA deployed by GitHub Pages.
+- Deployment id: the GitHub Pages build id for that Pages build.
+- Artifact: the `/docs` tree at the deployed commit. There is no separate
+  package artifact unless a future workflow creates one.
+- Rollback path: revert or fix forward on `main`, then let Pages rebuild from
+  `/docs`.
+
+Verification commands:
+
+```bash
+gh api repos/taehwandev/AgentPlaybook/pages \
+  --jq '{status, cname, https_enforced, build_type, source}'
+gh api repos/taehwandev/AgentPlaybook/pages/builds/latest \
+  --jq '{status, commit, created_at, updated_at, duration, error}'
+curl -I https://agentplaybook.thdev.app/
+```
+
+The website versioning contract follows
+`common/web-deployment-versioning.md`: every production deploy must be
+traceable, but the public release version changes only for a meaningful release
+unit.
+
 ## Quick Start
 
 Choose one setup path first. Existing local or repo-pinned roots are the

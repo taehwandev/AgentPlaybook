@@ -286,6 +286,27 @@ REQUEST_CONCERN_HINTS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "release",
+        (
+            r"\brelease version(?:ing)?\b",
+            r"\bversioning\b",
+            r"\bdeployment version(?:ing)?\b",
+            r"\bdeploy(?:ment)? ids?\b",
+            r"\bbuild ids?\b",
+            r"\brelease train\b",
+            r"\bsemver\b",
+            r"\bcalver\b",
+            r"\bchangelog\b",
+            r"\brollback\b",
+            "\ubc84\uc804 \uccb4\uacc4",
+            "\ubc84\uc804\uccb4\uacc4",
+            "\ubc30\ud3ec \ubc84\uc804",
+            "\uc6f9 \ubc30\ud3ec",
+            "\ub9b4\ub9ac\uc988 \ubc84\uc804",
+            "\ub864\ubc31",
+        ),
+    ),
+    (
         "webperf",
         (
             r"\bwebperf\b",
