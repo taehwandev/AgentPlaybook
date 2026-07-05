@@ -13,6 +13,8 @@ signing, or handing off release-sensitive work.
 
 - `common/release-deployment.md`
 - `common/release-versioning.md`
+- `common/commit-workflow.md` and `common/worktree-hygiene.md` when the release
+  action creates, moves, pushes, or publishes a source-control tag or branch
 - `common/ci-cd-automation.md` when workflow files, release automation,
   package publishing, deployment jobs, or CI gates are touched
 - `common/deprecation-migration.md` when release work removes, renames,
@@ -67,5 +69,7 @@ deployment, signing, migration, or external configuration changed.
 - The release artifact or target environment is unclear.
 - The version scheme, reset rule, or version/tag/artifact relationship is
   unclear.
+- A tag will be created, moved, pushed, or published but repo-local tag policy,
+  current branch/remote, or worktree state has not been checked.
 - A migration, signing, secret, or deployment change lacks a recovery path.
 - Required verification cannot run and no owner has accepted the release risk.

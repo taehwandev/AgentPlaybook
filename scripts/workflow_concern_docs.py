@@ -89,7 +89,13 @@ CONCERNS: Dict[str, Tuple[str, ...]] = {
     "push": ("common/commit-workflow.md", "common/worktree-hygiene.md", "common/secure-development-baseline.md"),
     "pr": ("common/commit-workflow.md", "common/worktree-hygiene.md", "workflows/review-and-commit.md"),
     "pull-request": ("common/commit-workflow.md", "common/worktree-hygiene.md", "workflows/review-and-commit.md"),
-    "tag": ("common/release-deployment.md", "common/release-versioning.md", "workflows/release-readiness.md"),
+    "tag": (
+        "common/commit-workflow.md",
+        "common/worktree-hygiene.md",
+        "workflows/release-readiness.md",
+        "common/release-deployment.md",
+        "common/release-versioning.md",
+    ),
     "webperf": (
         "common/performance-verification.md",
         "common/web-performance-verification.md",
@@ -100,7 +106,12 @@ CONCERNS: Dict[str, Tuple[str, ...]] = {
     "devtools": ("common/browser-runtime-testing.md",),
     "persistence": ("common/data-persistence-sync.md",),
     "cache": ("common/server-side-caching.md",),
-    "release": ("common/release-deployment.md", "common/release-versioning.md", "common/web-deployment-versioning.md"),
+    "release": (
+        "workflows/release-readiness.md",
+        "common/release-deployment.md",
+        "common/release-versioning.md",
+        "common/web-deployment-versioning.md",
+    ),
     "dependency": ("common/dependency-policy.md",),
     "generated": ("common/generated-files-policy.md",),
     "worktree": ("common/worktree-hygiene.md",),

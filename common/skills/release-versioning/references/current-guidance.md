@@ -19,10 +19,11 @@ The shared default is:
 
 - Use SemVer for libraries, SDKs, APIs, plugins, generated clients, and packages
   where compatibility expectations matter.
-- Use monthly CalVer for apps, services, internal tools, and operational
-  artifacts when date-oriented releases are useful.
-- Use weekly CalVer only when the project has a real weekly release train or
-  operational cadence.
+- Use weekly CalVer `YY.WW.N` for date-based release tags and operational
+  artifacts: two-digit year, ISO week, and a release count that starts at `1`
+  for each week.
+- Use monthly CalVer only when the repo-local release contract explicitly says
+  the release unit is month-based.
 
 ## Supported Schemes
 
@@ -43,8 +44,8 @@ Use `MAJOR.MINOR.PATCH` when consumers need compatibility signals.
 
 ### Monthly CalVer
 
-Use `YY.MM.N` for product, app, service, or deployment releases organized by
-month.
+Use `YY.MM.N` only when the repo-local release contract says releases are
+organized by month.
 
 ```text
 26.05.1
@@ -52,15 +53,17 @@ month.
 26.06.1
 ```
 
-- `YY` is the two-digit year.
+- `YY` is the two-digit year. Do not use a four-digit year.
 - `MM` is the release month.
 - `N` starts at `1` each month and increments for each released artifact or
   production deployment, as defined by the repo.
-- This is the preferred date-based scheme when there is no weekly release train.
+- Do not use monthly CalVer just because a calendar date is available; the
+  shared date-based default for tags is weekly CalVer `YY.WW.N`.
 
 ### Weekly CalVer
 
-Use `YY.WW.N` only when releases are planned, reported, or operated by week.
+Use `YY.WW.N` for date-based release tags unless the repo-local release
+contract explicitly documents another scheme.
 
 ```text
 26.21.1
@@ -68,10 +71,14 @@ Use `YY.WW.N` only when releases are planned, reported, or operated by week.
 26.22.1
 ```
 
+- `YY` is the two-digit year. Do not use `YYYY.WW.N`, `YYYY.MM.N`, or any
+  four-digit calendar year in a release tag.
 - `WW` should be the ISO week unless the repo explicitly documents another
   calendar.
 - `N` starts at `1` each week and increments for each released artifact or
   production deployment, as defined by the repo.
+- `N` must not start at `0`, and it should not be zero-padded unless the
+  repo-local release contract explicitly requires padding.
 - Document the timezone used to decide the release week.
 
 ## Required Repo-Local Contract
@@ -84,13 +91,18 @@ Every repo that uses calendar or custom versioning must document:
 - whether `N` counts published artifacts, production deployments, or public
   release attempts
 - reset rule for `N`
-- tag prefix, such as `v26.05.1`, and whether package metadata omits `v`
+- tag prefix, such as `v26.21.1`, and whether package metadata omits `v`
 - prerelease format, such as `26.05.1-rc.1`
 - build metadata or monotonic build number when stores or platforms require it
 
 ## Rules
 
 - Do not mix `YY.MM.N` and `YY.WW.N` for the same artifact.
+- Do not use four-digit years for date-based release tags. `2026.27.1` and
+  `v2026.27.1` are wrong when the scheme is CalVer; use `26.27.1` or
+  `v26.27.1`.
+- Do not start the release count at `0`; the first released artifact for a week
+  or month is `.1`.
 - Do not switch schemes without a migration note and release owner approval.
 - Do not infer month versus week from shape alone; read the repo-local contract.
 - Use UTC for date-based versions unless repo-local release policy names another
@@ -140,6 +152,8 @@ example: v2.4.7
 
 - The artifact, package, app display version, build number, tag, and deployment
   id are being treated as the same thing but the platform distinguishes them.
+- A date-based release tag uses a four-digit year, an unspecified week/month
+  basis, or a release count below `1`.
 - The repo already uses a different scheme and no migration approval exists.
 - The version would collide with an existing tag, artifact, package, or
   deployment record.

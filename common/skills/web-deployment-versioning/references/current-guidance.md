@@ -70,8 +70,9 @@ separate product release.
 1. Choose the release unit: continuous deploy, daily train, weekly train,
    monthly release, manual release, or package publication.
 2. Choose the public version scheme only for the release unit. Use SemVer for
-   compatibility-sensitive packages or APIs; use monthly or weekly CalVer for
-   date-oriented product release trains.
+   compatibility-sensitive packages or APIs; use weekly CalVer `YY.WW.N` for
+   date-oriented product release tags unless repo-local release policy
+   explicitly documents a month-based scheme.
 3. Require an immutable deployment id for every environment deployment,
    regardless of whether the public release version changes.
 4. Tie the deployment id to source revision, build artifact, environment,
@@ -116,6 +117,8 @@ separate product release.
 - Do not move old release tags to newer commits after deployment.
 - Do not count failed builds or failed deploy attempts as released versions
   unless the repo explicitly tracks deploy attempts as the release unit.
+- Do not use four-digit years such as `2026.27.1` for CalVer release tags; use
+  `26.27.1` or `v26.27.1`, and start the release count at `.1`.
 - Do not expose secrets, internal paths, branch names, account names, or private
   operator notes in public version metadata.
 - Do not make a shared AgentPlaybook card define one vendor's deployment
@@ -129,6 +132,8 @@ separate product release.
   as the same thing but the platform distinguishes them.
 - The version would collide with an existing tag, release note, artifact, or
   deployment record.
+- A date-based public release tag uses a four-digit year or starts the release
+  count below `.1`.
 - Rollback or support lookup cannot map a running site to source revision and
   artifact.
 - A cache, service worker, browser storage, API, or migration change needs a

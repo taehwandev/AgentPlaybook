@@ -183,6 +183,7 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertIn(doc, CONCERNS["release"])
         self.assertIn(doc, CONCERNS["shipping"])
+        self.assertIn("workflows/release-readiness.md", CONCERNS["release"])
         self.assertIn(route_doc(doc), resolve_docs("docs", "web", ["release"], request_classified=True)["docs"])
         self.assertIn(route_doc(doc), resolve_docs("ship", "web", ["shipping"], request_classified=True)["docs"])
 
@@ -194,6 +195,42 @@ class WorkflowRoutingTests(unittest.TestCase):
         for request in examples:
             with self.subTest(request=request):
                 self.assertIn("release", infer_concerns_from_request(request))
+
+    def test_release_route_requires_versioning_skill_doc(self) -> None:
+        route = resolve_docs("release", None, [], request_classified=True)
+
+        self.assertIn(route_doc("workflows/release-readiness.md"), route["required_docs"])
+        self.assertIn(route_doc("common/release-deployment.md"), route["required_docs"])
+        self.assertIn(route_doc("common/release-versioning.md"), route["required_docs"])
+        self.assertNotIn(route_doc("common/release-versioning.md"), route["reference_docs"])
+
+    def test_tag_concern_requires_release_and_git_safety_skill_docs(self) -> None:
+        expected_docs = (
+            "common/commit-workflow.md",
+            "common/worktree-hygiene.md",
+            "workflows/release-readiness.md",
+            "common/release-deployment.md",
+            "common/release-versioning.md",
+        )
+
+        for doc in expected_docs:
+            with self.subTest(doc=doc):
+                self.assertIn(doc, CONCERNS["tag"])
+
+        route = resolve_docs("release", None, ["tag"], request_classified=True)
+        for doc in expected_docs:
+            with self.subTest(required_doc=doc):
+                self.assertIn(route_doc(doc), route["required_docs"])
+
+    def test_release_versioning_forbids_four_digit_year_calver_tags(self) -> None:
+        guidance = (ROOT / "common/skills/release-versioning/references/current-guidance.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("weekly CalVer `YY.WW.N`", guidance)
+        self.assertIn("four-digit years", guidance)
+        self.assertIn("2026.27.1", guidance)
+        self.assertIn("starts at `1`", guidance)
 
     def test_credential_broker_concern_routes_to_product_pattern(self) -> None:
         doc = "product-patterns/agent-credential-broker-ideation.md"
@@ -347,6 +384,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             ("Automate git push only after safety checks", "push"),
             ("Open a draft PR from the work branch", "pull-request"),
             ("Release by pushing a verified tag", "tag"),
+            ("태그 따고 푸쉬해줘", "tag"),
+            ("태그 따고 푸쉬해줘", "push"),
         )
 
         for request, concern in examples:

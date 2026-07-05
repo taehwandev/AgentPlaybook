@@ -65,13 +65,22 @@ shared rule is to choose a documented scheme per artifact and keep it stable:
 
 - SemVer for compatibility-sensitive libraries, APIs, SDKs, generated clients,
   plugins, or packages.
-- Monthly CalVer for apps, services, and date-oriented product releases.
-- Weekly CalVer only for real weekly release trains or operations cadences.
+- Weekly CalVer `YY.WW.N` for date-based release tags and operational
+  artifacts: two-digit year, ISO week, and release count starting at `1`.
+- Monthly CalVer only when the repo-local release contract explicitly says the
+  release unit is month-based.
+
+Do not use four-digit years such as `2026.27.1` for CalVer release tags; use
+`26.27.1` or `v26.27.1` according to the repo-local tag prefix policy.
 
 ## Tag And Artifact Ownership
 
 When a release uses source-control tags:
 
+- Treat tag creation, tag movement, and tag push as release-sensitive
+  source-control operations. Read the release readiness, release deployment,
+  release versioning, commit workflow, and worktree hygiene guidance before
+  mutating a local or remote tag; version naming guidance alone is not enough.
 - Create or move the tag only after the intended release revision has passed the
   required source and artifact verification.
 - Keep the tag on the revision used to build the published artifacts.
