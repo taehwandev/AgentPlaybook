@@ -45,6 +45,11 @@ Common public discovery outputs include:
 - public HTML rendered for crawlers and link preview bots
 - machine-readable files intended for named agentic integrations
 
+When debugging stale Open Graph, social-card, or link-unfurl previews, also read
+the sibling reference `og-social-preview-debugging.md`. Social platforms may cache previews
+by the shared page URL; changing the image URL is not always enough, and some
+platforms require their debugger to refresh the cached page preview.
+
 ## AI Search Optimization
 
 For Google Search, optimize the public search experience before optimizing for
@@ -174,6 +179,8 @@ Verify public discovery as output data:
   scripts or private client state
 - structured data validates and matches visible public content
 - Open Graph previews use the intended public image fallback chain
+- social preview changes are checked against deployed HTML, public image
+  headers, and relevant platform debugger/cache-refresh tools
 - font and third-party-resource claims distinguish self-hosted, build-time,
   global runtime, route-specific runtime, and server-only fetches
 - Search Console, Rich Results Test, PageSpeed Insights, framework metadata
