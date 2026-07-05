@@ -10,14 +10,14 @@ Use when creating, reviewing, or restructuring docs, guides, specs, READMEs, age
 
 ## Read
 
-- `workflows/agent-task-lifecycle.md`
-- `common/code-conventions.md` for naming and clarity
-- `common/llm-wiki-documentation.md` for wiki, knowledge-base, runbook, onboarding, durable architecture, or operational docs
-- `common/agent-skill-card-anatomy.md` when creating or materially updating an
+- `workflows/skills/agent-task-lifecycle/SKILL.md`
+- `common/skills/code-conventions/SKILL.md` for naming and clarity
+- `common/skills/llm-wiki-documentation/SKILL.md` for wiki, knowledge-base, runbook, onboarding, durable architecture, or operational docs
+- `common/skills/agent-skill-card-anatomy/SKILL.md` when creating or materially updating an
   AgentPlaybook guidance card
-- `common/project-naming.md` when names, slugs, or product identifiers appear
-- `common/verification-policy.md` when links, examples, or commands can be checked
-- `common/human-authored-writing.md` when the task changes prose voice, tone, or AI-writing signals without changing facts
+- `common/skills/project-naming/SKILL.md` when names, slugs, or product identifiers appear
+- `common/skills/verification-policy/SKILL.md` when links, examples, or commands can be checked
+- `common/skills/human-authored-writing/SKILL.md` when the task changes prose voice, tone, or AI-writing signals without changing facts
 - task-specific architecture, product-pattern, security, or release cards when the docs describe those surfaces
 
 ## Steps

@@ -201,7 +201,7 @@ Before finishing:
 - Release-sensitive work: `workflows/release-readiness.md`.
 - Final review or commit: `workflows/review-and-commit.md`.
 - Architecture: `common/architecture-selection.md`, `common/architecture-design.md`, or `common/app-architecture.md`.
-- LLM-readable wiki, knowledge-base, runbook, or durable documentation: `common/llm-wiki-documentation.md`.
+- LLM-readable wiki, knowledge-base, runbook, or durable documentation: `common/skills/llm-wiki-documentation/SKILL.md`.
 - Code conventions: `common/code-conventions.md`.
 - File/module layout, ownership, public contracts, `api`/`impl` splits, or
   `assertions`/test-support modules: `common/code-structure-ownership.md`,

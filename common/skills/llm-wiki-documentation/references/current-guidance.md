@@ -13,6 +13,48 @@ An LLM wiki is not a content dump. It is a durable knowledge layer that helps an
 agent retrieve the right facts, distinguish source of truth from commentary, and
 act without inventing missing policy.
 
+## Context Layers
+
+From the model's point of view, instructions, skills, workflow cards, repo docs,
+and wiki pages all become text context once they are loaded. They are not the
+same layer operationally. The difference is how the runtime chooses them, when
+the agent must read them, and what authority they have over action.
+
+Use this order when certainty matters:
+
+1. Repo and runtime instructions: `AGENTS.md`, `AGENTS.override.md`,
+   `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, or the target repo's local
+   equivalent. These define local authority, safety policy, commands, and
+   workflow requirements.
+2. Workflow route output: the selected command manifest, required docs, gates,
+   hooks, and completion evidence for the current task.
+3. Skill entrypoint: the relevant `SKILL.md`, such as
+   `common/skills/llm-wiki-documentation/SKILL.md`. This is the canonical
+   lightweight read target and decides which references are needed.
+4. Skill references: focused files under `references/`, such as
+   `common/skills/llm-wiki-documentation/references/current-guidance.md`, only
+   when the task touches that detail.
+5. Repo-local source docs, specs, ADRs, runbooks, tests, and source files that
+   prove the current behavior or decision.
+6. LLM wiki or generated wiki pages as navigation and summary layers. They help
+   retrieval, but they do not override instructions, workflow gates, source
+   docs, or reviewed human decisions.
+
+Do not say that an agent "read the docs" just because a wiki, index, or generated
+summary was available. Name the exact instruction file, `SKILL.md`, reference
+file, source doc, or generated wiki revision that was opened.
+
+For AgentPlaybook itself, prefer these canonical read locations:
+
+- LLM wiki rules: `common/skills/llm-wiki-documentation/SKILL.md`, then
+  `common/skills/llm-wiki-documentation/references/current-guidance.md`.
+- Skill bundle structure: `common/skills/agent-skill-card-anatomy/SKILL.md`,
+  then its selected `references/` file.
+- Documentation updates: `workflows/skills/documentation-update/SKILL.md`, then
+  its selected `references/` file.
+- Task-wide gates: the output of `scripts/workflow.py route ...` plus the
+  required route docs it names.
+
 ## Page Contract
 
 Each durable wiki page should make these fields obvious, either in frontmatter or

@@ -11,8 +11,8 @@ This compatibility path has moved to the AgentPlaybook skill-bundle layout.
 
 ## Read
 
-- `skills/llm-wiki-documentation/SKILL.md` for the canonical lightweight entrypoint.
-- `skills/llm-wiki-documentation/references/current-guidance.md` for the full detailed guidance that previously lived here.
+- `common/skills/llm-wiki-documentation/SKILL.md` for the canonical lightweight entrypoint.
+- `common/skills/llm-wiki-documentation/references/current-guidance.md` for the full detailed guidance that previously lived here.
 
 ## Verification
 

@@ -6,11 +6,14 @@ type: ai-generated
 
 # LLM Wiki Documentation
 
-Use when routed to `common/llm-wiki-documentation.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/llm-wiki-documentation/SKILL.md`,
+the compatibility path `common/llm-wiki-documentation.md`, or when work needs
+this AgentPlaybook guidance area.
 
 ## Read
 
-- `references/current-guidance.md` for the full guidance previously held in `common/llm-wiki-documentation.md`.
+- `references/current-guidance.md` for the full LLM wiki guidance, including
+  context-layering, source-derived wiki, and read-location rules.
 - Related `SKILL.md` entrypoints named by the reference before loading their detailed references.
 
 ## Process
