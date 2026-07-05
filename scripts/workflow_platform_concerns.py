@@ -5,7 +5,10 @@ from __future__ import annotations
 from typing import Dict, Tuple
 
 
-ANDROID_EXTERNAL_SKILL_DOCS = ("platforms/android/android-external-skill-source-coverage.md",)
+ANDROID_EXTERNAL_SKILL_DOCS = (
+    "platforms/android/android-external-skill-source-coverage.md",
+    "platforms/android/skills/source-coverage/SKILL.md",
+)
 ANDROID_COMPOSE_DOCS = (
     "platforms/android/android-compose-ui.md",
     "platforms/android/android-review.md",
@@ -53,6 +56,8 @@ PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
         "platforms/android/android-review.md",
         *ANDROID_EXTERNAL_SKILL_DOCS,
     ),
+    ("android", "skills"): ANDROID_EXTERNAL_SKILL_DOCS,
+    ("android", "skill"): ANDROID_EXTERNAL_SKILL_DOCS,
     ("android", "structure"): ANDROID_STRUCTURE_DOCS,
     ("android", "module"): ANDROID_STRUCTURE_DOCS,
     ("android", "background"): ("platforms/android/android-background-work.md",),

@@ -22,6 +22,7 @@ from workflow_common import (
 )
 from workflow_gate_policy import add_automatic_gates, automatic_docs
 from workflow_parallel import parallel_execution_plan
+from workflow_skill_paths import canonical_doc_path
 
 
 REVIEW_HOOK_REQUIRED_COMMANDS = {
@@ -65,7 +66,8 @@ def resolve_docs(
         if platform:
             docs.extend(PLATFORM_CONCERNS.get((platform, concern), ()))
 
-    missing = [doc for doc in unique(docs) if not (ROOT / doc).exists()]
+    routed_docs = unique(canonical_doc_path(doc) for doc in docs)
+    missing = [doc for doc in routed_docs if not (ROOT / doc).exists()]
     notes = list(profile.notes)
     if command == "product" and not platform:
         notes.append("Select at least one platform card before writing ARD.")
@@ -96,7 +98,7 @@ def resolve_docs(
         "request_classification": request_classification,
         "request_classified": request_classified,
         "classification_evidence": classification_evidence,
-        "docs": unique(docs),
+        "docs": routed_docs,
         "gates": gates,
         "hooks": route_hooks(command),
         "attempt_limit": ATTEMPT_LIMIT,

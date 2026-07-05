@@ -50,6 +50,8 @@ def validate_route_contracts() -> list[str]:
 
     for command in COMMANDS:
         route = resolve_docs(command, None, [], request_classified=True)
+        if route.get("missing"):
+            failures.append(f"{command}: route has missing docs: {', '.join(route['missing'])}")
 
         if route["attempt_limit"] != ATTEMPT_LIMIT:
             failures.append(f"{command}: attempt_limit must be {ATTEMPT_LIMIT}")

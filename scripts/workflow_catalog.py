@@ -139,6 +139,7 @@ COMMANDS: Dict[str, Profile] = {
     ),
     "webperf": Profile(
         docs=(
+            "common/performance-verification.md",
             "common/web-performance-verification.md",
             "common/browser-runtime-testing.md",
             "common/ui-visual-verification.md",

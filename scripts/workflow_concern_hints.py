@@ -228,6 +228,78 @@ REQUEST_CONCERN_HINTS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "commit",
+        (
+            r"\bcommit(?:ting|s)?\b",
+            r"\bcommit workflow\b",
+            r"\bcommit message\b",
+            "\ucee4\ubc0b",
+            "\ucee4\ubc0b \uba54\uc2dc\uc9c0",
+        ),
+    ),
+    (
+        "branch",
+        (
+            r"\bbranches?\b",
+            r"\bbranching\b",
+            r"\bfeature/\b",
+            r"\bfix/\b",
+            r"\brefactor/\b",
+            r"\bdevelop\b",
+            r"\btrunk\b",
+            "\ube0c\ub79c\uce58",
+            "\uc791\uc5c5 \ube0c\ub79c\uce58",
+        ),
+    ),
+    (
+        "push",
+        (
+            r"\bpush(?:ing)?\b",
+            r"\bgit push\b",
+            "\ud478\uc26c",
+            "\ud478\uc2dc",
+        ),
+    ),
+    (
+        "pull-request",
+        (
+            r"\bpull requests?\b",
+            r"\bprs?\b",
+            r"\bdraft pr\b",
+            "\ud480\ub9ac\ud018\uc2a4\ud2b8",
+            "\ud480 \ub9ac\ud018\uc2a4\ud2b8",
+        ),
+    ),
+    (
+        "tag",
+        (
+            r"\btags?\b",
+            r"\brelease tags?\b",
+            r"\bgit tag\b",
+            "\ud0dc\uadf8",
+            "\ub9b4\ub9ac\uc988 \ud0dc\uadf8",
+        ),
+    ),
+    (
+        "wiki",
+        (
+            r"\bopenwiki\b",
+            r"\bdeepwiki\b",
+            r"\bliving wiki\b",
+            r"\bsource[- ]grounded (?:docs?|wiki|documentation)\b",
+            r"\bgenerated (?:docs?|wiki|documentation)\b",
+            r"\bauto(?:mated)? wiki\b",
+            r"\bauto(?:mated)? docs?\b",
+            r"\bcodebase wiki\b",
+            r"\bknowledge[- ]base\b",
+            r"\brunbooks?\b",
+            "\uc704\ud0a4",
+            "\uc790\ub3d9 \ubb38\uc11c",
+            "\uc0dd\uc131 \ubb38\uc11c",
+            "\uc9c0\uc2dd \ubca0\uc774\uc2a4",
+        ),
+    ),
+    (
         "doubt-driven",
         (
             r"\bdoubt[- ]driven\b",

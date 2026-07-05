@@ -373,7 +373,7 @@ def hook_failure_policy(success: bool, retry_attempt: int) -> tuple[dict[str, An
         "retry_limit": HOOK_RETRY_LIMIT,
         "next_action": "retrospective_required",
     }, [
-        "retrospective required: retry limit reached; run workflows/retrospective-learning.md before handoff",
+        "retrospective required: retry limit reached; run workflows/skills/retrospective-learning/SKILL.md before handoff",
     ]
 
 

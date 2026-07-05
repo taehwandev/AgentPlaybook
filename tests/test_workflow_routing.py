@@ -63,8 +63,13 @@ from workflow_request import classify_request
 from workflow_request import route_block_reason
 from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import resolve_docs
+from workflow_skill_paths import canonical_doc_path
 from workflow_spill import spill_tool_label
 from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS
+
+
+def route_doc(path: str) -> str:
+    return canonical_doc_path(path)
 
 
 class WorkflowRoutingTests(unittest.TestCase):
@@ -94,12 +99,13 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertIn("request intake", route["gates"])
                 self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
 
-        self.assertIn("common/incremental-implementation.md", resolve_docs("build", None, [], request_classified=True)["docs"])
-        self.assertIn("common/web-performance-verification.md", resolve_docs("webperf", None, [], request_classified=True)["docs"])
-        self.assertIn("common/ci-cd-automation.md", resolve_docs("ship", None, [], request_classified=True)["docs"])
+        self.assertIn(route_doc("common/incremental-implementation.md"), resolve_docs("build", None, [], request_classified=True)["docs"])
+        self.assertIn(route_doc("common/performance-verification.md"), resolve_docs("webperf", None, [], request_classified=True)["docs"])
+        self.assertIn(route_doc("common/web-performance-verification.md"), resolve_docs("webperf", None, [], request_classified=True)["docs"])
+        self.assertIn(route_doc("common/ci-cd-automation.md"), resolve_docs("ship", None, [], request_classified=True)["docs"])
 
         test_route = resolve_docs("test", None, [], request_classified=True)
-        self.assertIn("common/scenario-driven-testing.md", test_route["docs"])
+        self.assertIn(route_doc("common/scenario-driven-testing.md"), test_route["docs"])
 
         webperf_route = resolve_docs("webperf", None, [], request_classified=True)
         self.assertLess(webperf_route["gates"].index(ROUTE_DOCS_READ_GATE), webperf_route["gates"].index("baseline"))
@@ -117,8 +123,14 @@ class WorkflowRoutingTests(unittest.TestCase):
             "incremental": "common/incremental-implementation.md",
             "deprecation": "common/deprecation-migration.md",
             "ci": "common/ci-cd-automation.md",
-            "webperf": "common/web-performance-verification.md",
+            "webperf": "common/performance-verification.md",
             "browser-testing": "common/browser-runtime-testing.md",
+            "wiki": "common/llm-wiki-documentation.md",
+            "commit": "common/commit-workflow.md",
+            "branch": "common/commit-workflow.md",
+            "push": "common/commit-workflow.md",
+            "pull-request": "common/commit-workflow.md",
+            "tag": "common/release-deployment.md",
         }
 
         for concern, doc in expected.items():
@@ -145,8 +157,8 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertIn(doc, CONCERNS["release"])
         self.assertIn(doc, CONCERNS["shipping"])
-        self.assertIn(doc, resolve_docs("docs", "web", ["release"], request_classified=True)["docs"])
-        self.assertIn(doc, resolve_docs("ship", "web", ["shipping"], request_classified=True)["docs"])
+        self.assertIn(route_doc(doc), resolve_docs("docs", "web", ["release"], request_classified=True)["docs"])
+        self.assertIn(route_doc(doc), resolve_docs("ship", "web", ["shipping"], request_classified=True)["docs"])
 
         examples = (
             "Define web deployment versioning for every main merge",
@@ -180,7 +192,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertIn("credential-broker", infer_concerns_from_request(request))
 
         route = resolve_docs("planning", None, ["credential-broker"], request_classified=True)
-        self.assertIn(doc, route["docs"])
+        self.assertIn(route_doc(doc), route["docs"])
 
     def test_number_unit_display_concerns_route_to_accessibility_i18n(self) -> None:
         for concern in (
@@ -214,7 +226,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertIn("accessibility", concerns)
 
         route = resolve_docs("docs", None, ["units"], request_classified=True)
-        self.assertIn("common/accessibility-i18n.md", route["docs"])
+        self.assertIn(route_doc("common/accessibility-i18n.md"), route["docs"])
 
     def test_scenario_testing_requests_infer_testing_concern(self) -> None:
         examples = (
@@ -301,6 +313,14 @@ class WorkflowRoutingTests(unittest.TestCase):
             ("Run a doubt-driven assumption review", "doubt-driven"),
             ("Split this into vertical slices", "incremental"),
             ("Fix CI/CD automation", "ci"),
+            ("Apply OpenWiki-style living wiki docs", "wiki"),
+            ("Generate source-grounded documentation from this codebase", "wiki"),
+            ("코드베이스 위키와 자동 문서 갱신 방식을 정리해줘", "wiki"),
+            ("Create commit rules for feature branches and PRs", "commit"),
+            ("Create commit rules for feature branches and PRs", "branch"),
+            ("Automate git push only after safety checks", "push"),
+            ("Open a draft PR from the work branch", "pull-request"),
+            ("Release by pushing a verified tag", "tag"),
         )
 
         for request, concern in examples:
@@ -322,8 +342,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertIn("writing", concerns)
 
         route = resolve_docs("docs", None, ["writing"], request_classified=True)
-        self.assertIn("common/human-authored-writing.md", route["docs"])
-        self.assertIn("common/writing-workspace.md", route["docs"])
+        self.assertIn(route_doc("common/human-authored-writing.md"), route["docs"])
+        self.assertIn(route_doc("common/writing-workspace.md"), route["docs"])
 
     def test_ambiguous_writing_style_rewrite_requires_triage(self) -> None:
         request = (
@@ -348,12 +368,13 @@ class WorkflowRoutingTests(unittest.TestCase):
             request_classified=True,
         )
 
-        self.assertIn("platforms/android/android-compose-ui.md", route["docs"])
-        self.assertIn("platforms/android/android-review.md", route["docs"])
-        self.assertIn("platforms/android/android-external-skill-source-coverage.md", route["docs"])
+        self.assertIn(route_doc("common/performance-verification.md"), route["docs"])
+        self.assertIn(route_doc("platforms/android/android-compose-ui.md"), route["docs"])
+        self.assertIn(route_doc("platforms/android/android-review.md"), route["docs"])
+        self.assertIn(route_doc("platforms/android/android-external-skill-source-coverage.md"), route["docs"])
 
     def test_android_platform_surfaces_load_external_skill_manifest(self) -> None:
-        for concern in ("architecture", "security", "testing", "module", "dependency", "migration", "devtools"):
+        for concern in ("architecture", "security", "testing", "module", "dependency", "migration", "devtools", "skills", "skill"):
             with self.subTest(concern=concern):
                 route = resolve_docs(
                     "workflow-setup",
@@ -362,7 +383,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                     request_classified=True,
                 )
 
-                self.assertIn("platforms/android/android-external-skill-source-coverage.md", route["docs"])
+                self.assertIn(route_doc("platforms/android/android-external-skill-source-coverage.md"), route["docs"])
+                self.assertIn(route_doc("platforms/android/skills/source-coverage/SKILL.md"), route["docs"])
 
     def test_android_persistence_route_loads_datastore_reference(self) -> None:
         for concern in ("persistence", "cache"):
@@ -374,7 +396,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     request_classified=True,
                 )
 
-                self.assertIn("platforms/android/android-state-data.md", route["docs"])
+                self.assertIn(route_doc("platforms/android/android-state-data.md"), route["docs"])
                 self.assertIn("platforms/android/references/android-datastore.md", route["docs"])
 
     def test_retrospective_candidate_writes_safe_global_lesson(self) -> None:
@@ -485,17 +507,17 @@ class WorkflowRoutingTests(unittest.TestCase):
         ):
             self.assertIn(gate, route["gates"])
 
-        self.assertIn("workflows/ambiguity-gate.md", route["docs"])
-        self.assertIn("workflows/documentation-update.md", route["docs"])
-        self.assertIn("common/product-spec-to-implementation.md", route["docs"])
-        self.assertIn("common/source-driven-development.md", route["docs"])
-        self.assertIn("common/testing.md", route["docs"])
-        self.assertIn("common/scenario-driven-testing.md", route["docs"])
-        self.assertIn("common/verification-policy.md", route["docs"])
-        self.assertIn("common/code-structure-ownership.md", route["docs"])
-        self.assertIn("workflows/cycle-contract.md", route["docs"])
-        self.assertIn("workflows/multi-agent-collaboration.md", route["docs"])
-        self.assertIn("workflows/development-cycle.md", route["docs"])
+        self.assertIn(route_doc("workflows/ambiguity-gate.md"), route["docs"])
+        self.assertIn(route_doc("workflows/documentation-update.md"), route["docs"])
+        self.assertIn(route_doc("common/product-spec-to-implementation.md"), route["docs"])
+        self.assertIn(route_doc("common/source-driven-development.md"), route["docs"])
+        self.assertIn(route_doc("common/testing.md"), route["docs"])
+        self.assertIn(route_doc("common/scenario-driven-testing.md"), route["docs"])
+        self.assertIn(route_doc("common/verification-policy.md"), route["docs"])
+        self.assertIn(route_doc("common/code-structure-ownership.md"), route["docs"])
+        self.assertIn(route_doc("workflows/cycle-contract.md"), route["docs"])
+        self.assertIn(route_doc("workflows/multi-agent-collaboration.md"), route["docs"])
+        self.assertIn(route_doc("workflows/development-cycle.md"), route["docs"])
         self.assertLess(
             route["gates"].index(ROUTE_DOCS_READ_GATE),
             route["gates"].index("PRD/ARD applicability"),
@@ -545,7 +567,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 route = resolve_docs(command, None, [], request_classified=True)
 
                 self.assertIn(CYCLE_CONTRACT_GATE, route["gates"])
-                self.assertIn("workflows/cycle-contract.md", route["docs"])
+                self.assertIn(route_doc("workflows/cycle-contract.md"), route["docs"])
 
         for command in ("review", "docs-review", "test", "multi-agent", "triage"):
             with self.subTest(command=command):
@@ -567,8 +589,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertIn(SOURCE_DOCS_GATE, route["gates"])
                 self.assertIn(DOCUMENTATION_IMPACT_GATE, route["gates"])
                 self.assertIn(CYCLE_CONTRACT_GATE, route["gates"])
-                self.assertIn("common/source-driven-development.md", route["docs"])
-                self.assertIn("workflows/cycle-contract.md", route["docs"])
+                self.assertIn(route_doc("common/source-driven-development.md"), route["docs"])
+                self.assertIn(route_doc("workflows/cycle-contract.md"), route["docs"])
                 implementation_anchor = implementation_anchors[command]
                 self.assertLess(
                     route["gates"].index(DOCUMENTATION_IMPACT_GATE),
@@ -581,7 +603,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         route = resolve_docs("multi-agent", None, [], request_classified=True)
 
         self.assertIn(AGENTIC_RUN_STATE_GATE, route["gates"])
-        self.assertIn("workflows/scripted-agent-workflow.md", route["docs"])
+        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["docs"])
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("roles"))
         for gate in ("roles", "write scopes", "agent briefs", "integration review"):
             self.assertIn(gate, VALIDATED_GATES)
@@ -860,8 +882,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             product_route["gates"].index(ALIGNMENT_BRIEF_GATE),
             product_route["gates"].index("PRD"),
         )
-        self.assertIn("workflows/prd-creation.md", prd_route["docs"])
-        self.assertIn("workflows/prd-creation.md", product_route["docs"])
+        self.assertIn(route_doc("workflows/prd-creation.md"), prd_route["docs"])
+        self.assertIn(route_doc("workflows/prd-creation.md"), product_route["docs"])
 
     def test_prd_and_spec_routes_get_documentation_enforcement_gates(self) -> None:
         for command in ("prd", "spec"):
@@ -888,7 +910,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     route["gates"].index("PRD draft"),
                     route["gates"].index(DOCUMENTATION_GATE),
                 )
-                self.assertIn("workflows/documentation-update.md", route["docs"])
+                self.assertIn(route_doc("workflows/documentation-update.md"), route["docs"])
 
     def test_docs_route_gets_documentation_enforcement_gates(self) -> None:
         route = resolve_docs("docs", None, [], request_classified=True)
@@ -898,7 +920,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(DOCUMENTATION_GATE, route["gates"])
         self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index("edit"))
         self.assertLess(route["gates"].index(DOCUMENTATION_IMPACT_GATE), route["gates"].index("edit"))
-        self.assertIn("common/source-driven-development.md", route["docs"])
+        self.assertIn(route_doc("common/source-driven-development.md"), route["docs"])
 
     def test_prd_draft_evidence_requires_artifact_and_content(self) -> None:
         failures = validate_gate_evidence(
@@ -945,7 +967,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             route["gates"].index(ALIGNMENT_BRIEF_GATE),
             route["gates"].index("acceptance criteria"),
         )
-        self.assertIn("common/task-intake-effort-routing.md", route["docs"])
+        self.assertIn(route_doc("common/task-intake-effort-routing.md"), route["docs"])
 
     def test_grill_me_request_uses_triage_and_grill_gate(self) -> None:
         classification = classify_request("그릴미 해줘")
@@ -1035,7 +1057,14 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
     def test_request_triage_grill_me_output_uses_protocol_session_shape(self) -> None:
-        triage_doc = (ROOT / "workflows" / "request-triage.md").read_text()
+        triage_doc = (
+            ROOT
+            / "workflows"
+            / "skills"
+            / "request-triage"
+            / "references"
+            / "current-guidance.md"
+        ).read_text()
 
         self.assertIn("Grill-Me protocol /grilling session", triage_doc)
         self.assertIn("Stop here until the user answers", triage_doc)
