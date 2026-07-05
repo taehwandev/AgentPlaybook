@@ -63,6 +63,28 @@ workflows, permissions, role matrices, provider setup, deployment details, API
 shapes, and product policy in the target repo's local instructions or in an
 explicitly scoped platform or product-pattern document.
 
+## Project LLM Wiki Boundary
+
+Project-specific LLM wiki content belongs in the target project, not in this
+shared library. This includes generated repo wikis, code-derived module
+summaries, project runbooks, product decisions, local commands, local paths,
+service setup, role matrices, and domain policy for one repo or product.
+
+AgentPlaybook may define reusable rules for creating, reviewing, refreshing, and
+reading LLM wiki pages. Those meta-rules live in:
+
+```text
+<AGENTPLAYBOOK_ROOT>/common/skills/llm-wiki-documentation/SKILL.md
+<AGENTPLAYBOOK_ROOT>/common/skills/llm-wiki-documentation/references/current-guidance.md
+```
+
+When applying AgentPlaybook to a target repo, read the target repo's local LLM
+wiki only after repo/runtime instructions, the workflow route, and the relevant
+skill entrypoints. Treat project LLM wiki pages as navigation or source-derived
+summaries unless the target repo explicitly marks a reviewed page as a source of
+truth. Generated wiki pages must not override repo instructions, workflow gates,
+human-authored design decisions, or source docs.
+
 ## Language Policy
 
 Write shared agent library documents in English. This includes `AGENTS.md`,
