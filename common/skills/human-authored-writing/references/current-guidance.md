@@ -80,6 +80,11 @@ or disclosure obligations, keep the original meaning and report the constraint.
 - Prefer the user's voice over a generic "human" voice. Use supplied writing
   samples, nearby repo docs, or the draft's strongest natural passages as the
   style source.
+- For Korean prose, once the author's samples or the draft's own passages
+  establish plain declarative endings (`다`, `했다`, `이다`), keep that register
+  through the whole piece. Do not drift into honorific explanatory endings
+  (`합니다`, `됩니다`, `보입니다`) partway through; an unrequested honorific
+  shift is a register change, not a fidelity edit.
 - Keep edits conservative. If a rewrite would change more than roughly one
   third of the text, report the risk and offer a focused pass instead of silently
   replacing the piece.
@@ -145,7 +150,7 @@ Use these passes when the writing task is more than a one-line copy edit.
 
 | Surface | Signals to inspect | Preferred fix |
 | --- | --- | --- |
-| Korean prose | Translationese, overformal connective adverbs, passive or nominalized phrasing, mechanical numbered structure, excessive headings or decoration, overuse of English in parentheses, repeated endings, formal nouns such as "것/점/수/바" when they only pad the sentence, stock connective frames such as "핵심은", "중요한 점은", "반대로", or "이 글에서는" when the author's style would be more direct, and plausible but non-authorial metaphors such as "금방 갈라진다" when concrete maintenance wording fits better | Rewrite into natural Korean idiom while preserving the original claim and register |
+| Korean prose | Translationese, overformal connective adverbs, passive or nominalized phrasing, mechanical numbered structure, excessive headings or decoration, overuse of English in parentheses, repeated endings, an honorific-ending drift (`합니다`/`됩니다`/`보입니다`) away from the author's established plain declarative register (`다`/`했다`/`이다`), formal nouns such as "것/점/수/바" when they only pad the sentence, stock connective frames such as "핵심은", "중요한 점은", "반대로", or "이 글에서는" when the author's style would be more direct, and plausible but non-authorial metaphors such as "금방 갈라진다" when concrete maintenance wording fits better | Rewrite into natural Korean idiom while preserving the original claim and register |
 | English prose | Inflated significance, generic enthusiasm, promotional adjectives, shallow participial clauses, excessive hedging, repeated signposting, symmetric sentence rhythm, overuse of em dashes or paired contrasts, rule-of-three lists, synonym cycling, false ranges | Replace with specific claims, direct verbs, sourced detail, varied rhythm, and simpler punctuation |
 | Documentation | Polished filler, unsupported value claims, unnecessary summaries, "this guide explores" framing, duplicated overview bullets, diff-anchored narration, inline header lists where the heading repeats the sentence | Start with the action path, keep constraints explicit, and remove decorative framing |
 | Marketing or product copy | Vague benefits, buzzwords, "unlock/transform/revolutionize" language, claims without proof | Tie copy to concrete user outcomes, product evidence, and a clear audience |
