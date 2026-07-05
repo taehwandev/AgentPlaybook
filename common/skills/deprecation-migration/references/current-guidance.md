@@ -1,0 +1,114 @@
+---
+keyflow_id: sys_deprecation_migration
+status: review
+type: human-reviewed-needed
+agentplaybook_card_contract: strict
+---
+
+# Deprecation And Migration
+
+Use when removing, renaming, replacing, migrating, or sunsetting code, APIs,
+configuration, data shapes, routes, workflows, commands, features, or docs.
+
+The goal is to avoid zombie code, broken callers, unsafe data transitions, and
+unclear compatibility promises.
+
+## Use When
+
+- A public or shared contract is removed, renamed, or replaced.
+- A migration changes data, storage, cache, configuration, API, route, command,
+  package, or runtime behavior.
+- A deprecated path remains in the repo and the user asks to clean it up.
+- A release needs compatibility or rollback planning.
+
+For purely internal dead code, still inspect callers before deletion.
+
+## Inspect First
+
+- Callers, imports, references, tests, docs, generated artifacts, CI, scripts,
+  release config, and runtime entrypoints.
+- Compatibility requirements from repo-local policy, product docs, API docs, or
+  release notes.
+- Usage signals when removal depends on proving zero use.
+- Migration, rollback, and forward-fix paths.
+
+## Decision Rule
+
+Choose one mode before editing:
+
+- **Advisory deprecation**: keep the old path working, add guidance, and avoid
+  breaking callers.
+- **Compulsory migration**: update all callers and fail clearly if old input is
+  still used.
+- **Removal**: delete only after callers, docs, tests, generated outputs, and
+  release risks are accounted for.
+
+If the mode is unclear, stop and ask before changing behavior.
+
+## Process
+
+1. Inventory every caller and public reference.
+2. Identify compatibility window and rollback expectations.
+3. Choose advisory, compulsory, or removal mode.
+4. Add or update tests that prove old and new behavior as required.
+5. Migrate callers in small slices.
+6. Remove old paths only after usage and references are accounted for.
+7. Update docs, examples, release notes, and operational handoff.
+
+## Candidate-By-Candidate Migrations
+
+When replacing one UI technology, SDK, storage shape, routing model, or build
+tool with another, migrate one candidate or capability at a time unless the
+source guide requires a coordinated cutover. Before replacing it, capture the
+old behavior or public contract. After replacing it, compare parity, update
+callers, and delete the old path only after imports, docs, examples, generated
+artifacts, runtime entrypoints, and tests no longer depend on it.
+
+Do not use a migration as an excuse for a broad rewrite. Keep each slice small
+enough to prove compatibility and rollback or forward-fix behavior.
+
+## Common Rationalizations
+
+| Rationalization | Required Response |
+| --- | --- |
+| "Nothing imports it anymore." | Search scripts, tests, docs, generated files, runtime config, and external entrypoints too. |
+| "The old API is bad, so breaking it is fine." | Check compatibility and release policy before removal. |
+| "The migration is obvious." | Add rollback or forward-fix evidence for stateful data or release-sensitive changes. |
+| "Docs can be updated later." | Update docs in the same slice when the public contract changes. |
+
+## Red Flags
+
+- A renamed symbol leaves stale docs, examples, scripts, or generated clients.
+- A storage or schema change lacks backward compatibility or rollback language.
+- A deprecated path remains callable with no owner, warning, or removal plan.
+- A release note omits a breaking change or required operator action.
+- A cleanup PR changes behavior without acceptance criteria.
+
+## Do Not
+
+- Do not delete public or shared behavior only because local tests pass.
+- Do not leave two active sources of truth for the same command, route, API, or
+  data shape.
+- Do not silently coerce old input into new behavior when callers need an
+  explicit migration error.
+- Do not combine broad cleanup with unrelated feature work.
+- Do not claim zero usage from a narrow import search alone.
+
+## Stop If
+
+- Compatibility mode, migration owner, or release window is unclear.
+- Removal can affect persisted data, external clients, user content, billing,
+  auth, permissions, or deployment without rollback.
+- Required usage evidence is unavailable and the old path could still be active.
+
+## Verification
+
+Use caller-focused tests, contract tests, migration tests, compatibility checks,
+release dry runs, and reference searches. For removal, include evidence that
+imports, docs, scripts, generated artifacts, and runtime entrypoints no longer
+refer to the old path or that remaining references are intentional.
+
+## Report
+
+Report the selected mode, compatibility impact, migrated callers, verification,
+docs updated, and any retained deprecated path with owner and cleanup trigger.

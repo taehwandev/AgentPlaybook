@@ -1,64 +1,19 @@
 ---
-keyflow_id: sys_bugfix_debugging_workflow
+keyflow_id: sys_workflows_bugfix_debugging_md_compat
 status: review
-type: human-reviewed-needed
+type: compatibility-entrypoint
+agentplaybook_skill_bundle_stub: true
 ---
 
 # Bugfix Debugging Workflow
 
-Use when investigating a bug, regression, failing test, flaky behavior, or
-production-like failure.
+This compatibility path has moved to the AgentPlaybook skill-bundle layout.
 
 ## Read
 
-- `common/agent-operating-skill.md`
-- `common/testing.md`
-- `common/verification-policy.md`
-- `common/tool-failure-recovery.md` when a command, compiler, linter, or test
-  failure is part of the bug signal
-- `common/observability-error-handling.md`
-- `common/defensive-boundaries.md` when the bug involves external, persisted,
-  generated, cached, or user-provided values
-- matching platform architecture or review card from `index.md`
-- security, persistence, API contract, or product-pattern cards when affected
-
-## Steps
-
-1. Reproduce or capture the failure with the smallest reliable command, log, or
-   manual path.
-2. Define expected versus actual behavior and the user or system impact.
-3. Inspect the nearest ownership boundary before changing code.
-4. Check whether invalid, missing, stale, duplicated, out-of-order, or extreme
-   boundary data can produce the failure.
-5. Fix the cause, not only the symptom, with the smallest behavior-preserving
-   scope.
-6. Add or adjust logs, metrics, diagnostics, or user-visible error handling when
-   the failure would otherwise be hard to detect or support.
-7. Add or update a focused regression check when practical.
-8. Re-run the failing check and any nearby checks that prove the affected
-   boundary.
-9. Report reproduction, root cause, changed behavior, observability impact,
-   verification, and remaining risk.
+- `skills/bugfix-debugging/SKILL.md` for the canonical lightweight entrypoint.
+- `skills/bugfix-debugging/references/current-guidance.md` for the full detailed guidance that previously lived here.
 
 ## Verification
 
-A bug fix needs evidence for both the original failure and the protected
-boundary:
-
-- before/after failing test, command, log signal, or manual path when practical
-- regression test for the failing input, state transition, platform event, or
-  contract
-- boundary cases for missing, malformed, stale, duplicated, cancelled, lower
-  bound, upper bound, permission-denied, or unavailable values when relevant
-- nearby integration or manual smoke when the failure crossed API, persistence,
-  cache, auth, platform, release, or background-work boundaries
-
-Do not call the fix verified only because the observed symptom disappeared once.
-Name the root cause and the check that would fail if the bug returned.
-
-## Stop If
-
-- The failure cannot be reproduced and no reliable evidence points to a cause.
-- The likely fix crosses auth, billing, data loss, migration, or release
-  boundaries without enough context.
-- The bug report conflicts with documented product behavior.
+Routes should load `workflows/skills/bugfix-debugging/SKILL.md` instead of this compatibility stub.

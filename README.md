@@ -88,7 +88,7 @@ curl -I https://agentplaybook.thdev.app/
 ```
 
 The website versioning contract follows
-`common/web-deployment-versioning.md`: every production deploy must be
+`common/skills/web-deployment-versioning/SKILL.md`: every production deploy must be
 traceable, but the public release version changes only for a meaningful release
 unit.
 
@@ -446,7 +446,7 @@ For PRD -> ARD -> implementation:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
-Full bootstrap instructions live in [docs/agent-bootstrap.md](docs/agent-bootstrap.md).
+Full bootstrap instructions live in [docs/skills/agent-bootstrap/SKILL.md](docs/skills/agent-bootstrap/SKILL.md).
 A shorter reusable prompt lives in
 [templates/apply-agentplaybook-request.md](templates/apply-agentplaybook-request.md).
 
@@ -499,7 +499,7 @@ file or a pasted prompt.
   as missing setup so AGY cannot proceed as if the fail-closed and silence rules
   were installed.
 - For runtime-specific setup rules, read
-  [docs/agent-runtime-integration.md](docs/agent-runtime-integration.md).
+  [docs/skills/agent-runtime-integration/SKILL.md](docs/skills/agent-runtime-integration/SKILL.md).
 
 ## Distribution Modes
 
@@ -662,62 +662,62 @@ AgentPlaybook cards should not stop at "write clean code." Platform routes now
 include implementation-detail cards that tell an agent which boundary to create,
 where state should live, and what evidence proves the work.
 
-- Android Compose: `platforms/android/android-compose-ui.md` covers
+- Android Compose: `platforms/android/skills/android-compose-ui/SKILL.md` covers
   route/screen/component splits, `UiState`, architecture tracks, previews,
   package layout, and verification.
 - Android module/package structure:
-  `platforms/android/android-module-structure.md` covers feature modules,
+  `platforms/android/skills/android-module-structure/SKILL.md` covers feature modules,
   API/implementation splits, repository boundaries, build-logic conventions,
   shared core/design-system ownership, and migration strategy.
-- Android ViewModel/state: `platforms/android/android-viewmodel-state.md`
+- Android ViewModel/state: `platforms/android/skills/android-viewmodel-state/SKILL.md`
   covers ViewModel contracts, `StateFlow`, one-off events, use cases,
   repositories, persistence, and coroutine tests.
-- KMP/Compose Multiplatform: `platforms/kmp/kmp-architecture.md`,
-  `platforms/kmp/kmp-module-structure.md`,
-  `platforms/kmp/kmp-compose-ui.md`, `platforms/kmp/kmp-state-data.md`, and
-  `platforms/kmp/kmp-platform-integration.md` cover shared modules, source sets,
+- KMP/Compose Multiplatform: `platforms/kmp/skills/kmp-architecture/SKILL.md`,
+  `platforms/kmp/skills/kmp-module-structure/SKILL.md`,
+  `platforms/kmp/skills/kmp-compose-ui/SKILL.md`, `platforms/kmp/skills/kmp-state-data/SKILL.md`, and
+  `platforms/kmp/skills/kmp-platform-integration/SKILL.md` cover shared modules, source sets,
   umbrella frameworks, `expect`/`actual`, shared Compose UI, state/data
   boundaries, adapters, target capabilities, and verification across affected
   targets.
-- Flutter: `platforms/flutter/flutter-architecture.md`,
-  `platforms/flutter/flutter-project-structure.md`,
-  `platforms/flutter/flutter-widget-ui.md`,
-  `platforms/flutter/flutter-state-data.md`, and
-  `platforms/flutter/flutter-platform-integration.md` cover feature folders,
+- Flutter: `platforms/flutter/skills/flutter-architecture/SKILL.md`,
+  `platforms/flutter/skills/flutter-project-structure/SKILL.md`,
+  `platforms/flutter/skills/flutter-widget-ui/SKILL.md`,
+  `platforms/flutter/skills/flutter-state-data/SKILL.md`, and
+  `platforms/flutter/skills/flutter-platform-integration/SKILL.md` cover feature folders,
   package boundaries, widget layers, state management, repositories, platform
   channels, plugins, federated plugin splits, target capabilities, lifecycle,
   and verification across affected targets.
-- iOS module/package structure: `platforms/ios/ios-module-structure.md` covers
+- iOS module/package structure: `platforms/ios/skills/ios-module-structure/SKILL.md` covers
   targets, local Swift packages, access control, feature contracts, app
   extensions, package layout, and migration strategy.
-- iOS SwiftUI: `platforms/ios/ios-swiftui-ui.md` covers route/coordinator,
+- iOS SwiftUI: `platforms/ios/skills/ios-swiftui-ui/SKILL.md` covers route/coordinator,
   screen/section/view splits, ViewModel contracts, `UiState`, clean
   architecture, previews, navigation effects, and tests.
-- iOS UIKit: `platforms/ios/ios-uikit-ui.md` covers coordinators, view
+- iOS UIKit: `platforms/ios/skills/ios-uikit-ui/SKILL.md` covers coordinators, view
   controllers, ViewModels/presenters, typed UI state, lists, forms, navigation,
   and XCUITest/snapshot boundaries.
-- Web React: `platforms/web/web-react-ui.md` covers route/page,
+- Web React: `platforms/web/skills/web-react-ui/SKILL.md` covers route/page,
   container/screen splits, hooks, typed `UiState`, query/mutation boundaries,
   clean architecture, reusable components, and tests.
-- Server API: `platforms/server/server-api-implementation.md` covers handlers,
+- Server API: `platforms/server/skills/server-api-implementation/SKILL.md` covers handlers,
   validators, use cases, repositories, response/error shapes, tenant filters,
   idempotency, and API tests.
-- Desktop/application: `platforms/application/application-command-ui.md` covers
+- Desktop/application: `platforms/application/skills/application-command-ui/SKILL.md` covers
   command routing, windows/panels, shortcuts, menu bar/tray entry points, IPC,
   background work, and OS resource cleanup.
-- Shared reuse: `common/reusable-code-design.md` covers when code should stay
+- Shared reuse: `common/skills/reusable-code-design/SKILL.md` covers when code should stay
   local, move into feature common, become a design-system primitive, or become a
   shared package/API.
-- Shared structure/state/errors: `common/code-structure-ownership.md`,
-  `common/component-api-design.md`, `common/state-modeling.md`, and
-  `common/error-modeling.md` cover module ownership, component contracts, typed
+- Shared structure/state/errors: `common/skills/code-structure-ownership/SKILL.md`,
+  `common/skills/component-api-design/SKILL.md`, `common/skills/state-modeling/SKILL.md`, and
+  `common/skills/error-modeling/SKILL.md` cover module ownership, component contracts, typed
   state, effects, retries, and user-visible failure states.
 - Product implementation: product-pattern implementation cards cover concrete
   auth/RBAC, invitation, and billing/entitlement models, state machines,
   enforcement layers, side effects, and tests. Product-pattern ideation cards
   cover reusable choices such as agent credential brokering before a project
   commits to one implementation.
-- Human-authored writing: `common/human-authored-writing.md` covers preserving
+- Human-authored writing: `common/skills/human-authored-writing/SKILL.md` covers preserving
   meaning and voice while reducing generic AI-writing signals in prose,
   documentation, release notes, marketing copy, and email.
 
@@ -767,23 +767,23 @@ This is the core design: small cards, loaded only when relevant.
 - Discover the repo stack before choosing package managers, framework APIs, or
   project commands.
 - Diagnose command failures from stdout/stderr before retrying or changing code.
-- Start most coding work from `common/agent-operating-skill.md`.
-- Use `workflows/agent-task-lifecycle.md` for multi-step agent work of any kind.
-- Use `workflows/request-triage.md` and
-  `common/task-intake-effort-routing.md` when deciding whether to ask
+- Start most coding work from `common/skills/agent-operating-skill/SKILL.md`.
+- Use `workflows/skills/agent-task-lifecycle/SKILL.md` for multi-step agent work of any kind.
+- Use `workflows/skills/request-triage/SKILL.md` and
+  `common/skills/task-intake-effort-routing/SKILL.md` when deciding whether to ask
   blocker questions, run the Grill-Me protocol, or lower/raise effort.
-- Use `workflows/product-architecture-delivery.md` for product work that needs
+- Use `workflows/skills/product-architecture-delivery/SKILL.md` for product work that needs
   PRD, architecture, implementation, verification, UI tests, and commit gates.
-- Use `workflows/development-cycle.md` for lower-level multi-step implementation
+- Use `workflows/skills/development-cycle/SKILL.md` for lower-level multi-step implementation
   work.
-- Use `workflows/ambiguity-gate.md` before PRD, ARD, task breakdown, or
+- Use `workflows/skills/ambiguity-gate/SKILL.md` before PRD, ARD, task breakdown, or
   implementation when unknowns could change behavior, risk, or verification.
-- Use `workflows/multi-agent-collaboration.md` when delegating or parallelizing
+- Use `workflows/skills/multi-agent-collaboration/SKILL.md` when delegating or parallelizing
   agent work.
-- Use `workflows/multi-perspective-review.md` for non-trivial reviews and
+- Use `workflows/skills/multi-perspective-review/SKILL.md` for non-trivial reviews and
   release candidates that need multiple risk lenses.
-- A typical coding task should load `common/llm-coding-discipline.md`,
-  `common/code-conventions.md`, one platform architecture card, and only
+- A typical coding task should load `common/skills/llm-coding-discipline/SKILL.md`,
+  `common/skills/code-conventions/SKILL.md`, one platform architecture card, and only
   relevant detail or concern cards.
 - Naming is surface-specific: app display names can use product capitalization,
   while repos, slugs, services, and CLIs usually use lowercase `kebab-case`.
@@ -860,7 +860,7 @@ type: ai-generated
 - Prefer links over duplicated guidance.
 - Add platform-neutral lessons to `common/`.
 - Add LLM-readable wiki, runbook, and durable knowledge-base rules to
-  `common/llm-wiki-documentation.md`.
+  `common/skills/llm-wiki-documentation/SKILL.md`.
 - Add reusable product mechanics to `product-patterns/`.
 - Add repeatable task paths to `workflows/`.
 - Add or update `scripts/workflow.py` when a repeated workflow should be

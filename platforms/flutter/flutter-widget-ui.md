@@ -1,68 +1,19 @@
 ---
-keyflow_id: sys_flutter_widget_ui
+keyflow_id: sys_platforms_flutter_flutter_widget_ui_md_compat
 status: review
-type: human-reviewed-needed
+type: compatibility-entrypoint
+agentplaybook_skill_bundle_stub: true
 ---
 
 # Flutter Widget UI
 
-Use when creating, changing, moving, or reviewing Flutter routes, pages,
-widgets, design-system components, forms, gestures, navigation UI, golden tests,
-or widget tests.
+This compatibility path has moved to the AgentPlaybook skill-bundle layout.
 
-For reusable UI extraction, also read `common/reusable-code-design.md`,
-`common/component-api-design.md`, and `common/design-system.md`.
-For feature folders, local packages, package exports, and design-system
-promotion decisions, also read `flutter-project-structure.md`.
+## Read
 
-## Widget Layers
-
-Use this shape unless the repo has a stricter local pattern:
-
-```text
-Route/Page -> Screen Widget -> Section Widget -> Feature Widget
--> Design-System Primitive
-```
-
-- Route/page widgets wire navigation, state owners, effects, permission
-  launchers, and dependency entry points.
-- Screen widgets receive immutable view state and explicit callbacks.
-- Section widgets receive only the state needed for that section.
-- Feature widgets may know product UI models but not repositories, platform
-  channels, route parsers, or service locators.
-- Design-system primitives know visual and interaction contracts, not product
-  routes, analytics labels, storage, permissions, or fake data.
-
-## Statefulness
-
-- Use `StatelessWidget` for pure rendering.
-- Use `StatefulWidget`, hooks, controllers, or local notifiers only for local UI
-  state such as focus, scroll, animation, text editing, selection, tabs,
-  expansion, and gesture state.
-- Keep product state in the repo's state owner, not in a widget subtree that can
-  be rebuilt, disposed, or duplicated unexpectedly.
-- Dispose controllers, subscriptions, animation controllers, focus nodes,
-  streams, timers, and platform listeners in the owning widget or service.
-
-## UI Contract
-
-- Make long text, narrow screens, large text scale, keyboard focus, reduced
-  motion, loading, empty, error, disabled, and permission-denied states explicit
-  when they are reachable.
-- Use semantic labels, roles, focus order, hit targets, and localization as part
-  of the component contract.
-- Use keys intentionally for lists, forms, animations, test selectors, and
-  state preservation.
-- Do not read global providers or routers from leaf widgets when explicit
-  values and callbacks keep the component reusable.
-- Keep target-specific interaction differences visible, such as desktop
-  keyboard shortcuts and hover, mobile touch, and web browser constraints.
+- `skills/flutter-widget-ui/SKILL.md` for the canonical lightweight entrypoint.
+- `skills/flutter-widget-ui/references/current-guidance.md` for the full detailed guidance that previously lived here.
 
 ## Verification
 
-- Run analyzer or compile checks for changed packages.
-- Use widget tests for state rendering, callbacks, forms, focus, semantics, and
-  navigation outputs.
-- Use golden tests or screenshots for visual component changes when configured.
-- Use integration or target smoke checks when platform services, plugins,
-  lifecycle, permissions, or routing changed.
+Routes should load `platforms/flutter/skills/flutter-widget-ui/SKILL.md` instead of this compatibility stub.

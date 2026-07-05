@@ -1,59 +1,19 @@
 ---
-keyflow_id: sys_product_spec_to_implementation
+keyflow_id: sys_common_product_spec_to_implementation_md_compat
 status: review
-type: ai-generated
+type: compatibility-entrypoint
+agentplaybook_skill_bundle_stub: true
 ---
 
 # Product Spec To Implementation
 
-Use when turning a product request, PRD, design note, or vague feature idea into implementation work.
+This compatibility path has moved to the AgentPlaybook skill-bundle layout.
 
-## Start
+## Read
 
-- Identify the user outcome, not only the requested UI.
-- Separate known facts, assumptions, and open decisions.
-- Find and open repo-local PRD, spec, ARD, issue, design note, task doc, or
-  product source-of-truth before inventing behavior or editing code.
-- Treat this as a pre-edit hard gate. Do not implement first and reconstruct
-  the PRD/spec/ARD search afterward.
-- Ask only when ambiguity changes the result or risk.
-- Use `workflows/ambiguity-gate.md` when an unknown might change behavior,
-  architecture, security, release risk, or verification.
+- `skills/product-spec-to-implementation/SKILL.md` for the canonical lightweight entrypoint.
+- `skills/product-spec-to-implementation/references/current-guidance.md` for the full detailed guidance that previously lived here.
 
-If no product source exists and the work introduces a new capability, flow,
-multi-screen behavior, data model, API contract, auth/permission/billing policy,
-release behavior, or durable acceptance criteria, create or update a PRD/spec
-before implementation. If the work is a narrow slice that can proceed without a
-PRD, record the PRD-skip reason and the acceptance criteria source.
+## Verification
 
-## Define The Contract
-
-Write acceptance criteria before coding when behavior is non-trivial.
-
-```text
-Given ...
-When ...
-Then ...
-```
-
-Cover success, empty, error, permission denied, and rollback/conflict states when relevant.
-
-## Break Down Work
-
-- Product contract
-- Data model or API contract
-- UI state and interaction
-- Permission or entitlement rules
-- Tests and verification
-- Migration or compatibility needs
-
-## Guardrails
-
-- Do not hide a missing product decision inside a boolean or fallback.
-- Do not ship UI copy that implies server capability before the backend exists.
-- Keep project-specific role names, commands, and domain terms in the repo.
-- Prefer one narrow vertical slice over broad speculative scaffolding.
-
-## Done
-
-Implementation, tests, and docs all point to the same contract. Any deferred decision is explicit.
+Routes should load `common/skills/product-spec-to-implementation/SKILL.md` instead of this compatibility stub.

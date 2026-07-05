@@ -6,7 +6,7 @@ type: human-reviewed-needed
 
 # AgentPlaybook 최신화 안내
 
-이 문서는 한글 빠른 안내입니다. AgentPlaybook의 기준 정책은 `README.md`, `AGENTS.md`, `docs/agent-bootstrap.md`, `docs/agent-runtime-integration.md`에 있습니다.
+이 문서는 한글 빠른 안내입니다. AgentPlaybook의 기준 정책은 `README.md`, `AGENTS.md`, `docs/skills/agent-bootstrap/SKILL.md`, `docs/skills/agent-runtime-integration/SKILL.md`에 있습니다.
 
 ## 기본 원칙
 

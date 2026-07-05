@@ -10,184 +10,191 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 
 ## Common
 
-- Agent operating baseline: `common/agent-operating-skill.md`
+- Agent operating baseline: `common/skills/agent-operating-skill/SKILL.md`
 - User questions, approvals, status updates, and handoff messages:
-  `common/agent-interaction.md`
+  `common/skills/agent-interaction/SKILL.md`
 - Request clarity, model/effort routing, token controls, Grill-Me:
-  `common/task-intake-effort-routing.md`
-- All coding work: `common/llm-coding-discipline.md`
-- Code conventions, naming, comments, formatting: `common/code-conventions.md`
+  `common/skills/task-intake-effort-routing/SKILL.md`
+- All coding work: `common/skills/llm-coding-discipline/SKILL.md`
+- Code conventions, naming, comments, formatting: `common/skills/code-conventions/SKILL.md`
 - SOLID design principles, ISP contract/module splits, dependency inversion,
-  and DDD/domain-modeling fit: `common/solid-design-principles.md`
+  and DDD/domain-modeling fit: `common/skills/solid-design-principles/SKILL.md`
 - Code structure, file/module ownership, api/impl split:
-  `common/code-structure-ownership.md`
+  `common/skills/code-structure-ownership/SKILL.md`
 - Reusable code design, extraction, shared module/package contracts:
-  `common/reusable-code-design.md`
+  `common/skills/reusable-code-design/SKILL.md`
 - Component API design, reusable view/hook/widget contracts:
-  `common/component-api-design.md`
+  `common/skills/component-api-design/SKILL.md`
 - Stack, package manager, framework, runtime, and command discovery:
-  `common/stack-discovery.md`
-- Project, app, repo, package, module, CLI, and service naming: `common/project-naming.md`
-- Change size and reviewable diff scope: `common/change-size-policy.md`
-- Existing checkout and user-owned diff safety: `common/worktree-hygiene.md`
-- Dependencies, SDKs, packages, build plugins: `common/dependency-policy.md`
-- Generated files, lockfiles, snapshots, build artifacts: `common/generated-files-policy.md`
-- API, DTO, route, event, webhook contract compatibility: `common/api-contract-compatibility.md`
+  `common/skills/stack-discovery/SKILL.md`
+- Project, app, repo, package, module, CLI, and service naming: `common/skills/project-naming/SKILL.md`
+- Change size and reviewable diff scope: `common/skills/change-size-policy/SKILL.md`
+- Existing checkout and user-owned diff safety: `common/skills/worktree-hygiene/SKILL.md`
+- Dependencies, SDKs, packages, build plugins: `common/skills/dependency-policy/SKILL.md`
+- Generated files, lockfiles, snapshots, build artifacts: `common/skills/generated-files-policy/SKILL.md`
+- API, DTO, route, event, webhook contract compatibility: `common/skills/api-contract-compatibility/SKILL.md`
 - Asset upload, URL, publish, cleanup, and embedded reference lifecycle:
-  `common/asset-lifecycle.md`
+  `common/skills/asset-lifecycle/SKILL.md`
 - Defensive handling for external, persisted, generated, cached, or user-provided
-  values: `common/defensive-boundaries.md`
+  values: `common/skills/defensive-boundaries/SKILL.md`
 - Environment-specific runtime URL configuration, callback URLs, CORS origins,
   webhook endpoints, API origins, and asset hosts:
-  `common/runtime-url-configuration.md`
-- Release, deployment, packaging, rollback: `common/release-deployment.md`
+  `common/skills/runtime-url-configuration/SKILL.md`
+- Release, deployment, packaging, rollback: `common/skills/release-deployment/SKILL.md`
 - Release version, tag, artifact, build number, and deployment id scheme:
-  `common/release-versioning.md`
+  `common/skills/release-versioning/SKILL.md`
 - Web deployment versioning, public release version versus deploy id, and
-  continuous deployment release history: `common/web-deployment-versioning.md`
+  continuous deployment release history: `common/skills/web-deployment-versioning/SKILL.md`
 - Accessibility, localization, dates, numbers, units, measurements, display
-  values, UI text: `common/accessibility-i18n.md`
+  values, UI text: `common/skills/accessibility-i18n/SKILL.md`
 - Human-authored prose, voice fidelity, and AI-writing signal cleanup:
-  `common/human-authored-writing.md`
+  `common/skills/human-authored-writing/SKILL.md`
 - Blog/article draft workspace, publishing-target separation, and shared
   writing source-of-truth:
-  `common/writing-workspace.md`
+  `common/skills/writing-workspace/SKILL.md`
 - AgentPlaybook card anatomy, anti-rationalization, red flags, and evidence
-  sections: `common/agent-skill-card-anatomy.md`
-- Architecture choice/change: `common/architecture-selection.md`
-- Architecture design: `common/architecture-design.md`
+  sections: `common/skills/agent-skill-card-anatomy/SKILL.md`
+- AgentPlaybook skill bundle migration and `SKILL.md` plus `references/`
+  structure: `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md`
+- Architecture choice/change: `common/skills/architecture-selection/SKILL.md`
+- Architecture design: `common/skills/architecture-design/SKILL.md`
 - Source-driven framework, SDK, platform, API, and external-doc decisions:
-  `common/source-driven-development.md`
+  `common/skills/source-driven-development/SKILL.md`
 - Doubt-driven challenge pass for high-risk assumptions:
-  `common/doubt-driven-development.md`
+  `common/skills/doubt-driven-development/SKILL.md`
 - Incremental implementation and verified slice planning:
-  `common/incremental-implementation.md`
-- New feature or product ambiguity: `common/product-spec-to-implementation.md`
+  `common/skills/incremental-implementation/SKILL.md`
+- New feature or product ambiguity: `common/skills/product-spec-to-implementation/SKILL.md`
 - LLM-readable wiki, knowledge-base, runbook, or durable documentation:
-  `common/llm-wiki-documentation.md`
+  `common/skills/llm-wiki-documentation/SKILL.md`
 - Public discovery, SEO, AI search visibility, sitemap, metadata, previews, and
   canonical URLs:
-  `common/public-discovery.md`
-- App boundary/state/data shape: `common/app-architecture.md`
+  `common/skills/public-discovery/SKILL.md`
+- App boundary/state/data shape: `common/skills/app-architecture/SKILL.md`
 - State modeling, UiState, effects, reducers, stores, ViewModels, hooks:
-  `common/state-modeling.md`
-- Refactor: `common/refactoring.md`
-- Testing or bug regression: `common/testing.md`
+  `common/skills/state-modeling/SKILL.md`
+- Refactor: `common/skills/refactoring/SKILL.md`
+- Testing or bug regression: `common/skills/testing/SKILL.md`
 - Scenario-driven test design and QA flow coverage:
-  `common/scenario-driven-testing.md`
-- Verification evidence: `common/verification-policy.md`
+  `common/skills/scenario-driven-testing/SKILL.md`
+- Verification evidence: `common/skills/verification-policy/SKILL.md`
 - Completion checklist and Definition of Done:
-  `common/definition-of-done.md`
+  `common/skills/definition-of-done/SKILL.md`
 - Tool, compiler, lint, test, and command failure recovery:
-  `common/tool-failure-recovery.md`
-- Local tools, AI CLIs, runtime, usage telemetry: `common/local-tools.md`
-- File editing safety, secrets, external state: `common/agent-editing-safety.md`
-- Design system or shared UI rules: `common/design-system.md`
-- UI visual and interaction verification: `common/ui-visual-verification.md`
-- Secure development, secrets, client keys, open-source-safe setup: `common/secure-development-baseline.md`
-- Security/privacy/secrets/tenant risk: `common/security-privacy-review.md`
-- Persistence, cache, sync, migration: `common/data-persistence-sync.md`
-- Server-rendered/API/edge/database caching and invalidation: `common/server-side-caching.md`
-- Errors, logs, audit, diagnostics: `common/observability-error-handling.md`
+  `common/skills/tool-failure-recovery/SKILL.md`
+- Local tools, AI CLIs, runtime, usage telemetry: `common/skills/local-tools/SKILL.md`
+- File editing safety, secrets, external state: `common/skills/agent-editing-safety/SKILL.md`
+- Design system or shared UI rules: `common/skills/design-system/SKILL.md`
+- UI visual and interaction verification: `common/skills/ui-visual-verification/SKILL.md`
+- Secure development, secrets, client keys, open-source-safe setup: `common/skills/secure-development-baseline/SKILL.md`
+- Security/privacy/secrets/tenant risk: `common/skills/security-privacy-review/SKILL.md`
+- Persistence, cache, sync, migration: `common/skills/data-persistence-sync/SKILL.md`
+- Server-rendered/API/edge/database caching and invalidation: `common/skills/server-side-caching/SKILL.md`
+- Errors, logs, audit, diagnostics: `common/skills/observability-error-handling/SKILL.md`
 - CI/CD automation, workflow files, release checks, publishing and deployment
-  automation: `common/ci-cd-automation.md`
+  automation: `common/skills/ci-cd-automation/SKILL.md`
 - Deprecation, migration, removal, compatibility windows, and zero-usage
-  cleanup: `common/deprecation-migration.md`
+  cleanup: `common/skills/deprecation-migration/SKILL.md`
+- All-platform performance proof, release-like measurement, diagnostic-only
+  evidence: `common/skills/performance-verification/SKILL.md`
 - Web performance evidence, Core Web Vitals, bundle/runtime measurement:
-  `common/web-performance-verification.md`
+  `common/skills/web-performance-verification/SKILL.md`
 - Browser runtime testing, console/network/DOM/accessibility inspection:
-  `common/browser-runtime-testing.md`
+  `common/skills/browser-runtime-testing/SKILL.md`
 - Error modeling, typed failures, retryability, user-visible failure states:
-  `common/error-modeling.md`
-- Code review: `common/code-review.md`
-- Commit review: start with code review, then add `common/commit-review.md`
-- Commit creation: `common/commit-workflow.md`
+  `common/skills/error-modeling/SKILL.md`
+- Code review: `common/skills/code-review/SKILL.md`
+- Commit review: start with code review, then add `common/skills/commit-review/SKILL.md`
+- Commit creation, branch/PR/push safety, staged diff policy:
+  `common/skills/commit-workflow/SKILL.md`
 
 ## Platform
 
-- Android architecture: `platforms/android/android-architecture.md`
+- Android architecture: `platforms/android/skills/android-architecture/SKILL.md`
 - Android module/package structure:
-  `platforms/android/android-module-structure.md`
+  `platforms/android/skills/android-module-structure/SKILL.md`
 - Android external skill source coverage and no-omission manifest:
-  `platforms/android/android-external-skill-source-coverage.md`
+  `platforms/android/skills/android-external-skill-source-coverage/SKILL.md`
+- Android external skill source entrypoint and distilled source rules:
+  `platforms/android/skills/source-coverage/SKILL.md`
 - Android ViewModel, UiState, Flow, repository, persistence, one-off events:
-  `platforms/android/android-viewmodel-state.md`
+  `platforms/android/skills/android-viewmodel-state/SKILL.md`
 - Android Compose UI structure, stateful/stateless split, previews, packages:
-  `platforms/android/android-compose-ui.md`
-- Android state/data: `platforms/android/android-state-data.md`
+  `platforms/android/skills/android-compose-ui/SKILL.md`
+- Android state/data: `platforms/android/skills/android-state-data/SKILL.md`
 - Android DataStore persistence reference:
   `platforms/android/references/android-datastore.md`
-- Android background work: `platforms/android/android-background-work.md`
-- Android security: `platforms/android/android-security.md`
-- Android review: `platforms/android/android-review.md`
-- KMP architecture: `platforms/kmp/kmp-architecture.md`
+- Android background work: `platforms/android/skills/android-background-work/SKILL.md`
+- Android security: `platforms/android/skills/android-security/SKILL.md`
+- Android review: `platforms/android/skills/android-review/SKILL.md`
+- KMP architecture: `platforms/kmp/skills/kmp-architecture/SKILL.md`
 - KMP module/source-set structure:
-  `platforms/kmp/kmp-module-structure.md`
-- KMP Compose Multiplatform UI: `platforms/kmp/kmp-compose-ui.md`
-- KMP state/data: `platforms/kmp/kmp-state-data.md`
-- KMP platform integration: `platforms/kmp/kmp-platform-integration.md`
-- KMP security: `platforms/kmp/kmp-security.md`
-- KMP review: `platforms/kmp/kmp-review.md`
-- Flutter architecture: `platforms/flutter/flutter-architecture.md`
+  `platforms/kmp/skills/kmp-module-structure/SKILL.md`
+- KMP Compose Multiplatform UI: `platforms/kmp/skills/kmp-compose-ui/SKILL.md`
+- KMP state/data: `platforms/kmp/skills/kmp-state-data/SKILL.md`
+- KMP platform integration: `platforms/kmp/skills/kmp-platform-integration/SKILL.md`
+- KMP security: `platforms/kmp/skills/kmp-security/SKILL.md`
+- KMP review: `platforms/kmp/skills/kmp-review/SKILL.md`
+- Flutter architecture: `platforms/flutter/skills/flutter-architecture/SKILL.md`
 - Flutter project/package structure:
-  `platforms/flutter/flutter-project-structure.md`
-- Flutter widget UI: `platforms/flutter/flutter-widget-ui.md`
-- Flutter state/data: `platforms/flutter/flutter-state-data.md`
-- Flutter platform integration: `platforms/flutter/flutter-platform-integration.md`
-- Flutter security: `platforms/flutter/flutter-security.md`
-- Flutter review: `platforms/flutter/flutter-review.md`
-- Swift architecture: `platforms/swift/swift-architecture.md`
+  `platforms/flutter/skills/flutter-project-structure/SKILL.md`
+- Flutter widget UI: `platforms/flutter/skills/flutter-widget-ui/SKILL.md`
+- Flutter state/data: `platforms/flutter/skills/flutter-state-data/SKILL.md`
+- Flutter platform integration: `platforms/flutter/skills/flutter-platform-integration/SKILL.md`
+- Flutter security: `platforms/flutter/skills/flutter-security/SKILL.md`
+- Flutter review: `platforms/flutter/skills/flutter-review/SKILL.md`
+- Swift architecture: `platforms/swift/skills/swift-architecture/SKILL.md`
 - Swift package/target/file structure:
-  `platforms/swift/swift-code-structure.md`
+  `platforms/swift/skills/swift-code-structure/SKILL.md`
 - Swift design system, tokens, primitives, component variants, and previews:
-  `platforms/swift/swift-design-system.md`
-- Swift review: `platforms/swift/swift-review.md`
-- iOS architecture: `platforms/ios/ios-architecture.md`
+  `platforms/swift/skills/swift-design-system/SKILL.md`
+- Swift review: `platforms/swift/skills/swift-review/SKILL.md`
+- iOS architecture: `platforms/ios/skills/ios-architecture/SKILL.md`
 - iOS target/package structure:
-  `platforms/ios/ios-module-structure.md`
+  `platforms/ios/skills/ios-module-structure/SKILL.md`
 - iOS SwiftUI UI structure, ViewModel contracts, UiState, previews, packages:
-  `platforms/ios/ios-swiftui-ui.md`
+  `platforms/ios/skills/ios-swiftui-ui/SKILL.md`
 - iOS UIKit UI structure, coordinators, view controllers, lists, forms:
-  `platforms/ios/ios-uikit-ui.md`
-- iOS state/concurrency: `platforms/ios/ios-state-concurrency.md`
-- iOS security: `platforms/ios/ios-security.md`
-- iOS review: `platforms/ios/ios-review.md`
-- Web/React architecture: `platforms/web/web-architecture.md`
+  `platforms/ios/skills/ios-uikit-ui/SKILL.md`
+- iOS state/concurrency: `platforms/ios/skills/ios-state-concurrency/SKILL.md`
+- iOS security: `platforms/ios/skills/ios-security/SKILL.md`
+- iOS review: `platforms/ios/skills/ios-review/SKILL.md`
+- Web/React architecture: `platforms/web/skills/web-architecture/SKILL.md`
 - Web file/feature structure and import boundaries:
-  `platforms/web/web-code-structure.md`
+  `platforms/web/skills/web-code-structure/SKILL.md`
 - Web/React UI implementation, container/screen split, hooks, UiState:
-  `platforms/web/web-react-ui.md`
-- Web/React state/data: `platforms/web/web-state-data.md`
+  `platforms/web/skills/web-react-ui/SKILL.md`
+- Web/React state/data: `platforms/web/skills/web-state-data/SKILL.md`
 - Web design system, tokens, primitives, component variants, and styling:
-  `platforms/web/web-design-system.md`
-- Web accessibility/i18n: `platforms/web/web-accessibility-i18n.md`
-- Web security: `platforms/web/web-security.md`
-- Web review: `platforms/web/web-review.md`
-- Server architecture: `platforms/server/server-architecture.md`
-- Server API implementation: `platforms/server/server-api-implementation.md`
-- Server data/jobs: `platforms/server/server-data-jobs.md`
-- Server security: `platforms/server/server-security.md`
-- Server review: `platforms/server/server-review.md`
-- Application architecture: `platforms/application/application-architecture.md`
+  `platforms/web/skills/web-design-system/SKILL.md`
+- Web accessibility/i18n: `platforms/web/skills/web-accessibility-i18n/SKILL.md`
+- Web security: `platforms/web/skills/web-security/SKILL.md`
+- Web review: `platforms/web/skills/web-review/SKILL.md`
+- Server architecture: `platforms/server/skills/server-architecture/SKILL.md`
+- Server API implementation: `platforms/server/skills/server-api-implementation/SKILL.md`
+- Server data/jobs: `platforms/server/skills/server-data-jobs/SKILL.md`
+- Server security: `platforms/server/skills/server-security/SKILL.md`
+- Server review: `platforms/server/skills/server-review/SKILL.md`
+- Application architecture: `platforms/application/skills/application-architecture/SKILL.md`
 - Application command/UI implementation:
-  `platforms/application/application-command-ui.md`
+  `platforms/application/skills/application-command-ui/SKILL.md`
 - Application React desktop renderer structure:
-  `platforms/application/application-react-desktop.md`
-- Application system integration: `platforms/application/application-system-integration.md`
-- Application security: `platforms/application/application-security.md`
-- Application review: `platforms/application/application-review.md`
+  `platforms/application/skills/application-react-desktop/SKILL.md`
+- Application system integration: `platforms/application/skills/application-system-integration/SKILL.md`
+- Application security: `platforms/application/skills/application-security/SKILL.md`
+- Application review: `platforms/application/skills/application-review/SKILL.md`
 
 ## Product Pattern
 
-- Auth/RBAC/permissions: `product-patterns/auth-rbac-permissions.md`
-- Auth/RBAC implementation: `product-patterns/auth-rbac-implementation.md`
-- Invitation flows: `product-patterns/invitation-workflows.md`
-- Invitation implementation: `product-patterns/invitation-implementation.md`
-- Billing/entitlements/quota: `product-patterns/billing-entitlements.md`
+- Auth/RBAC/permissions: `product-patterns/skills/auth-rbac-permissions/SKILL.md`
+- Auth/RBAC implementation: `product-patterns/skills/auth-rbac-implementation/SKILL.md`
+- Invitation flows: `product-patterns/skills/invitation-workflows/SKILL.md`
+- Invitation implementation: `product-patterns/skills/invitation-implementation/SKILL.md`
+- Billing/entitlements/quota: `product-patterns/skills/billing-entitlements/SKILL.md`
 - Billing/entitlements implementation:
-  `product-patterns/billing-entitlements-implementation.md`
+  `product-patterns/skills/billing-entitlements-implementation/SKILL.md`
 - Agent credential broker ideation:
-  `product-patterns/agent-credential-broker-ideation.md`
+  `product-patterns/skills/agent-credential-broker-ideation/SKILL.md`
 
 ## Workflow
 
@@ -201,29 +208,29 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>"`
 - Finish evidence wrapper:
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" ...`
-- Agent task lifecycle: `workflows/agent-task-lifecycle.md`
-- Request triage: `workflows/request-triage.md`
-- Agent handoff/continuation: `workflows/agent-handoff-continuation.md`
-- Scripted workflow routing: `workflows/scripted-agent-workflow.md`
-- Cycle contract: `workflows/cycle-contract.md`
-- Ambiguity gate: `workflows/ambiguity-gate.md`
-- PRD creation: `workflows/prd-creation.md`
-- Product architecture delivery: `workflows/product-architecture-delivery.md`
-- Development cycle: `workflows/development-cycle.md`
-- Multi-agent collaboration: `workflows/multi-agent-collaboration.md`
-- Multi-perspective review: `workflows/multi-perspective-review.md`
-- Retrospective learning: `workflows/retrospective-learning.md`
-- Planning/research: `workflows/planning-research.md`
-- Documentation update: `workflows/documentation-update.md`
-- Feature implementation: `workflows/feature-implementation.md`
-- Bugfix/debugging: `workflows/bugfix-debugging.md`
-- Refactor cleanup: `workflows/refactor-cleanup.md`
-- Release readiness: `workflows/release-readiness.md`
-- Review and commit: `workflows/review-and-commit.md`
+- Agent task lifecycle: `workflows/skills/agent-task-lifecycle/SKILL.md`
+- Request triage: `workflows/skills/request-triage/SKILL.md`
+- Agent handoff/continuation: `workflows/skills/agent-handoff-continuation/SKILL.md`
+- Scripted workflow routing: `workflows/skills/scripted-agent-workflow/SKILL.md`
+- Cycle contract: `workflows/skills/cycle-contract/SKILL.md`
+- Ambiguity gate: `workflows/skills/ambiguity-gate/SKILL.md`
+- PRD creation: `workflows/skills/prd-creation/SKILL.md`
+- Product architecture delivery: `workflows/skills/product-architecture-delivery/SKILL.md`
+- Development cycle: `workflows/skills/development-cycle/SKILL.md`
+- Multi-agent collaboration: `workflows/skills/multi-agent-collaboration/SKILL.md`
+- Multi-perspective review: `workflows/skills/multi-perspective-review/SKILL.md`
+- Retrospective learning: `workflows/skills/retrospective-learning/SKILL.md`
+- Planning/research: `workflows/skills/planning-research/SKILL.md`
+- Documentation update: `workflows/skills/documentation-update/SKILL.md`
+- Feature implementation: `workflows/skills/feature-implementation/SKILL.md`
+- Bugfix/debugging: `workflows/skills/bugfix-debugging/SKILL.md`
+- Refactor cleanup: `workflows/skills/refactor-cleanup/SKILL.md`
+- Release readiness: `workflows/skills/release-readiness/SKILL.md`
+- Review and commit: `workflows/skills/review-and-commit/SKILL.md`
 
 ## Loading Rule
 
-For any multi-step agent task, start with `workflows/agent-task-lifecycle.md`.
+For any multi-step agent task, start with `workflows/skills/agent-task-lifecycle/SKILL.md`.
 Run `scripts/workflow.py route ...` to generate the command route before
 manually selecting workflow documents, editing, reviewing, committing, or
 reporting completion. Treat the route's gate ledger as a required execution
@@ -235,25 +242,25 @@ When wrapper scripts are available, run `agent-preflight.py` before editing and
 Missing wrapper evidence or missing route gate evidence is non-compliant.
 
 For any new request, first classify clarity and effort with
-`common/task-intake-effort-routing.md`. Do not use the strongest model, longest
+`common/skills/task-intake-effort-routing/SKILL.md`. Do not use the strongest model, longest
 reasoning, or full-document loading by default. Use quick effort for exact
 low-risk requests, standard effort for scoped implementation, and deep effort
 only for ambiguous, broad, high-risk, or cross-boundary work.
 
 Before running project commands, adding dependencies, or using framework-specific
-APIs, use `common/stack-discovery.md`. When a command fails, use
-`common/tool-failure-recovery.md` before retrying or changing code. When the
+APIs, use `common/skills/stack-discovery/SKILL.md`. When a command fails, use
+`common/skills/tool-failure-recovery/SKILL.md` before retrying or changing code. When the
 agent needs to ask a blocker question or approval, use
-`common/agent-interaction.md`.
+`common/skills/agent-interaction/SKILL.md`.
 
-For PRD-only work, use `workflows/prd-creation.md` and run this scripted route:
+For PRD-only work, use `workflows/skills/prd-creation/SKILL.md` and run this scripted route:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --platform <platform> --concern <concern>
 ```
 
 For product or feature work that needs PRD -> ARD -> implementation ->
-verification gates, use `workflows/product-architecture-delivery.md` and run
+verification gates, use `workflows/skills/product-architecture-delivery/SKILL.md` and run
 this scripted route:
 
 ```text
@@ -267,149 +274,153 @@ will continue into code. The `feature` route is only for scoped slices where the
 PRD/ARD gate is already satisfied or clearly unnecessary.
 
 For lower-level multi-step development work, continue with
-`workflows/development-cycle.md`. For vague or risky requests, use
-`workflows/ambiguity-gate.md` before PRD, ARD, task breakdown, or
+`workflows/skills/development-cycle/SKILL.md`. For vague or risky requests, use
+`workflows/skills/ambiguity-gate/SKILL.md` before PRD, ARD, task breakdown, or
 implementation. After a task, incident, handoff, repeated mistake, or missed
-signal, use `workflows/retrospective-learning.md` only when there is a reusable
+signal, use `workflows/skills/retrospective-learning/SKILL.md` only when there is a reusable
 lesson. For coding, read
-`common/agent-operating-skill.md`, `common/llm-coding-discipline.md`, and
-`common/code-conventions.md` first. Then read one platform architecture card.
+`common/skills/agent-operating-skill/SKILL.md`, `common/skills/llm-coding-discipline/SKILL.md`, and
+`common/skills/code-conventions/SKILL.md` first. Then read one platform architecture card.
 Add platform detail, common, or product-pattern cards only when the task touches
 that concern.
 
-For documentation-only work, use `workflows/documentation-update.md`. For wiki,
-knowledge-base, runbook, onboarding, durable architecture, or operational docs
-that humans and agents will read, also use `common/llm-wiki-documentation.md`.
+For documentation-only work, use `workflows/skills/documentation-update/SKILL.md`. For wiki,
+knowledge-base, source-grounded/living/generated docs, runbook, onboarding,
+durable architecture, or operational docs that humans and agents will read, also
+use `common/skills/llm-wiki-documentation/SKILL.md`.
 For documentation review, use
 `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route docs-review --concern wiki`
-or manually combine `workflows/review-and-commit.md`,
-`workflows/documentation-update.md`, and `common/llm-wiki-documentation.md`.
+or manually combine `workflows/skills/review-and-commit/SKILL.md`,
+`workflows/skills/documentation-update/SKILL.md`, and `common/skills/llm-wiki-documentation/SKILL.md`.
 For planning, research, comparison, or recommendations before implementation,
-use `workflows/planning-research.md`. For interrupted, long-running, or
-transferred work, use `workflows/agent-handoff-continuation.md`.
+use `workflows/skills/planning-research/SKILL.md`. For interrupted, long-running, or
+transferred work, use `workflows/skills/agent-handoff-continuation/SKILL.md`.
 
 For delegated or parallel agent work, use
-`workflows/multi-agent-collaboration.md`. For non-trivial reviews, release
+`workflows/skills/multi-agent-collaboration/SKILL.md`. For non-trivial reviews, release
 candidates, or changes that need product, UX, architecture, reliability,
-security, and QA lenses, use `workflows/multi-perspective-review.md`.
+security, and QA lenses, use `workflows/skills/multi-perspective-review/SKILL.md`.
 
 For new project scaffolds, app names, repo names, package ids, modules, CLIs,
-services, slugs, bundle ids, or renames, read `common/project-naming.md`.
+services, slugs, bundle ids, or renames, read `common/skills/project-naming/SKILL.md`.
 
 For broad diffs, refactors, PR review, or commit preparation, also read
-`common/change-size-policy.md`. When the worktree already contains changes or
-the task includes commit preparation, also read `common/worktree-hygiene.md`.
+`common/skills/change-size-policy/SKILL.md`. When the worktree already contains changes or
+the task includes commit preparation, also read `common/skills/worktree-hygiene/SKILL.md`.
+For branch creation, push, PR, tag, or release publication, discover repo-local
+policy first; shared guidance does not assume `main`, `master`, `develop`, or
+`trunk` semantics.
 When deciding file layout, package layout, module ownership, public contracts,
-or `api`/`impl` splits, also read `common/code-structure-ownership.md`.
+or `api`/`impl` splits, also read `common/skills/code-structure-ownership/SKILL.md`.
 Do not make `api`/`impl` modules by default. Choose that split only when a
 stable external contract, navigation/deep-link/registration boundary,
 implementation swap, dependency isolation, ownership split, or cycle/build
 coupling pressure exists.
 When code is extracted into shared modules, reused by multiple callers, or
-promoted into a package/API, also read `common/reusable-code-design.md`.
+promoted into a package/API, also read `common/skills/reusable-code-design/SKILL.md`.
 When designing reusable UI components, hooks, widgets, controls, or other
-caller-facing component APIs, also read `common/component-api-design.md`.
+caller-facing component APIs, also read `common/skills/component-api-design/SKILL.md`.
 For dependency, SDK, package, build plugin, or lockfile work, read
-`common/dependency-policy.md`. For codegen, generated clients, lockfiles,
+`common/skills/dependency-policy/SKILL.md`. For codegen, generated clients, lockfiles,
 snapshots, build artifacts, translations, or generated assets, read
-`common/generated-files-policy.md`.
+`common/skills/generated-files-policy/SKILL.md`.
 
 For API, DTO, route, event, webhook, shared fixture, or generated client
-changes, read `common/api-contract-compatibility.md`. For packaging,
+changes, read `common/skills/api-contract-compatibility/SKILL.md`. For packaging,
 deployment, publishing, signing, migration rollout, or rollback-sensitive work,
-read `common/release-deployment.md`. For release version, package version, app
+read `common/skills/release-deployment/SKILL.md`. For release version, package version, app
 version, build number, tag, artifact name, or deployment id changes, also read
-`common/release-versioning.md`. For user-facing text, forms, controls, dates,
+`common/skills/release-versioning/SKILL.md`. For user-facing text, forms, controls, dates,
 numbers, units, measurements, display values, media, or localization, read
-`common/accessibility-i18n.md`.
+`common/skills/accessibility-i18n/SKILL.md`.
 
 For prose, documentation tone, release notes, marketing copy, emails, or
-AI-writing signal cleanup, read `common/human-authored-writing.md`. For UI text,
+AI-writing signal cleanup, read `common/skills/human-authored-writing/SKILL.md`. For UI text,
 forms, localized copy, or accessibility-sensitive content, also read
-`common/accessibility-i18n.md`.
+`common/skills/accessibility-i18n/SKILL.md`.
 
 For uploads, downloads, generated files, media, attachments, signed or temporary
 URLs, public/private asset movement, asset cleanup, or asset references embedded
-in persisted content, read `common/asset-lifecycle.md`.
+in persisted content, read `common/skills/asset-lifecycle/SKILL.md`.
 
 For sitemap, robots, metadata, Open Graph previews, short links, public search,
 AI search visibility, AEO/GEO claims, canonical URLs, link previews, structured
-data, or public discovery feeds, read `common/public-discovery.md`.
+data, or public discovery feeds, read `common/skills/public-discovery/SKILL.md`.
 
 For code that consumes external, persisted, generated, cached, platform, or
-user-provided values, read `common/defensive-boundaries.md`.
+user-provided values, read `common/skills/defensive-boundaries/SKILL.md`.
 
 For UI, application, async, cache, reducer, store, ViewModel, hook, or state
-machine work, read `common/state-modeling.md`.
+machine work, read `common/skills/state-modeling/SKILL.md`.
 
 For error handling, typed failures, retries, and user-visible failure states,
-read `common/error-modeling.md`. Add `common/observability-error-handling.md`
+read `common/skills/error-modeling/SKILL.md`. Add `common/skills/observability-error-handling/SKILL.md`
 when logs, metrics, diagnostics, support traces, or audits are touched.
 
 For UI layout, visible state, interaction, text overflow, responsive behavior,
-or accessibility-visible changes, read `common/ui-visual-verification.md`.
+or accessibility-visible changes, read `common/skills/ui-visual-verification/SKILL.md`.
 
 For server-rendered data, API response caching, framework data cache,
 request-level memoization, edge/CDN cache, database query cache, materialized
-read models, or cache invalidation, read `common/server-side-caching.md`.
+read models, or cache invalidation, read `common/skills/server-side-caching/SKILL.md`.
 
 For Android work touching background execution, release builds, exported
 components, deep links, WebView, permissions, or secrets, load the Android
 background/security cards instead of relying only on the architecture card.
 
 For Android Compose screen or component work, load
-`platforms/android/android-compose-ui.md` before implementation. This includes
+`platforms/android/skills/android-compose-ui/SKILL.md` before implementation. This includes
 stateful/stateless boundaries, previews, component package structure, and
 design-system promotion decisions.
 
 For Android module, package, feature API, repository API, build-logic, or
 shared-core ownership work, load
-`platforms/android/android-module-structure.md` before implementation.
+`platforms/android/skills/android-module-structure/SKILL.md` before implementation.
 
 For Android ViewModel, `UiState`, Flow, repository, persistence, or one-off
-event work, load `platforms/android/android-viewmodel-state.md` before
+event work, load `platforms/android/skills/android-viewmodel-state/SKILL.md` before
 implementation.
 
 For KMP or Compose Multiplatform work, load
-`platforms/kmp/kmp-architecture.md`. For shared modules, source-set hierarchy,
+`platforms/kmp/skills/kmp-architecture/SKILL.md`. For shared modules, source-set hierarchy,
 umbrella frameworks, Gradle module splits, or KMP package ownership, also load
-`platforms/kmp/kmp-module-structure.md`; for shared Compose UI, also load
-`platforms/kmp/kmp-compose-ui.md`; for shared state, repositories, coroutines,
-persistence, or adapters, load `platforms/kmp/kmp-state-data.md`; for source
+`platforms/kmp/skills/kmp-module-structure/SKILL.md`; for shared Compose UI, also load
+`platforms/kmp/skills/kmp-compose-ui/SKILL.md`; for shared state, repositories, coroutines,
+persistence, or adapters, load `platforms/kmp/skills/kmp-state-data/SKILL.md`; for source
 sets, `expect`/`actual`, native interop, files, shell, clipboard, permissions,
 or target capabilities, load
-`platforms/kmp/kmp-platform-integration.md`.
+`platforms/kmp/skills/kmp-platform-integration/SKILL.md`.
 
-For Flutter work, load `platforms/flutter/flutter-architecture.md`. For
+For Flutter work, load `platforms/flutter/skills/flutter-architecture/SKILL.md`. For
 feature folders, local packages, package exports, plugin package shape, or
 federated plugin splits, also load
-`platforms/flutter/flutter-project-structure.md`; for widgets, forms, routes,
+`platforms/flutter/skills/flutter-project-structure/SKILL.md`; for widgets, forms, routes,
 design-system components, or golden/widget tests, also load
-`platforms/flutter/flutter-widget-ui.md`; for state owners, streams,
+`platforms/flutter/skills/flutter-widget-ui/SKILL.md`; for state owners, streams,
 repositories, storage, or async effects, load
-`platforms/flutter/flutter-state-data.md`; for MethodChannel, EventChannel,
+`platforms/flutter/skills/flutter-state-data/SKILL.md`; for MethodChannel, EventChannel,
 plugins, permissions, lifecycle, isolates, desktop, mobile, or web target
-behavior, load `platforms/flutter/flutter-platform-integration.md`.
+behavior, load `platforms/flutter/skills/flutter-platform-integration/SKILL.md`.
 
 For Swift or Apple-platform work, load
-`platforms/swift/swift-architecture.md`. For Swift Package Manager layout,
+`platforms/swift/skills/swift-architecture/SKILL.md`. For Swift Package Manager layout,
 Xcode targets, package products, public APIs, access control, target
 membership, resources, or file ownership, also load
-`platforms/swift/swift-code-structure.md`. For SwiftUI, UIKit, or AppKit
+`platforms/swift/skills/swift-code-structure/SKILL.md`. For SwiftUI, UIKit, or AppKit
 design-system tokens, styles, primitives, reusable controls, variants, previews,
-or visual QA, load `platforms/swift/swift-design-system.md`. For Swift review,
-load `platforms/swift/swift-review.md`.
+or visual QA, load `platforms/swift/skills/swift-design-system/SKILL.md`. For Swift review,
+load `platforms/swift/skills/swift-review/SKILL.md`.
 
 For iOS targets, local Swift packages, package exports, access control, feature
 contracts, or target membership work, load
-`platforms/ios/ios-module-structure.md` before implementation.
+`platforms/ios/skills/ios-module-structure/SKILL.md` before implementation.
 
 For iOS SwiftUI screen or component work, load
-`platforms/ios/ios-swiftui-ui.md` before implementation. This includes
+`platforms/ios/skills/ios-swiftui-ui/SKILL.md` before implementation. This includes
 route/screen/section boundaries, ViewModel contracts, explicit `UiState`,
 architecture tracks, previews, and design-system promotion decisions.
 
-For iOS UIKit screen or component work, load `platforms/ios/ios-uikit-ui.md`
+For iOS UIKit screen or component work, load `platforms/ios/skills/ios-uikit-ui/SKILL.md`
 before implementation. This includes coordinator/view-controller boundaries,
 typed UI state, lists, forms, navigation, and UI tests.
 
@@ -423,11 +434,11 @@ launch, load the application system/security cards.
 
 For desktop/application UI, commands, windows, panels, shortcuts, menu bar/tray,
 background tasks, or renderer bridges, load
-`platforms/application/application-command-ui.md`.
+`platforms/application/skills/application-command-ui/SKILL.md`.
 
 For React-based desktop app work, such as Tauri, Electron, WebView, or a native
 shell with an embedded React renderer, load
-`platforms/application/application-react-desktop.md` together with the matching
+`platforms/application/skills/application-react-desktop/SKILL.md` together with the matching
 application command/system/security cards and the relevant web React structure
 cards.
 
@@ -438,11 +449,11 @@ privileged APIs, packaging, signing, and updates.
 
 For server API, GraphQL, RPC, webhook, route handler, validation, use case,
 repository, response shape, or API error work, load
-`platforms/server/server-api-implementation.md`.
+`platforms/server/skills/server-api-implementation/SKILL.md`.
 
 When the task touches keys, auth, permissions, user data, logs, analytics,
 external integrations, local config, release config, or a public/open-source
-repo, read `common/secure-development-baseline.md` before implementation.
+repo, read `common/skills/secure-development-baseline/SKILL.md` before implementation.
 
 For React/web feature work, usually read:
 
@@ -456,8 +467,8 @@ platforms/web/web-accessibility-i18n.md when UI text, forms, menus, dialogs,
 or localization are touched
 ```
 
-For review, read `common/code-review.md` first. Then read the matching platform
-review card. Add `common/security-privacy-review.md` and product-pattern cards
+For review, read `common/skills/code-review/SKILL.md` first. Then read the matching platform
+review card. Add `common/skills/security-privacy-review/SKILL.md` and product-pattern cards
 only for affected auth, invite, billing, tenancy, or security concerns.
 
 Stop reading when you can answer:

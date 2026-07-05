@@ -82,7 +82,7 @@ A workflow is complete only when:
 - the final diff or artifact was inspected against the request
 - the smallest reliable verification ran, or the skip reason and residual risk
   are explicit
-- `common/definition-of-done.md` is satisfied before handoff, commit, release,
+- `common/skills/definition-of-done/SKILL.md` is satisfied before handoff, commit, release,
   PR, or final report
 - handoff reports changed files, commands, results, blockers, and remaining risk
 
@@ -107,7 +107,7 @@ Failure handling is also binary:
 
 - first `FAIL`: request exactly one retry for the same hook and failed scope
 - second `FAIL` for that hook/scope: stop and run
-  `workflows/retrospective-learning.md`
+  `workflows/skills/retrospective-learning/SKILL.md`
 
 Use the same public states for route gate signals and hook status:
 `🐱🟢 SUCCESS` and `🐱🔴 FAIL`. Do not report any third state.

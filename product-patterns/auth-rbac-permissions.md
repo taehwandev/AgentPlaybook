@@ -1,55 +1,19 @@
 ---
-keyflow_id: sys_8a635e708aeb
+keyflow_id: sys_product_patterns_auth_rbac_permissions_md_compat
 status: review
-type: ai-generated
+type: compatibility-entrypoint
+agentplaybook_skill_bundle_stub: true
 ---
 
 # Auth, RBAC, Permissions
 
-Use for login, membership, role, permission, entitlement, and tenant-boundary work.
+This compatibility path has moved to the AgentPlaybook skill-bundle layout.
 
-For concrete identity/session/membership/role/permission/entitlement modeling,
-server enforcement, cache invalidation, and tests, also use
-`auth-rbac-implementation.md`.
+## Read
 
-## Separate
+- `skills/auth-rbac-permissions/SKILL.md` for the canonical lightweight entrypoint.
+- `skills/auth-rbac-permissions/references/current-guidance.md` for the full detailed guidance that previously lived here.
 
-- Auth: who the user is.
-- Authorization: what action is allowed.
-- Role: product-facing permission bundle.
-- Permission: action-level allow/deny.
-- Entitlement: plan or feature access.
+## Verification
 
-## Rules
-
-- Server is the final authority.
-- Client checks are for UX and request prevention.
-- Distinguish unauthenticated, unauthorized, plan-limited, not-a-member.
-- Prefer action permissions over role-name checks.
-- Recheck permissions after role change, org switch, invite accept, logout.
-
-## Do Not
-
-- Do not treat hidden UI controls as authorization.
-- Do not trust role, tenant, owner, entitlement, or permission values supplied by
-  client-controlled storage, request bodies, local cache, or browser state.
-- Do not scatter raw role-name checks through UI or services when action
-  permissions would describe the protected command.
-- Do not cache permissions across logout, tenant switch, membership revoke,
-  role change, invite accept, plan change, or session refresh without
-  invalidation.
-- Do not leak whether private users, tenants, resources, invites, or billing
-  objects exist unless product policy explicitly allows it.
-
-## Check
-
-- Is this enforced on server and represented in UI?
-- Does cache update after permission changes?
-- Does the error avoid leaking sensitive data?
-
-## Tests
-
-Cover unauthenticated, unauthorized, wrong-tenant, stale session, revoked role,
-membership change, entitlement mismatch, and client-cache refresh paths when
-applicable. Verify protected actions fail at the trusted boundary, not only
-because UI controls are hidden.
+Routes should load `product-patterns/skills/auth-rbac-permissions/SKILL.md` instead of this compatibility stub.

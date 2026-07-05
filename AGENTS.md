@@ -99,7 +99,7 @@ it out before or after the work.
 For implementation, review, refactoring, debugging, documentation, or planning tasks, first consult:
 
 ```text
-<AGENTPLAYBOOK_ROOT>/common/agent-operating-skill.md
+<AGENTPLAYBOOK_ROOT>/common/skills/agent-operating-skill/SKILL.md
 ```
 
 Then load only the supporting documents relevant to the task.
@@ -110,7 +110,7 @@ VibeGuard is mandatory for AgentPlaybook maintenance and for repos that apply
 AgentPlaybook. Before documentation, code, configuration, dependency, data,
 deployment, or credential changes, run the VibeGuard audit for the target repo.
 When applying AgentPlaybook to another repo, do not run VibeGuard `setup` or
-`update` blindly; use the application drill in `docs/agent-bootstrap.md` when
+`update` blindly; use the application drill in `docs/skills/agent-bootstrap/SKILL.md` when
 the target already has agent instructions or guardrails. Use `update` only when
 the user explicitly chooses to refresh an existing managed VibeGuard block;
 otherwise run audit with the current guardrails.
@@ -202,8 +202,8 @@ gate to be `🐱🟢 SUCCESS`. If a
 required gate fails or lacks evidence, report `🐱🔴 FAIL`, follow missed-gate
 recovery, and do not finalize. On the first `FAIL`, request exactly one retry
 for the same hook or gate scope. On the second `FAIL` for that scope, stop and
-run `workflows/retrospective-learning.md` before handoff, commit, release, or a
-completion report. See `workflows/scripted-agent-workflow.md` for the full
+run `workflows/skills/retrospective-learning/SKILL.md` before handoff, commit, release, or a
+completion report. See `workflows/skills/scripted-agent-workflow/SKILL.md` for the full
 consumption rules.
 
 ## Required Executable Evidence Gate
@@ -330,33 +330,33 @@ of being listed as baseline direct routes here.
 
 ```text
 <AGENTPLAYBOOK_ROOT>/index.md
-<AGENTPLAYBOOK_ROOT>/common/stack-discovery.md
-<AGENTPLAYBOOK_ROOT>/common/llm-coding-discipline.md
-<AGENTPLAYBOOK_ROOT>/common/code-conventions.md
-<AGENTPLAYBOOK_ROOT>/common/tool-failure-recovery.md
-<AGENTPLAYBOOK_ROOT>/common/agent-interaction.md
-<AGENTPLAYBOOK_ROOT>/common/agent-editing-safety.md
+<AGENTPLAYBOOK_ROOT>/common/skills/stack-discovery/SKILL.md
+<AGENTPLAYBOOK_ROOT>/common/skills/llm-coding-discipline/SKILL.md
+<AGENTPLAYBOOK_ROOT>/common/skills/code-conventions/SKILL.md
+<AGENTPLAYBOOK_ROOT>/common/skills/tool-failure-recovery/SKILL.md
+<AGENTPLAYBOOK_ROOT>/common/skills/agent-interaction/SKILL.md
+<AGENTPLAYBOOK_ROOT>/common/skills/agent-editing-safety/SKILL.md
 ```
 
 ## Workflow Documents
 
 ```text
-<AGENTPLAYBOOK_ROOT>/workflows/agent-task-lifecycle.md
-<AGENTPLAYBOOK_ROOT>/workflows/agent-handoff-continuation.md
-<AGENTPLAYBOOK_ROOT>/workflows/scripted-agent-workflow.md
-<AGENTPLAYBOOK_ROOT>/workflows/ambiguity-gate.md
-<AGENTPLAYBOOK_ROOT>/workflows/product-architecture-delivery.md
-<AGENTPLAYBOOK_ROOT>/workflows/development-cycle.md
-<AGENTPLAYBOOK_ROOT>/workflows/multi-agent-collaboration.md
-<AGENTPLAYBOOK_ROOT>/workflows/multi-perspective-review.md
-<AGENTPLAYBOOK_ROOT>/workflows/retrospective-learning.md
-<AGENTPLAYBOOK_ROOT>/workflows/planning-research.md
-<AGENTPLAYBOOK_ROOT>/workflows/documentation-update.md
-<AGENTPLAYBOOK_ROOT>/workflows/feature-implementation.md
-<AGENTPLAYBOOK_ROOT>/workflows/bugfix-debugging.md
-<AGENTPLAYBOOK_ROOT>/workflows/refactor-cleanup.md
-<AGENTPLAYBOOK_ROOT>/workflows/release-readiness.md
-<AGENTPLAYBOOK_ROOT>/workflows/review-and-commit.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/agent-task-lifecycle/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/agent-handoff-continuation/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/scripted-agent-workflow/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/ambiguity-gate/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/product-architecture-delivery/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/development-cycle/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/multi-agent-collaboration/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/multi-perspective-review/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/retrospective-learning/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/planning-research/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/documentation-update/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/feature-implementation/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/bugfix-debugging/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/refactor-cleanup/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/release-readiness/SKILL.md
+<AGENTPLAYBOOK_ROOT>/workflows/skills/review-and-commit/SKILL.md
 ```
 
 ## Operating Rule
