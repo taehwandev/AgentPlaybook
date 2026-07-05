@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,11 +11,59 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_review_structure import check_file_size
+from agent_review_structure import changed_source_paths, check_file_size
 from agent_structure_rules import structure_rule_review
 
 
 class AgentReviewStructureTests(unittest.TestCase):
+    def test_changed_source_paths_can_be_limited_to_review_pathspec(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            (project / "src").mkdir()
+            (project / "src" / "a.py").write_text("value = 1\n", encoding="utf-8")
+            (project / "src" / "b.py").write_text("value = 1\n", encoding="utf-8")
+            subprocess.run(["git", "init"], cwd=project, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(["git", "add", "."], cwd=project, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(
+                [
+                    "git",
+                    "-c",
+                    "user.name=AgentPlaybook Tests",
+                    "-c",
+                    "user.email=agentplaybook@example.invalid",
+                    "commit",
+                    "-m",
+                    "initial",
+                ],
+                cwd=project,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            (project / "src" / "a.py").write_text("value = 2\n", encoding="utf-8")
+            (project / "src" / "b.py").write_text("value = 2\n", encoding="utf-8")
+
+            def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+                result = subprocess.run(
+                    command,
+                    cwd=cwd,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": result.returncode,
+                    "stdout": result.stdout,
+                    "stderr": result.stderr,
+                }
+
+            _discovery, paths = changed_source_paths(project, run_command, ["src/a.py"])
+
+        self.assertEqual([Path("src/a.py")], paths)
+
     def test_existing_oversized_file_growth_requires_evidence_without_hard_failure(self) -> None:
         result = {"failures": [], "warnings": []}
 
@@ -28,6 +77,20 @@ class AgentReviewStructureTests(unittest.TestCase):
 
         self.assertEqual([], result["failures"])
         self.assertTrue(any("already over 500 lines" in warning for warning in result["warnings"]))
+
+    def test_changed_file_over_review_pressure_limit_requires_evidence(self) -> None:
+        result = {"failures": [], "warnings": []}
+
+        check_file_size(
+            Path("src/workflow.ts"),
+            ["export const value = 1;"] * 301,
+            500,
+            {"status": "M", "additions": 4},
+            result,
+        )
+
+        self.assertEqual([], result["failures"])
+        self.assertTrue(any("review-pressure limit is 300" in warning for warning in result["warnings"]))
 
     def test_new_oversized_file_still_fails(self) -> None:
         result = {"failures": [], "warnings": []}

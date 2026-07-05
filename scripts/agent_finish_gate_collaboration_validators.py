@@ -1,0 +1,196 @@
+"""Collaboration and workspace finish gate validators."""
+
+from __future__ import annotations
+
+
+def validate_multi_agent(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    serial = any(
+        phrase in text
+        for phrase in (
+            "serial",
+            "single-agent",
+            "single agent",
+            "not applicable",
+            "no subagent",
+            "no sub-agent",
+            "no parallel",
+        )
+    )
+    parallel = any(
+        phrase in text
+        for phrase in (
+            "multi-agent",
+            "subagent",
+            "sub-agent",
+            "parallel",
+            "split",
+            "worker",
+        )
+    )
+    has_serial_reason = any(
+        phrase in text
+        for phrase in (
+            "small",
+            "single-file",
+            "same file",
+            "contract",
+            "unstable",
+            "overlap",
+            "dirty worktree",
+            "migration",
+            "dependency",
+            "release",
+            "not applicable",
+            "not safe",
+        )
+    )
+    if serial and has_serial_reason:
+        return []
+    has_owned = "owned" in text or "owner" in text or "scope" in text
+    has_forbidden = "forbidden" in text or "do not touch" in text or "excluded" in text
+    has_contract = "contract" in text or "brief" in text or "input" in text or "output" in text
+    has_verification = any(
+        phrase in text
+        for phrase in (
+            "verification",
+            "verify",
+            "test",
+            "check",
+            "manual",
+            "smoke",
+        )
+    )
+    if parallel and has_owned and has_forbidden and has_contract and has_verification:
+        return []
+    return [
+        "multi-agent split decision evidence must state either serial/single-agent with a concrete "
+        "reason, or parallel/subagent work with owned scope, forbidden scope, contract/brief, and "
+        "verification"
+    ]
+
+
+def validate_multi_agent_roles(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_lead = "lead" in text or "owner" in text
+    has_worker_or_verifier = any(phrase in text for phrase in ("worker", "builder", "verifier", "reviewer"))
+    if has_lead and has_worker_or_verifier:
+        return []
+    return ["roles evidence must name the lead/owner role and worker/builder/verifier roles"]
+
+
+def validate_multi_agent_write_scopes(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_owned = any(phrase in text for phrase in ("owned", "owner", "write scope", "writes:", "scope:"))
+    has_forbidden = any(
+        phrase in text for phrase in ("forbidden", "do not touch", "excluded", "read-only", "readonly")
+    )
+    if has_owned and has_forbidden:
+        return []
+    return ["write scopes evidence must name owned write scope and forbidden/read-only scope"]
+
+
+def validate_multi_agent_briefs(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    checks = {
+        "worker": any(phrase in text for phrase in ("worker", "agent", "task id")),
+        "role": "role" in text,
+        "owned": any(phrase in text for phrase in ("owned", "scope")),
+        "forbidden": any(phrase in text for phrase in ("forbidden", "do not touch", "excluded")),
+        "contract": any(phrase in text for phrase in ("contract", "input", "expected output", "output")),
+        "acceptance": "acceptance" in text,
+        "verification": any(phrase in text for phrase in ("verification", "verify", "test", "check", "smoke")),
+    }
+    if all(checks.values()):
+        return []
+    missing = ", ".join(name for name, present in checks.items() if not present)
+    return [
+        "agent briefs evidence must include worker id, role, owned scope, forbidden scope, "
+        f"contract/output, acceptance checks, and verification; missing: {missing}"
+    ]
+
+
+def validate_multi_agent_integration_review(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_integration = any(phrase in text for phrase in ("integration", "merged", "merge", "combined"))
+    has_contract = any(phrase in text for phrase in ("contract", "drift", "schema", "route", "state model", "config"))
+    has_final_check = any(
+        phrase in text for phrase in ("verification", "verify", "test", "check", "smoke", "final")
+    )
+    if has_integration and has_contract and has_final_check:
+        return []
+    return ["integration review evidence must name integration/merge review, contract-drift check, and final verification"]
+
+
+def validate_workspace_scope_checkpoint(evidence: str) -> list[str]:
+    text = evidence.lower()
+    if not text:
+        return []
+    has_primary = any(
+        phrase in text
+        for phrase in (
+            "starting primary",
+            "primary repo",
+            "primary:",
+            "primary=",
+            "시작 primary",
+            "기준 repo",
+        )
+    )
+    has_secondary = any(
+        phrase in text
+        for phrase in (
+            "secondary repo",
+            "secondary:",
+            "secondary=",
+            "source of truth",
+            "new source",
+            "추가 repo",
+            "소스 오브 트루스",
+        )
+    )
+    has_mode = any(
+        phrase in text
+        for phrase in (
+            "single-repo",
+            "single_repo",
+            "primary-led",
+            "primary_led",
+            "secondary read",
+            "secondary write",
+            "multi-session",
+            "multi_session",
+            "mode:",
+            "mode=",
+            "모드",
+        )
+    )
+    has_verification = any(
+        phrase in text
+        for phrase in (
+            "verification",
+            "verify",
+            "test",
+            "smoke",
+            "check",
+            "검증",
+            "테스트",
+        )
+    )
+    if has_primary and has_secondary and has_mode and has_verification:
+        return []
+    return [
+        "workspace scope checkpoint evidence must state the starting primary repo, "
+        "secondary/source-of-truth repo, chosen mode, and cross-repo verification before "
+        "writing to a secondary repo"
+    ]

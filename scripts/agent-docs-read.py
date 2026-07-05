@@ -9,7 +9,7 @@ from pathlib import Path
 
 from agent_finish_check_steps import read_preflight, resolve_paths
 from agent_finish_common import write_json
-from agent_route_docs import build_route_doc_receipt, receipt_path_for_evidence
+from agent_route_docs import build_route_doc_receipt, receipt_path_for_evidence, route_docs_to_read
 
 
 def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
@@ -37,13 +37,13 @@ def main() -> int:
     failures: list[str] = []
     preflight = read_preflight(evidence_path, failures)
     route = preflight.get("route") or {}
-    docs = route.get("docs") or []
+    docs = route_docs_to_read(route)
     if failures:
         for failure in failures:
             print(f"FAIL: {failure}", file=sys.stderr)
         return 1
     if not docs:
-        print("FAIL: preflight route has no docs to read", file=sys.stderr)
+        print("FAIL: preflight route has no required docs to read", file=sys.stderr)
         return 1
 
     output_arg = args.receipt_output or args.output
@@ -56,13 +56,15 @@ def main() -> int:
             route=route,
         )
     except OSError as error:
-        print(f"FAIL: unable to read routed docs: {error}", file=sys.stderr)
+        print(f"FAIL: unable to read required docs: {error}", file=sys.stderr)
         return 1
 
     write_json(output_path, receipt)
     print(f"SUCCESS docs-read")
     print(f"- receipt: {output_path}")
-    print(f"- routed docs read: {receipt['doc_count']}")
+    print(f"- required docs read: {receipt['doc_count']}")
+    print(f"- routed doc candidates: {receipt['routed_doc_count']}")
+    print(f"- on-demand reference docs: {receipt['reference_doc_count']}")
     print(f"- route fingerprint: {receipt['route_fingerprint']}")
     for doc in receipt["docs"][:8]:
         print(f"- {doc['path']} ({doc['size_bytes']} bytes)")

@@ -20,7 +20,17 @@ from agent_preflight_runtime import (
     check_agent_hooks,
 )
 from agent_preflight_spill import write_spill_label
+from agent_vibeguard_cache import cached_vibeguard
 from agent_workspace_policy import is_git_status_review_only, non_git_writing_workspace_note
+from workflow_catalog import COMMANDS, CONCERNS, PLATFORM_CONCERNS, PLATFORMS
+from workflow_common import unique
+from workflow_request import (
+    classified_route_block_reason,
+    classify_request,
+    infer_concerns_from_request,
+    route_block_reason,
+)
+from workflow_route import resolve_docs
 
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
@@ -83,7 +93,7 @@ def parse_overall(output: str) -> dict[str, str]:
 
 def route_command(args: argparse.Namespace, playbook_root: Path) -> list[str]:
     command = [
-        sys.executable,
+        "python3",
         str(playbook_root / "scripts" / "workflow.py"),
         "route",
         args.command,
@@ -101,6 +111,78 @@ def route_command(args: argparse.Namespace, playbook_root: Path) -> list[str]:
     return command
 
 
+def route_result(args: argparse.Namespace, playbook_root: Path, project: Path) -> dict[str, Any]:
+    command = route_command(args, playbook_root)
+    try:
+        route, error, returncode = route_payload(args)
+    except Exception as error:
+        return {
+            "command": command,
+            "cwd": str(project),
+            "returncode": 1,
+            "stdout": "",
+            "stderr": f"{error.__class__.__name__}: {error}",
+            "in_process": True,
+        }
+    return {
+        "command": command,
+        "cwd": str(project),
+        "returncode": returncode,
+        "stdout": json.dumps(route, indent=2, sort_keys=True) if route else "",
+        "stderr": error,
+        "in_process": True,
+    }
+
+
+def route_payload(args: argparse.Namespace) -> tuple[dict[str, Any] | None, str, int]:
+    if args.request_classified and not args.classification_evidence:
+        return (
+            None,
+            "Route --request-classified requires --classification-evidence so request intake cannot be skipped silently.",
+            2,
+        )
+    request_classification = classify_request(args.request) if args.request else None
+    if not request_classification and not args.request_classified:
+        return (
+            None,
+            "Route requires request intake evidence. Pass --request \"<USER_REQUEST>\" "
+            "or --request-classified after answering/classifying the current request.",
+            2,
+        )
+    block_reason = route_block_reason(args.command, request_classification)
+    if not block_reason and args.request_classified:
+        block_reason = classified_route_block_reason(args.command, args.classification_evidence or "")
+    if block_reason:
+        stderr = block_reason
+        if request_classification:
+            stderr += (
+                "\nClassification: "
+                f"{request_classification['clarity']} / "
+                f"response_mode: {request_classification['response_mode']} / "
+                f"grill_me: {str(request_classification['grill_me']).lower()}"
+            )
+        return None, stderr, 2
+
+    inferred_concerns = infer_concerns_from_request(args.request or "")
+    concerns = unique([*args.concern, *inferred_concerns])
+    newly_inferred = [concern for concern in inferred_concerns if concern not in args.concern]
+    route = resolve_docs(
+        args.command,
+        args.platform[-1] if args.platform else None,
+        concerns,
+        request_classification=request_classification,
+        request_classified=args.request_classified,
+        classification_evidence=args.classification_evidence or "",
+    )
+    if newly_inferred:
+        route["inferred_concerns"] = newly_inferred
+        notes = route.get("notes")
+        if isinstance(notes, list):
+            joined = ", ".join(f"`{concern}`" for concern in newly_inferred)
+            notes.append(f"Inferred concern(s) from request keywords: {joined}.")
+    return route, "", 1 if route["missing"] else 0
+
+
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -110,7 +192,7 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run route, git status, and VibeGuard before agent work."
     )
-    parser.add_argument("--command", required=True, help="workflow.py route command")
+    parser.add_argument("--command", required=True, choices=sorted(COMMANDS), help="workflow.py route command")
     request_group = parser.add_mutually_exclusive_group(required=True)
     request_group.add_argument("--request", help="current user request")
     request_group.add_argument(
@@ -125,8 +207,13 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
             "classification or answer-first handling"
         ),
     )
-    parser.add_argument("--platform", action="append", default=[])
-    parser.add_argument("--concern", action="append", default=[])
+    parser.add_argument("--platform", action="append", choices=sorted(PLATFORMS), default=[])
+    parser.add_argument(
+        "--concern",
+        action="append",
+        choices=sorted(set(CONCERNS) | {key[1] for key in PLATFORM_CONCERNS}),
+        default=[],
+    )
     parser.add_argument("--project", type=Path, default=Path.cwd())
     parser.add_argument("--rules", type=Path, default=playbook_root)
     parser.add_argument("--evidence", type=Path)
@@ -221,14 +308,20 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
             early_bridge_failure,
         )
 
-    route_result = run_command(route_command(args, playbook_root), project)
-    route_payload, route_parse_error = parse_route_payload(route_result)
+    route_result_payload = route_result(args, playbook_root, project)
+    route_payload, route_parse_error = parse_route_payload(route_result_payload)
     git_status = run_command(["git", "status", "--short", "--untracked-files=all"], project)
     if is_git_status_review_only(project, git_status):
         git_status["review_only"] = True
         git_status["review_note"] = non_git_writing_workspace_note(project)
-    vibeguard = run_command(vibeguard_command(project, rules), project)
-    vibeguard["overall"] = parse_overall(vibeguard["stdout"] + "\n" + vibeguard["stderr"])
+    vibeguard = cached_vibeguard(
+        project=project,
+        rules=rules,
+        run_command=run_command,
+        vibeguard_command=vibeguard_command,
+        parse_overall=parse_overall,
+        git_status_result=git_status,
+    )
     global_lessons = lesson_summary()
 
     write_json(evidence_path, {
@@ -239,7 +332,7 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
         "request_intake": request_intake(args),
         "route": route_payload,
         "route_parse_error": route_parse_error,
-        "route_command": route_result,
+        "route_command": route_result_payload,
         "git_status": git_status,
         "vibeguard": vibeguard,
         "global_lessons": global_lessons,
@@ -247,7 +340,7 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
 
     hook_warnings, hook_failures = check_agent_hooks(playbook_root)
     failures = collect_failures(
-        route_result,
+        route_result_payload,
         route_payload,
         route_parse_error,
         git_status,

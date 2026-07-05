@@ -9,105 +9,41 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
-import shutil
-import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_hook_gate_records import (
+    gate_batch_hook,
+    gate_hook,
+    preflight_evidence_path,
+    record_hook_gate,
+    reset_and_record_start_gate,
+)
+from agent_hook_runtime import (
+    REVIEW_CHANGED_PATH_LIMIT,
+    existing_path,
+    finish_with_result,
+    git_status,
+    non_negative_int,
+    parse_overall,
+    retry_attempt,
+    run_command,
+    vibeguard_command,
+)
+from agent_inprocess import run_script_main
 from agent_review_hook import review_hook
 from agent_review_structure import (
     REVIEW_FUNCTION_LINE_LIMIT,
     REVIEW_SOURCE_FILE_LINE_LIMIT,
 )
-from agent_gate_evidence import (
-    parse_field,
-    record_gate_evidence,
-    reset_gate_evidence_ledger,
-)
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
-HOOK_RETRY_LIMIT = 1
-REVIEW_CHANGED_PATH_LIMIT = 25
-
-
-def clean_output(text: str) -> str:
-    return ANSI_RE.sub("", text)
-
-
-def run_command(command: list[str], cwd: Path) -> dict[str, Any]:
-    result = subprocess.run(
-        command,
-        cwd=str(cwd),
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    return {
-        "command": command,
-        "cwd": str(cwd),
-        "returncode": result.returncode,
-        "stdout": clean_output(result.stdout),
-        "stderr": clean_output(result.stderr),
-    }
-
-
-def vibeguard_command(project: Path, rules: Path) -> list[str]:
-    binary = shutil.which("vibeguard")
-    if binary:
-        return [binary, "audit", str(project), "--rules", str(rules)]
-    return [
-        "npx",
-        "--yes",
-        "@taehwandev/vibeguard",
-        "audit",
-        str(project),
-        "--rules",
-        str(rules),
-    ]
-
-
-def parse_overall(output: str) -> str:
-    for raw_line in clean_output(output).splitlines():
-        line = raw_line.strip()
-        if line.startswith("Overall:"):
-            value = line.split("Overall:", 1)[1].strip()
-            if "Ready" in value:
-                return "Ready"
-            if "Needs review" in value:
-                return "Needs review"
-            if "Blocked" in value:
-                return "Blocked"
-            return value or "unknown"
-    return "unknown"
-
-
-def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-
-def print_status(name: str, success: bool, details: list[str]) -> None:
-    print(f"{'SUCCESS' if success else 'FAIL'} {name}")
-    for detail in details:
-        print(f"- {detail}")
-
-
-def git_status(project: Path) -> tuple[dict[str, Any], list[str]]:
-    result = run_command(["git", "status", "--short", "--untracked-files=all"], project)
-    lines = [line for line in result["stdout"].splitlines() if line.strip()]
-    return result, lines
 
 
 def start_hook(args: argparse.Namespace) -> int:
     command = [
-        sys.executable,
-        str(ROOT / "scripts" / "agent-preflight.py"),
         "--project",
         str(args.project),
         "--rules",
@@ -127,13 +63,13 @@ def start_hook(args: argparse.Namespace) -> int:
     if args.evidence:
         command.extend(["--evidence", str(args.evidence)])
 
-    result = run_command(command, args.project)
+    result = run_script_main(ROOT / "scripts" / "agent-preflight.py", command, args.project)
     success = result["returncode"] == 0
     details = ["preflight completed" if success else "preflight failed"]
     details.extend(_summary_lines(result))
     if success:
-        details.extend(_hook_summary_from_preflight(_preflight_evidence_path(args)))
-        _reset_and_record_start_gate(args)
+        details.extend(_hook_summary_from_preflight(preflight_evidence_path(args)))
+        reset_and_record_start_gate(args)
     return finish_with_result(
         "start",
         success,
@@ -142,10 +78,6 @@ def start_hook(args: argparse.Namespace) -> int:
         {"preflight": result},
         args.retry_attempt,
     )
-
-
-def _preflight_evidence_path(args: argparse.Namespace) -> Path:
-    return args.evidence if args.evidence else args.project / ".agentplaybook" / "preflight.json"
 
 
 def _hook_summary_from_preflight(path: Path) -> list[str]:
@@ -166,8 +98,6 @@ def _hook_summary_from_preflight(path: Path) -> list[str]:
 
 def finish_hook(args: argparse.Namespace) -> int:
     command = [
-        sys.executable,
-        str(ROOT / "scripts" / "agent-finish-check.py"),
         "--project",
         str(args.project),
         "--rules",
@@ -180,7 +110,7 @@ def finish_hook(args: argparse.Namespace) -> int:
     if args.allow_vibeguard_review:
         command.extend(["--allow-vibeguard-review", args.allow_vibeguard_review])
 
-    result = run_command(command, args.project)
+    result = run_script_main(ROOT / "scripts" / "agent-finish-check.py", command, args.project)
     success = result["returncode"] == 0
     details = ["finish check completed" if success else "finish check failed"]
     details.extend(_summary_lines(result))
@@ -196,8 +126,6 @@ def finish_hook(args: argparse.Namespace) -> int:
 
 def docs_read_hook(args: argparse.Namespace) -> int:
     command = [
-        sys.executable,
-        str(ROOT / "scripts" / "agent-docs-read.py"),
         "--project",
         str(args.project),
         "--rules",
@@ -209,12 +137,12 @@ def docs_read_hook(args: argparse.Namespace) -> int:
     if receipt_output:
         command.extend(["--receipt-output", str(receipt_output)])
 
-    result = run_command(command, args.project)
+    result = run_script_main(ROOT / "scripts" / "agent-docs-read.py", command, args.project)
     success = result["returncode"] == 0
     details = ["route docs read receipt completed" if success else "route docs read receipt failed"]
     details.extend(_summary_lines(result))
     if success:
-        _record_hook_gate(
+        record_hook_gate(
             args,
             "route docs read",
             "docs-read receipt completed",
@@ -228,80 +156,6 @@ def docs_read_hook(args: argparse.Namespace) -> int:
         None,
         {"docs_read": result},
         args.retry_attempt,
-    )
-
-
-def gate_hook(args: argparse.Namespace) -> int:
-    fields: dict[str, str] = {}
-    for raw_field in args.field:
-        try:
-            key, value = parse_field(raw_field)
-        except ValueError as error:
-            print_status("gate", False, [str(error)])
-            return 1
-        fields[key] = value
-    try:
-        entry = _record_hook_gate(
-            args,
-            args.gate_name,
-            args.gate_evidence or "",
-            fields,
-            args.source,
-            args.status,
-        )
-    except (OSError, json.JSONDecodeError) as error:
-        print_status("gate", False, [f"gate evidence ledger update failed: {error}"])
-        return 1
-    return finish_with_result(
-        "gate",
-        True,
-        [f"gate evidence recorded: {entry['gate']}"],
-        args.output,
-        {"gate_evidence": entry},
-        args.retry_attempt,
-    )
-
-
-def _record_hook_gate(
-    args: argparse.Namespace,
-    gate: str,
-    evidence: str,
-    fields: dict[str, str],
-    source: str,
-    status: str = "SUCCESS",
-) -> dict[str, Any]:
-    evidence_path = _preflight_evidence_path(args)
-    preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
-    return record_gate_evidence(
-        evidence_path=evidence_path,
-        preflight=preflight,
-        gate=gate,
-        evidence=evidence,
-        fields=fields,
-        status=status,
-        source=source,
-    )
-
-
-def _reset_and_record_start_gate(args: argparse.Namespace) -> None:
-    evidence_path = _preflight_evidence_path(args)
-    try:
-        preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return
-    reset_gate_evidence_ledger(evidence_path, preflight)
-    classification_evidence = (
-        (preflight.get("request_intake") or {}).get("classification_evidence")
-        or "request provided to preflight"
-    )
-    record_gate_evidence(
-        evidence_path=evidence_path,
-        preflight=preflight,
-        gate="request intake",
-        evidence=f"preflight request intake completed: {classification_evidence}",
-        fields={"classification_evidence": str(classification_evidence)},
-        status="SUCCESS",
-        source="start",
     )
 
 
@@ -322,82 +176,17 @@ def _summary_lines(result: dict[str, Any]) -> list[str]:
                 "Global lessons:",
                 "SUCCESS docs-read",
                 "- receipt:",
-                "- routed docs read:",
+                "- required docs read:",
+                "- routed doc candidates:",
+                "- on-demand reference docs:",
             )):
                 lines.append(stripped)
     return lines[:8]
 
 
-def finish_with_result(
-    name: str,
-    success: bool,
-    details: list[str],
-    output: Path | None,
-    payload: dict[str, Any],
-    retry_attempt: int,
-) -> int:
-    policy, policy_details = hook_failure_policy(success, retry_attempt)
-    details = [*details, *policy_details]
-    evidence = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "hook": name,
-        "status": "SUCCESS" if success else "FAIL",
-        "policy": policy,
-        "details": details,
-        **payload,
-    }
-    if output:
-        write_json(output, evidence)
-    print_status(name, success, details)
-    return 0 if success else 1
-
-
-def hook_failure_policy(success: bool, retry_attempt: int) -> tuple[dict[str, Any], list[str]]:
-    if success:
-        return {
-            "retry_attempt": retry_attempt,
-            "retry_limit": HOOK_RETRY_LIMIT,
-            "next_action": "continue",
-        }, []
-    if retry_attempt < HOOK_RETRY_LIMIT:
-        return {
-            "retry_attempt": retry_attempt,
-            "retry_limit": HOOK_RETRY_LIMIT,
-            "next_action": "retry_once",
-        }, [
-            "retry request: diagnose every failure, fix scoped and safe issues outside the hook, "
-            "then rerun this hook once with --retry-attempt 1",
-        ]
-    return {
-        "retry_attempt": retry_attempt,
-        "retry_limit": HOOK_RETRY_LIMIT,
-        "next_action": "retrospective_required",
-    }, [
-        "retrospective required: retry limit reached; run workflows/skills/retrospective-learning/SKILL.md before handoff",
-    ]
-
-
-def existing_path(value: str) -> Path:
-    return Path(value).resolve()
-
-
-def retry_attempt(value: str) -> int:
-    attempt = int(value)
-    if attempt < 0 or attempt > HOOK_RETRY_LIMIT:
-        raise argparse.ArgumentTypeError(f"retry attempt must be 0 or {HOOK_RETRY_LIMIT}")
-    return attempt
-
-
-def non_negative_int(value: str) -> int:
-    parsed = int(value)
-    if parsed < 0:
-        raise argparse.ArgumentTypeError("value must be non-negative")
-    return parsed
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run essential AgentPlaybook hooks.")
-    parser.add_argument("hook", choices=("start", "docs-read", "gate", "review", "finish"))
+    parser.add_argument("hook", choices=("start", "docs-read", "gate", "gate-batch", "review", "finish"))
     parser.add_argument("--project", type=existing_path, default=Path.cwd())
     parser.add_argument("--rules", type=existing_path, default=ROOT)
     parser.add_argument(
@@ -460,6 +249,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="short evidence that the final diff and side-effect surfaces were checked",
     )
     review.add_argument(
+        "--review-scope",
+        choices=("working-tree", "pathspec"),
+        default="working-tree",
+        help="declare whether review covers the whole working tree or explicit --review-path pathspecs",
+    )
+    review.add_argument(
+        "--review-path",
+        action="append",
+        default=[],
+        help="limit review hook changed-path, diff, and structure checks to this pathspec; repeat as needed",
+    )
+    review.add_argument(
         "--max-changed-paths",
         type=non_negative_int,
         default=REVIEW_CHANGED_PATH_LIMIT,
@@ -488,6 +289,17 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument("--source", default="manual")
     gate.add_argument("--gate-evidence", default="")
     gate.add_argument("--field", action="append", default=[], help="structured evidence field as key=value")
+    gate.add_argument(
+        "--gate-record",
+        action="append",
+        default=[],
+        help="JSON object or array of objects with gate, evidence, fields, source, and status",
+    )
+    gate.add_argument(
+        "--gate-json",
+        type=existing_path,
+        help="JSON file containing a gate evidence object or array of objects",
+    )
     return parser
 
 
@@ -501,6 +313,11 @@ def main() -> int:
             parser.error("start requires --request or --request-classified")
         return start_hook(args)
     if args.hook == "review":
+        args.review_path = [path.strip() for path in args.review_path if path.strip()]
+        if args.review_path and args.review_scope == "working-tree":
+            args.review_scope = "pathspec"
+        if args.review_scope == "pathspec" and not args.review_path:
+            parser.error("review --review-scope pathspec requires at least one --review-path")
         return review_hook(args, run_command, git_status, vibeguard_command, parse_overall, finish_with_result)
     if args.hook == "docs-read":
         return docs_read_hook(args)
@@ -508,6 +325,8 @@ def main() -> int:
         if not args.gate_name:
             parser.error("gate requires --gate-name")
         return gate_hook(args)
+    if args.hook == "gate-batch":
+        return gate_batch_hook(args)
     return finish_hook(args)
 
 

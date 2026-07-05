@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import json
-import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from agent_gate_evidence import record_gate_evidence
+from agent_inprocess import run_workflow_validate
 from agent_review_boundary import format_boundary_note_requirements, missing_boundary_note_fields
 from agent_review_structure import structure_review
+from agent_vibeguard_cache import cached_vibeguard
 from agent_workspace_policy import is_git_status_review_only, is_writing_workspace, non_git_writing_workspace_note
 
 
@@ -50,7 +51,21 @@ def review_hook(
     if "side-effect audit" in route_gates and not side_effect_evidence:
         failures.append("side-effect audit evidence is required for this route")
 
-    status_before, status_before_lines = git_status(args.project)
+    review_paths = review_pathspec(args)
+    review_scope = review_scope_label(args, review_paths)
+    checks["review_scope"] = review_scope
+    full_status_before, full_status_before_lines = git_status(args.project)
+    if is_git_status_review_only(args.project, full_status_before):
+        full_status_before["review_only"] = True
+        full_status_before["review_note"] = non_git_writing_workspace_note(args.project)
+        full_status_before_lines = []
+    checks["full_git_status_before"] = full_status_before
+    status_before, status_before_lines = git_status_for_review(
+        args.project,
+        run_command,
+        git_status,
+        review_paths,
+    )
     if is_git_status_review_only(args.project, status_before):
         status_before["review_only"] = True
         status_before["review_note"] = non_git_writing_workspace_note(args.project)
@@ -60,13 +75,21 @@ def review_hook(
     checks["changed_path_limit"] = args.max_changed_paths
     if status_before["returncode"] != 0 and not status_before.get("review_only"):
         failures.append("git status failed")
+    elif full_status_before["returncode"] != 0 and not full_status_before.get("review_only"):
+        failures.append("git status failed")
     elif len(status_before_lines) > args.max_changed_paths:
         failures.append(
             f"review scope has {len(status_before_lines)} changed paths; "
             f"limit is {args.max_changed_paths}; split the change or run a smaller review scope"
         )
 
-    structure = structure_review(args.project, args.max_source_file_lines, args.max_function_lines, run_command)
+    structure = structure_review(
+        args.project,
+        args.max_source_file_lines,
+        args.max_function_lines,
+        run_command,
+        review_paths,
+    )
     checks["structure_review"] = structure
     failures.extend(f"structure review: {failure}" for failure in structure["failures"])
     failures.extend(structure_evidence_failures(structure, structure_evidence))
@@ -82,7 +105,7 @@ def review_hook(
             "review_note": non_git_writing_workspace_note(args.project),
         }
         if status_before.get("review_only")
-        else run_command(["git", "diff", "--check"], args.project)
+        else run_command(diff_check_command(review_paths), args.project)
     )
     checks["diff_check"] = diff_check
     if diff_check["returncode"] != 0:
@@ -90,36 +113,73 @@ def review_hook(
 
     validate_script = args.rules / "scripts" / "workflow.py"
     if validate_script.exists():
-        validate = run_command([sys.executable, str(validate_script), "validate"], args.rules)
+        validate = run_workflow_validate(args.rules)
         checks["workflow_validate"] = validate
         if validate["returncode"] != 0:
             failures.append("workflow validate failed")
     else:
         failures.append(f"workflow validate script missing at {validate_script}")
 
-    vibeguard = run_command(vibeguard_command(args.project, args.rules), args.project)
-    vibeguard["overall"] = parse_overall(vibeguard["stdout"] + "\n" + vibeguard["stderr"])
+    scoped_vibeguard_command = review_vibeguard_command(
+        args.project,
+        args.rules,
+        run_command,
+        vibeguard_command,
+        review_paths,
+    )
+    checks["vibeguard_pathspec"] = {
+        "paths": review_paths,
+        "path_option_supported": bool(
+            getattr(scoped_vibeguard_command, "path_option_supported", False)
+        ),
+    }
+    vibeguard = cached_vibeguard(
+        project=args.project,
+        rules=args.rules,
+        run_command=run_command,
+        vibeguard_command=scoped_vibeguard_command,
+        parse_overall=parse_overall,
+    )
     checks["vibeguard"] = vibeguard
     if vibeguard["returncode"] != 0:
         failures.append("VibeGuard audit failed")
     elif vibeguard["overall"] != "Ready" and not is_writing_workspace(args.project):
         failures.append(f"VibeGuard overall is {vibeguard['overall']}")
 
-    status_after, status_after_lines = git_status(args.project)
+    status_after, status_after_lines = git_status_for_review(
+        args.project,
+        run_command,
+        git_status,
+        review_paths,
+    )
+    full_status_after, full_status_after_lines = git_status(args.project)
+    if is_git_status_review_only(args.project, full_status_after):
+        full_status_after["review_only"] = True
+        full_status_after["review_note"] = non_git_writing_workspace_note(args.project)
+        full_status_after_lines = []
     if is_git_status_review_only(args.project, status_after):
         status_after["review_only"] = True
         status_after["review_note"] = non_git_writing_workspace_note(args.project)
         status_after_lines = []
     checks["git_status_after"] = status_after
+    checks["full_git_status_after"] = full_status_after
     if status_after["returncode"] != 0 and not status_after.get("review_only"):
+        failures.append("git status failed")
+    elif full_status_after["returncode"] != 0 and not full_status_after.get("review_only"):
         failures.append("git status failed")
     elif status_after_lines != status_before_lines:
         failures.append("review hook changed the worktree; review hooks must stay read-only")
+    elif full_status_after_lines != full_status_before_lines:
+        failures.append("review hook changed files outside the review pathspec; review hooks must stay read-only")
 
     if not failures:
         record_review_gate(args, checks)
 
-    details = review_failure_details(failures, structure) if failures else review_success_details(structure)
+    details = (
+        review_failure_details(failures, structure, review_scope)
+        if failures
+        else review_success_details(structure, review_scope)
+    )
     return finish_with_result("review", not failures, details, args.output, checks, args.retry_attempt)
 
 
@@ -136,6 +196,7 @@ def record_review_gate(args: Any, checks: dict[str, Any]) -> None:
         evidence="review hook completed successfully and left worktree unchanged",
         fields={
             "changed_path_count": str(checks.get("changed_path_count", "")),
+            "review_scope": str(checks.get("review_scope", "")),
             "workflow_validate": str((checks.get("workflow_validate") or {}).get("returncode", "")),
             "vibeguard": str((checks.get("vibeguard") or {}).get("overall", "")),
         },
@@ -173,10 +234,90 @@ def review_route_gates(project: Path, evidence_path: Path | None) -> list[str]:
     return [gate for gate in gates if isinstance(gate, str)]
 
 
-def review_success_details(structure: dict[str, Any]) -> list[str]:
+def review_pathspec(args: Any) -> list[str]:
+    return [path.strip() for path in getattr(args, "review_path", []) if path.strip()]
+
+
+def review_scope_label(args: Any, review_paths: list[str]) -> str:
+    if review_paths:
+        return "pathspec: " + ", ".join(review_paths)
+    return getattr(args, "review_scope", "working-tree")
+
+
+def git_status_for_review(
+    project: Path,
+    run_command: CommandRunner,
+    git_status: Callable[[Path], tuple[dict[str, Any], list[str]]],
+    review_paths: list[str],
+) -> tuple[dict[str, Any], list[str]]:
+    if not review_paths:
+        return git_status(project)
+    result = run_command(
+        ["git", "status", "--short", "--untracked-files=all", "--", *review_paths],
+        project,
+    )
+    lines = [line for line in result["stdout"].splitlines() if line.strip()]
+    return result, lines
+
+
+def diff_check_command(review_paths: list[str]) -> list[str]:
+    if not review_paths:
+        return ["git", "diff", "--check"]
+    return ["git", "diff", "--check", "--", *review_paths]
+
+
+def review_vibeguard_command(
+    project: Path,
+    rules: Path,
+    run_command: CommandRunner,
+    vibeguard_command: Callable[[Path, Path], list[str]],
+    review_paths: list[str],
+) -> Callable[[Path, Path], list[str]]:
+    supports_path = bool(review_paths) and vibeguard_supports_path_option(
+        vibeguard_command(project, rules),
+        run_command,
+        project,
+    )
+
+    def command(project_path: Path, rules_path: Path) -> list[str]:
+        base = list(vibeguard_command(project_path, rules_path))
+        if not review_paths:
+            return base
+        scoped = [*base, "--changed-only"]
+        if supports_path:
+            for review_path in review_paths:
+                scoped.extend(["--path", review_path])
+        return scoped
+
+    setattr(command, "path_option_supported", supports_path)
+    return command
+
+
+def vibeguard_supports_path_option(
+    base_command: list[str],
+    run_command: CommandRunner,
+    project: Path,
+) -> bool:
+    if not base_command:
+        return False
+    command = _vibeguard_help_command(base_command)
+    result = run_command(command, project)
+    if result.get("returncode") != 0:
+        return False
+    return "--path" in f"{result.get('stdout', '')}\n{result.get('stderr', '')}"
+
+
+def _vibeguard_help_command(base_command: list[str]) -> list[str]:
+    if base_command[:2] == ["npx", "--yes"] and len(base_command) >= 3:
+        return [*base_command[:3], "--help"]
+    return [base_command[0], "--help"]
+
+
+def review_success_details(structure: dict[str, Any], review_scope: str) -> list[str]:
     return [
         "code review evidence recorded",
         "docs freshness evidence recorded",
+        f"review scope: {review_scope}",
         f"structure review passed for {structure['checked_path_count']} development source/style file(s)",
         f"structure scope: {structure['scope']}",
         "review scope guard passed",
@@ -187,8 +328,13 @@ def review_success_details(structure: dict[str, Any]) -> list[str]:
     ]
 
 
-def review_failure_details(failures: list[str], structure: dict[str, Any]) -> list[str]:
+def review_failure_details(
+    failures: list[str],
+    structure: dict[str, Any],
+    review_scope: str,
+) -> list[str]:
     details = [
+        f"review scope: {review_scope}",
         f"structure scope: {structure['scope']}",
         f"checked development source/style files: {format_checked_paths(structure.get('checked_paths', []))}",
     ]

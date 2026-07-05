@@ -23,6 +23,8 @@ AGENTIC_RUN_STATE_COMMANDS = WORK_PRODUCING_COMMANDS | {
 }
 ROUTE_DOCS_READ_COMMANDS = WORK_PRODUCING_COMMANDS | {
     "ambiguity",
+    "commit",
+    "git_commit",
     "docs",
     "docs-review",
     "multi-agent",
@@ -123,6 +125,8 @@ def automatic_gates(command: str) -> list[str]:
 def automatic_docs(command: str) -> list[str]:
     docs: list[str] = []
     gates = set(automatic_gates(command))
+    if command in {"commit", "git_commit"}:
+        return docs
     if AMBIGUITY_GATE in gates:
         docs.append("workflows/ambiguity-gate.md")
     if ALIGNMENT_BRIEF_GATE in gates:

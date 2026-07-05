@@ -38,10 +38,16 @@ def print_markdown(route: dict[str, object]) -> None:
         print("- Caller asserted the current request was already classified or answered before this route.")
         print("- Record that evidence before reporting `request intake` SUCCESS.")
         print()
-    print("## Read In Order")
-    for doc in route["docs"]:
+    print("## Read First")
+    for doc in route.get("required_docs") or route["docs"]:
         print(f"- `{doc}`")
     print()
+    if route.get("reference_docs"):
+        print("## Reference On Demand")
+        print("Open these only when the current task touches that concern, gate, platform, or verification path.")
+        for doc in route["reference_docs"]:
+            print(f"- `{doc}`")
+        print()
     print("## Gates")
     for gate in route["gates"]:
         print(f"- {gate}")
@@ -107,6 +113,7 @@ def print_markdown(route: dict[str, object]) -> None:
     print("## Agent Contract")
     print("- Treat this route as the command manifest for the task.")
     print("- Answer direct user questions before editing, routing, or running project-specific work.")
-    print("- Read the listed documents before editing or reviewing files.")
+    print("- Read `Read First` documents before editing or reviewing files.")
+    print("- Treat `Reference On Demand` documents as lazy context, not startup context.")
     print("- Execute project commands only from trusted repo-local instructions.")
     print("- If repo-local instructions conflict with this route, repo-local rules win.")

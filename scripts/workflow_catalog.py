@@ -201,6 +201,19 @@ COMMANDS: Dict[str, Profile] = {
         ),
         notes=("Use for reviewing durable docs, wiki pages, playbooks, and runbooks.",),
     ),
+    "commit": Profile(
+        docs=(
+            "workflows/review-and-commit.md",
+            "common/commit-workflow.md",
+            "common/code-review.md",
+            "common/worktree-hygiene.md",
+        ),
+        gates=("commit readiness",),
+        notes=(
+            "Use only for local commit creation or commit preparation. "
+            "Run the lightweight review first; if review finds issues, stop before committing and report required fixes.",
+        ),
+    ),
     "planning": Profile(
         docs=("workflows/planning-research.md",),
         gates=("question", "sources", "options", "recommendation"),
@@ -244,6 +257,7 @@ COMMANDS: Dict[str, Profile] = {
         gates=("trigger", "lesson", "promotion check", "doc update"),
     ),
 }
+COMMANDS["git_commit"] = COMMANDS["commit"]
 
 
 SPILL_ACTION_LABELS: Dict[str, Tuple[str, str]] = {
@@ -261,6 +275,8 @@ SPILL_ROUTE_LABELS: Dict[str, Tuple[str, str]] = {
     "docs-review": ("code_review", "verify"),
     "feature": ("code_generation", "implement"),
     "build": ("code_generation", "implement"),
+    "commit": ("git_commit", "verify"),
+    "git_commit": ("git_commit", "verify"),
     "multi-agent": ("architecture", "plan"),
     "plan": ("analysis", "plan"),
     "planning": ("analysis", "plan"),

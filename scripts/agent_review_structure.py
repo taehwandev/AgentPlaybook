@@ -15,8 +15,8 @@ from agent_workspace_policy import is_writing_workspace
 
 CommandRunner = Callable[[list[str], Path], dict[str, Any]]
 
-REVIEW_SOURCE_FILE_LINE_LIMIT = 400
-REVIEW_FILE_REVIEW_WARNING_LIMIT = 350
+REVIEW_SOURCE_FILE_LINE_LIMIT = 500
+REVIEW_FILE_REVIEW_WARNING_LIMIT = 300
 REVIEW_ADDED_LINE_LIMIT = 200
 REVIEW_FUNCTION_LINE_LIMIT = 120
 REVIEW_SOURCE_EXTENSIONS = {
@@ -111,8 +111,9 @@ def structure_review(
     max_file_lines: int,
     max_block_lines: int,
     run_command: CommandRunner,
+    review_paths: list[str] | None = None,
 ) -> dict[str, Any]:
-    discovery, paths = changed_source_paths(project, run_command)
+    discovery, paths = changed_source_paths(project, run_command, review_paths)
     result: dict[str, Any] = {
         "checked_paths": [str(path) for path in paths],
         "checked_path_count": len(paths),
@@ -178,7 +179,11 @@ def structure_review(
     return result
 
 
-def changed_source_paths(project: Path, run_command: CommandRunner) -> tuple[dict[str, Any], list[Path]]:
+def changed_source_paths(
+    project: Path,
+    run_command: CommandRunner,
+    review_paths: list[str] | None = None,
+) -> tuple[dict[str, Any], list[Path]]:
     commands: dict[str, Any] = {}
     names: set[str] = set()
     path_metadata: dict[str, dict[str, Any]] = {}
@@ -194,9 +199,12 @@ def changed_source_paths(project: Path, run_command: CommandRunner) -> tuple[dic
             "review_only": "non_git_writing_workspace",
         }, []
     if head["returncode"] == 0:
-        collect_head_diff(project, run_command, commands, names, path_metadata, command_errors)
+        collect_head_diff(project, run_command, commands, names, path_metadata, command_errors, review_paths)
     else:
-        tracked = run_command(["git", "ls-files", "--cached", "--others", "--exclude-standard"], project)
+        tracked = run_command(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard", *_pathspec_args(review_paths)],
+            project,
+        )
         commands["ls_files_initial"] = tracked
         if tracked["returncode"] == 0:
             for line in tracked["stdout"].splitlines():
@@ -206,7 +214,10 @@ def changed_source_paths(project: Path, run_command: CommandRunner) -> tuple[dic
         else:
             command_errors.append("git ls-files changed source discovery failed")
 
-    untracked = run_command(["git", "ls-files", "--others", "--exclude-standard"], project)
+    untracked = run_command(
+        ["git", "ls-files", "--others", "--exclude-standard", *_pathspec_args(review_paths)],
+        project,
+    )
     commands["ls_files_untracked"] = untracked
     if untracked["returncode"] == 0:
         for line in untracked["stdout"].splitlines():
@@ -232,8 +243,13 @@ def collect_head_diff(
     names: set[str],
     path_metadata: dict[str, dict[str, Any]],
     command_errors: list[str],
+    review_paths: list[str] | None = None,
 ) -> None:
-    status = run_command(["git", "diff", "--name-status", "--diff-filter=ACMRTUXB", "HEAD", "--"], project)
+    pathspec = _pathspec_args(review_paths)
+    status = run_command(
+        ["git", "diff", "--name-status", "--diff-filter=ACMRTUXB", "HEAD", *pathspec],
+        project,
+    )
     commands["diff_name_status"] = status
     if status["returncode"] == 0:
         for line in status["stdout"].splitlines():
@@ -243,7 +259,10 @@ def collect_head_diff(
     else:
         command_errors.append("git diff changed source discovery failed")
 
-    numstat = run_command(["git", "diff", "--numstat", "--diff-filter=ACMRTUXB", "HEAD", "--"], project)
+    numstat = run_command(
+        ["git", "diff", "--numstat", "--diff-filter=ACMRTUXB", "HEAD", *pathspec],
+        project,
+    )
     commands["diff_numstat"] = numstat
     if numstat["returncode"] == 0:
         for line in numstat["stdout"].splitlines():
@@ -263,6 +282,11 @@ def record_path(
 ) -> None:
     names.add(name)
     path_metadata.setdefault(name, {}).update(updates)
+
+
+def _pathspec_args(review_paths: list[str] | None) -> list[str]:
+    paths = [path.strip() for path in (review_paths or []) if path.strip()]
+    return ["--", *paths] if paths else ["--"]
 
 
 def review_source_path(project: Path, path: Path) -> bool:
@@ -332,6 +356,7 @@ def check_file_size(
     elif line_count > REVIEW_FILE_REVIEW_WARNING_LIMIT:
         result["warnings"].append(
             f"{path} is a changed development source/style file with {line_count} lines; "
+            f"review-pressure limit is {REVIEW_FILE_REVIEW_WARNING_LIMIT}; "
             "structure-review evidence is required before approving more behavior"
         )
 

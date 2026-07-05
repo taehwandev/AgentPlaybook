@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +29,7 @@ from agent_gate_evidence import (
     gate_evidence_path_for_preflight,
     merge_gate_evidence_from_ledger,
     record_gate_evidence,
+    record_many_gate_evidence,
     reset_gate_evidence_ledger,
 )
 from agent_delegation_plan import validate_delegation_plan_evidence
@@ -36,7 +38,14 @@ from agent_preflight_runtime import (
     AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
     _claude_spill_warnings,
 )
-from agent_route_docs import preflight_evidence_sha256, route_fingerprint
+from agent_review_hook import review_hook, review_vibeguard_command
+from agent_vibeguard_cache import cached_vibeguard
+from agent_route_docs import (
+    preflight_evidence_sha256,
+    receipt_path_for_evidence,
+    route_docs_to_read,
+    route_fingerprint,
+)
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
 from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
@@ -60,12 +69,13 @@ from workflow_gate_policy import (
 )
 from workflow_request import infer_concerns_from_request
 from workflow_request import classify_request
+from workflow_request import classified_route_block_reason
 from workflow_request import route_block_reason
 from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import resolve_docs
 from workflow_skill_paths import canonical_doc_path
 from workflow_spill import spill_tool_label
-from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS
+from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS, markdown_files_to_validate
 
 
 def route_doc(path: str) -> str:
@@ -89,6 +99,22 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("common/verification-policy.md", CONCERNS["testing"])
         self.assertIn("definition-of-done", CONCERNS)
         self.assertIn("common/definition-of-done.md", CONCERNS["definition-of-done"])
+
+    def test_workflow_validate_ignores_generated_markdown_caches(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            docs_dir = root / "docs"
+            cache_dir = root / ".pytest_cache"
+            docs_dir.mkdir()
+            cache_dir.mkdir()
+            valid_doc = docs_dir / "guide.md"
+            valid_doc.write_text(
+                "---\nkeyflow_id: test\nstatus: stable\ntype: human-reviewed\n---\n# Guide\n",
+                encoding="utf-8",
+            )
+            (cache_dir / "README.md").write_text("# Cache\n", encoding="utf-8")
+
+            self.assertEqual([valid_doc], markdown_files_to_validate(root))
 
     def test_lifecycle_alias_commands_are_registered(self) -> None:
         for command in ("spec", "plan", "build", "test", "webperf", "code-simplify", "ship"):
@@ -327,6 +353,94 @@ class WorkflowRoutingTests(unittest.TestCase):
             with self.subTest(request=request):
                 self.assertIn(concern, infer_concerns_from_request(request))
 
+    def test_commit_request_uses_lightweight_commit_route(self) -> None:
+        classification = classify_request("웹 코드 커밋 안한거 분리해서 커밋해줘")
+
+        self.assertEqual("commit", classification["recommended_route"])
+        self.assertEqual("quick", classification["effort"])
+        self.assertFalse(classification["grill_me"])
+
+        self.assertIn("commit", COMMANDS)
+        self.assertIn("git_commit", COMMANDS)
+
+        route = resolve_docs("git_commit", None, [], request_classified=True)
+
+        self.assertEqual(
+            [ROUTE_DOCS_READ_GATE, "review hook", "commit readiness"],
+            [gate for gate in route["gates"] if gate != "request intake"],
+        )
+        self.assertNotIn(AMBIGUITY_GATE, route["gates"])
+        self.assertNotIn(ALIGNMENT_BRIEF_GATE, route["gates"])
+        self.assertNotIn(CYCLE_CONTRACT_GATE, route["gates"])
+        self.assertNotIn(BOUNDARY_PLAN_GATE, route["gates"])
+        self.assertNotIn(MULTI_AGENT_GATE, route["gates"])
+        self.assertIn(route_doc("workflows/review-and-commit.md"), route["required_docs"])
+        self.assertIn(route_doc("common/commit-workflow.md"), route["required_docs"])
+        self.assertIn(route_doc("common/code-review.md"), route["reference_docs"])
+        self.assertIn(route_doc("common/worktree-hygiene.md"), route["reference_docs"])
+
+    def test_preflight_rejects_invalid_concern_like_workflow_route_cli(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "agent-preflight.py"),
+                    "--project",
+                    str(project),
+                    "--rules",
+                    str(ROOT),
+                    "--command",
+                    "bugfix",
+                    "--concern",
+                    "not-a-real-concern",
+                    "--request-classified",
+                    "--classification-evidence",
+                    "clear-scoped actionable request: verify preflight parser validation",
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+
+        self.assertEqual(2, result.returncode)
+        self.assertIn("invalid choice", result.stderr)
+
+    def test_git_commit_route_accepts_commit_classification_evidence(self) -> None:
+        evidence = (
+            "User asked to split all uncommitted web code into commits. "
+            "Target repo is known and current task is local commit creation."
+        )
+
+        self.assertIsNone(classified_route_block_reason("git_commit", evidence))
+
+    def test_finish_request_intake_uses_commit_evidence_policy(self) -> None:
+        evidence = (
+            "User asked to split all uncommitted web code into commits. "
+            "Target repo is known and current task is local commit creation."
+        )
+        route = {
+            "command": "git_commit",
+            "request_classified": True,
+        }
+        failures: list[str] = []
+        gate_signals: list[dict[str, str]] = []
+        missed_gates: list[str] = []
+
+        check_request_intake(
+            route,
+            {"request_classified": True, "classification_evidence": evidence},
+            {},
+            {},
+            gate_signals,
+            missed_gates,
+            failures,
+        )
+
+        self.assertEqual([], failures)
+        self.assertEqual([], missed_gates)
+
     def test_writing_requests_infer_human_authored_writing_concern(self) -> None:
         examples = (
             "AgentPlaybook 소개하는 글을 써줘. 바이브가드도 같이 소개해줘.",
@@ -518,6 +632,14 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(route_doc("workflows/cycle-contract.md"), route["docs"])
         self.assertIn(route_doc("workflows/multi-agent-collaboration.md"), route["docs"])
         self.assertIn(route_doc("workflows/development-cycle.md"), route["docs"])
+        self.assertIn(route_doc("common/code-conventions.md"), route["required_docs"])
+        self.assertIn(route_doc("common/llm-coding-discipline.md"), route["required_docs"])
+        self.assertIn(route_doc("common/agent-editing-safety.md"), route["required_docs"])
+        self.assertIn(route_doc("common/testing.md"), route["required_docs"])
+        self.assertIn(route_doc("workflows/ambiguity-gate.md"), route["reference_docs"])
+        self.assertIn(route_doc("workflows/cycle-contract.md"), route["reference_docs"])
+        self.assertIn(route_doc("workflows/product-architecture-delivery.md"), route["reference_docs"])
+        self.assertNotIn(route_doc("workflows/product-architecture-delivery.md"), route["required_docs"])
         self.assertLess(
             route["gates"].index(ROUTE_DOCS_READ_GATE),
             route["gates"].index("PRD/ARD applicability"),
@@ -739,6 +861,627 @@ class WorkflowRoutingTests(unittest.TestCase):
             self.assertEqual([], validate_gate_evidence(gate_evidence, route["gates"]))
             self.assertEqual([], route_docs_failures)
 
+    def test_gate_evidence_ledger_requires_structured_fields_for_structured_gates(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "docs": ["AGENTS.md"],
+            "gates": [CYCLE_CONTRACT_GATE],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": route}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            reset_gate_evidence_ledger(evidence_path, preflight)
+
+            record_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                gate=CYCLE_CONTRACT_GATE,
+                evidence=(
+                    "cycle_type=workflow_setup; input_scope=gate evidence ledger fallback; "
+                    "allowed_changes=finish-check merge code and tests; "
+                    "forbidden_changes=unrelated workflow behavior; "
+                    "acceptance criteria=manual ledger evidence is still validated by finish; "
+                    "verification=unit test; stop condition=manual evidence merges; "
+                    "checkpoint=finish hook retry"
+                ),
+                source="manual",
+            )
+
+            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+                route=route,
+                evidence_path=evidence_path,
+                route_docs_receipt={},
+                cli_gate_evidence={},
+            )
+
+        self.assertFalse(diagnostics["used"])
+        self.assertIn(CYCLE_CONTRACT_GATE, diagnostics["missing_fields"])
+        self.assertNotIn(CYCLE_CONTRACT_GATE, gate_evidence)
+
+    def test_gate_evidence_ledger_rejects_same_route_preflight_hash_refresh(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "docs": ["AGENTS.md"],
+            "gates": [TEST_GATE, CYCLE_CONTRACT_GATE],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": route, "git_status": {"stdout": "before"}}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            reset_gate_evidence_ledger(evidence_path, preflight)
+            record_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                gate=TEST_GATE,
+                evidence="test/check run: first check; result: PASS",
+                source="manual",
+            )
+
+            refreshed_preflight = {"route": route, "git_status": {"stdout": "after"}}
+            evidence_path.write_text(json.dumps(refreshed_preflight), encoding="utf-8")
+            record_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=refreshed_preflight,
+                gate=CYCLE_CONTRACT_GATE,
+                fields={
+                    "cycle_type": "workflow_setup",
+                    "input_scope": "same route ledger refresh",
+                    "allowed_changes": "gate evidence binding",
+                    "forbidden_changes": "route changes",
+                    "acceptance_criteria": "existing gate evidence remains after hash refresh",
+                    "verification": "unit test",
+                    "stop_condition": "ledger keeps both entries",
+                    "checkpoint": "finish hook",
+                },
+                source="manual",
+            )
+
+            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+                route=route,
+                evidence_path=evidence_path,
+                route_docs_receipt={},
+                cli_gate_evidence={},
+            )
+
+        self.assertTrue(diagnostics["used"])
+        self.assertNotIn(TEST_GATE, gate_evidence)
+        self.assertIn(CYCLE_CONTRACT_GATE, gate_evidence)
+        self.assertEqual([], validate_gate_evidence(gate_evidence, route["gates"]))
+
+    def test_gate_evidence_ledger_rejects_partial_structured_fields_even_with_text(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "docs": ["AGENTS.md"],
+            "gates": [CYCLE_CONTRACT_GATE],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": route}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            reset_gate_evidence_ledger(evidence_path, preflight)
+
+            record_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                gate=CYCLE_CONTRACT_GATE,
+                evidence=(
+                    "cycle_type=workflow_setup; input_scope=partial fields; "
+                    "allowed_changes=tests; forbidden_changes=none; "
+                    "acceptance criteria=must not bypass fields; verification=unit test; "
+                    "stop condition=done; checkpoint=finish"
+                ),
+                fields={
+                    "cycle_type": "workflow_setup",
+                    "input_scope": "partial fields",
+                },
+                source="manual",
+            )
+
+            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+                route=route,
+                evidence_path=evidence_path,
+                route_docs_receipt={},
+                cli_gate_evidence={},
+            )
+
+        self.assertNotIn(CYCLE_CONTRACT_GATE, gate_evidence)
+        self.assertIn(CYCLE_CONTRACT_GATE, diagnostics["missing_fields"])
+
+    def test_record_many_gate_evidence_writes_batch_with_single_binding(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "docs": ["AGENTS.md"],
+            "gates": [BOUNDARY_PLAN_GATE, TEST_GATE],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": route}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+
+            entries = record_many_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                records=[
+                    {
+                        "gate": BOUNDARY_PLAN_GATE,
+                        "fields": {
+                            "scope": "gate evidence batching",
+                            "verification": "unit test",
+                        },
+                    },
+                    {
+                        "gate": TEST_GATE,
+                        "fields": {
+                            "check": "unit test",
+                            "result": "PASS",
+                        },
+                    },
+                ],
+            )
+
+            ledger_path = gate_evidence_path_for_preflight(evidence_path)
+            ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+                route=route,
+                evidence_path=evidence_path,
+                route_docs_receipt={},
+                cli_gate_evidence={},
+            )
+
+        self.assertEqual(2, len(entries))
+        self.assertEqual(2, len(ledger["entries"]))
+        self.assertTrue(diagnostics["used"])
+        self.assertIn(BOUNDARY_PLAN_GATE, gate_evidence)
+        self.assertIn(TEST_GATE, gate_evidence)
+        self.assertEqual([], validate_gate_evidence(gate_evidence, route["gates"]))
+
+    def test_custom_preflight_evidence_uses_separate_gate_ledger(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            default_evidence = root / ".agentplaybook" / "preflight.json"
+            custom_evidence = root / ".agentplaybook" / "preflight-smoke.json"
+            default_evidence.parent.mkdir(parents=True)
+
+            self.assertEqual(
+                default_evidence.parent / "gate-evidence.json",
+                gate_evidence_path_for_preflight(default_evidence),
+            )
+            self.assertEqual(
+                custom_evidence.parent / "preflight-smoke-gate-evidence.json",
+                gate_evidence_path_for_preflight(custom_evidence),
+            )
+
+    def test_agent_hook_gate_batch_cli_records_multiple_gates(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "docs": ["AGENTS.md"],
+            "gates": [BOUNDARY_PLAN_GATE, TEST_GATE],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path.parent.mkdir(parents=True)
+            evidence_path.write_text(json.dumps({"route": route}), encoding="utf-8")
+            records = [
+                {
+                    "gate": BOUNDARY_PLAN_GATE,
+                    "fields": {
+                        "scope": "gate evidence batch cli",
+                        "verification": "subprocess test",
+                    },
+                },
+                {
+                    "gate": TEST_GATE,
+                    "fields": {
+                        "check": "subprocess test",
+                        "result": "PASS",
+                    },
+                },
+            ]
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "agent-hook.py"),
+                    "gate-batch",
+                    "--project",
+                    str(project),
+                    "--rules",
+                    str(ROOT),
+                    "--evidence",
+                    str(evidence_path),
+                    "--gate-record",
+                    json.dumps(records),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+
+            ledger_path = gate_evidence_path_for_preflight(evidence_path)
+            ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("SUCCESS gate-batch", result.stdout)
+        self.assertIn("2 gate evidence entries recorded", result.stdout)
+        self.assertEqual([BOUNDARY_PLAN_GATE, TEST_GATE], [entry["gate"] for entry in ledger["entries"]])
+
+    def test_vibeguard_cache_reuses_same_git_state_and_invalidates_on_status_change(self) -> None:
+        calls: list[list[str]] = []
+        state = {"status": ""}
+
+        def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+            calls.append(command)
+            if command[:3] == ["git", "rev-parse", "--verify"]:
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": "abc123\n",
+                    "stderr": "",
+                }
+            if command[:3] == ["git", "status", "--short"]:
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": state["status"],
+                    "stderr": "",
+                }
+            if command == ["vibeguard", "audit", "."]:
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": "Overall: Ready\n",
+                    "stderr": "",
+                }
+            raise AssertionError(command)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            rules = project
+            command = lambda _project, _rules: ["vibeguard", "audit", "."]
+            parse = lambda output: "Ready" if "Ready" in output else "unknown"
+
+            first = cached_vibeguard(
+                project=project,
+                rules=rules,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+            second = cached_vibeguard(
+                project=project,
+                rules=rules,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+            state["status"] = " M scripts/agent-hook.py\n"
+            third = cached_vibeguard(
+                project=project,
+                rules=rules,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+
+        audit_calls = [command for command in calls if command == ["vibeguard", "audit", "."]]
+        self.assertEqual(2, len(audit_calls))
+        self.assertFalse(first["cached"])
+        self.assertTrue(second["cached"])
+        self.assertFalse(third["cached"])
+
+    def test_vibeguard_cache_invalidates_on_rules_git_state_change(self) -> None:
+        calls: list[tuple[Path, list[str]]] = []
+        states = {"project": "", "rules": ""}
+
+        def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+            calls.append((cwd, command))
+            if command[:3] == ["git", "rev-parse", "--verify"]:
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": f"{cwd.name}-head\n",
+                    "stderr": "",
+                }
+            if command[:3] == ["git", "status", "--short"]:
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": states[cwd.name],
+                    "stderr": "",
+                }
+            if command == ["vibeguard", "audit", "."]:
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": "Overall: Ready\n",
+                    "stderr": "",
+                }
+            raise AssertionError(command)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            project = root / "project"
+            rules = root / "rules"
+            project.mkdir()
+            rules.mkdir()
+            command = lambda _project, _rules: ["vibeguard", "audit", "."]
+            parse = lambda output: "Ready" if "Ready" in output else "unknown"
+
+            first = cached_vibeguard(
+                project=project,
+                rules=rules,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+            second = cached_vibeguard(
+                project=project,
+                rules=rules,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+            states["rules"] = " M common/rules.md\n"
+            third = cached_vibeguard(
+                project=project,
+                rules=rules,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+
+        audit_calls = [command for _cwd, command in calls if command == ["vibeguard", "audit", "."]]
+        self.assertEqual(2, len(audit_calls))
+        self.assertFalse(first["cached"])
+        self.assertTrue(second["cached"])
+        self.assertFalse(third["cached"])
+
+    def test_vibeguard_cache_does_not_store_failed_invocations(self) -> None:
+        calls: list[list[str]] = []
+
+        def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+            calls.append(command)
+            if command[:3] == ["git", "rev-parse", "--verify"]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "abc\n", "stderr": ""}
+            if command[:3] == ["git", "status", "--short"]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "", "stderr": ""}
+            if command == ["vibeguard", "audit", "."]:
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 1,
+                    "stdout": "",
+                    "stderr": "temporary failure",
+                }
+            raise AssertionError(command)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            command = lambda _project, _rules: ["vibeguard", "audit", "."]
+            parse = lambda output: "Ready" if "Ready" in output else "unknown"
+
+            first = cached_vibeguard(
+                project=project,
+                rules=project,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+            second = cached_vibeguard(
+                project=project,
+                rules=project,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+
+        audit_calls = [command for command in calls if command == ["vibeguard", "audit", "."]]
+        self.assertEqual(2, len(audit_calls))
+        self.assertFalse(first["cached"])
+        self.assertFalse(second["cached"])
+
+    def test_vibeguard_cache_ignores_preexisting_failed_cache_entry(self) -> None:
+        calls: list[list[str]] = []
+
+        def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+            calls.append(command)
+            if command[:3] == ["git", "rev-parse", "--verify"]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "abc\n", "stderr": ""}
+            if command[:3] == ["git", "status", "--short"]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "", "stderr": ""}
+            if command == ["vibeguard", "audit", "."]:
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": "Overall: Ready\n",
+                    "stderr": "",
+                }
+            raise AssertionError(command)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            command = lambda _project, _rules: ["vibeguard", "audit", "."]
+            parse = lambda output: "Ready" if "Ready" in output else "unknown"
+
+            first = cached_vibeguard(
+                project=project,
+                rules=project,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+            cache_path = project / ".agentplaybook" / "vibeguard-cache.json"
+            payload = json.loads(cache_path.read_text(encoding="utf-8"))
+            payload["result"]["returncode"] = 1
+            payload["result"]["stderr"] = "old failure"
+            cache_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            second = cached_vibeguard(
+                project=project,
+                rules=project,
+                run_command=run_command,
+                vibeguard_command=command,
+                parse_overall=parse,
+            )
+
+        audit_calls = [command for command in calls if command == ["vibeguard", "audit", "."]]
+        self.assertEqual(2, len(audit_calls))
+        self.assertFalse(first["cached"])
+        self.assertFalse(second["cached"])
+
+    def test_review_hook_detects_mutation_outside_pathspec(self) -> None:
+        full_statuses = [
+            " M outside.py\n",
+            " M outside.py\n M outside2.py\n",
+        ]
+        outputs: list[dict[str, object]] = []
+
+        def git_status(_project: Path) -> tuple[dict[str, object], list[str]]:
+            stdout = full_statuses.pop(0)
+            result = {
+                "command": ["git", "status", "--short", "--untracked-files=all"],
+                "cwd": str(ROOT),
+                "returncode": 0,
+                "stdout": stdout,
+                "stderr": "",
+            }
+            return result, [line for line in stdout.splitlines() if line.strip()]
+
+        def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+            if command[:3] == ["git", "status", "--short"]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "", "stderr": ""}
+            if command[:3] == ["git", "rev-parse", "--verify"]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "abc\n", "stderr": ""}
+            if command[:2] == ["git", "diff"]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "", "stderr": ""}
+            if command[:2] == ["git", "ls-files"]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "", "stderr": ""}
+            if command == ["vibeguard", "--help"]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "", "stderr": ""}
+            if command[:3] == ["vibeguard", "audit", "."]:
+                return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "Overall: Ready\n", "stderr": ""}
+            return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "", "stderr": ""}
+
+        def finish_with_result(
+            name: str,
+            success: bool,
+            details: list[str],
+            output: Path | None,
+            payload: dict[str, object],
+            retry_attempt: int,
+        ) -> int:
+            outputs.append({"name": name, "success": success, "details": details, "payload": payload})
+            return 0 if success else 1
+
+        args = SimpleNamespace(
+            project=ROOT,
+            rules=ROOT,
+            evidence=None,
+            code_review_evidence="reviewed scoped change",
+            docs_freshness_evidence="docs unchanged because no durable docs impact",
+            structure_review_evidence="",
+            boundary_plan_evidence="",
+            side_effect_audit_evidence="side-effect audit checked diff; no unexpected changes",
+            review_scope="pathspec",
+            review_path=["scripts/agent-hook.py"],
+            max_changed_paths=25,
+            max_source_file_lines=500,
+            max_function_lines=120,
+            output=None,
+            retry_attempt=0,
+        )
+
+        result = review_hook(
+            args,
+            run_command,
+            git_status,
+            lambda _project, _rules: ["vibeguard", "audit", "."],
+            lambda output: "Ready" if "Ready" in output else "unknown",
+            finish_with_result,
+        )
+
+        self.assertEqual(1, result)
+        self.assertFalse(outputs[0]["success"])
+        self.assertTrue(
+            any("outside the review pathspec" in detail for detail in outputs[0]["details"])
+        )
+
+    def test_review_vibeguard_command_uses_pathspec_when_supported(self) -> None:
+        calls: list[list[str]] = []
+
+        def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+            calls.append(command)
+            return {
+                "command": command,
+                "cwd": str(cwd),
+                "returncode": 0,
+                "stdout": "usage: vibeguard audit [project] [--path <path>]\n",
+                "stderr": "",
+            }
+
+        command = review_vibeguard_command(
+            ROOT,
+            ROOT,
+            run_command,
+            lambda _project, _rules: ["vibeguard", "audit", ".", "--rules", "."],
+            ["scripts/agent_review_hook.py"],
+        )
+
+        self.assertEqual(["vibeguard", "--help"], calls[0])
+        self.assertEqual(
+            [
+                "vibeguard",
+                "audit",
+                ".",
+                "--rules",
+                ".",
+                "--changed-only",
+                "--path",
+                "scripts/agent_review_hook.py",
+            ],
+            command(ROOT, ROOT),
+        )
+
+    def test_review_vibeguard_command_falls_back_to_changed_only_without_path_support(self) -> None:
+        def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+            return {
+                "command": command,
+                "cwd": str(cwd),
+                "returncode": 0,
+                "stdout": "usage: vibeguard audit [project] [--changed-only]\n",
+                "stderr": "",
+            }
+
+        command = review_vibeguard_command(
+            ROOT,
+            ROOT,
+            run_command,
+            lambda _project, _rules: ["vibeguard", "audit", ".", "--rules", "."],
+            ["scripts/agent_review_hook.py"],
+        )
+
+        self.assertEqual(
+            [
+                "vibeguard",
+                "audit",
+                ".",
+                "--rules",
+                ".",
+                "--changed-only",
+            ],
+            command(ROOT, ROOT),
+        )
+
     def test_gate_evidence_ledger_ignores_stale_preflight(self) -> None:
         route = {
             "command": "workflow-setup",
@@ -787,6 +1530,13 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "common/agent-operating-skill.md",
                 "workflows/scripted-agent-workflow.md",
             ],
+            "required_docs": [
+                "AGENTS.md",
+                "common/agent-operating-skill.md",
+            ],
+            "reference_docs": [
+                "workflows/scripted-agent-workflow.md",
+            ],
         }
 
         failures = validate_route_docs_manifest_evidence(
@@ -803,7 +1553,7 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         failures = validate_route_docs_manifest_evidence(
             route,
-            {ROUTE_DOCS_READ_GATE: "read all 3 routed docs from the preflight route manifest before edits"},
+            {ROUTE_DOCS_READ_GATE: "read required docs from the preflight route manifest before edits"},
             {},
         )
 
@@ -815,18 +1565,18 @@ class WorkflowRoutingTests(unittest.TestCase):
             {
                 "schema_version": 1,
                 "route_fingerprint": route_fingerprint(route),
-                "doc_count": 3,
+                "doc_count": 2,
                 "docs": [
                     {"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"},
                     {"path": "common/agent-operating-skill.md", "size_bytes": 1, "sha256": "def"},
-                    {"path": "workflows/scripted-agent-workflow.md", "size_bytes": 1, "sha256": "ghi"},
                 ],
             },
         )
 
         self.assertEqual([], failures)
+        self.assertEqual(route["required_docs"], route_docs_to_read(route))
 
-    def test_route_docs_read_receipt_must_match_current_preflight_hash(self) -> None:
+    def test_route_docs_read_receipt_rejects_refreshed_preflight_hash(self) -> None:
         route = {
             "gates": [ROUTE_DOCS_READ_GATE],
             "docs": ["AGENTS.md"],
@@ -861,7 +1611,48 @@ class WorkflowRoutingTests(unittest.TestCase):
                 evidence_path,
             )
 
-            self.assertTrue(any("stale" in failure for failure in failures))
+        self.assertTrue(any("stale" in failure for failure in failures))
+
+    def test_route_docs_read_receipt_still_binds_to_preflight_evidence_path(self) -> None:
+        route = {
+            "gates": [ROUTE_DOCS_READ_GATE],
+            "docs": ["AGENTS.md"],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            current_evidence = Path(temp_dir) / "current-preflight.json"
+            old_evidence = Path(temp_dir) / "old-preflight.json"
+            current_evidence.write_text('{"route":"a"}\n', encoding="utf-8")
+            old_evidence.write_text('{"route":"a"}\n', encoding="utf-8")
+            receipt = {
+                "schema_version": 1,
+                "route_fingerprint": route_fingerprint(route),
+                "doc_count": 1,
+                "preflight_evidence": str(old_evidence),
+                "preflight_evidence_sha256": preflight_evidence_sha256(old_evidence),
+                "docs": [{"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"}],
+            }
+
+            failures = validate_route_docs_manifest_evidence(
+                route,
+                {ROUTE_DOCS_READ_GATE: "read routed docs before edits; applied takeaway: wrapper receipt policy"},
+                receipt,
+                current_evidence,
+            )
+
+        self.assertTrue(any("different preflight evidence file" in failure for failure in failures))
+
+    def test_custom_preflight_gets_isolated_route_docs_receipt_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+
+            self.assertEqual(
+                root / "route-docs-read.json",
+                receipt_path_for_evidence(root / "preflight.json"),
+            )
+            self.assertEqual(
+                root / "worker-a-route-docs-read.json",
+                receipt_path_for_evidence(root / "worker-a.json"),
+            )
 
     def test_prd_and_product_routes_require_alignment_brief(self) -> None:
         prd_route = resolve_docs("prd", None, [], request_classified=True)
@@ -1296,8 +2087,22 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertTrue(docs_read_hook["required"])
         self.assertIn("agent-hook.py docs-read", docs_read_hook["command"])
+        self.assertIn("--review-scope working-tree", review_hook["command"])
+        self.assertIn("[--review-path <task-owned-path>]", review_hook["command"])
         self.assertIn("--boundary-plan-evidence", review_hook["command"])
         self.assertIn("--side-effect-audit-evidence", review_hook["command"])
+
+    def test_commit_review_hook_command_is_lightweight(self) -> None:
+        route = resolve_docs("git_commit", None, [], request_classified=True)
+        review_hook = next(hook for hook in route["hooks"] if hook["hook"] == "review")
+
+        self.assertTrue(review_hook["required"])
+        self.assertIn("--review-scope working-tree", review_hook["command"])
+        self.assertIn("[--review-path <commit-owned-path>]", review_hook["command"])
+        self.assertIn("--code-review-evidence", review_hook["command"])
+        self.assertIn("--docs-freshness-evidence", review_hook["command"])
+        self.assertNotIn("--boundary-plan-evidence", review_hook["command"])
+        self.assertNotIn("--side-effect-audit-evidence", review_hook["command"])
 
     def test_triage_and_ambiguity_read_route_docs_without_code_work_gates(self) -> None:
         for command in ("triage", "ambiguity"):
@@ -1506,6 +2311,108 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
         self.assertEqual(14, len(failures))
+
+    def test_required_gate_skip_evidence_fails_unless_gate_allows_skip(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                BOUNDARY_PLAN_GATE: "skipped because this looked small",
+            },
+            [BOUNDARY_PLAN_GATE],
+        )
+
+        self.assertTrue(any("cannot pass by recording a skip" in failure for failure in failures))
+
+        allowed = validate_gate_evidence(
+            {
+                TEST_GATE: "tests not run because docs-only change has no useful test",
+            },
+            [TEST_GATE],
+        )
+
+        self.assertEqual([], allowed)
+
+    def test_required_gate_skip_guard_ignores_policy_implementation_language(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                BOUNDARY_PLAN_GATE: (
+                    "boundary/scope: finish-check skip validation policy; nearest "
+                    "verification/check: unit tests and workflow validate covered the "
+                    "gate evidence validator"
+                )
+            },
+            [BOUNDARY_PLAN_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+        failures = validate_gate_evidence(
+            {
+                CYCLE_CONTRACT_GATE: (
+                    "cycle_type=workflow_setup; input_scope=gate evidence policy; "
+                    "allowed_changes=finish-check validator tests; "
+                    "forbidden_changes=unrelated behavior; "
+                    "acceptance criteria=required gates fail on real skipped or "
+                    "deferred fixes; verification=unit tests; "
+                    "stop condition=policy language does not count as a gate skip; "
+                    "checkpoint=finish"
+                )
+            },
+            [CYCLE_CONTRACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_required_gate_skip_guard_allows_non_skip_unable_language(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                BOUNDARY_PLAN_GATE: (
+                    "boundary/scope: regression reproduction notes; nearest "
+                    "verification/check: unable to reproduce further edge cases "
+                    "after unit tests and workflow validate"
+                )
+            },
+            [BOUNDARY_PLAN_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_required_gate_skip_guard_allows_scoped_review_caveat(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                SIDE_EFFECT_AUDIT_GATE: (
+                    "side-effect audit checked final diff; scope/risk reviewed: "
+                    "not reviewed by a second person but self-tested with focused "
+                    "unit coverage; result: no side effects found"
+                )
+            },
+            [SIDE_EFFECT_AUDIT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_required_gate_skip_guard_blocks_explicit_not_applicable_required_gate(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                BOUNDARY_PLAN_GATE: (
+                    "not applicable because this change looked small"
+                )
+            },
+            [BOUNDARY_PLAN_GATE],
+        )
+
+        self.assertTrue(any("cannot pass by recording a skip" in failure for failure in failures))
+
+    def test_required_gate_unresolved_issue_evidence_fails(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                SIDE_EFFECT_AUDIT_GATE: (
+                    "side-effect audit checked diff; public api risk found, should fix later"
+                ),
+            },
+            [SIDE_EFFECT_AUDIT_GATE],
+        )
+
+        self.assertTrue(any("unresolved issue" in failure for failure in failures))
 
     def test_alignment_evidence_requires_user_visible_checkpoint(self) -> None:
         failures = validate_gate_evidence(

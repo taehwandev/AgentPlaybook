@@ -87,6 +87,14 @@ CLASSIFICATION_RESOLVED_PATTERNS = (
     r"(?:블로커|차단|막힌)\s*(?:질문|사항)?\s*해결",
     r"(?:모호성|불명확성|미정사항)\s*해결",
 )
+COMMIT_ACTION_PATTERNS = (
+    r"\bcommit(?:ting|s)?\b",
+    r"\bgit commit\b",
+    r"\bmake a commit\b",
+    r"\bcreate a commit\b",
+    r"\bcommit message\b",
+    r"\b커밋\b",
+)
 
 
 def infer_concerns_from_request(text: str) -> list[str]:
@@ -131,6 +139,7 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
     has_risky = _matches(RISKY_PATTERNS, lowered)
     has_vague = _matches(VAGUE_PATTERNS, lowered)
     has_inspection = _matches(INSPECTION_PATTERNS, lowered)
+    has_commit_action = _matches(COMMIT_ACTION_PATTERNS, normalized, re.IGNORECASE)
     inspection_lacks_target = has_inspection and _inspection_lacks_target(lowered)
     has_direct_question = _matches(DIRECT_QUESTION_PATTERNS, lowered)
     asks_agent_action = _matches(QUESTION_ACTION_PATTERNS, lowered)
@@ -148,6 +157,7 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
         "has_risky": has_risky,
         "has_vague": has_vague,
         "has_inspection": has_inspection,
+        "has_commit_action": has_commit_action,
         "inspection_lacks_target": inspection_lacks_target,
         "has_direct_question": has_direct_question,
         "asks_agent_action": asks_agent_action,
@@ -164,6 +174,7 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
     has_risky = bool(flags["has_risky"])
     has_vague = bool(flags["has_vague"])
     has_inspection = bool(flags["has_inspection"])
+    has_commit_action = bool(flags["has_commit_action"])
     inspection_lacks_target = bool(flags["inspection_lacks_target"])
     asks_drill = bool(flags["asks_drill"])
 
@@ -181,6 +192,15 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
         flags["clarity"] = "vague-action"
         flags["effort"] = "deep" if has_broad or has_risky else "standard"
         return "triage", True, "clarify_first", "The request explicitly asks for the Grill-Me protocol before work."
+    if has_commit_action and not has_risky:
+        flags["clarity"] = "clear-scoped"
+        flags["effort"] = "quick"
+        return (
+            "commit",
+            False,
+            "work",
+            "The request asks for local commit preparation or commit creation; use the lightweight commit route.",
+        )
     if has_broad and not has_exact:
         flags["clarity"] = "broad-product"
         flags["effort"] = "deep"
@@ -303,6 +323,8 @@ def classified_route_block_reason(command: str, classification_evidence: str) ->
     """Block work routes unless --request-classified proves the request is actionable."""
     if command in QUESTION_ROUTE_COMMANDS:
         return None
+    if _commit_evidence_allows_work(command, classification_evidence):
+        return None
     if classification_evidence_allows_work(classification_evidence):
         return None
     return (
@@ -319,6 +341,15 @@ def classification_evidence_blocks_work(evidence: str) -> bool:
     if _matches(EXPLICIT_UNRESOLVED_PATTERNS, normalized):
         return True
     return not _has_resolution_signal(normalized)
+
+
+def _commit_evidence_allows_work(command: str, evidence: str) -> bool:
+    if command not in {"commit", "git_commit"}:
+        return False
+    normalized = " ".join(evidence.strip().lower().split())
+    if not normalized or _matches(EXPLICIT_UNRESOLVED_PATTERNS, normalized):
+        return False
+    return _matches(COMMIT_ACTION_PATTERNS, evidence, re.IGNORECASE)
 
 
 def classification_evidence_allows_work(evidence: str) -> bool:

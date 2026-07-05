@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import sys
+from pathlib import Path
 
 from agent_finish_gate_policy import VALIDATED_GATES
 from workflow_catalog import COMMANDS, CONCERNS, CORE_DOCS, PLATFORM_CONCERNS, PLATFORMS
@@ -32,6 +33,21 @@ STRICT_CARD_REQUIRED_HEADINGS = (
     "## Stop If",
     "## Verification",
 )
+MARKDOWN_VALIDATE_IGNORED_DIRS = {
+    ".agentplaybook",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "build",
+    "coverage",
+    "dist",
+    "node_modules",
+    "venv",
+}
 MULTI_AGENT_VALIDATED_GATES = {
     "roles",
     "write scopes",
@@ -144,7 +160,7 @@ def validate() -> int:
 
     missing = sorted(doc for doc in refs if not (ROOT / doc).exists())
     bad_route_contracts = validate_route_contracts()
-    markdown_files = sorted(ROOT.rglob("*.md"))
+    markdown_files = markdown_files_to_validate(ROOT)
     bad_frontmatter: list[str] = []
     bad_links: list[str] = []
     bad_card_quality: list[str] = []
@@ -216,3 +232,11 @@ def validate() -> int:
 
 def _has_heading(text: str, heading: str) -> bool:
     return re.search(rf"^{re.escape(heading)}(?:\s|$)", text, re.MULTILINE) is not None
+
+
+def markdown_files_to_validate(root: Path) -> list[Path]:
+    return sorted(
+        path
+        for path in root.rglob("*.md")
+        if not MARKDOWN_VALIDATE_IGNORED_DIRS.intersection(path.relative_to(root).parts)
+    )

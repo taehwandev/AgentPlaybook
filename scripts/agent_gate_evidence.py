@@ -38,6 +38,8 @@ FIELD_REQUIREMENTS: dict[str, tuple[str, ...]] = {
 
 
 def gate_evidence_path_for_preflight(evidence_path: Path) -> Path:
+    if evidence_path.name != "preflight.json":
+        return evidence_path.parent / f"{evidence_path.stem}-gate-evidence.json"
     return evidence_path.parent / GATE_EVIDENCE_FILENAME
 
 
@@ -77,23 +79,58 @@ def record_gate_evidence(
     status: str = "SUCCESS",
     source: str = "manual",
 ) -> dict[str, Any]:
+    entries = record_many_gate_evidence(
+        evidence_path=evidence_path,
+        preflight=preflight,
+        records=[
+            {
+                "gate": gate,
+                "evidence": evidence,
+                "fields": fields or {},
+                "status": status,
+                "source": source,
+            }
+        ],
+    )
+    return entries[0]
+
+
+def record_many_gate_evidence(
+    *,
+    evidence_path: Path,
+    preflight: dict[str, Any],
+    records: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    if not records:
+        return []
     path = gate_evidence_path_for_preflight(evidence_path)
     ledger = read_gate_evidence_ledger(path)
     if not _ledger_matches_preflight(ledger, evidence_path, preflight):
         ledger = _new_ledger(evidence_path, preflight)
-    entry = {
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "gate": gate,
-        "status": status,
-        "source": source,
-        "evidence": evidence,
-        "fields": dict(sorted((fields or {}).items())),
-    }
     entries = [item for item in ledger.get("entries", []) if isinstance(item, dict)]
-    entries.append(entry)
+    recorded: list[dict[str, Any]] = []
+    for record in records:
+        gate = str(record.get("gate") or "").strip()
+        if not gate:
+            raise ValueError("gate evidence record requires a non-empty gate")
+        status = str(record.get("status") or "SUCCESS").strip()
+        if status not in {"SUCCESS", "FAIL"}:
+            raise ValueError(f"gate evidence record has invalid status: {status}")
+        fields = _string_fields(record.get("fields") or {})
+        entry = {
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "gate": gate,
+            "status": status,
+            "source": str(record.get("source") or "manual"),
+            "evidence": str(record.get("evidence") or ""),
+            "fields": dict(sorted(fields.items())),
+        }
+        entries.append(entry)
+        recorded.append(entry)
+    _refresh_ledger_binding(ledger, evidence_path, preflight)
     ledger["entries"] = entries
     _write_gate_evidence_ledger(path, ledger)
-    return entry
+    return recorded
 
 
 def merge_gate_evidence_from_ledger(
@@ -155,18 +192,21 @@ def synthesize_gate_evidence(
     route_docs_receipt: dict[str, Any],
     route: dict[str, Any] | None = None,
 ) -> tuple[str, list[str]]:
-    missing = _missing_fields(gate, fields)
-    if missing:
-        return "", missing
     if gate == "route docs read":
         receipt_failures = validate_route_doc_receipt(route or {}, route_docs_receipt)
         if receipt_failures:
             return "", ["matching route docs receipt"]
+        missing = _missing_fields(gate, fields)
+        if missing:
+            return "", missing
         return (
-            "read routed skill/guidance docs before code, implementation, or editing "
+            "read required skill/guidance docs before code, implementation, or editing "
             f"with docs-read receipt; applied rule/takeaway: {fields['takeaway']}",
             [],
         )
+    missing = _missing_fields(gate, fields)
+    if missing:
+        return "", missing
     if gate == "cycle contract":
         return (
             f"cycle_type={fields['cycle_type']}; input_scope={fields['input_scope']}; "
@@ -269,14 +309,19 @@ def _ledger_matches_route(ledger: dict[str, Any], evidence_path: Path, route: di
         return False
     if ledger.get("preflight_evidence") != str(evidence_path):
         return False
-    try:
-        evidence_hash = preflight_evidence_sha256(evidence_path)
-    except OSError:
+    if ledger.get("preflight_evidence_sha256") != preflight_evidence_sha256(evidence_path):
         return False
-    return (
-        ledger.get("preflight_evidence_sha256") == evidence_hash
-        and ledger.get("route_fingerprint") == route_fingerprint(route)
-    )
+    return ledger.get("route_fingerprint") == route_fingerprint(route)
+
+
+def _refresh_ledger_binding(
+    ledger: dict[str, Any],
+    evidence_path: Path,
+    preflight: dict[str, Any],
+) -> None:
+    ledger["preflight_evidence"] = str(evidence_path)
+    ledger["preflight_evidence_sha256"] = preflight_evidence_sha256(evidence_path)
+    ledger["route_fingerprint"] = route_fingerprint(preflight.get("route") or {})
 
 
 def _string_fields(fields: dict[str, Any]) -> dict[str, str]:

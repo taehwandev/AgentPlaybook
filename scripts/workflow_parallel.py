@@ -38,7 +38,7 @@ def parallel_execution_plan(command: str, gates: list[str]) -> dict[str, Any]:
         phase_id="orientation",
         mode="parallel",
         gates=_existing(gates, (ROUTE_DOCS_READ_GATE, SOURCE_DOCS_GATE)),
-        tasks=("read independent routed docs", "run read-only searches", "inspect stack and git status"),
+        tasks=("read independent required docs", "run read-only searches", "inspect stack and git status"),
         constraints=("read-only commands only", "preflight must succeed before edits"),
     )
     _append_phase(
@@ -106,7 +106,9 @@ def parallel_execution_plan(command: str, gates: list[str]) -> dict[str, Any]:
         "phases": phases,
         "notes": [
             "Use these phases to find safe parallel work; do not treat route gates as one fully serial chain.",
+            "Batch independent read-only commands and selected document reads instead of running them one at a time.",
             "Parallelize read-only orientation and independent verification when the runtime supports it.",
+            "Use Review Hook --review-path for task-owned files when unrelated working-tree changes are present.",
             "Run writers in parallel only after owned scopes, forbidden scopes, contracts, and checks are explicit.",
             "Keep shared contracts, generated files, migrations, dependency changes, release config, and same-file edits serial.",
         ],

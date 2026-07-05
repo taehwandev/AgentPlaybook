@@ -13,7 +13,7 @@ from agent_finish_common import add_gate_signal, append_unique
 from agent_finish_gate_policy import ROUTE_DOCS_READ_GATE, validate_gate_evidence
 from agent_route_docs import read_route_doc_receipt, receipt_path_for_evidence, validate_route_doc_receipt
 from workflow_common import QUESTION_ROUTE_COMMANDS
-from workflow_request import classification_evidence_blocks_work, classification_evidence_requires_clarification
+from workflow_request import classified_route_block_reason, classification_evidence_requires_clarification
 from workflow_request_patterns import GRILL_ME_REQUEST_PATTERNS
 
 
@@ -147,19 +147,23 @@ def check_request_intake(
     if (
         request_classified
         and not question_resolution_route
-        and classification_evidence_blocks_work(request_intake.get("classification_evidence", ""))
     ):
+        block_reason = classified_route_block_reason(
+            str(route.get("command") or ""),
+            request_intake.get("classification_evidence", ""),
+        )
+    else:
+        block_reason = ""
+    if block_reason:
         append_unique(missed_gates, "request intake")
         add_gate_signal(
             gate_signals,
             "FAIL",
             "request intake",
             "failed",
-            "classification evidence does not prove work can start",
+            block_reason,
         )
-        failures.append(
-            "classification evidence does not prove work can start before work route"
-        )
+        failures.append(block_reason)
 
     grill_me_required = (
         _classification_requires_grill_me(request_classification)

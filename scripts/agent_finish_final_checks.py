@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Any
 
 from agent_finish_common import add_gate_signal, parse_overall, run_command, vibeguard_command
+from agent_inprocess import run_workflow_validate
+from agent_vibeguard_cache import cached_vibeguard
 from agent_workspace_policy import is_writing_workspace, non_git_writing_workspace_note
 
 
@@ -18,10 +19,7 @@ def run_final_checks(
     gate_signals: list[dict[str, str]],
     failures: list[str],
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], str]:
-    validate = run_command(
-        [sys.executable, str(playbook_root / "scripts" / "workflow.py"), "validate"],
-        playbook_root,
-    )
+    validate = run_workflow_validate(playbook_root)
     diff_check = (
         {
             "command": ["git", "diff", "--check"],
@@ -35,8 +33,13 @@ def run_final_checks(
         if is_writing_workspace(project)
         else run_command(["git", "diff", "--check"], project)
     )
-    vibeguard = run_command(vibeguard_command(project, rules), project)
-    vibeguard["overall"] = parse_overall(vibeguard["stdout"] + "\n" + vibeguard["stderr"])
+    vibeguard = cached_vibeguard(
+        project=project,
+        rules=rules,
+        run_command=run_command,
+        vibeguard_command=vibeguard_command,
+        parse_overall=parse_overall,
+    )
     _record_final_check_signals(validate, diff_check, vibeguard, allow_vibeguard_review, gate_signals, failures)
     return validate, diff_check, vibeguard, vibeguard["overall"]["status"]
 
