@@ -243,15 +243,23 @@ include the relevant common gates below even when an individual command profile
 forgets them:
 
 - `route docs read`: after routing and before code, implementation, review,
-  edit, triage, or ambiguity work, read the route's `docs` / `Read In Order`
-  list. Evidence must say that the routed skill/guidance docs were read before
-  work and name the applied rule, criterion, or takeaway used for this task;
-  merely listing documents in the route output is not evidence that the agent
-  consumed or used them.
+  edit, triage, or ambiguity work, read the route's `required_docs` / `Read
+  First` list. Treat `reference_docs` / `Reference On Demand` as lazy context;
+  open one only when the current task touches that concern, platform, gate, or
+  verification path. Evidence must say that the required skill/guidance docs
+  were read before work and name the applied rule, criterion, or takeaway used
+  for this task; merely listing documents in the route output is not evidence
+  that the agent consumed or used them.
   Run the `docs-read` hook after preflight and before edits so finish-check can
   compare its receipt against the current preflight evidence file, route
-  manifest, and routed document count. Generic wording such as "checked docs"
+  manifest, and required-document count. Generic wording such as "checked docs"
   or "read guidance" is a missed gate.
+- Required gates cannot pass by recording a skip, not-applicable,
+  unable-to-run, deferred, or follow-up reason unless that specific gate allows
+  the outcome and the evidence names the allowed reason. Evidence that names an
+  unresolved, must-fix, should-fix, blocking, or deferred issue must report
+  `FAIL`; do not convert it into a successful note. Use missed-gate recovery
+  and retrospective learning to make the next action path fix the issue.
 - `source docs`: before feature, product, build, bugfix, refactor,
   simplification, workflow-setup, release, shipping, or general task
   implementation, search for repo-local source-of-truth documents that match
@@ -363,6 +371,13 @@ shows which parts can overlap safely.
   Do not serialize `sed`, `cat`, `rg`, `find`, stack inspection, git status, or
   other read-only commands unless one result decides whether another command is
   needed.
+- When unrelated dirty files are present, narrow Review Hook checks to the task
+  boundary with `--review-path <path>` after the boundary plan names the owned
+  files or modules. Pathspec review narrows git status, diff, structure, and
+  VibeGuard file scans; VibeGuard uses changed-only fallback when the installed
+  CLI does not yet support explicit path filters. Use the default
+  `--review-scope working-tree` only when the whole current diff is part of the
+  requested review.
 - Treat `mode: parallel` phases as safe opportunities for concurrent read-only
   orientation or independent verification, subject to repo-local tool limits.
 - Treat `mode: conditional_parallel` phases as parallel only after the route's
@@ -488,24 +503,29 @@ wrapper command plus the runtime's trailing argument wildcard. Never save
 `--project`, `--request`, `--gate`, `$HOME`, `$(pwd)`, or user text in the
 permission prefix.
 
-`agent-hook.py start` delegates to `agent-preflight.py` and writes the same
+`agent-hook.py start` runs the preflight logic in-process and writes the same
 preflight evidence. Calling `agent-preflight.py` directly is acceptable only as
 a lower-level wrapper path when the start hook is unavailable.
 
 After preflight and before edits, reviews, commits, or completion reports, read
-the route's docs and write the route-doc receipt:
+the route's required docs and write the route-doc receipt:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
 ```
 
-The docs-read hook reads each routed doc from the preflight manifest and writes
-`<TARGET_REPO>/.agentplaybook/route-docs-read.json` with path, size, doc hash,
-route fingerprint, document count, and the current preflight evidence hash. Use
+The docs-read hook reads each required doc from the preflight manifest and
+writes `<TARGET_REPO>/.agentplaybook/route-docs-read.json` for the default
+`preflight.json`, or `<preflight-stem>-route-docs-read.json` for a custom
+preflight evidence file. The receipt includes path, size, doc hash, route
+fingerprint, required-document count, and diagnostic preflight metadata. Use
 `--receipt-output` only when the receipt must be written to a non-default path;
-`--output` is a legacy alias for that docs-read receipt path. Finish-check
-treats a missing, stale, or mismatched receipt as a missed `route docs read`
-gate.
+`--output` is a legacy alias for that docs-read receipt path.
+Finish-check validates the receipt against the current route required-doc
+manifest, preflight evidence path, and preflight evidence hash. If the
+preflight file is refreshed, rerun `docs-read` for that preflight instead of
+reusing an older receipt with the same route shape. A missing, stale, or
+mismatched receipt is a missed `route docs read` gate.
 
 Before final report, commit, release, or handoff:
 
@@ -516,25 +536,27 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO
 Do not wait until finish to write all gate evidence by hand. The default path
 is a structured gate ledger at
 `<TARGET_REPO>/.agentplaybook/gate-evidence.json`, bound to the current
-preflight evidence hash and route fingerprint. `agent-hook.py finish` reads
-that ledger first, then applies any explicit `--gate "<gate>=<evidence>"`
-arguments as compatibility overrides.
+preflight evidence hash and route fingerprint. Custom preflight evidence files
+use `<preflight-stem>-gate-evidence.json` so parallel jobs do not overwrite one
+another's ledger. `agent-hook.py finish` reads that ledger first, then applies
+any explicit `--gate "<gate>=<evidence>"` arguments as compatibility overrides.
 
 The `start`, `docs-read`, and `review` hooks record their own successful gate
-evidence in the ledger. For gates that only the active agent can prove, record
-structured fields as soon as the gate is executed:
+evidence in the ledger. For gates that only the active agent can prove, batch
+structured records instead of spawning one shell process per gate:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py gate --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-name "cycle contract" --field cycle_type=workflow_setup --field input_scope=<safe-source-scope> --field allowed_changes=<safe-scope> --field forbidden_changes=<safe-boundary> --field acceptance_criteria=<safe-criteria> --field verification=<check> --field stop_condition=<condition> --field checkpoint=<handoff-or-next-cycle>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py gate-batch --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"cycle contract","fields":{"cycle_type":"workflow_setup","input_scope":"<safe-source-scope>","allowed_changes":"<safe-scope>","forbidden_changes":"<safe-boundary>","acceptance_criteria":"<safe-criteria>","verification":"<check>","stop_condition":"<condition>","checkpoint":"<handoff-or-next-cycle>"}},{"gate":"boundary plan","fields":{"scope":"<owned-scope>","verification":"<nearest-check>"}}]'
 ```
 
 Use this ledger to capture what happened, not to craft magic validator prose.
 If a structured entry is missing required fields, finish-check should fail and
 the recovery is to complete or record the missing gate fact, not to add a vague
-sentence. Manual `--gate` arguments are acceptable for one-off fallback or
-override, but they should not become the normal finish path.
+sentence. Use `agent-hook.py gate` only for a single immediate gate. Manual
+`--gate` arguments are acceptable for one-off fallback or override, but they
+should not become the normal finish path.
 
-`agent-hook.py finish` delegates to `agent-finish-check.py`. Calling
+`agent-hook.py finish` runs the finish-check logic in-process. Calling
 `agent-finish-check.py` directly is acceptable only as a lower-level wrapper path
 when the finish hook is unavailable.
 
@@ -548,7 +570,10 @@ For work routes, that evidence must include a resolved-scope signal rather than
 a generic `classified`, `done`, `handled`, `clarified`, or `no blockers`
 marker.
 `agent-finish-check.py` requires evidence for every route gate, runs
-`workflow.py validate`, runs `git diff --check`, reruns VibeGuard, and writes
+`workflow.py validate`, runs `git diff --check`, uses the task-local VibeGuard
+audit cache when both the target project git state and AgentPlaybook rules git
+state are unchanged. Failed VibeGuard invocations must not be cached; rerun the
+tool after transient failures. Finish-check writes
 `<TARGET_REPO>/.agentplaybook/finish.json`.
 It also writes `gate_signals`, `missed_gates`, and
 `retrospective_required`. When `retrospective_required` is true, it writes a
@@ -611,6 +636,8 @@ The current script exposes these stable command profiles:
 - `docs`: documentation-only update.
 - `planning`: research, compare, and recommend before implementation.
 - `review`: review and commit-readiness check.
+- `commit` / `git_commit`: lightweight local commit preparation. Run review
+  first, stop on findings, then record commit readiness for the staged diff.
 - `multi-agent`: delegated or parallel agent work with explicit write scopes.
 - `release`: packaging, deployment, migration, or rollback-sensitive work.
 - `retrospective`: capture a reusable lesson after a task or incident.
@@ -623,7 +650,8 @@ For a multi-step task:
 2. Run the workflow router before selecting task documents, editing, reviewing,
    committing, or reporting completion.
 3. Read the route output as the task command manifest.
-4. Load the listed documents in order.
+4. Load `required_docs` / `Read First` in order; load `reference_docs` only
+   when the task touches that concern, platform, gate, or verification path.
 5. Follow the listed gates before editing, reviewing, testing, or committing.
 6. Execute project commands only from trusted repo-local instructions.
 7. Report verification and residual risk against the route gates.

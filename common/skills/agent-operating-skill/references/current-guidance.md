@@ -15,14 +15,28 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 3. Read repo-local instructions before changing files.
 4. Discover the project stack before choosing commands or libraries.
 5. For multi-step tasks, run `scripts/workflow.py route ... --request "<USER_REQUEST>"` before selecting task documents, editing, reviewing, committing, or reporting completion.
-6. Read the route's listed docs before editing, reviewing, coding, or running
-   project-specific work. Record `route docs read` evidence when the route
-   includes that gate; the evidence must name that routed skill/guidance docs
-   were read before code, implementation, or edits, and must name the applied
-   rule, criterion, or takeaway used for this task. Generic evidence such as
-   "docs read" is not enough; run the `docs-read` hook after preflight so the
-   finish check can compare the receipt against the current preflight evidence,
-   route manifest, and routed document count.
+6. Read the route's `required_docs` / `Read First` docs before editing,
+   reviewing, coding, or running project-specific work. Treat `reference_docs`
+   as lazy context and open one only when the current task touches that concern,
+   platform, gate, or verification path. Record `route docs read` evidence when
+   the route includes that gate; the evidence must name that required
+   skill/guidance docs were read before code, implementation, or edits, and
+   must name the applied rule, criterion, or takeaway used for this task.
+   Generic evidence such as "docs read" is not enough; run the `docs-read` hook
+   after preflight so the finish check can compare the receipt against the
+   current preflight evidence path, preflight evidence hash, route manifest,
+   and required-document count.
+   A required gate cannot pass by recording a skip, not-applicable,
+   unable-to-run, deferred, or follow-up reason unless that gate explicitly
+   allows that outcome. If the evidence names an unresolved, must-fix,
+   should-fix, blocking, or deferred issue, report `FAIL`, run missed-gate
+   recovery, and use retrospective learning to change the next action path.
+   For local commit creation or commit preparation, route to `commit` or
+   `git_commit` instead of the general `task`, `review`, or `triage` routes
+   when the request is clear. Commit routes are intentionally lightweight:
+   read the commit workflow entrypoints, run the review hook first, stop before
+   committing when review finds issues, and record commit readiness only after
+   the staged diff and verification evidence match the intended commit unit.
 7. For feature, product, build, release, or other behavior-changing work, search
    for repo-local PRD, spec, ARD, issue, design note, task doc, or documented
    source of truth before implementation or edits. If one exists, open it and
@@ -40,9 +54,12 @@ Use this before implementation, review, refactoring, debugging, documentation, o
    instructions conflict.
 10. Keep a gate execution ledger for the route and mark each gate with
     evidence when it is executed. Prefer structured
-    `.agentplaybook/gate-evidence.json` entries written by `agent-hook.py gate`
-    or by executable hooks over reconstructing validator-ready prose at finish.
-    Show a short gate signal after each completed gate or task step.
+    `.agentplaybook/gate-evidence.json` entries for the default
+    `preflight.json`, or `<preflight-stem>-gate-evidence.json` entries for a
+    custom preflight evidence file, written by executable hooks or one
+    `agent-hook.py gate-batch` call over repeated single-gate shell calls or
+    reconstructing validator-ready prose at finish. Show a short gate signal
+    after each completed gate or task step.
 11. For work-producing or delegated tasks, record the agentic run state:
     current state, next transition or resume point, and the gate/command/check
     evidence. Use it as the continuation and recovery anchor after interruption,
@@ -100,12 +117,13 @@ Before editing:
   editing the draft.
 - Check repo-local `AGENTS.md`, `AGENTS.override.md`, `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or equivalent docs.
 - Check stack manifests, lockfiles, and config before running commands, adding dependencies, or using framework-specific APIs.
-- Read the route's `Read In Order` docs before code, implementation, review,
-  or edit work. Do not treat the route output as a passive suggestion; if the
-  route includes `route docs read`, finish evidence must state that routed
-  skill/guidance docs were read before work, name the applied rule/criterion or
-  takeaway, and the `docs-read` receipt must match the current preflight
-  evidence file, route manifest, and routed document count.
+- Read the route's `Read First` / `required_docs` docs before code,
+  implementation, review, or edit work. Do not load `Reference On Demand` docs
+  unless the current task touches that concern, platform, gate, or verification
+  path. If the route includes `route docs read`, finish evidence must state that
+  required skill/guidance docs were read before work, name the applied
+  rule/criterion or takeaway, and the `docs-read` receipt must match the current
+  preflight evidence file, route manifest, and required-document count.
 - For feature, product, build, release, or other behavior-changing work, search
   and open repo-local PRD/spec/ARD/source-of-truth docs before implementation.
   Finish evidence must say whether those docs were found and read, or whether
@@ -161,7 +179,9 @@ Before finishing:
 - Confirm every required workflow route gate has structured ledger evidence
   when a scripted route was used. Treat missing fields as missing work or
   missing evidence to complete, not as a prompt to write vague pass-through
-  wording at finish.
+  wording at finish. For gates with structured field requirements, ledger
+  evidence must provide those fields; use explicit finish `--gate` overrides
+  only as a compatibility fallback for one-off manual evidence.
 - Confirm alignment evidence names the user-visible checkpoint, not only an
   internal note reconstructed after the work.
 - Confirm documentation evidence names the decision, affected source-of-truth

@@ -38,5 +38,5 @@ guidance in the `SKILL.md` plus `references/` layout.
 
 - `python3 scripts/workflow.py validate`
 - A route smoke that should load the changed bundle and shows `SKILL.md` in
-  `Read In Order`.
+  `Read First` or `Reference On Demand` as appropriate for the task.
 - `vibeguard audit . --rules .`

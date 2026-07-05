@@ -124,11 +124,14 @@ the update.
   request classification, route, git status, and pre-work VibeGuard evidence.
   Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.
 - `Docs-Read Hook`: run after Start Hook and before edits when the route
-  includes `route docs read`. It reads every routed doc from the preflight
-  manifest and writes `.agentplaybook/route-docs-read.json` with path, size,
-  doc hash, route fingerprint, document count, and preflight evidence hash.
-  Finish Hook rejects route-doc evidence when this receipt is missing, stale,
-  or mismatched. Use `--receipt-output` only for a non-default receipt path.
+  includes `route docs read`. It reads the route's `required_docs` from the
+  preflight manifest, leaves `reference_docs` for on-demand context, and writes
+  `.agentplaybook/route-docs-read.json` for the default `preflight.json`, or
+  `<preflight-stem>-route-docs-read.json` for a custom preflight evidence file.
+  The receipt includes path, size, doc hash, route fingerprint,
+  required-document count, and preflight evidence hash. Finish Hook rejects
+  route-doc evidence when this receipt is missing, stale, or mismatched.
+  Use `--receipt-output` only for a non-default receipt path.
   Use `python3 scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>`.
 - `Review Hook`: the primary hook. Run it immediately after meaningful edits
   and before finish. It must record code review evidence and docs freshness
@@ -138,13 +141,21 @@ the update.
   additions, oversized functions, components, hooks, handlers, script steps, or
   style blocks. Tests, fixtures, mocks, specs, generated files, config/build
   files, Markdown, MDX, and prose docs are excluded from these code-size hard
-  gates. Default hard gates are: new development source/style file over 400
+  gates, but all human-authored files still need one clear owner or role.
+  Default gates are: structure-review evidence for development source/style
+  files over 300 lines, new development source/style file hard failure over 500
   lines, more than 200 added lines in one development source/style file, growth
-  in an existing development source/style file already over 400 lines, or a
-  development source/style block over 120 lines. Architecture,
-  security, dependency, release, and test concerns are reviewed here as
-  evidence, not as separate hooks. The review hook is read-only: it fails if its
-  checks change the worktree. On `FAIL`, it must explain the exact failing
+  in an existing development source/style file already over 500 lines without a
+  same-owner split decision, or a development source/style block over 120
+  lines. Architecture, security, dependency, release, and test concerns are
+  reviewed here as evidence, not as separate hooks. The review hook is
+  read-only: it fails if its checks change the worktree. `--review-path`
+  narrows changed-path, diff, and structure checks to the owned scope. VibeGuard
+  is run with changed-only scope for pathspec reviews, and with explicit path
+  filters when the installed
+  VibeGuard CLI supports them. The read-only self-check still compares the full
+  worktree before and after the hook so scoped reviews cannot hide
+  out-of-scope mutations. On `FAIL`, it must explain the exact failing
   check, threshold, affected path or line when available, and recovery action.
   Fix scoped and safe failures outside the hook, then rerun the same hook once
   with `--retry-attempt 1`; do not finalize with an unresolved `FAIL`. It also
@@ -154,11 +165,16 @@ the update.
   `python3 scripts/agent-hook.py review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
 - `Finish Hook`: run before final report, commit, release, or handoff. It
   verifies the required route gate evidence, final validation, diff hygiene,
-  and final VibeGuard state. Use `--gate "<gate>=<evidence>"` for each required
-  gate from the start evidence. If `review hook` is one of those gates, missing
-  Review Hook evidence is a workflow failure. It also validates automatic gate
-  evidence for ambiguity, alignment, documentation, tests, and multi-agent split
-  decisions; vague placeholders such as "done" are failures.
+  and final VibeGuard state. Prefer executable hook evidence plus one
+  `agent-hook.py gate-batch` call for manual gates; use repeated
+  `--gate "<gate>=<evidence>"` only as a compatibility fallback. If a custom
+  preflight evidence path is used, its gate ledger is
+  `<preflight-stem>-gate-evidence.json`; the default preflight keeps using
+  `.agentplaybook/gate-evidence.json`. If
+  `review hook` is one of those gates, missing Review Hook evidence is a
+  workflow failure. It also validates automatic gate evidence for ambiguity,
+  alignment, documentation, tests, and multi-agent split decisions; vague
+  placeholders such as "done" are failures.
 
 ## Current Workflows
 
@@ -180,6 +196,7 @@ the update.
 - `refactor-cleanup.md`: improve structure while preserving behavior.
 - `release-readiness.md`: prepare release, deployment, package, or migration handoff.
 - `review-and-commit.md`: review the current work, verify it, then prepare a clean commit unit.
+- `commit` / `git_commit` route: lightweight local commit preparation. Run review first, stop on findings, then record commit readiness for the staged diff.
 
 ## Rule
 

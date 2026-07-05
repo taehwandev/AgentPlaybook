@@ -109,6 +109,10 @@ Use parallelism to reduce waiting, not to blur ownership.
   boundaries, and any file that two agents would both touch.
 - Run integration review or the Review Hook after parallel changes are merged
   before broad verification or handoff.
+- When reviewing an implementation in a dirty worktree, make the review scope
+  explicit. Use the whole working tree only when all current changes belong to
+  the task; otherwise pass task-owned paths to the Review Hook so structure,
+  changed-path, and whitespace checks cover the intended slice.
 
 ## Minimum Verification
 

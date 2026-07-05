@@ -8,6 +8,12 @@ type: ai-generated
 
 Use before creating commits, regardless of git client, IDE, CLI, or AI tool.
 
+For AgentPlaybook-routed work, clear local commit requests must use the
+lightweight `commit` route, or `git_commit` when the runtime uses that label.
+Do not route a clear commit request through the general `task`, `review`, or
+`triage` routes. The commit route exists to avoid running implementation gates
+after the code work is already done.
+
 ## Read
 
 - Repo-local commit, branch, signing, and generated-file rules.
@@ -39,6 +45,8 @@ to rollback or forward-fix.
 ## Before Commit
 
 - Check repo-local commit rules first.
+- Run the lightweight code review first. If it finds an issue, stop before
+  staging or committing and report the concrete fixes needed.
 - Check repo-local branch, push, PR, or tag rules only when that action is in
   scope.
 - Inspect the final diff, not memory of the work.

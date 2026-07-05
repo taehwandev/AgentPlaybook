@@ -213,11 +213,14 @@ external dependencies. Use it instead of reading all of `index.md` when the
 concern is narrow or the document name is unknown. Then load only the matched
 documents relevant to the task.
 
-The route output contains `request_classification`, `docs`, `gates`,
-`gate_ledger`, `attempt_limit`, `retry_limit`, `retry_scope`, `notes`, and
-`missing`. Read
-listed documents in order, follow the gates as the task checklist, and stop if
-`missing` is not empty. Public gate and hook signals must use only
+The route output contains `request_classification`, `docs`, `required_docs`,
+`reference_docs`, `gates`, `gate_ledger`, `attempt_limit`, `retry_limit`,
+`retry_scope`, `notes`, and `missing`. Read `required_docs` in order before
+editing or reviewing. Treat `docs` as the full candidate manifest and
+`reference_docs` as lazy, on-demand context; open a reference only when the
+current task touches that concern, platform, gate, or verification path. Follow
+the gates as the task checklist, and stop if `missing` is not empty. Public gate
+and hook signals must use only
 `🐱🟢 SUCCESS` or `🐱🔴 FAIL`. Do not introduce any third state in human-visible
 reports or machine-readable hook status. Completion requires every required
 gate to be `🐱🟢 SUCCESS`. If a
@@ -227,6 +230,14 @@ for the same hook or gate scope. On the second `FAIL` for that scope, stop and
 run `workflows/skills/retrospective-learning/SKILL.md` before handoff, commit, release, or a
 completion report. See `workflows/skills/scripted-agent-workflow/SKILL.md` for the full
 consumption rules.
+
+For local commit creation or commit preparation, use the lightweight `commit`
+route, or `git_commit` when the runtime labels the task that way. Do not route
+a clear commit request through `review`, `task`, or `triage` unless the request
+is genuinely unclear. The commit route is intentionally small: read the commit
+workflow entrypoints, run the lightweight review hook first, stop before
+committing when review finds issues, and record only commit readiness before
+creating the local commit.
 
 ## Required Executable Evidence Gate
 
@@ -267,14 +278,17 @@ completion, run the docs-read receipt hook whenever the route includes
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
 ```
 
-The docs-read hook reads each routed document from the preflight route manifest
-and writes `<TARGET_REPO>/.agentplaybook/route-docs-read.json`. Finish-check
-must reject `route docs read` evidence when this receipt is missing or does not
-match the current preflight evidence file, route manifest, and document count.
-The finish gate evidence must also name the rule, criterion, or takeaway from
-the routed docs that was applied to the current task; "docs read" or "checked
-docs" is not enough. Use `--receipt-output` only when a non-default receipt
-path is required; `--output` is a legacy docs-read alias.
+The docs-read hook reads the route's `required_docs` from the preflight route
+manifest and writes `<TARGET_REPO>/.agentplaybook/route-docs-read.json` for the
+default `preflight.json`, or `<preflight-stem>-route-docs-read.json` for a
+custom preflight evidence file. When a legacy route has no `required_docs`, it
+falls back to `docs`. Finish-check must reject `route docs read` evidence when
+this receipt is missing or does not match the current preflight evidence file,
+route manifest, and required-document count. The finish gate evidence must also
+name the rule, criterion, or takeaway from the required docs that was applied to
+the current task; "docs read" or "checked docs" is not enough. Use
+`--receipt-output` only when a non-default receipt path is required; `--output`
+is a legacy docs-read alias.
 
 For work-producing tasks, do not wait until final reporting to think about
 documentation. Treat `documentation impact` as a pre-code/pre-edit checkpoint:
@@ -299,6 +313,10 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REP
 ```
 
 The wrappers write local JSON evidence under `<TARGET_REPO>/.agentplaybook/`.
+The gate ledger is `<TARGET_REPO>/.agentplaybook/gate-evidence.json` for the
+default `preflight.json`; custom preflight evidence files use
+`<preflight-stem>-gate-evidence.json` so concurrent or delegated runs do not
+overwrite one another.
 That directory is local runtime evidence and should usually be gitignored.
 The wrappers may also read or write safe cross-agent lessons under
 `~/.agentplaybook/`. That user-global store is for content-free lesson metadata
@@ -311,6 +329,12 @@ Missing preflight evidence, missing finish-check evidence, or missing gate
 evidence is non-compliant even when the final code or documentation appears
 correct. `agent-preflight.py --request-classified` must include
 `--classification-evidence`; otherwise request intake is treated as skipped.
+For required gates, a skip, not-applicable, unable-to-run, deferred, or
+follow-up reason is not completion unless that gate explicitly allows that
+outcome and the evidence names the allowed reason. Evidence that names an
+unresolved, must-fix, should-fix, blocking, or deferred issue must fail the gate
+instead of passing with a note; use missed-gate recovery and retrospective
+learning to fix the process.
 If route classification or stored request text says `grill_me: true`, legacy
 `question_drill: true`, or explicitly asks for Grill-Me, `agent-finish-check.py`
 must receive Grill-Me protocol evidence such as

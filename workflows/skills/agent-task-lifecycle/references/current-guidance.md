@@ -64,12 +64,14 @@ from memory.
    "<USER_REQUEST>"` before manually choosing workflow cards. Use `index.md`
    only for simple answer-only work or an explicitly accepted fallback when the
    script cannot run.
-6. Route docs read: read the route's listed docs before editing, coding,
-   reviewing, or running project-specific work. When the route includes
-   `route docs read`, record evidence that the routed skill/guidance docs were
-   read before code, implementation, or edits. The evidence must match the
-   `docs-read` receipt for the preflight route manifest; generic "docs checked"
-   wording is a missed gate.
+6. Route docs read: read the route's `required_docs` / `Read First` docs before
+   editing, coding, reviewing, or running project-specific work. Treat
+   `reference_docs` as lazy context and open one only when the current task
+   touches that concern, platform, gate, or verification path. When the route
+   includes `route docs read`, record evidence that the required skill/guidance
+   docs were read before code, implementation, or edits. The evidence must match
+   the `docs-read` receipt for the preflight route manifest; generic "docs
+   checked" wording is a missed gate.
 7. Gate ledger: create a ledger for every route gate, mark each gate when it is
    executed, and show a short `SUCCESS` or `FAIL` gate signal after each
    completed or failed gate or task step.
