@@ -129,12 +129,13 @@ as a read-only gate:
   fixture, mock, spec, generated, config/build, Markdown, MDX, prose
   documentation, and other docs are excluded from these code-size hard gates
   unless a repo-local rule explicitly treats them as runtime source.
-- Enforce these default hard gates only on development source/style files: a new
-  file over 400 lines fails; a file adding more than 200 lines fails; a
-  function, component, hook, handler, script-step, or style block over 120 lines
-  fails. An existing oversized file that grows should require structure-review
-  evidence and fail only when the current change expands the public owner
-  surface, adds another unclear responsibility, or crosses another hard gate.
+- Enforce these default gates only on development source/style files: a file
+  over 300 lines requires structure-review evidence; a new file over 500 lines
+  fails; a file adding more than 200 lines fails; a function, component, hook,
+  handler, script-step, or style block over 120 lines fails. An existing
+  oversized file that grows should require structure-review evidence and fail
+  only when the current change expands the public owner surface, adds another
+  unclear responsibility, or crosses another hard gate.
 - Enforce purpose-based file ownership, not only line count. A runtime file
   should expose one public/exported top-level class, interface, component,
   hook, handler, service, repository, adapter, DTO, mapper, validator, command,
@@ -151,6 +152,10 @@ as a read-only gate:
   because they are small, feature-local, or convenient to create in one pass.
   Extensibility review must check whether future callers can extend, replace,
   test, or preview one owner without importing unrelated owners.
+- Fail function-only grab bags on the same basis. A group of free functions is
+  one file owner only when it is one cohesive contract family, pipeline, or
+  private support set for one exported owner; unrelated helpers should be split
+  by purpose even when there are no classes.
 - Fail new runtime files added under grab-bag package names such as `utils`,
   `helpers`, `common`, `shared`, `misc`, `manager`, or `service`. Treat
   pre-existing mixed-role packages as review pressure: require boundary evidence

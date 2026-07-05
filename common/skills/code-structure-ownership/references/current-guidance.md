@@ -89,12 +89,15 @@ them in:
   a hard review failure unless repo-local policy explicitly sets a different
   limit.
 - Development source/style files should have one primary owner and one
-  responsibility cluster. A new file over about 400 lines fails review. An
-  existing file already over about 400 lines must not gain another public owner,
-  unclear responsibility, or hard-gate violation; when the change only edits an
-  existing owner, require structure-review evidence instead of failing solely on
-  pre-existing size. More than about 200 added lines in one development file
-  fails review because it is usually a "dump it all here" signal.
+  responsibility cluster. Over about 300 lines is review pressure: require
+  structure-review evidence that names the owner, allowed imports, callers,
+  tests, verification path, and split decision. A new file over about 500 lines
+  fails review. An existing file already over about 500 lines must not gain
+  another public owner, unclear responsibility, or hard-gate violation; when the
+  change only edits an existing owner, require structure-review evidence instead
+  of failing solely on pre-existing size. More than about 200 added lines in one
+  development file fails review because it is usually a "dump it all here"
+  signal.
 - CSS and style files follow the same ownership rule. Do not group tokens,
   primitives, component variants, page layout overrides, and one-off fixes in
   one file only because they are all styles.
@@ -104,12 +107,13 @@ them in:
 
 ### All-Platform File And Type Baseline
 
-Across web, mobile, desktop, server, scripts, styles, tests, and
-generated-adjacent glue, a runtime file must default to one independently
-importable owner. Class-based code must keep one primary public or internal
-class per file. In non-class shapes, keep one primary exported component, hook,
-handler, service, repository, adapter, struct, enum, protocol, interface,
-object, or contract family per file.
+Across web, mobile, desktop, server, scripts, styles, tests, docs-like source,
+and generated-adjacent glue, every human-authored file must default to one clear
+owner or role. Runtime files should have one independently importable owner.
+Class-based code must keep one primary public or internal class per file. In
+non-class shapes, keep one primary exported component, hook, handler, service,
+repository, adapter, struct, enum, protocol, interface, object, function
+family, or contract family per file.
 
 Split aggressively at the nearest useful boundary before adding behavior when a
 file has more than one named owner, review path, test path, side-effect owner,
@@ -125,6 +129,16 @@ owners, platform bridges, fakes, fixtures, or assertion helpers. When a class,
 interface, struct, protocol, object, function component, hook, handler, or
 service is independently importable, testable, previewable, or reviewable, it
 must live in its own purpose-named file.
+
+Function-only files use the same rule. A file with free functions is acceptable
+only when those functions form one cohesive contract family, pipeline, or
+private support set for one exported owner. It is a structure problem when a
+file collects unrelated functions because they are "helpers", "utils",
+"common", or "small": parsing plus execution, read helpers plus mutating
+commands, formatting plus I/O, policy plus transport, or unrelated caller sets
+belong in separate purpose-named files. Tiny private helpers may stay near the
+owner they support; independent importable functions should not share a file
+only because the language does not use classes.
 
 Do not:
 

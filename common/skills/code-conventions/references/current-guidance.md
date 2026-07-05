@@ -53,7 +53,7 @@ defaults and CI candidates for new projects:
 | Parameters | Keep public functions and components to about five parameters or fewer. Prefer a typed request/options object only when the fields are a real caller-facing contract, not a dumping bag. |
 | Complexity | Keep cyclomatic/cognitive complexity low enough that one branch can be reviewed in one pass. More than about 10 decision points, nested depth over 3, or several unrelated branches is split pressure. |
 | Function size | Normal units should fit in about 40-80 lines. Runtime units over about 120 lines fail review by default unless a local policy has a documented exception. |
-| File ownership | Runtime source files default to one primary importable owner. New development files over about 400 lines or more than about 200 added lines in one file fail review by default. |
+| File ownership | Every human-authored file should have one primary owner or role. Development files over about 300 lines need structure-review evidence; new development files over about 500 lines or more than about 200 added lines in one file fail review by default. |
 | Imports | Imports are formatter-sorted and boundary-safe. Do not use wildcard imports, deep implementation imports, or barrel/index imports that hide forbidden dependencies unless the repo documents that pattern. |
 | Suppressions | Lint suppressions, `// swiftlint:disable`, `@Suppress`, `eslint-disable`, `# noqa`, or equivalent require a short reason and the narrowest scope. Do not suppress file-wide to make new code pass. |
 
@@ -168,9 +168,12 @@ gates but still need clear ownership and reviewable structure:
   range for orchestration code.
 - A runtime function, component, hook, handler, script step, or style block over
   about 120 lines fails review by default.
-- A new development source/style file over about 400 lines fails review by
+- A development source/style file over about 300 lines requires
+  structure-review evidence that names the owner, allowed imports, callers,
+  tests, verification path, and split decision.
+- A new development source/style file over about 500 lines fails review by
   default.
-- An existing development source/style file already over about 400 lines should
+- An existing development source/style file already over about 500 lines should
   not grow by adding a new responsibility. If the current change only edits an
   existing owner without expanding the public owner surface, require structure
   review evidence instead of failing solely on the pre-existing size.
@@ -179,6 +182,8 @@ gates but still need clear ownership and reviewable structure:
 
 Split only when it improves ownership, testability, or review. Do not create
 extra files just to satisfy a line count.
+Function-only files are not exempt: several unrelated free functions in one
+file are the same ownership problem as several unrelated classes or components.
 For function, file, class, package, module, CSS, and shared-code split criteria,
 use `common/code-structure-ownership.md`. For diff-size and split decisions, use
 `common/change-size-policy.md`.
