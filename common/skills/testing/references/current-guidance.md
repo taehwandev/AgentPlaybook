@@ -27,6 +27,33 @@ change affects a product rule, public contract, state transition, mapper,
 permission, persistence, cache, platform adapter, release behavior, or known
 regression.
 
+## Test-First
+
+Use test-first when the expected behavior is clear enough to name before
+implementation. Design the scenario and the smallest failing test before
+changing production code, then implement only enough code to pass that test and
+the adjacent regression checks.
+
+Test-first is not a reason to guess missing product behavior. If the expected
+outcome, permission rule, data-loss rule, migration behavior, or error copy is
+unclear, clarify the source of truth before writing the test.
+
+For bug fixes, reproduce the failure with a focused failing test when practical.
+For new behavior, write the test against the public boundary or state transition
+the caller depends on, not private implementation steps.
+
+## Unit Test F.I.R.S.T. Check
+
+When adding or reviewing unit tests, check that they are:
+
+- Fast: narrow enough to run during normal local development.
+- Isolated: independent from other tests and external mutable state.
+- Repeatable: deterministic across machines, time, order, locale, and network
+  availability.
+- Self-validating: assertions decide pass or fail without manual log inspection.
+- Timely: written before or alongside the production change while the expected
+  behavior is still explicit.
+
 ## Prioritize
 
 1. Product rules and permissions
