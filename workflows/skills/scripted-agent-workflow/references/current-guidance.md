@@ -248,12 +248,14 @@ forgets them:
   open one only when the current task touches that concern, platform, gate, or
   verification path. Evidence must say that the required skill/guidance docs
   were read before work and name the applied rule, criterion, or takeaway used
-  for this task; merely listing documents in the route output is not evidence
-  that the agent consumed or used them.
+  for this task, plus the immediate next action that applies it. Merely listing
+  documents in the route output, or proving that the receipt matches the route
+  manifest, is not evidence that the agent consumed or used them.
   Run the `docs-read` hook after preflight and before edits so finish-check can
   compare its receipt against the current preflight evidence file, route
-  manifest, and required-document count. Generic wording such as "checked docs"
-  or "read guidance" is a missed gate.
+  manifest, and required-document count. The hook must receive `--takeaway` and
+  `--next-action`; generic wording such as "checked docs", "read guidance", or
+  "receipt matched the manifest" is a missed gate.
 - Required gates cannot pass by recording a skip, not-applicable,
   unable-to-run, deferred, or follow-up reason unless that specific gate allows
   the outcome and the evidence names the allowed reason. Evidence that names an
@@ -511,7 +513,7 @@ After preflight and before edits, reviews, commits, or completion reports, read
 the route's required docs and write the route-doc receipt:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --takeaway "<doc-derived rule/takeaway>" --next-action "<immediate task action>"
 ```
 
 The docs-read hook reads each required doc from the preflight manifest and
@@ -525,7 +527,9 @@ Finish-check validates the receipt against the current route required-doc
 manifest, preflight evidence path, and preflight evidence hash. If the
 preflight file is refreshed, rerun `docs-read` for that preflight instead of
 reusing an older receipt with the same route shape. A missing, stale, or
-mismatched receipt is a missed `route docs read` gate.
+mismatched receipt is a missed `route docs read` gate. A matching receipt alone
+is also a missed gate unless the hook records the task-specific required-doc
+takeaway and immediate next action.
 
 Before final report, commit, release, or handoff:
 

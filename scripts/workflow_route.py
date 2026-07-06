@@ -226,6 +226,8 @@ def route_hooks(command: str) -> list[dict[str, object]]:
                 "command": (
                     "python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read "
                     "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+                    "--takeaway \"<doc-derived rule/takeaway>\" "
+                    "--next-action \"<immediate task action>\" "
                     "[--receipt-output <TARGET_REPO>/.agentplaybook/route-docs-read.json]"
                 ),
             }

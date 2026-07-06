@@ -21,11 +21,12 @@ Use this before implementation, review, refactoring, debugging, documentation, o
    platform, gate, or verification path. Record `route docs read` evidence when
    the route includes that gate; the evidence must name that required
    skill/guidance docs were read before code, implementation, or edits, and
-   must name the applied rule, criterion, or takeaway used for this task.
-   Generic evidence such as "docs read" is not enough; run the `docs-read` hook
-   after preflight so the finish check can compare the receipt against the
-   current preflight evidence path, preflight evidence hash, route manifest,
-   and required-document count.
+   must name the applied rule, criterion, or takeaway used for this task and
+   the immediate next action that applies it. Generic evidence such as "docs
+   read" or receipt/manifest matching is not enough; run the `docs-read` hook
+   after preflight with `--takeaway` and `--next-action` so the finish check can
+   compare the receipt against the current preflight evidence path, preflight
+   evidence hash, route manifest, and required-document count.
    A required gate cannot pass by recording a skip, not-applicable,
    unable-to-run, deferred, or follow-up reason unless that gate explicitly
    allows that outcome. If the evidence names an unresolved, must-fix,
@@ -122,8 +123,9 @@ Before editing:
   unless the current task touches that concern, platform, gate, or verification
   path. If the route includes `route docs read`, finish evidence must state that
   required skill/guidance docs were read before work, name the applied
-  rule/criterion or takeaway, and the `docs-read` receipt must match the current
-  preflight evidence file, route manifest, and required-document count.
+  rule/criterion or takeaway, name the immediate next action, and the
+  `docs-read` receipt must match the current preflight evidence file, route
+  manifest, and required-document count.
 - For feature, product, build, release, or other behavior-changing work, search
   and open repo-local PRD/spec/ARD/source-of-truth docs before implementation.
   Finish evidence must say whether those docs were found and read, or whether

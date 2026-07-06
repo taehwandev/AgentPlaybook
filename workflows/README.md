@@ -131,8 +131,13 @@ the update.
   The receipt includes path, size, doc hash, route fingerprint,
   required-document count, and preflight evidence hash. Finish Hook rejects
   route-doc evidence when this receipt is missing, stale, or mismatched.
+  Receipt or manifest matching is not the gate by itself. The hook must receive
+  a task-specific `--takeaway` from the required docs and a concrete
+  `--next-action` that applies that takeaway to the current work; otherwise it
+  returns `FAIL` with the smallest recovery action instead of recording
+  successful gate evidence.
   Use `--receipt-output` only for a non-default receipt path.
-  Use `python3 scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>`.
+  Use `python3 scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --takeaway "<doc-derived rule/takeaway>" --next-action "<immediate task action>"`.
 - `Review Hook`: the primary hook. Run it immediately after meaningful edits
   and before finish. It must record code review evidence and docs freshness
   evidence, then run structural review, local diff hygiene, workflow validation,

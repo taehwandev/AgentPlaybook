@@ -275,7 +275,7 @@ completion, run the docs-read receipt hook whenever the route includes
 `route docs read`:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --takeaway "<doc-derived rule/takeaway>" --next-action "<immediate task action>"
 ```
 
 The docs-read hook reads the route's `required_docs` from the preflight route
@@ -286,7 +286,10 @@ falls back to `docs`. Finish-check must reject `route docs read` evidence when
 this receipt is missing or does not match the current preflight evidence file,
 route manifest, and required-document count. The finish gate evidence must also
 name the rule, criterion, or takeaway from the required docs that was applied to
-the current task; "docs read" or "checked docs" is not enough. Use
+the current task and the immediate next action that applies it; receipt or
+manifest matching alone is not enough. The docs-read hook must fail until the
+agent turns the discovered required docs into that task-specific takeaway and
+next action. Use
 `--receipt-output` only when a non-default receipt path is required; `--output`
 is a legacy docs-read alias.
 

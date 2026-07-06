@@ -852,7 +852,10 @@ class WorkflowRoutingTests(unittest.TestCase):
                 evidence_path=evidence_path,
                 preflight=preflight,
                 gate=ROUTE_DOCS_READ_GATE,
-                fields={"takeaway": "use structured ledger evidence instead of manual finish prose"},
+                fields={
+                    "takeaway": "use structured ledger evidence instead of manual finish prose",
+                    "next_action": "record route-doc gate evidence before continuing implementation",
+                },
                 source="docs-read",
             )
             record_gate_evidence(
@@ -1680,6 +1683,77 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertTrue(any("different preflight evidence file" in failure for failure in failures))
 
+    def test_docs_read_hook_requires_takeaway_and_next_action(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "docs": ["AGENTS.md"],
+            "gates": [ROUTE_DOCS_READ_GATE],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir).resolve()
+            evidence_path = (project / "preflight.json").resolve()
+            evidence_path.write_text(json.dumps({"route": route}), encoding="utf-8")
+
+            missing_application = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "agent-hook.py"),
+                    "docs-read",
+                    "--project",
+                    str(project),
+                    "--rules",
+                    str(ROOT),
+                    "--evidence",
+                    str(evidence_path),
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+
+            self.assertNotEqual(0, missing_application.returncode)
+            self.assertIn("required recovery", missing_application.stdout)
+            self.assertFalse(gate_evidence_path_for_preflight(evidence_path).exists())
+
+            applied_application = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "agent-hook.py"),
+                    "docs-read",
+                    "--project",
+                    str(project),
+                    "--rules",
+                    str(ROOT),
+                    "--evidence",
+                    str(evidence_path),
+                    "--takeaway",
+                    "workflow policy requires actionable required-doc evidence before work",
+                    "--next-action",
+                    "record the docs-read gate before continuing workflow implementation",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+
+            self.assertEqual(0, applied_application.returncode, applied_application.stderr)
+            receipt = json.loads(
+                receipt_path_for_evidence(evidence_path).read_text(encoding="utf-8")
+            )
+            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+                route=route,
+                evidence_path=evidence_path,
+                route_docs_receipt=receipt,
+                cli_gate_evidence={},
+            )
+
+        self.assertTrue(diagnostics["used"])
+        self.assertIn("immediate next action", gate_evidence[ROUTE_DOCS_READ_GATE])
+
     def test_custom_preflight_gets_isolated_route_docs_receipt_path(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -2126,6 +2200,8 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertTrue(docs_read_hook["required"])
         self.assertIn("agent-hook.py docs-read", docs_read_hook["command"])
+        self.assertIn("--takeaway", docs_read_hook["command"])
+        self.assertIn("--next-action", docs_read_hook["command"])
         self.assertIn("--review-scope working-tree", review_hook["command"])
         self.assertIn("[--review-path <task-owned-path>]", review_hook["command"])
         self.assertIn("--boundary-plan-evidence", review_hook["command"])
@@ -2486,7 +2562,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                 ROUTE_DOCS_READ_GATE: (
                     "read routed docs before code: AGENTS.md, index.md, "
                     "common/agent-operating-skill.md; applied takeaway: wrapper "
-                    "receipt policy and gate evidence criteria"
+                    "receipt policy and gate evidence criteria; immediate next action: "
+                    "record structured gate evidence before continuing implementation"
                 ),
                 AMBIGUITY_GATE: "no blockers; safe assumption recorded",
                 ALIGNMENT_BRIEF_GATE: (
@@ -2728,6 +2805,61 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
         self.assertTrue(any("applied" in failure for failure in failures))
+
+    def test_route_docs_read_evidence_requires_immediate_next_action(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                ROUTE_DOCS_READ_GATE: (
+                    "read routed docs before edits with docs-read receipt; "
+                    "applied takeaway: wrapper receipt policy and gate evidence criteria"
+                )
+            },
+            [ROUTE_DOCS_READ_GATE],
+        )
+
+        self.assertTrue(any("immediate next action" in failure for failure in failures))
+
+    def test_route_docs_read_evidence_rejects_receipt_only_takeaway(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "docs": ["AGENTS.md"],
+            "gates": [ROUTE_DOCS_READ_GATE],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": route}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            reset_gate_evidence_ledger(evidence_path, preflight)
+
+            record_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                gate=ROUTE_DOCS_READ_GATE,
+                fields={
+                    "takeaway": "route docs receipt matched the current preflight manifest",
+                    "next_action": "continue by editing the scoped workflow hook",
+                },
+                source="docs-read",
+            )
+            receipt = {
+                "schema_version": 1,
+                "route_fingerprint": route_fingerprint(route),
+                "doc_count": 1,
+                "preflight_evidence": str(evidence_path),
+                "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
+                "docs": [{"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"}],
+            }
+
+            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+                route=route,
+                evidence_path=evidence_path,
+                route_docs_receipt=receipt,
+                cli_gate_evidence={},
+            )
+
+        self.assertEqual({}, gate_evidence)
+        self.assertIn(ROUTE_DOCS_READ_GATE, diagnostics["missing_fields"])
+        self.assertTrue(any("task-specific" in item for item in diagnostics["missing_fields"][ROUTE_DOCS_READ_GATE]))
 
     def test_parallel_subagent_evidence_requires_contract_forbidden_scope_and_verification(self) -> None:
         failures = validate_gate_evidence(

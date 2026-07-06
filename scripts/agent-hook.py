@@ -32,6 +32,7 @@ from agent_hook_runtime import (
     vibeguard_command,
 )
 from agent_inprocess import run_script_main
+from agent_finish_gate_core_validators import validate_route_docs_application_fields
 from agent_review_hook import review_hook
 from agent_review_structure import (
     REVIEW_FUNCTION_LINE_LIMIT,
@@ -142,11 +143,27 @@ def docs_read_hook(args: argparse.Namespace) -> int:
     details = ["route docs read receipt completed" if success else "route docs read receipt failed"]
     details.extend(_summary_lines(result))
     if success:
+        application_failures = validate_route_docs_application_fields(
+            args.takeaway or "",
+            args.next_action or "",
+        )
+        if application_failures:
+            details.append("route docs read gate evidence is incomplete")
+            details.extend(f"required recovery: {failure}" for failure in application_failures)
+            details.append(
+                "rerun docs-read with --takeaway \"<doc-derived rule>\" "
+                "--next-action \"<immediate task action>\""
+            )
+            success = False
+    if success:
         record_hook_gate(
             args,
             "route docs read",
             "docs-read receipt completed",
-            {"takeaway": "route docs receipt matched the current preflight manifest"},
+            {
+                "takeaway": args.takeaway or "",
+                "next_action": args.next_action or "",
+            },
             "docs-read",
         )
     return finish_with_result(
@@ -184,8 +201,7 @@ def _summary_lines(result: dict[str, Any]) -> list[str]:
     return lines[:8]
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run essential AgentPlaybook hooks.")
+def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("hook", choices=("start", "docs-read", "gate", "gate-batch", "review", "finish"))
     parser.add_argument("--project", type=existing_path, default=Path.cwd())
     parser.add_argument("--rules", type=existing_path, default=ROOT)
@@ -214,6 +230,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="0 for the first hook run, 1 for the single allowed retry",
     )
 
+
+def _add_start_arguments(parser: argparse.ArgumentParser) -> None:
     start = parser.add_argument_group("start hook")
     start.add_argument("--command", default="task", help="workflow route command for start")
     start_request = start.add_mutually_exclusive_group()
@@ -223,6 +241,20 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--platform", action="append", default=[])
     start.add_argument("--concern", action="append", default=[])
 
+
+def _add_docs_read_arguments(parser: argparse.ArgumentParser) -> None:
+    docs_read = parser.add_argument_group("docs-read hook")
+    docs_read.add_argument(
+        "--takeaway",
+        help="task-specific rule, criterion, policy, or takeaway applied from the required docs",
+    )
+    docs_read.add_argument(
+        "--next-action",
+        help="immediate next task action that applies the discovered docs",
+    )
+
+
+def _add_review_arguments(parser: argparse.ArgumentParser) -> None:
     review = parser.add_argument_group("review hook")
     review.add_argument(
         "--code-review-evidence",
@@ -279,10 +311,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="fail review when a changed function, class, component, or style block is above this line count",
     )
 
+
+def _add_finish_arguments(parser: argparse.ArgumentParser) -> None:
     finish = parser.add_argument_group("finish hook")
     finish.add_argument("--gate", action="append", default=[])
     finish.add_argument("--allow-vibeguard-review")
 
+
+def _add_gate_arguments(parser: argparse.ArgumentParser) -> None:
     gate = parser.add_argument_group("gate evidence hook")
     gate.add_argument("--gate-name", help="route gate name to record in the structured ledger")
     gate.add_argument("--status", choices=("SUCCESS", "FAIL"), default="SUCCESS")
@@ -300,6 +336,16 @@ def build_parser() -> argparse.ArgumentParser:
         type=existing_path,
         help="JSON file containing a gate evidence object or array of objects",
     )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Run essential AgentPlaybook hooks.")
+    _add_common_arguments(parser)
+    _add_start_arguments(parser)
+    _add_docs_read_arguments(parser)
+    _add_review_arguments(parser)
+    _add_finish_arguments(parser)
+    _add_gate_arguments(parser)
     return parser
 
 

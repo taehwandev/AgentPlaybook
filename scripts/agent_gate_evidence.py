@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_finish_gate_core_validators import validate_route_docs_application_fields
 from agent_route_docs import preflight_evidence_sha256, route_fingerprint, validate_route_doc_receipt
 
 
@@ -30,7 +31,7 @@ FIELD_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "documentation": ("decision", "target", "reason"),
     "documentation impact": ("artifact", "decision", "reason"),
     "multi-agent split decision": ("mode", "reason", "verification"),
-    "route docs read": ("takeaway",),
+    "route docs read": ("takeaway", "next_action"),
     "side-effect audit": ("scope", "result"),
     "source docs": ("source", "outcome"),
     "tests": ("check", "result"),
@@ -199,9 +200,16 @@ def synthesize_gate_evidence(
         missing = _missing_fields(gate, fields)
         if missing:
             return "", missing
+        application_failures = validate_route_docs_application_fields(
+            fields["takeaway"],
+            fields["next_action"],
+        )
+        if application_failures:
+            return "", application_failures
         return (
             "read required skill/guidance docs before code, implementation, or editing "
-            f"with docs-read receipt; applied rule/takeaway: {fields['takeaway']}",
+            f"with docs-read receipt; applied rule/takeaway: {fields['takeaway']}; "
+            f"immediate next action: {fields['next_action']}",
             [],
         )
     missing = _missing_fields(gate, fields)
