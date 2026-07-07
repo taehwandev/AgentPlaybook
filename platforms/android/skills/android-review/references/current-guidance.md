@@ -41,8 +41,9 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 - Check design-system ownership when shared UI changes: tokens, wrappers,
   defaults, and accessibility contracts belong there; product copy, routes,
   analytics, permissions, fake data, and repository calls do not.
-- Confirm meaningful screen, section, and reusable component changes include
-  previews or a documented replacement check.
+- Confirm every named stateless composable that renders UI has a colocated
+  preview. Screenshot tests, UI tests, and manual smoke paths are additional
+  checks, not replacements for missing stateless UI previews.
 - Verify loading, empty, error, permission-denied, and offline states.
 - Ensure repository/data source boundaries are not bypassed from UI.
 - Check permission, activity result, navigation argument, and process recreation behavior.
@@ -89,7 +90,13 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 ## UI Test Focus
 
 - Screen renders expected state from fake ViewModel/state.
-- Stateless screen and component previews cover the changed visual states.
+- Every named stateless UI composable has a colocated preview, with no omissions.
+  A parent preview does not cover a separately named stateless child unless the
+  child is inlined and no longer exists as its own visual owner.
+- One-off `@Preview` functions, private preview data, and private
+  `PreviewParameterProvider` classes are colocated with the stateless
+  composable they render; separate preview packages have a named reuse or
+  design-system ownership reason.
 - User actions emit correct events or trigger expected navigation.
 - Lists use stable keys/content types when items reorder, update independently,
   animate, or hold local state.

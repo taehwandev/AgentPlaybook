@@ -44,6 +44,10 @@ Apply `../../common/code-structure-ownership.md` before growing Android runtime
 files. Kotlin and Java source should default to one primary public or internal
 top-level class, interface, object, composable screen/state owner, repository,
 adapter, mapper, fake, or assertion subject per file.
+Every named stateless UI composable must have a colocated private `@Preview`.
+Same-file private preview data and private `PreviewParameterProvider` classes
+belong beside the stateless composable they render. They are part of the
+component's visual contract, not separate runtime owners.
 
 Split files before adding behavior when a feature file contains separate owners
 such as route contract, `NavEntry` mapping, screen rendering, ViewModel,
@@ -631,15 +635,20 @@ dependency direction:
   model/                     UiState, UiAction, UiEffect, UI display models
   compose/ or ui/            stateless screen composables
   compose/component/         feature-local components
-  preview/                   PreviewParameterProvider and sample states
+  preview/                   shared preview providers only when reused across
+                             multiple composable files
   convert/ or mapper/        domain/repository -> UI model mapping
   di/                        feature-local bindings
   navigation/                local graph or route registration when needed
 ```
 
 For small screens, keeping `Route`, `Screen`, `UiState`, and preview provider in
-one package is fine. Split packages when each area has a separate owner, many
-files, or tests.
+one package is fine, but one-off `@Preview` functions and their
+`PreviewParameterProvider` must stay in the same file as the `Screen`, section,
+or component they render. Do not leave a named stateless UI composable without a
+preview; inline it into a previewed parent if it is too small to own one. Split
+preview providers into `preview/` only when several composable files reuse the
+same deterministic states or a design-system module owns shared examples.
 
 ## Repository Package Layout
 
