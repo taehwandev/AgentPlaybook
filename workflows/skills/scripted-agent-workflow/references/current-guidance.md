@@ -511,6 +511,24 @@ replace request classification, command/profile selection, repo-local
 instructions, or the requirement to record a task-specific docs-read takeaway
 before edits.
 
+The route/search layer also maintains a local document graph derived from
+Markdown links, compatibility stubs, and `workflow-doc-surfaces.json` document
+sets. Natural-language matching should identify seed documents; graph expansion
+should then surface directly connected skill entrypoints, detailed references,
+and explicit document dependencies. Treat ordinary graph links as
+`reference_docs` so broad surfaces do not overload required reading. Promote a
+graph neighbor to `required_docs` only when the source declares an explicit
+required relation such as frontmatter `requires_docs`.
+
+Natural-language document discovery belongs in the routing/search layer, not in
+the hook body. Hooks are enforcement points: they stop work until preflight,
+docs-read receipts, and finish evidence exist. The router and `workflow.py
+query` must carry the retrieval burden by expanding vague task language into
+reusable facets such as cleanup, review, verification, UI feature work, skill
+docs, or document routing, using the local document graph to add connected
+candidates, then returning candidate `required_docs` and `reference_docs`
+before the hook gate checks whether they were actually read.
+
 The command includes task-specific arguments, but persistent runtime permission
 prefixes must not. For Codex escalation, request only
 `["python3", "/absolute/path/to/AgentPlaybook/scripts/agent-hook.py"]` as the

@@ -90,6 +90,14 @@ TEST_ACTION_PATTERNS = (
     "\ud14c\uc2a4\ud2b8.*(\uc2e4\ud589|\uac80\uc99d|\ud655\uc778)",
     "\uac80\uc99d\ub9cc",
 )
+WORKFLOW_SETUP_ACTION_PATTERNS = (
+    r"\b(natural language|semantic)\b.*\b(search|routing|retrieval|docs?|documents?|skills?)\b",
+    r"\b(doc routing|document routing|doc-route|route docs|docs-read)\b",
+    r"\b(hook|hooks?)\b.*\b(docs?|documents?|search|read|routing)\b",
+    r"(\uc790\uc5f0\uc5b4|\uc758\ubbf8).*(\uac80\uc0c9|\ubb38\uc11c|\ub77c\uc6b0\ud305)",
+    r"(\ubb38\uc11c|\uc2a4\ud0ac).*(\uac80\uc0c9|\ub77c\uc6b0\ud305|\ubd88\ub7ec|\uc77d)",
+    r"(\ud6c5|hook).*(\ubb38\uc11c|\uac80\uc0c9|\uc77d|\ub77c\uc6b0\ud305)",
+)
 UI_FEATURE_ACTION_PATTERNS = (
     r"\b(screen|screens|ui|layout|list|lists|favorite|favorites|navigation|tab)\b.*\b(build|create|implement|compose|design|add|make)\b",
     r"\b(build|create|implement|compose|design|add|make)\b.*\b(screen|screens|ui|layout|list|lists|favorite|favorites|navigation|tab)\b",

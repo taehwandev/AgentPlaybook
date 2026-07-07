@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Document promotion rules used by the workflow router when request intent or touched paths show which guidance must be read before work.",
+  "description": "Document promotion rules used by the workflow router when request intent or touched paths show which guidance must be read before work. These rules also seed the local document graph used by route and query expansion.",
   "doc_sets": {
     "common_ui_quality": [
       "common/ui-visual-verification.md",
@@ -139,6 +139,26 @@
         "common/definition-of-done.md"
       ],
       "reason": "Verification requests need test scope, scenario, evidence, and done criteria guidance."
+    },
+    {
+      "name": "natural_language_doc_routing",
+      "commands": ["workflow-setup", "task", "docs", "docs-review", "review"],
+      "request_any": [
+        "\\b(natural language|semantic|document routing|doc routing|doc-route|route docs|docs-read|hook|hooks?)\\b",
+        "\\b(search|retrieval)\\b.*\\b(docs?|documents?|skills?)\\b",
+        "(\\uc790\\uc5f0\\uc5b4|\\uc758\\ubbf8).*(\\uac80\\uc0c9|\\ubb38\\uc11c|\\ub77c\\uc6b0\\ud305)",
+        "(\\ubb38\\uc11c|\\uc2a4\\ud0ac).*(\\uac80\\uc0c9|\\ub77c\\uc6b0\\ud305|\\ubd88\\ub7ec|\\uc77d)",
+        "(\\ud6c5|hook).*(\\ubb38\\uc11c|\\uac80\\uc0c9|\\uc77d)"
+      ],
+      "docs": [
+        "workflows/scripted-agent-workflow.md",
+        "workflows/agent-task-lifecycle.md",
+        "common/task-intake-effort-routing.md",
+        "common/source-driven-development.md",
+        "common/agent-skill-card-anatomy.md",
+        "common/tool-failure-recovery.md"
+      ],
+      "reason": "Natural-language document routing work must treat hooks as enforcement points and load the routing, intake, source, skill-card, and tool-failure guidance that defines how required docs are selected and verified."
     },
     {
       "name": "android_compose_ui_feature",

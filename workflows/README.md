@@ -129,6 +129,13 @@ the update.
   Application desktop UI, Flutter widgets, iOS SwiftUI/UIKit, KMP Compose,
   Swift design-system UI, and Web React UI must promote the matching UI, state,
   structure, review, visual verification, and performance guidance.
+  Natural-language document discovery stays in the router/search layer; the
+  hook enforces that routed docs were read, but it does not become the search
+  engine or mutate the route by itself. The router/search layer may expand
+  matched seed docs through the local document graph built from Markdown links,
+  compatibility stubs, and `workflow-doc-surfaces.json`; loose graph neighbors
+  stay in `reference_docs`, while explicit `requires_docs` relations may become
+  required.
   Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.
 - `Docs-Read Hook`: run after Start Hook and before edits when the route
   includes `route docs read`. It reads the route's `required_docs` from the

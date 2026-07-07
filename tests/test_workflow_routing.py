@@ -49,6 +49,11 @@ from agent_route_docs import (
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
 from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
+from support.runtime_bridge import (
+    RUNTIME_BRIDGE_GRAPH_PHRASES,
+    runtime_bridge_block,
+    runtime_bridge_required_phrases,
+)
 from support.stable_launcher import stable_launcher_path
 from workflow_catalog import COMMANDS, CONCERNS
 from workflow_gate_policy import (
@@ -78,8 +83,14 @@ from workflow_doc_surfaces import (
     load_doc_surface_rules,
     surface_rule_doc_refs,
 )
+from workflow_doc_graph import (
+    clear_doc_graph_cache,
+    expand_doc_matches,
+    graph_required_docs,
+)
 from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import resolve_docs
+from workflow_search import search_docs
 from workflow_skill_paths import canonical_doc_path
 from workflow_spill import spill_tool_label
 from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS, markdown_files_to_validate
@@ -337,6 +348,13 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertEqual("clear-scoped", classification["clarity"])
         self.assertEqual("feature", classification["recommended_route"])
+        self.assertFalse(classification["grill_me"])
+
+    def test_natural_language_doc_routing_request_routes_to_workflow_setup(self) -> None:
+        classification = classify_request("훅은 보완이고 자연어 검색 가능한 문서 라우팅을 강화해줘")
+
+        self.assertEqual("clear-scoped", classification["clarity"])
+        self.assertEqual("workflow-setup", classification["recommended_route"])
         self.assertFalse(classification["grill_me"])
 
     def test_claude_user_prompt_hook_requires_classification_evidence(self) -> None:
@@ -664,6 +682,18 @@ class WorkflowRoutingTests(unittest.TestCase):
             self.assertIn(phrase, PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES)
             self.assertIn(phrase, block)
 
+    def test_runtime_bridge_requires_graph_backed_document_routing(self) -> None:
+        agy_block = _agy_runtime_bridge_block(ROOT)
+        codex_block = runtime_bridge_block(ROOT, "Codex", "AGENTS.md")
+        claude_required = runtime_bridge_required_phrases("Claude", "CLAUDE.md")
+
+        for phrase in RUNTIME_BRIDGE_GRAPH_PHRASES:
+            self.assertIn(phrase, AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES)
+            self.assertIn(phrase, PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES)
+            self.assertIn(phrase, claude_required)
+            self.assertIn(phrase, agy_block)
+            self.assertIn(phrase, codex_block)
+
     def test_spill_tool_label_prefers_codex_runtime_over_stale_spill_env(self) -> None:
         label = spill_tool_label({"CODEX_SANDBOX": "seatbelt", "SPILL_AI_TOOL": "claude"})
 
@@ -798,6 +828,56 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("platforms/ios/ios-swiftui-ui.md", docs)
         self.assertIn("platforms/flutter/flutter-widget-ui.md", docs)
 
+    def test_document_graph_expands_markdown_and_required_frontmatter_refs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            docs_dir = root / "docs"
+            docs_dir.mkdir()
+            (docs_dir / "a.md").write_text(
+                "---\nrequires_docs:\n  - docs/c.md\n---\n# A\n\nRead [B](b.md).\n",
+                encoding="utf-8",
+            )
+            (docs_dir / "b.md").write_text("# B\n", encoding="utf-8")
+            (docs_dir / "c.md").write_text("# C\n", encoding="utf-8")
+
+            clear_doc_graph_cache()
+            matches = expand_doc_matches(root, ["docs/a.md"], max_depth=1)
+            paths = [str(match["path"]) for match in matches]
+
+            self.assertIn("docs/b.md", paths)
+            self.assertIn("docs/c.md", paths)
+            self.assertEqual(["docs/c.md"], graph_required_docs(matches))
+
+    def test_document_graph_expands_surface_rule_neighbors(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            docs_dir = root / "docs"
+            docs_dir.mkdir()
+            (docs_dir / "a.md").write_text("# A\n", encoding="utf-8")
+            (docs_dir / "b.md").write_text("# B\n", encoding="utf-8")
+            (root / "workflow-doc-surfaces.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "doc_sets": {"pair": ["docs/a.md", "docs/b.md"]},
+                        "request_intents": [],
+                        "path_surfaces": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            clear_doc_graph_cache()
+            matches = expand_doc_matches(
+                root,
+                ["docs/a.md"],
+                max_depth=1,
+                relation_prefixes=("surface:",),
+            )
+
+            self.assertIn("docs/b.md", [str(match["path"]) for match in matches])
+            self.assertTrue(any(match["relation"] == "surface:doc_set:pair" for match in matches))
+
     def test_android_ui_request_promotes_compose_docs_to_required_docs(self) -> None:
         route = resolve_docs(
             "feature",
@@ -857,6 +937,78 @@ class WorkflowRoutingTests(unittest.TestCase):
             route["required_docs"],
         )
         self.assertTrue(any(match["name"] == "android_compose_paths" for match in route["doc_surface_matches"]))
+
+    def test_query_expands_code_cleanup_natural_language_to_refactor_docs(self) -> None:
+        results = search_docs(ROOT, "코드 정리해줘", max_results=8)
+        paths = [str(item["path"]) for item in results]
+
+        self.assertIn("workflows/refactor-cleanup.md", paths)
+        self.assertIn("common/refactoring.md", paths)
+        self.assertIn("common/verification-policy.md", paths)
+        self.assertTrue(
+            any("code_cleanup" in item.get("matched_facets", []) for item in results),
+            results,
+        )
+
+    def test_query_expands_android_ui_natural_language_to_compose_docs(self) -> None:
+        results = search_docs(
+            ROOT,
+            "안드로이드 첫 화면에서는 전체 목록이, 두번째 화면에서는 즐겨찾기가 있는 화면을 구성해줘",
+            max_results=12,
+        )
+        paths = [str(item["path"]) for item in results]
+
+        self.assertIn("platforms/android/android-compose-ui.md", paths)
+        self.assertIn("platforms/android/android-viewmodel-state.md", paths)
+        self.assertIn("platforms/android/skills/source-coverage/references/compose-performance-source-map.md", paths)
+        self.assertTrue(
+            any("android_compose_ui" in item.get("matched_facets", []) for item in results),
+            results,
+        )
+
+    def test_natural_language_doc_routing_request_promotes_workflow_docs(self) -> None:
+        route = resolve_docs(
+            "workflow-setup",
+            None,
+            [],
+            request_classified=True,
+            request_text="훅은 보완이고 자연어 검색 가능한 문서 라우팅을 강화해줘",
+        )
+
+        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["required_docs"])
+        self.assertIn(route_doc("common/task-intake-effort-routing.md"), route["required_docs"])
+        self.assertIn(route_doc("common/source-driven-development.md"), route["required_docs"])
+        self.assertTrue(any(match["name"] == "natural_language_doc_routing" for match in route["doc_surface_matches"]))
+
+    def test_route_exposes_document_graph_neighbors_as_reference_docs(self) -> None:
+        route = resolve_docs(
+            "workflow-setup",
+            None,
+            [],
+            request_classified=True,
+            request_text="훅은 보완이고 자연어 검색 가능한 문서 라우팅을 강화해줘",
+        )
+
+        self.assertIn("doc_graph_matches", route)
+        self.assertIn(
+            "workflows/skills/scripted-agent-workflow/references/current-guidance.md",
+            route["reference_docs"],
+        )
+        self.assertNotIn(
+            "workflows/skills/scripted-agent-workflow/references/current-guidance.md",
+            route["required_docs"],
+        )
+
+    def test_query_uses_document_graph_to_promote_related_skill_entrypoints(self) -> None:
+        results = search_docs(ROOT, "훅으로 문서 검색하고 읽도록", max_results=12)
+        graph_items = [
+            item
+            for item in results
+            if item["path"] == "workflows/skills/scripted-agent-workflow/SKILL.md"
+        ]
+
+        self.assertTrue(graph_items, results)
+        self.assertTrue(graph_items[0].get("graph_reasons"), graph_items[0])
 
     def test_ui_feature_request_promotes_docs_for_all_ui_platforms(self) -> None:
         request = "첫 화면에서는 전체 목록이, 두번째 화면에서는 즐겨찾기가 있는 화면을 구성해줘"

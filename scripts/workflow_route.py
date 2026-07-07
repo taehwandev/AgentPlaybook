@@ -20,6 +20,7 @@ from workflow_common import (
     QUESTION_ROUTE_COMMANDS,
     unique,
 )
+from workflow_doc_graph import expand_doc_matches, graph_required_docs
 from workflow_gate_policy import add_automatic_gates, automatic_docs
 from workflow_doc_surfaces import infer_surface_docs
 from workflow_parallel import parallel_execution_plan
@@ -107,7 +108,17 @@ def resolve_docs(
         request_text=request_text,
         surface_paths=surface_paths or [],
     )
+    doc_graph_matches = expand_doc_matches(
+        ROOT,
+        surface_docs,
+        max_depth=1,
+        max_docs=24,
+        relation_prefixes=("frontmatter:", "markdown:", "compat:"),
+    )
+    graph_docs = [str(match["path"]) for match in doc_graph_matches]
+    graph_required = graph_required_docs(doc_graph_matches)
     docs.extend(surface_docs)
+    docs.extend(graph_docs)
 
     if platform:
         docs.extend(PLATFORMS[platform])
@@ -118,7 +129,7 @@ def resolve_docs(
             docs.extend(PLATFORM_CONCERNS.get((platform, concern), ()))
 
     routed_docs = unique(canonical_doc_path(doc) for doc in docs)
-    required_docs = route_required_docs(command, platform, concerns, profile.docs, surface_docs)
+    required_docs = route_required_docs(command, platform, concerns, profile.docs, [*surface_docs, *graph_required])
     reference_docs = [doc for doc in routed_docs if doc not in set(required_docs)]
     missing = [doc for doc in routed_docs if not (ROOT / doc).exists()]
     notes = list(profile.notes)
@@ -149,6 +160,10 @@ def resolve_docs(
     if surface_matches:
         notes.append(
             "Promoted required docs from request intent or touched path surfaces using `workflow-doc-surfaces.json`."
+        )
+    if doc_graph_matches:
+        notes.append(
+            "Expanded related candidate docs from the local document graph; explicit `requires_docs` edges become required docs."
         )
 
     route = {
@@ -184,6 +199,8 @@ def resolve_docs(
         route["surface_paths"] = surface_paths
     if surface_matches:
         route["doc_surface_matches"] = surface_matches
+    if doc_graph_matches:
+        route["doc_graph_matches"] = doc_graph_matches
     return route
 
 

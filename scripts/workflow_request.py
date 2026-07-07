@@ -19,6 +19,7 @@ from workflow_request_patterns import (
     RISKY_PATTERNS,
     SCOPED_PATTERNS,
     TEST_ACTION_PATTERNS,
+    WORKFLOW_SETUP_ACTION_PATTERNS,
     UI_FEATURE_ACTION_PATTERNS,
     VAGUE_PATTERNS,
 )
@@ -146,6 +147,7 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
     has_refactor_action = _matches(REFACTOR_ACTION_PATTERNS, lowered)
     has_review_action = _matches(REVIEW_ACTION_PATTERNS, lowered)
     has_test_action = _matches(TEST_ACTION_PATTERNS, lowered)
+    has_workflow_setup_action = _matches(WORKFLOW_SETUP_ACTION_PATTERNS, lowered)
     has_ui_feature_action = _matches(UI_FEATURE_ACTION_PATTERNS, lowered)
     has_commit_action = _matches(COMMIT_ACTION_PATTERNS, normalized, re.IGNORECASE)
     inspection_lacks_target = has_inspection and _inspection_lacks_target(lowered)
@@ -168,6 +170,7 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
         "has_refactor_action": has_refactor_action,
         "has_review_action": has_review_action,
         "has_test_action": has_test_action,
+        "has_workflow_setup_action": has_workflow_setup_action,
         "has_ui_feature_action": has_ui_feature_action,
         "has_commit_action": has_commit_action,
         "inspection_lacks_target": inspection_lacks_target,
@@ -189,6 +192,7 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
     has_refactor_action = bool(flags["has_refactor_action"])
     has_review_action = bool(flags["has_review_action"])
     has_test_action = bool(flags["has_test_action"])
+    has_workflow_setup_action = bool(flags["has_workflow_setup_action"])
     has_ui_feature_action = bool(flags["has_ui_feature_action"])
     has_commit_action = bool(flags["has_commit_action"])
     inspection_lacks_target = bool(flags["inspection_lacks_target"])
@@ -216,6 +220,15 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
             False,
             "work",
             "The request asks for local commit preparation or commit creation; use the lightweight commit route.",
+        )
+    if has_workflow_setup_action and not has_risky:
+        flags["clarity"] = "clear-scoped"
+        flags["effort"] = "standard"
+        return (
+            "workflow-setup",
+            False,
+            "work",
+            "The request changes document routing, natural-language discovery, or hook enforcement behavior.",
         )
     if has_ui_feature_action and not has_risky:
         flags["clarity"] = "clear-scoped"

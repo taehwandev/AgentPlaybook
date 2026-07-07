@@ -1,0 +1,161 @@
+"""Build the local AgentPlaybook document graph."""
+
+from __future__ import annotations
+
+import json
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Iterable
+
+from workflow_common import ROOT, unique
+from workflow_doc_graph_refs import frontmatter_doc_refs, markdown_doc_refs
+from workflow_doc_surface_rules import rule_docs, rule_list, string_list
+from workflow_doc_surfaces import RULES_FILE, load_doc_surface_rules
+from workflow_skill_paths import canonical_doc_path
+
+
+def build_doc_graph(root: Path = ROOT) -> dict[str, list[dict[str, object]]]:
+    """Return a path -> edge list graph for local Markdown guidance."""
+    return _build_doc_graph(str(root.resolve()))
+
+
+@lru_cache(maxsize=4)
+def _build_doc_graph(root_text: str) -> dict[str, list[dict[str, object]]]:
+    root = Path(root_text)
+    graph: dict[str, list[dict[str, object]]] = {}
+    docs = _markdown_docs(root)
+    for rel in docs:
+        graph.setdefault(rel, [])
+
+    _add_markdown_edges(root, docs, graph)
+    _add_compat_edges(docs, graph)
+    _add_surface_rule_edges(root, graph)
+    return graph
+
+
+def clear_doc_graph_cache() -> None:
+    """Clear graph cache for tests or long-lived processes after docs change."""
+    _build_doc_graph.cache_clear()
+
+
+def graph_summary(root: Path = ROOT) -> dict[str, int]:
+    """Return a small graph size summary for diagnostics."""
+    graph = build_doc_graph(root)
+    edge_count = sum(len(edges) for edges in graph.values())
+    return {
+        "nodes": len(graph),
+        "edges": edge_count,
+        "surface_rules": _surface_rule_count(root),
+    }
+
+
+def _markdown_docs(root: Path) -> set[str]:
+    docs: set[str] = set()
+    for path in root.rglob("*.md"):
+        rel = path.relative_to(root).as_posix()
+        if rel.startswith(".agentplaybook/") or "/.agentplaybook/" in rel:
+            continue
+        docs.add(rel)
+    return docs
+
+
+def _add_markdown_edges(root: Path, docs: set[str], graph: dict[str, list[dict[str, object]]]) -> None:
+    for rel in sorted(docs):
+        path = root / rel
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        for target in markdown_doc_refs(root, rel, text, docs):
+            _add_edge(graph, rel, target, "markdown:link", "Markdown document reference", 30)
+        for relation, target in frontmatter_doc_refs(root, rel, text, docs):
+            _add_edge(graph, rel, target, relation, "Frontmatter document relation", 80)
+
+
+def _add_compat_edges(docs: set[str], graph: dict[str, list[dict[str, object]]]) -> None:
+    for rel in sorted(docs):
+        canonical = canonical_doc_path(rel)
+        if canonical == rel or canonical not in docs:
+            continue
+        _add_edge(
+            graph,
+            rel,
+            canonical,
+            "compat:canonical-skill",
+            "Compatibility path maps to canonical SKILL.md",
+            90,
+        )
+        _add_edge(
+            graph,
+            canonical,
+            rel,
+            "compat:flat-path",
+            "Canonical SKILL.md has a flat compatibility path",
+            20,
+        )
+
+
+def _add_surface_rule_edges(root: Path, graph: dict[str, list[dict[str, object]]]) -> None:
+    rules = load_doc_surface_rules(root)
+    for name, docs in _doc_sets(rules).items():
+        _connect_group(graph, docs, f"surface:doc_set:{name}", f"Shared document set `{name}`", 45)
+    for key, label, weight in (
+        ("request_intents", "request_intent", 40),
+        ("path_surfaces", "path_surface", 35),
+    ):
+        for rule in rule_list(rules, key):
+            name = str(rule.get("name") or label)
+            _connect_group(
+                graph,
+                rule_docs(rules, rule),
+                f"surface:{label}:{name}",
+                str(rule.get("reason") or f"Shared {label} rule `{name}`"),
+                weight,
+            )
+
+
+def _connect_group(
+    graph: dict[str, list[dict[str, object]]],
+    docs: Iterable[str],
+    relation: str,
+    reason: str,
+    weight: int,
+) -> None:
+    members = unique(doc for doc in docs if doc)
+    for source in members:
+        for target in members:
+            if source != target:
+                _add_edge(graph, source, target, relation, reason, weight)
+
+
+def _add_edge(
+    graph: dict[str, list[dict[str, object]]],
+    source: str,
+    target: str,
+    relation: str,
+    reason: str,
+    weight: int,
+) -> None:
+    if not source or not target or source == target:
+        return
+    edges = graph.setdefault(source, [])
+    for edge in edges:
+        if edge["target"] == target and edge["relation"] == relation:
+            return
+    edges.append({"target": target, "relation": relation, "reason": reason, "weight": weight})
+
+
+def _doc_sets(rules: dict[str, Any]) -> dict[str, list[str]]:
+    raw = rules.get("doc_sets")
+    if not isinstance(raw, dict):
+        return {}
+    return {str(name): string_list(value) for name, value in raw.items()}
+
+
+def _surface_rule_count(root: Path) -> int:
+    rules_path = root / RULES_FILE
+    try:
+        rules = json.loads(rules_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return 0
+    return len(rule_list(rules, "request_intents")) + len(rule_list(rules, "path_surfaces"))

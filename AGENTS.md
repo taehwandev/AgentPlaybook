@@ -212,6 +212,18 @@ adds paths from `git status --short --untracked-files=all`. Use
 does not appear in the request or current git status. Surface promotion may
 move a document from `reference_docs` to `required_docs`; it never replaces
 repo-local instructions or the normal route command/profile selection.
+The router also builds a local document graph from Markdown links,
+compatibility stubs, and `workflow-doc-surfaces.json` document sets. Natural
+language search should find seed docs; the graph then follows nearby relations
+so agents see connected guidance without the user naming every keyword. Loose
+graph relations become `reference_docs`; only explicit required relations such
+as frontmatter `requires_docs` may promote an additional doc to `required_docs`.
+
+Natural-language document discovery is a router responsibility, not a hook
+responsibility. Hooks must enforce preflight, docs-read receipts, and finish
+evidence, but the router/search layer must expand vague task language such as
+cleanup, review, screen work, or document routing into reusable task facets and
+candidate required docs before the hook gate runs.
 
 Discover valid commands, platforms, and concerns with:
 
@@ -227,9 +239,12 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py query <keyword> [<keyword> ...]
 
 The query command ranks all playbook documents by relevance and returns the top
 matches with one-line descriptions. It works tool-agnostically and requires no
-external dependencies. Use it instead of reading all of `index.md` when the
-concern is narrow or the document name is unknown. Then load only the matched
-documents relevant to the task.
+external dependencies. It may also expand natural-language task descriptions
+into reusable facets such as code cleanup, change review, verification, UI
+feature work, skill docs, or document routing, then use the local document
+graph to surface connected skill entrypoints and references. Use it instead of
+reading all of `index.md` when the concern is narrow or the document name is
+unknown. Then load only the matched documents relevant to the task.
 
 The route output contains `request_classification`, `docs`, `required_docs`,
 `reference_docs`, `gates`, `gate_ledger`, `attempt_limit`, `retry_limit`,
