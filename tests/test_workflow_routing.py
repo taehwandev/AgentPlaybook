@@ -71,6 +71,13 @@ from workflow_request import infer_concerns_from_request
 from workflow_request import classify_request
 from workflow_request import classified_route_block_reason
 from workflow_request import route_block_reason
+from workflow_doc_surfaces import (
+    extract_request_surface_paths,
+    git_status_surface_paths,
+    infer_surface_docs,
+    load_doc_surface_rules,
+    surface_rule_doc_refs,
+)
 from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import resolve_docs
 from workflow_skill_paths import canonical_doc_path
@@ -306,6 +313,31 @@ class WorkflowRoutingTests(unittest.TestCase):
         concerns = infer_concerns_from_request("Preserve Spill workflow label bridge data")
 
         self.assertIn("metering", concerns)
+
+    def test_natural_code_cleanup_request_routes_to_code_simplify(self) -> None:
+        classification = classify_request("코드 정리해줘")
+
+        self.assertEqual("clear-scoped", classification["clarity"])
+        self.assertEqual("code-simplify", classification["recommended_route"])
+        self.assertFalse(classification["grill_me"])
+
+    def test_natural_change_review_request_routes_to_review(self) -> None:
+        for request in ("변경사항 검토하고 확인해줘", "이 작업 검토하고 확인해줘"):
+            with self.subTest(request=request):
+                classification = classify_request(request)
+
+                self.assertEqual("clear-scoped", classification["clarity"])
+                self.assertEqual("review", classification["recommended_route"])
+                self.assertFalse(classification["grill_me"])
+
+    def test_android_screen_request_routes_to_feature(self) -> None:
+        classification = classify_request(
+            "안드로이드 작업에서 첫 화면에서는 전체 목록이, 두번째 화면에서는 즐겨찾기가 있는 화면을 구성해줘"
+        )
+
+        self.assertEqual("clear-scoped", classification["clarity"])
+        self.assertEqual("feature", classification["recommended_route"])
+        self.assertFalse(classification["grill_me"])
 
     def test_claude_user_prompt_hook_requires_classification_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -692,6 +724,328 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(CYCLE_CONTRACT_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index(CYCLE_CONTRACT_GATE))
+
+    def test_path_surface_promotes_workflow_docs_to_required_docs(self) -> None:
+        route = resolve_docs(
+            "task",
+            None,
+            [],
+            request_classified=True,
+            surface_paths=["scripts/workflow_route.py"],
+        )
+
+        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["required_docs"])
+        self.assertIn(route_doc("common/ci-cd-automation.md"), route["required_docs"])
+        self.assertIn("doc_surface_matches", route)
+        self.assertTrue(any(match["name"] == "workflow_router" for match in route["doc_surface_matches"]))
+
+    def test_request_path_surface_promotes_docs_without_explicit_keyword(self) -> None:
+        route = resolve_docs(
+            "task",
+            None,
+            [],
+            request_classified=True,
+            request_text="`scripts/workflow_route.py` 수정해줘",
+        )
+
+        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["required_docs"])
+        self.assertIn(route_doc("common/ci-cd-automation.md"), route["required_docs"])
+
+    def test_test_path_surface_promotes_testing_docs_to_required_docs(self) -> None:
+        route = resolve_docs(
+            "task",
+            None,
+            [],
+            request_classified=True,
+            surface_paths=["tests/test_workflow_routing.py"],
+        )
+
+        self.assertIn(route_doc("common/testing.md"), route["required_docs"])
+        self.assertIn(route_doc("common/verification-policy.md"), route["required_docs"])
+
+    def test_surface_helpers_extract_request_and_git_status_paths(self) -> None:
+        self.assertIn(
+            "scripts/workflow_request.py",
+            extract_request_surface_paths("`scripts/workflow_request.py` 수정해줘"),
+        )
+        self.assertIn(
+            "scripts/workflow_request.py",
+            extract_request_surface_paths("`scripts/workflow_request.py:10` 확인해줘"),
+        )
+        self.assertIn(
+            "scripts/workflow_route.py",
+            git_status_surface_paths(" M scripts/workflow_route.py\n?? tests/new_test.py\n"),
+        )
+        self.assertIn(
+            "tests/new_test.py",
+            git_status_surface_paths(" M scripts/workflow_route.py\n?? tests/new_test.py\n"),
+        )
+
+    def test_surface_rule_docs_are_loaded_from_root_map(self) -> None:
+        docs, matches = infer_surface_docs(
+            command="task",
+            surface_paths=["common/skills/code-conventions/SKILL.md"],
+        )
+
+        self.assertIn("common/agent-skill-card-anatomy.md", docs)
+        self.assertTrue(any(match["name"] == "skill_docs" for match in matches))
+
+    def test_surface_doc_sets_are_loaded_from_root_map(self) -> None:
+        docs, invalid_refs = surface_rule_doc_refs(load_doc_surface_rules())
+
+        self.assertEqual([], invalid_refs)
+        self.assertIn("platforms/web/web-react-ui.md", docs)
+        self.assertIn("platforms/ios/ios-swiftui-ui.md", docs)
+        self.assertIn("platforms/flutter/flutter-widget-ui.md", docs)
+
+    def test_android_ui_request_promotes_compose_docs_to_required_docs(self) -> None:
+        route = resolve_docs(
+            "feature",
+            "android",
+            [],
+            request_classified=True,
+            request_text=(
+                "안드로이드 작업에서 첫 화면에서는 전체 목록이, "
+                "두번째 화면에서는 즐겨찾기가 있는 화면을 구성해줘"
+            ),
+        )
+
+        self.assertIn(route_doc("platforms/android/android-compose-ui.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/android-viewmodel-state.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/android-state-data.md"), route["required_docs"])
+        self.assertIn(route_doc("common/ui-visual-verification.md"), route["required_docs"])
+        self.assertIn(
+            "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
+            route["required_docs"],
+        )
+        self.assertTrue(any(match["name"] == "android_compose_ui_feature" for match in route["doc_surface_matches"]))
+
+    def test_android_compose_self_selection_promotes_performance_source_docs(self) -> None:
+        route = resolve_docs(
+            "feature",
+            "android",
+            [],
+            request_classified=True,
+            request_text="Compose로 작성하겠다고 정했으면 목록 화면을 구현해줘",
+        )
+
+        self.assertIn(route_doc("platforms/android/android-compose-ui.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/android-external-skill-source-coverage.md"), route["required_docs"])
+        self.assertIn("platforms/android/skills/source-coverage/SKILL.md", route["required_docs"])
+        self.assertIn(
+            "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
+            route["required_docs"],
+        )
+        self.assertIn(
+            "platforms/android/skills/source-coverage/references/chrisbanes-source-map.md",
+            route["required_docs"],
+        )
+
+    def test_android_compose_path_promotes_compose_docs_without_request_keyword(self) -> None:
+        route = resolve_docs(
+            "task",
+            None,
+            [],
+            request_classified=True,
+            surface_paths=["app/src/main/java/com/example/home/HomeScreen.kt"],
+        )
+
+        self.assertIn(route_doc("platforms/android/android-compose-ui.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/android-review.md"), route["required_docs"])
+        self.assertIn(
+            "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
+            route["required_docs"],
+        )
+        self.assertTrue(any(match["name"] == "android_compose_paths" for match in route["doc_surface_matches"]))
+
+    def test_ui_feature_request_promotes_docs_for_all_ui_platforms(self) -> None:
+        request = "첫 화면에서는 전체 목록이, 두번째 화면에서는 즐겨찾기가 있는 화면을 구성해줘"
+        expected_docs = {
+            "android": [
+                "platforms/android/android-compose-ui.md",
+                "platforms/android/android-viewmodel-state.md",
+                "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
+            ],
+            "application": [
+                "platforms/application/application-command-ui.md",
+                "platforms/application/application-system-integration.md",
+            ],
+            "flutter": [
+                "platforms/flutter/flutter-widget-ui.md",
+                "platforms/flutter/flutter-state-data.md",
+            ],
+            "ios": [
+                "platforms/ios/ios-swiftui-ui.md",
+                "platforms/ios/ios-uikit-ui.md",
+                "platforms/ios/ios-state-concurrency.md",
+            ],
+            "kmp": [
+                "platforms/kmp/kmp-compose-ui.md",
+                "platforms/kmp/kmp-state-data.md",
+            ],
+            "swift": [
+                "platforms/swift/swift-design-system.md",
+                "platforms/swift/swift-code-structure.md",
+            ],
+            "web": [
+                "platforms/web/web-react-ui.md",
+                "platforms/web/web-state-data.md",
+                "platforms/web/web-design-system.md",
+            ],
+        }
+
+        for platform, docs in expected_docs.items():
+            with self.subTest(platform=platform):
+                route = resolve_docs(
+                    "feature",
+                    platform,
+                    [],
+                    request_classified=True,
+                    request_text=request,
+                )
+
+                for doc in docs:
+                    self.assertIn(route_doc(doc), route["required_docs"])
+                self.assertIn(route_doc("common/ui-visual-verification.md"), route["required_docs"])
+                self.assertIn(route_doc("common/performance-verification.md"), route["required_docs"])
+
+    def test_server_platform_does_not_receive_ui_surface_docs(self) -> None:
+        route = resolve_docs(
+            "feature",
+            "server",
+            [],
+            request_classified=True,
+            request_text="첫 화면에서는 전체 목록이, 두번째 화면에서는 즐겨찾기가 있는 화면을 구성해줘",
+        )
+
+        self.assertNotIn("doc_surface_matches", route)
+        self.assertNotIn(route_doc("common/ui-visual-verification.md"), route["required_docs"])
+        self.assertNotIn(route_doc("platforms/web/web-react-ui.md"), route["required_docs"])
+
+    def test_self_selected_ui_frameworks_promote_platform_docs(self) -> None:
+        cases = [
+            (
+                "android",
+                "Compose로 목록 화면을 구현해줘",
+                "android_compose_self_selected",
+                "platforms/android/android-compose-ui.md",
+            ),
+            (
+                "application",
+                "Tauri React renderer로 목록 화면을 구현해줘",
+                "application_react_self_selected",
+                "platforms/application/application-react-desktop.md",
+            ),
+            (
+                "flutter",
+                "Flutter Widget으로 목록 화면을 구현해줘",
+                "flutter_widget_self_selected",
+                "platforms/flutter/flutter-widget-ui.md",
+            ),
+            (
+                "ios",
+                "SwiftUI로 목록 화면을 구현해줘",
+                "ios_swiftui_self_selected",
+                "platforms/ios/ios-swiftui-ui.md",
+            ),
+            (
+                "ios",
+                "UIKit ViewController로 목록 화면을 구현해줘",
+                "ios_uikit_self_selected",
+                "platforms/ios/ios-uikit-ui.md",
+            ),
+            (
+                "kmp",
+                "Compose Multiplatform으로 목록 화면을 구현해줘",
+                "kmp_compose_self_selected",
+                "platforms/kmp/kmp-compose-ui.md",
+            ),
+            (
+                "web",
+                "React TSX로 목록 화면을 구현해줘",
+                "web_react_self_selected",
+                "platforms/web/web-react-ui.md",
+            ),
+        ]
+
+        for platform, request, match_name, doc in cases:
+            with self.subTest(platform=platform, match_name=match_name):
+                route = resolve_docs(
+                    "feature",
+                    platform,
+                    [],
+                    request_classified=True,
+                    request_text=request,
+                )
+
+                self.assertIn(route_doc(doc), route["required_docs"])
+                self.assertTrue(any(match["name"] == match_name for match in route["doc_surface_matches"]))
+
+    def test_ui_path_surfaces_promote_platform_docs_without_cross_platform_leak(self) -> None:
+        cases = [
+            (
+                "app/src/main/java/com/example/home/HomeScreen.kt",
+                "android_compose_paths",
+                "platforms/android/android-compose-ui.md",
+                "platforms/kmp/kmp-compose-ui.md",
+            ),
+            (
+                "shared/src/commonMain/kotlin/com/example/home/HomeScreen.kt",
+                "kmp_compose_paths",
+                "platforms/kmp/kmp-compose-ui.md",
+                "platforms/android/android-compose-ui.md",
+            ),
+            (
+                "src/features/home/HomeScreen.tsx",
+                "web_react_paths",
+                "platforms/web/web-react-ui.md",
+                "platforms/application/application-command-ui.md",
+            ),
+            (
+                "App/Features/Home/HomeView.swift",
+                "ios_swiftui_paths",
+                "platforms/ios/ios-swiftui-ui.md",
+                "platforms/ios/ios-uikit-ui.md",
+            ),
+            (
+                "App/Features/Home/HomeViewController.swift",
+                "ios_uikit_paths",
+                "platforms/ios/ios-uikit-ui.md",
+                "platforms/kmp/kmp-compose-ui.md",
+            ),
+            (
+                "lib/features/home/screens/home_screen.dart",
+                "flutter_widget_paths",
+                "platforms/flutter/flutter-widget-ui.md",
+                "platforms/web/web-react-ui.md",
+            ),
+            (
+                "Sources/AppDesignSystem/Components/ButtonStyle.swift",
+                "swift_design_paths",
+                "platforms/swift/swift-design-system.md",
+                "platforms/ios/ios-uikit-ui.md",
+            ),
+            (
+                "src-tauri/src/main.rs",
+                "application_desktop_paths",
+                "platforms/application/application-command-ui.md",
+                "platforms/web/web-react-ui.md",
+            ),
+        ]
+
+        for path, match_name, expected_doc, absent_doc in cases:
+            with self.subTest(path=path):
+                route = resolve_docs(
+                    "task",
+                    None,
+                    [],
+                    request_classified=True,
+                    surface_paths=[path],
+                )
+
+                self.assertIn(route_doc(expected_doc), route["required_docs"])
+                self.assertNotIn(route_doc(absent_doc), route["required_docs"])
+                self.assertTrue(any(match["name"] == match_name for match in route["doc_surface_matches"]))
 
     def test_routes_expose_parallel_execution_plan(self) -> None:
         route = resolve_docs("feature", None, ["testing"], request_classified=True)
