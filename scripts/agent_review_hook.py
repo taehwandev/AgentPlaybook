@@ -339,7 +339,11 @@ def review_failure_details(
         f"checked development source/style files: {format_checked_paths(structure.get('checked_paths', []))}",
     ]
     details.extend(f"failure detail: {failure}" for failure in failures)
-    details.append("required recovery: fix scoped and safe code/docs issues immediately outside the hook, then rerun this same review hook once with --retry-attempt 1")
+    details.append(
+        "required recovery: run an actionable retrospective for this review failure, record the "
+        "correction plan, fix scoped and safe code/docs issues immediately outside the hook, then "
+        "rerun this same review hook once with --retry-attempt 1 and cite or apply that plan"
+    )
     details.append("do not finalize with FAIL; ask only when recovery needs a scope decision, destructive action, credential change, external state, or a broader refactor")
     return details
 

@@ -110,6 +110,14 @@ def append_unique(items: list[str], value: str) -> None:
         items.append(value)
 
 
+def requires_retrospective(
+    missed_gates: list[str],
+    gate_policy_failures: list[str],
+    finish_failures: list[str],
+) -> bool:
+    return bool(missed_gates or gate_policy_failures or finish_failures)
+
+
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

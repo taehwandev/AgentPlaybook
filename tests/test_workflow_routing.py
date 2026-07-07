@@ -13,6 +13,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+from agent_finish_common import requires_retrospective
 from agent_finish_gate_policy import (
     PLATFORM_SELECTION_GATE,
     PRD_DRAFT_GATE,
@@ -34,6 +35,7 @@ from agent_gate_evidence import (
 )
 from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_global_lessons import lesson_summary, write_retrospective_candidate
+from agent_hook_runtime import hook_failure_policy
 from agent_preflight_runtime import (
     AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
     _claude_spill_warnings,
@@ -620,11 +622,75 @@ class WorkflowRoutingTests(unittest.TestCase):
             self.assertEqual("candidate", lesson["promotion_status"])
             self.assertEqual(["side_effect_audit"], lesson["missed_gates"])
             self.assertEqual("safe_slugs_only", lesson["privacy"])
+            self.assertEqual(
+                "run_actionable_retrospective_then_retry_same_scope",
+                lesson["next_action"],
+            )
+            self.assertEqual(
+                "immediate_correction_plan",
+                lesson["required_retrospective_output"],
+            )
+            self.assertEqual(
+                "second_attempt_cites_retrospective_plan_and_resumes_first_missed_gate",
+                lesson["retry_rule"],
+            )
+            self.assertEqual(
+                "cite_or_apply_retrospective_correction_plan",
+                lesson["second_attempt_requirement"],
+            )
             for private_key in ("project", "path", "prompt", "command", "diff", "repo", "branch"):
                 self.assertNotIn(private_key, lesson)
 
             summary = lesson_summary()
             self.assertEqual(1, summary["candidate_count"])
+
+    def test_hook_failure_policy_requires_retrospective_before_retry(self) -> None:
+        policy, details = hook_failure_policy(success=False, retry_attempt=0)
+
+        self.assertEqual("retrospective_then_retry_once", policy["next_action"])
+        self.assertEqual("actionable_retrospective", policy["recovery_required"])
+        joined_details = " ".join(details)
+        self.assertIn("actionable retrospective", joined_details)
+        self.assertIn("immediate correction plan", joined_details)
+        self.assertIn("--retry-attempt 1", joined_details)
+        self.assertIn("cite or apply", joined_details)
+
+    def test_hook_failure_policy_stops_after_retrospective_retry_fails(self) -> None:
+        policy, details = hook_failure_policy(success=False, retry_attempt=1)
+
+        self.assertEqual("stop_after_retrospective_retry_failed", policy["next_action"])
+        self.assertEqual("promote_or_handoff_lesson", policy["recovery_required"])
+        joined_details = " ".join(details)
+        self.assertIn("retry limit reached", joined_details)
+        self.assertIn("promote the retrospective lesson", joined_details)
+
+    def test_finish_final_check_failure_requires_retrospective_lesson(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.environ["AGENTPLAYBOOK_STATE_HOME"] = temp_dir
+
+            retrospective_required = requires_retrospective(
+                missed_gates=[],
+                gate_policy_failures=[],
+                finish_failures=["workflow validate failed"],
+            )
+            result = write_retrospective_candidate(
+                {
+                    "retrospective_required": retrospective_required,
+                    "missed_gates": [],
+                    "gate_signals": [{"gate": "workflow validate", "signal": "FAIL"}],
+                }
+            )
+
+            self.assertTrue(retrospective_required)
+            self.assertTrue(result["created"])
+            lesson_path = Path(temp_dir) / result["relative_path"]
+            lesson = json.loads(lesson_path.read_text(encoding="utf-8"))
+            self.assertEqual("finish_gate_failure", lesson["failure_type"])
+            self.assertEqual("finish_failed_before_completion", lesson["root_cause"])
+            self.assertEqual(
+                "run_actionable_retrospective_then_retry_same_scope",
+                lesson["next_action"],
+            )
 
     def test_setup_permissions_include_new_workflow_helpers(self) -> None:
         entries = "\n".join(codex_prefix_rule_entries(ROOT / "scripts"))

@@ -73,7 +73,7 @@ def retrospective_candidate(finish_result: dict[str, Any]) -> dict[str, Any]:
         "missed_gates": missed_gates,
         "policy_failure_count": policy_failures,
         "root_cause": root_cause,
-        "next_action": "run_retrospective_then_retry_same_scope",
+        "next_action": "run_actionable_retrospective_then_retry_same_scope",
     }
     lesson_id = hashlib.sha256(json.dumps(seed, sort_keys=True).encode("utf-8")).hexdigest()[:16]
     return {
@@ -87,8 +87,11 @@ def retrospective_candidate(finish_result: dict[str, Any]) -> dict[str, Any]:
         "missed_gates": missed_gates,
         "policy_failure_count": policy_failures,
         "root_cause": root_cause,
-        "next_action": "run_retrospective_then_retry_same_scope",
-        "retry_rule": "resume_first_missed_gate_after_retrospective",
+        "next_action": "run_actionable_retrospective_then_retry_same_scope",
+        "required_retrospective_output": "immediate_correction_plan",
+        "retry_rule": "second_attempt_cites_retrospective_plan_and_resumes_first_missed_gate",
+        "second_attempt_requirement": "cite_or_apply_retrospective_correction_plan",
+        "durable_fix_rule": "apply_safe_scoped_fix_immediately_else_record_follow_up_owner",
         "promotion_target": "shared_doc_or_hook_or_test",
         "promotion_status": "candidate",
         "privacy": "safe_slugs_only",

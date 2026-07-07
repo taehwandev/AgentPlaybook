@@ -121,17 +121,22 @@ def hook_failure_policy(success: bool, retry_attempt: int) -> tuple[dict[str, An
         return {
             "retry_attempt": retry_attempt,
             "retry_limit": HOOK_RETRY_LIMIT,
-            "next_action": "retry_once",
+            "next_action": "retrospective_then_retry_once",
+            "recovery_required": "actionable_retrospective",
         }, [
-            "retry request: diagnose every failure, fix scoped and safe issues outside the hook, "
-            "then rerun this hook once with --retry-attempt 1",
+            "recovery request: diagnose every failure, run an actionable retrospective for this "
+            "failed scope, record the immediate correction plan, apply scoped and safe fixes "
+            "outside the hook, then rerun this hook once with --retry-attempt 1 and cite or "
+            "apply that plan",
         ]
     return {
         "retry_attempt": retry_attempt,
         "retry_limit": HOOK_RETRY_LIMIT,
-        "next_action": "retrospective_required",
+        "next_action": "stop_after_retrospective_retry_failed",
+        "recovery_required": "promote_or_handoff_lesson",
     }, [
-        "retrospective required: retry limit reached; run workflows/skills/retrospective-learning/SKILL.md before handoff",
+        "stop request: retry limit reached after the recovery attempt; promote the retrospective "
+        "lesson or hand off the blocker before continuing",
     ]
 
 

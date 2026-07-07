@@ -19,7 +19,7 @@ from agent_finish_check_steps import (
     read_preflight,
     resolve_paths,
 )
-from agent_finish_common import display_signal, parse_gate, write_json
+from agent_finish_common import display_signal, parse_gate, requires_retrospective, write_json
 from agent_finish_final_checks import run_final_checks
 from agent_gate_evidence import merge_gate_evidence_from_ledger
 
@@ -152,9 +152,18 @@ def main() -> int:
         gate_signals,
         failures,
     )
-    retrospective_required = bool(missed_gates or gate_policy_failures)
+    finish_failures_before_retrospective = list(failures)
+    retrospective_required = requires_retrospective(
+        missed_gates,
+        gate_policy_failures,
+        finish_failures_before_retrospective,
+    )
     if retrospective_required:
-        failures.append("retrospective required before final report, commit, release, or handoff")
+        failures.append(
+            "retrospective required before retry, final report, commit, release, or handoff; "
+            "record the immediate correction plan, apply safe scoped fixes, then resume at the "
+            "first missed gate or same failed scope"
+        )
     retrospective_lesson = write_retrospective_candidate(
         {
             "missed_gates": missed_gates,

@@ -96,8 +96,9 @@ def print_markdown(route: dict[str, object]) -> None:
     print()
     print("If any required gate is not executed, stop finalization, return to the")
     print("first missed gate only, roll back only dependent agent-made changes when")
-    print("safe, then request one recovery retry for the missed gate only.")
-    print("If that retry misses the gate again, run `workflows/skills/retrospective-learning/SKILL.md`;")
+    print("safe, then run an actionable retrospective before the one recovery retry for the missed gate only.")
+    print("The retry must cite or apply the retrospective correction plan;")
+    print("if that retry misses the gate again, promote the lesson or stop for handoff;")
     print("do not restart the whole route.")
     if route["notes"]:
         print()
