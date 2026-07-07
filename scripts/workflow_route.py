@@ -21,6 +21,7 @@ from workflow_common import (
     unique,
 )
 from workflow_gate_policy import add_automatic_gates, automatic_docs
+from workflow_doc_surfaces import infer_surface_docs
 from workflow_parallel import parallel_execution_plan
 from workflow_skill_paths import canonical_doc_path
 
@@ -94,10 +95,19 @@ def resolve_docs(
     request_classification: Optional[dict[str, object]] = None,
     request_classified: bool = False,
     classification_evidence: str = "",
+    request_text: str = "",
+    surface_paths: Optional[list[str]] = None,
 ) -> dict[str, object]:
     profile = COMMANDS[command]
     docs: list[str] = [*CORE_DOCS, *profile.docs]
     docs.extend(automatic_docs(command))
+    surface_docs, surface_matches = infer_surface_docs(
+        command=command,
+        platform=platform,
+        request_text=request_text,
+        surface_paths=surface_paths or [],
+    )
+    docs.extend(surface_docs)
 
     if platform:
         docs.extend(PLATFORMS[platform])
@@ -108,7 +118,7 @@ def resolve_docs(
             docs.extend(PLATFORM_CONCERNS.get((platform, concern), ()))
 
     routed_docs = unique(canonical_doc_path(doc) for doc in docs)
-    required_docs = route_required_docs(command, platform, concerns, profile.docs)
+    required_docs = route_required_docs(command, platform, concerns, profile.docs, surface_docs)
     reference_docs = [doc for doc in routed_docs if doc not in set(required_docs)]
     missing = [doc for doc in routed_docs if not (ROOT / doc).exists()]
     notes = list(profile.notes)
@@ -136,8 +146,12 @@ def resolve_docs(
         notes.append(
             "Read `required_docs` before work; treat `reference_docs` as on-demand context only when the current task touches that concern."
         )
+    if surface_matches:
+        notes.append(
+            "Promoted required docs from request intent or touched path surfaces using `workflow-doc-surfaces.json`."
+        )
 
-    return {
+    route = {
         "root": str(ROOT),
         "command": command,
         "platform": platform,
@@ -166,6 +180,11 @@ def resolve_docs(
         "notes": notes,
         "missing": missing,
     }
+    if surface_paths:
+        route["surface_paths"] = surface_paths
+    if surface_matches:
+        route["doc_surface_matches"] = surface_matches
+    return route
 
 
 def route_required_docs(
@@ -173,6 +192,7 @@ def route_required_docs(
     platform: Optional[str],
     concerns: list[str],
     profile_docs: tuple[str, ...],
+    surface_docs: list[str] | None = None,
 ) -> list[str]:
     docs: list[str] = [*CORE_REQUIRED_DOCS, *COMMAND_REQUIRED_DOCS.get(command, profile_docs)]
 
@@ -187,6 +207,7 @@ def route_required_docs(
         if platform:
             docs.extend(PLATFORM_CONCERNS.get((platform, concern), ()))
 
+    docs.extend(surface_docs or [])
     return unique(canonical_doc_path(doc) for doc in docs)
 
 

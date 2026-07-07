@@ -24,6 +24,7 @@ from agent_vibeguard_cache import cached_vibeguard
 from agent_workspace_policy import is_git_status_review_only, non_git_writing_workspace_note
 from workflow_catalog import COMMANDS, CONCERNS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import unique
+from workflow_doc_surfaces import git_status_surface_paths
 from workflow_request import (
     classified_route_block_reason,
     classify_request,
@@ -108,13 +109,20 @@ def route_command(args: argparse.Namespace, playbook_root: Path) -> list[str]:
         command.extend(["--platform", platform])
     for concern in args.concern:
         command.extend(["--concern", concern])
+    for path in args.surface_path:
+        command.extend(["--surface-path", path])
     return command
 
 
-def route_result(args: argparse.Namespace, playbook_root: Path, project: Path) -> dict[str, Any]:
+def route_result(
+    args: argparse.Namespace,
+    playbook_root: Path,
+    project: Path,
+    git_status: dict[str, Any],
+) -> dict[str, Any]:
     command = route_command(args, playbook_root)
     try:
-        route, error, returncode = route_payload(args)
+        route, error, returncode = route_payload(args, git_status)
     except Exception as error:
         return {
             "command": command,
@@ -134,7 +142,10 @@ def route_result(args: argparse.Namespace, playbook_root: Path, project: Path) -
     }
 
 
-def route_payload(args: argparse.Namespace) -> tuple[dict[str, Any] | None, str, int]:
+def route_payload(
+    args: argparse.Namespace,
+    git_status: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any] | None, str, int]:
     if args.request_classified and not args.classification_evidence:
         return (
             None,
@@ -166,6 +177,12 @@ def route_payload(args: argparse.Namespace) -> tuple[dict[str, Any] | None, str,
     inferred_concerns = infer_concerns_from_request(args.request or "")
     concerns = unique([*args.concern, *inferred_concerns])
     newly_inferred = [concern for concern in inferred_concerns if concern not in args.concern]
+    surface_paths = unique(
+        [
+            *args.surface_path,
+            *git_status_surface_paths((git_status or {}).get("stdout", "")),
+        ]
+    )
     route = resolve_docs(
         args.command,
         args.platform[-1] if args.platform else None,
@@ -173,6 +190,8 @@ def route_payload(args: argparse.Namespace) -> tuple[dict[str, Any] | None, str,
         request_classification=request_classification,
         request_classified=args.request_classified,
         classification_evidence=args.classification_evidence or "",
+        request_text=args.request or "",
+        surface_paths=surface_paths,
     )
     if newly_inferred:
         route["inferred_concerns"] = newly_inferred
@@ -208,6 +227,12 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("--platform", action="append", choices=sorted(PLATFORMS), default=[])
+    parser.add_argument(
+        "--surface-path",
+        action="append",
+        default=[],
+        help="path already known to be in scope; can be repeated",
+    )
     parser.add_argument(
         "--concern",
         action="append",
@@ -308,12 +333,12 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
             early_bridge_failure,
         )
 
-    route_result_payload = route_result(args, playbook_root, project)
-    route_payload, route_parse_error = parse_route_payload(route_result_payload)
     git_status = run_command(["git", "status", "--short", "--untracked-files=all"], project)
     if is_git_status_review_only(project, git_status):
         git_status["review_only"] = True
         git_status["review_note"] = non_git_writing_workspace_note(project)
+    route_result_payload = route_result(args, playbook_root, project, git_status)
+    route_payload, route_parse_error = parse_route_payload(route_result_payload)
     vibeguard = cached_vibeguard(
         project=project,
         rules=rules,

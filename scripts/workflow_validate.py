@@ -15,6 +15,7 @@ from workflow_common import (
     RETRY_SCOPE,
     ROOT,
 )
+from workflow_doc_surfaces import load_doc_surface_rules, surface_rule_doc_refs
 from workflow_gate_policy import automatic_gates
 from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import REVIEW_HOOK_REQUIRED_COMMANDS, resolve_docs, route_gates
@@ -157,6 +158,9 @@ def validate() -> int:
         refs.update(docs)
     for docs in PLATFORM_CONCERNS.values():
         refs.update(docs)
+    surface_rules = load_doc_surface_rules(ROOT)
+    surface_docs, bad_surface_refs = surface_rule_doc_refs(surface_rules)
+    refs.update(surface_docs)
 
     missing = sorted(doc for doc in refs if not (ROOT / doc).exists())
     bad_route_contracts = validate_route_contracts()
@@ -214,12 +218,16 @@ def validate() -> int:
         print("Invalid workflow route contracts:", file=sys.stderr)
         for item in bad_route_contracts:
             print(f"- {item}", file=sys.stderr)
+    if bad_surface_refs:
+        print("Invalid workflow document surface rules:", file=sys.stderr)
+        for item in bad_surface_refs:
+            print(f"- {item}", file=sys.stderr)
     if bad_card_quality:
         print("Invalid strict card anatomy:", file=sys.stderr)
         for item in bad_card_quality:
             print(f"- {item}", file=sys.stderr)
 
-    if missing or bad_frontmatter or bad_links or bad_route_contracts or bad_card_quality:
+    if missing or bad_frontmatter or bad_links or bad_route_contracts or bad_surface_refs or bad_card_quality:
         return 1
 
     print(

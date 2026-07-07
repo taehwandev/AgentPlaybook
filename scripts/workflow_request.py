@@ -13,9 +13,13 @@ from workflow_request_patterns import (
     GRILL_ME_REQUEST_PATTERNS,
     EXACT_PATTERNS,
     INSPECTION_PATTERNS,
+    REFACTOR_ACTION_PATTERNS,
     QUESTION_ACTION_PATTERNS,
+    REVIEW_ACTION_PATTERNS,
     RISKY_PATTERNS,
     SCOPED_PATTERNS,
+    TEST_ACTION_PATTERNS,
+    UI_FEATURE_ACTION_PATTERNS,
     VAGUE_PATTERNS,
 )
 
@@ -139,6 +143,10 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
     has_risky = _matches(RISKY_PATTERNS, lowered)
     has_vague = _matches(VAGUE_PATTERNS, lowered)
     has_inspection = _matches(INSPECTION_PATTERNS, lowered)
+    has_refactor_action = _matches(REFACTOR_ACTION_PATTERNS, lowered)
+    has_review_action = _matches(REVIEW_ACTION_PATTERNS, lowered)
+    has_test_action = _matches(TEST_ACTION_PATTERNS, lowered)
+    has_ui_feature_action = _matches(UI_FEATURE_ACTION_PATTERNS, lowered)
     has_commit_action = _matches(COMMIT_ACTION_PATTERNS, normalized, re.IGNORECASE)
     inspection_lacks_target = has_inspection and _inspection_lacks_target(lowered)
     has_direct_question = _matches(DIRECT_QUESTION_PATTERNS, lowered)
@@ -157,6 +165,10 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
         "has_risky": has_risky,
         "has_vague": has_vague,
         "has_inspection": has_inspection,
+        "has_refactor_action": has_refactor_action,
+        "has_review_action": has_review_action,
+        "has_test_action": has_test_action,
+        "has_ui_feature_action": has_ui_feature_action,
         "has_commit_action": has_commit_action,
         "inspection_lacks_target": inspection_lacks_target,
         "has_direct_question": has_direct_question,
@@ -174,6 +186,10 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
     has_risky = bool(flags["has_risky"])
     has_vague = bool(flags["has_vague"])
     has_inspection = bool(flags["has_inspection"])
+    has_refactor_action = bool(flags["has_refactor_action"])
+    has_review_action = bool(flags["has_review_action"])
+    has_test_action = bool(flags["has_test_action"])
+    has_ui_feature_action = bool(flags["has_ui_feature_action"])
     has_commit_action = bool(flags["has_commit_action"])
     inspection_lacks_target = bool(flags["inspection_lacks_target"])
     asks_drill = bool(flags["asks_drill"])
@@ -201,6 +217,10 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
             "work",
             "The request asks for local commit preparation or commit creation; use the lightweight commit route.",
         )
+    if has_ui_feature_action and not has_risky:
+        flags["clarity"] = "clear-scoped"
+        flags["effort"] = "standard"
+        return "feature", False, "work", "The request describes a scoped UI or screen feature to implement."
     if has_broad and not has_exact:
         flags["clarity"] = "broad-product"
         flags["effort"] = "deep"
@@ -210,6 +230,18 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
             "clarify_first",
             "Broad product or architecture work needs Grill-Me blocker-question discovery before PRD, ARD, or implementation unless existing acceptance criteria are already known.",
         )
+    if has_review_action and not has_risky:
+        flags["clarity"] = "clear-scoped"
+        flags["effort"] = "standard"
+        return "review", False, "work", "The request asks to review inspectable changes or the current work surface."
+    if has_refactor_action and not has_risky:
+        flags["clarity"] = "clear-scoped"
+        flags["effort"] = "standard"
+        return "code-simplify", False, "work", "The request asks for behavior-preserving code cleanup or simplification."
+    if has_test_action and not has_risky:
+        flags["clarity"] = "clear-scoped"
+        flags["effort"] = "quick"
+        return "test", False, "work", "The request asks for verification or test execution."
     if has_exact:
         flags["clarity"] = "clear-exact"
         flags["effort"] = "quick"

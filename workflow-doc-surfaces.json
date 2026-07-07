@@ -1,0 +1,545 @@
+{
+  "schema_version": 1,
+  "description": "Document promotion rules used by the workflow router when request intent or touched paths show which guidance must be read before work.",
+  "doc_sets": {
+    "common_ui_quality": [
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "android_compose_ui": [
+      "platforms/android/android-compose-ui.md",
+      "platforms/android/android-module-structure.md",
+      "platforms/android/android-viewmodel-state.md",
+      "platforms/android/android-state-data.md",
+      "platforms/android/android-review.md",
+      "platforms/android/android-external-skill-source-coverage.md",
+      "platforms/android/skills/source-coverage/SKILL.md",
+      "platforms/android/skills/source-coverage/references/external-source-distillation.md",
+      "platforms/android/skills/source-coverage/references/official-android-source-map.md",
+      "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
+      "platforms/android/skills/source-coverage/references/chrisbanes-source-map.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "application_ui": [
+      "platforms/application/application-command-ui.md",
+      "platforms/application/application-architecture.md",
+      "platforms/application/application-review.md",
+      "platforms/application/application-system-integration.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "application_react_desktop": [
+      "platforms/application/application-react-desktop.md",
+      "platforms/application/application-command-ui.md",
+      "platforms/application/application-system-integration.md",
+      "platforms/application/application-review.md",
+      "platforms/web/web-code-structure.md",
+      "platforms/web/web-react-ui.md",
+      "platforms/web/web-state-data.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "flutter_ui": [
+      "platforms/flutter/flutter-widget-ui.md",
+      "platforms/flutter/flutter-project-structure.md",
+      "platforms/flutter/flutter-state-data.md",
+      "platforms/flutter/flutter-review.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "ios_ui": [
+      "platforms/ios/ios-swiftui-ui.md",
+      "platforms/ios/ios-uikit-ui.md",
+      "platforms/ios/ios-module-structure.md",
+      "platforms/ios/ios-state-concurrency.md",
+      "platforms/ios/ios-review.md",
+      "platforms/swift/swift-design-system.md",
+      "platforms/swift/swift-code-structure.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "ios_swiftui": [
+      "platforms/ios/ios-swiftui-ui.md",
+      "platforms/ios/ios-module-structure.md",
+      "platforms/ios/ios-state-concurrency.md",
+      "platforms/ios/ios-review.md",
+      "platforms/swift/swift-design-system.md",
+      "platforms/swift/swift-code-structure.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "ios_uikit": [
+      "platforms/ios/ios-uikit-ui.md",
+      "platforms/ios/ios-module-structure.md",
+      "platforms/ios/ios-state-concurrency.md",
+      "platforms/ios/ios-review.md",
+      "platforms/swift/swift-design-system.md",
+      "platforms/swift/swift-code-structure.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "kmp_compose_ui": [
+      "platforms/kmp/kmp-compose-ui.md",
+      "platforms/kmp/kmp-module-structure.md",
+      "platforms/kmp/kmp-state-data.md",
+      "platforms/kmp/kmp-review.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "swift_ui_design": [
+      "platforms/swift/swift-design-system.md",
+      "platforms/swift/swift-code-structure.md",
+      "platforms/swift/swift-review.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ],
+    "web_ui": [
+      "platforms/web/web-react-ui.md",
+      "platforms/web/web-code-structure.md",
+      "platforms/web/web-state-data.md",
+      "platforms/web/web-design-system.md",
+      "platforms/web/web-accessibility-i18n.md",
+      "platforms/web/web-review.md",
+      "common/ui-visual-verification.md",
+      "common/performance-verification.md"
+    ]
+  },
+  "request_intents": [
+    {
+      "name": "code_cleanup",
+      "commands": ["code-simplify", "refactor"],
+      "docs": [
+        "workflows/refactor-cleanup.md",
+        "common/refactoring.md",
+        "common/code-structure-ownership.md",
+        "common/testing.md",
+        "common/verification-policy.md"
+      ],
+      "reason": "Cleanup and refactor requests need behavior-preserving refactor, ownership, and equivalence-check guidance."
+    },
+    {
+      "name": "change_review",
+      "commands": ["review", "docs-review"],
+      "docs": [
+        "workflows/review-and-commit.md",
+        "common/code-review.md",
+        "common/worktree-hygiene.md",
+        "common/verification-policy.md"
+      ],
+      "reason": "Review requests need diff review, worktree hygiene, and verification evidence guidance."
+    },
+    {
+      "name": "verification",
+      "commands": ["test", "webperf"],
+      "docs": [
+        "common/testing.md",
+        "common/scenario-driven-testing.md",
+        "common/verification-policy.md",
+        "common/definition-of-done.md"
+      ],
+      "reason": "Verification requests need test scope, scenario, evidence, and done criteria guidance."
+    },
+    {
+      "name": "android_compose_ui_feature",
+      "commands": ["feature", "task", "build"],
+      "platforms": ["android"],
+      "request_all": [
+        [
+          "\\b(screen|screens|ui|layout|list|lists|favorite|favorites|navigation|tab)\\b",
+          "(\\ud654\\uba74|\\ubaa9\\ub85d|\\ub9ac\\uc2a4\\ud2b8|\\uc990\\uaca8\\ucc3e\\uae30|\\ud0ed|\\ub124\\ube44|\\ub0b4\\ube44)"
+        ],
+        [
+          "\\b(build|create|implement|compose|design|add|make)\\b",
+          "(\\uad6c\\uc131|\\uad6c\\ud604|\\ub9cc\\ub4e4|\\uc791\\uc131|\\ucd94\\uac00|\\uc9dc\\uc918)"
+        ]
+      ],
+      "doc_sets": ["android_compose_ui"],
+      "reason": "Android screen, list, favorite, navigation, or tab feature work should load Compose UI, state, review, source coverage, visual verification, and Compose performance guidance before code generation."
+    },
+    {
+      "name": "android_compose_self_selected",
+      "commands": ["feature", "task", "build", "review", "code-simplify", "refactor"],
+      "platforms": ["android"],
+      "request_any": [
+        "jetpack\\s+compose",
+        "compose",
+        "\\ucef4\\ud3ec\\uc988"
+      ],
+      "doc_sets": ["android_compose_ui"],
+      "reason": "When the agent or user selects Jetpack Compose for Android work, Compose architecture, source coverage, and performance guidance become required context."
+    },
+    {
+      "name": "application_ui_feature",
+      "commands": ["feature", "task", "build"],
+      "platforms": ["application"],
+      "request_all": [
+        [
+          "\\b(screen|screens|ui|layout|list|lists|favorite|favorites|window|panel|menu|toolbar|tray|shortcut)\\b",
+          "(\\ud654\\uba74|\\ubaa9\\ub85d|\\ub9ac\\uc2a4\\ud2b8|\\uc990\\uaca8\\ucc3e\\uae30|\\ucc3d|\\ud328\\ub110|\\uba54\\ub274|\\ud234\\ubc14|\\ub2e8\\ucd95\\ud0a4)"
+        ],
+        [
+          "\\b(build|create|implement|compose|design|add|make)\\b",
+          "(\\uad6c\\uc131|\\uad6c\\ud604|\\ub9cc\\ub4e4|\\uc791\\uc131|\\ucd94\\uac00|\\uc9dc\\uc918)"
+        ]
+      ],
+      "doc_sets": ["application_ui"],
+      "reason": "Desktop/application UI requests need command, window/panel, state, system integration, visual, and performance guidance."
+    },
+    {
+      "name": "application_react_self_selected",
+      "commands": ["feature", "task", "build", "review", "code-simplify", "refactor"],
+      "platforms": ["application"],
+      "request_any": [
+        "\\b(react|renderer|tauri|electron|webview)\\b"
+      ],
+      "doc_sets": ["application_react_desktop"],
+      "reason": "React renderer or desktop shell choices need desktop command/IPC and web React UI guidance together."
+    },
+    {
+      "name": "flutter_ui_feature",
+      "commands": ["feature", "task", "build"],
+      "platforms": ["flutter"],
+      "request_all": [
+        [
+          "\\b(screen|screens|ui|layout|list|lists|favorite|favorites|widget|widgets|navigation|tab)\\b",
+          "(\\ud654\\uba74|\\ubaa9\\ub85d|\\ub9ac\\uc2a4\\ud2b8|\\uc990\\uaca8\\ucc3e\\uae30|\\uc704\\uc82f|\\ud0ed|\\ub124\\ube44|\\ub0b4\\ube44)"
+        ],
+        [
+          "\\b(build|create|implement|compose|design|add|make)\\b",
+          "(\\uad6c\\uc131|\\uad6c\\ud604|\\ub9cc\\ub4e4|\\uc791\\uc131|\\ucd94\\uac00|\\uc9dc\\uc918)"
+        ]
+      ],
+      "doc_sets": ["flutter_ui"],
+      "reason": "Flutter UI feature work should load widget, project structure, state/data, review, visual, and performance guidance."
+    },
+    {
+      "name": "flutter_widget_self_selected",
+      "commands": ["feature", "task", "build", "review", "code-simplify", "refactor"],
+      "platforms": ["flutter"],
+      "request_any": [
+        "\\b(flutter|widget|widgets|dart)\\b",
+        "\\ud50c\\ub7ec\\ud130",
+        "\\uc704\\uc82f"
+      ],
+      "doc_sets": ["flutter_ui"],
+      "reason": "Flutter or Widget choices require Flutter widget UI, state, review, visual, and performance context."
+    },
+    {
+      "name": "ios_ui_feature",
+      "commands": ["feature", "task", "build"],
+      "platforms": ["ios"],
+      "request_all": [
+        [
+          "\\b(screen|screens|ui|layout|list|lists|favorite|favorites|navigation|tab|view|views)\\b",
+          "(\\ud654\\uba74|\\ubaa9\\ub85d|\\ub9ac\\uc2a4\\ud2b8|\\uc990\\uaca8\\ucc3e\\uae30|\\ud0ed|\\ub124\\ube44|\\ub0b4\\ube44|\\ubdf0)"
+        ],
+        [
+          "\\b(build|create|implement|compose|design|add|make)\\b",
+          "(\\uad6c\\uc131|\\uad6c\\ud604|\\ub9cc\\ub4e4|\\uc791\\uc131|\\ucd94\\uac00|\\uc9dc\\uc918)"
+        ]
+      ],
+      "doc_sets": ["ios_ui"],
+      "reason": "Generic iOS UI requests need SwiftUI, UIKit, state/concurrency, module, review, Swift design-system, visual, and performance guidance until the repo-local UI stack is confirmed."
+    },
+    {
+      "name": "ios_swiftui_self_selected",
+      "commands": ["feature", "task", "build", "review", "code-simplify", "refactor"],
+      "platforms": ["ios"],
+      "request_any": [
+        "swiftui",
+        "\\bswift\\s+ui\\b"
+      ],
+      "doc_sets": ["ios_swiftui"],
+      "reason": "SwiftUI choices require SwiftUI UI, state/concurrency, module, Swift design-system, visual, and performance context."
+    },
+    {
+      "name": "ios_uikit_self_selected",
+      "commands": ["feature", "task", "build", "review", "code-simplify", "refactor"],
+      "platforms": ["ios"],
+      "request_any": [
+        "uikit",
+        "viewcontroller",
+        "\\bview controller\\b"
+      ],
+      "doc_sets": ["ios_uikit"],
+      "reason": "UIKit choices require UIKit UI, state/concurrency, module, Swift design-system, visual, and performance context."
+    },
+    {
+      "name": "kmp_compose_ui_feature",
+      "commands": ["feature", "task", "build"],
+      "platforms": ["kmp"],
+      "request_all": [
+        [
+          "\\b(screen|screens|ui|layout|list|lists|favorite|favorites|navigation|tab|compose)\\b",
+          "(\\ud654\\uba74|\\ubaa9\\ub85d|\\ub9ac\\uc2a4\\ud2b8|\\uc990\\uaca8\\ucc3e\\uae30|\\ud0ed|\\ub124\\ube44|\\ub0b4\\ube44|\\ucef4\\ud3ec\\uc988)"
+        ],
+        [
+          "\\b(build|create|implement|compose|design|add|make)\\b",
+          "(\\uad6c\\uc131|\\uad6c\\ud604|\\ub9cc\\ub4e4|\\uc791\\uc131|\\ucd94\\uac00|\\uc9dc\\uc918)"
+        ]
+      ],
+      "doc_sets": ["kmp_compose_ui"],
+      "reason": "KMP UI feature work should load Compose Multiplatform, source-set/module, state/data, review, visual, and performance guidance."
+    },
+    {
+      "name": "kmp_compose_self_selected",
+      "commands": ["feature", "task", "build", "review", "code-simplify", "refactor"],
+      "platforms": ["kmp"],
+      "request_any": [
+        "\\b(compose|compose\\s+multiplatform|cmp)\\b",
+        "\\ucef4\\ud3ec\\uc988"
+      ],
+      "doc_sets": ["kmp_compose_ui"],
+      "reason": "Compose Multiplatform choices require shared Compose UI, module/source-set, state/data, visual, and performance context."
+    },
+    {
+      "name": "swift_ui_feature",
+      "commands": ["feature", "task", "build"],
+      "platforms": ["swift"],
+      "request_all": [
+        [
+          "\\b(screen|screens|ui|layout|list|lists|favorite|favorites|view|views|design-system|tokens|component)\\b",
+          "(\\ud654\\uba74|\\ubaa9\\ub85d|\\ub9ac\\uc2a4\\ud2b8|\\uc990\\uaca8\\ucc3e\\uae30|\\ubdf0|\\ub514\\uc790\\uc778\\uc2dc\\uc2a4\\ud15c|\\ud1a0\\ud070|\\ucef4\\ud3ec\\ub10c\\ud2b8)"
+        ],
+        [
+          "\\b(build|create|implement|compose|design|add|make)\\b",
+          "(\\uad6c\\uc131|\\uad6c\\ud604|\\ub9cc\\ub4e4|\\uc791\\uc131|\\ucd94\\uac00|\\uc9dc\\uc918)"
+        ]
+      ],
+      "doc_sets": ["swift_ui_design"],
+      "reason": "Swift UI/design-system work should load Swift design-system, code-structure, review, visual, and performance guidance."
+    },
+    {
+      "name": "web_ui_feature",
+      "commands": ["feature", "task", "build"],
+      "platforms": ["web"],
+      "request_all": [
+        [
+          "\\b(screen|screens|ui|layout|list|lists|favorite|favorites|page|pages|route|component|components|navigation|tab)\\b",
+          "(\\ud654\\uba74|\\ubaa9\\ub85d|\\ub9ac\\uc2a4\\ud2b8|\\uc990\\uaca8\\ucc3e\\uae30|\\ud398\\uc774\\uc9c0|\\ub77c\\uc6b0\\ud2b8|\\ucef4\\ud3ec\\ub10c\\ud2b8|\\ud0ed|\\ub124\\ube44|\\ub0b4\\ube44)"
+        ],
+        [
+          "\\b(build|create|implement|compose|design|add|make)\\b",
+          "(\\uad6c\\uc131|\\uad6c\\ud604|\\ub9cc\\ub4e4|\\uc791\\uc131|\\ucd94\\uac00|\\uc9dc\\uc918)"
+        ]
+      ],
+      "doc_sets": ["web_ui"],
+      "reason": "Web UI feature work should load React UI, code structure, state/data, design-system, accessibility, review, visual, and performance guidance."
+    },
+    {
+      "name": "web_react_self_selected",
+      "commands": ["feature", "task", "build", "review", "code-simplify", "refactor"],
+      "platforms": ["web"],
+      "request_any": [
+        "\\b(react|tsx|jsx|next\\.js|nextjs|remix)\\b"
+      ],
+      "doc_sets": ["web_ui"],
+      "reason": "React or TSX choices require React UI, web structure, state/data, design-system, accessibility, visual, and performance context."
+    }
+  ],
+  "path_surfaces": [
+    {
+      "name": "workflow_router",
+      "patterns": [
+        "scripts/workflow*.py",
+        "scripts/agent-preflight.py",
+        "scripts/agent-hook.py",
+        "scripts/agent-docs-read.py",
+        "scripts/agent-finish-check.py",
+        "scripts/agent_*",
+        "scripts/agent-*",
+        "scripts/support/*setup*.py"
+      ],
+      "docs": [
+        "workflows/scripted-agent-workflow.md",
+        "workflows/agent-task-lifecycle.md",
+        "common/tool-failure-recovery.md",
+        "common/ci-cd-automation.md"
+      ],
+      "reason": "Workflow and hook script changes affect the executable route, preflight, docs-read, and finish gates."
+    },
+    {
+      "name": "request_classifier",
+      "patterns": [
+        "scripts/workflow_request.py",
+        "scripts/workflow_request_patterns.py",
+        "workflows/skills/request-triage/**",
+        "common/skills/task-intake-effort-routing/**"
+      ],
+      "docs": [
+        "common/task-intake-effort-routing.md",
+        "workflows/request-triage.md",
+        "workflows/ambiguity-gate.md"
+      ],
+      "reason": "Request classification changes need intake, triage, and ambiguity routing guidance."
+    },
+    {
+      "name": "android_compose_paths",
+      "patterns": [
+        "app/src/main/**/ui/**/*.kt",
+        "*/src/main/**/ui/**/*.kt",
+        "**/src/main/**/compose/**/*.kt",
+        "**/src/main/**/*Screen.kt",
+        "**/src/main/**/*Route.kt",
+        "**/src/main/**/*Composable.kt",
+        "**/src/main/**/*UiState.kt"
+      ],
+      "doc_sets": ["android_compose_ui"],
+      "reason": "Touched Android Kotlin UI, screen, route, composable, or UiState paths imply Android Compose UI/state and performance guidance should be read."
+    },
+    {
+      "name": "application_desktop_paths",
+      "patterns": [
+        "src-tauri/**",
+        "electron/**",
+        "tauri.conf.json",
+        "src/**/ipc/**/*.ts",
+        "src/**/renderer/**/*.tsx"
+      ],
+      "doc_sets": ["application_ui"],
+      "reason": "Touched desktop shell, command, IPC, or renderer paths imply application command/UI guidance should be read."
+    },
+    {
+      "name": "flutter_widget_paths",
+      "patterns": [
+        "lib/**/screens/**/*.dart",
+        "lib/**/pages/**/*.dart",
+        "lib/**/widgets/**/*.dart",
+        "**/*_screen.dart",
+        "**/*_page.dart",
+        "**/*_widget.dart"
+      ],
+      "doc_sets": ["flutter_ui"],
+      "reason": "Touched Flutter screen, page, or widget paths imply Flutter widget UI/state guidance should be read."
+    },
+    {
+      "name": "ios_swiftui_paths",
+      "patterns": [
+        "**/*View.swift",
+        "**/*Screen.swift"
+      ],
+      "doc_sets": ["ios_swiftui"],
+      "reason": "Touched SwiftUI view, screen, or view-model paths imply iOS SwiftUI/state/design guidance should be read."
+    },
+    {
+      "name": "ios_uikit_paths",
+      "patterns": [
+        "**/*ViewController.swift",
+        "**/*CollectionViewCell.swift",
+        "**/*TableViewCell.swift",
+        "**/*Coordinator.swift"
+      ],
+      "doc_sets": ["ios_uikit"],
+      "reason": "Touched UIKit view-controller, cell, or coordinator paths imply UIKit/state/design guidance should be read."
+    },
+    {
+      "name": "kmp_compose_paths",
+      "patterns": [
+        "**/commonMain/**/ui/**/*.kt",
+        "**/commonMain/**/compose/**/*.kt",
+        "**/commonMain/**/*Screen.kt",
+        "**/commonMain/**/*Composable.kt",
+        "**/commonMain/**/*UiState.kt"
+      ],
+      "doc_sets": ["kmp_compose_ui"],
+      "reason": "Touched KMP commonMain Compose UI paths imply Compose Multiplatform state/module guidance should be read."
+    },
+    {
+      "name": "swift_design_paths",
+      "patterns": [
+        "Sources/**/DesignSystem/**/*.swift",
+        "Sources/**/*Style.swift",
+        "Sources/**/*Modifier.swift",
+        "Sources/**/*Primitive.swift",
+        "Sources/**/*Component.swift"
+      ],
+      "doc_sets": ["swift_ui_design"],
+      "reason": "Touched Swift design-system, style, modifier, primitive, or component paths imply Swift UI/design guidance should be read."
+    },
+    {
+      "name": "web_react_paths",
+      "patterns": [
+        "app/**/page.tsx",
+        "app/**/layout.tsx",
+        "pages/**/*.tsx",
+        "src/**/pages/**/*.tsx",
+        "src/**/routes/**/*.tsx",
+        "src/**/screens/**/*.tsx",
+        "src/**/components/**/*.tsx",
+        "src/**/features/**/*.tsx",
+        "**/*Screen.tsx",
+        "**/*Page.tsx"
+      ],
+      "doc_sets": ["web_ui"],
+      "reason": "Touched React page, route, screen, component, or feature paths imply web UI/state/design guidance should be read."
+    },
+    {
+      "name": "tests",
+      "patterns": [
+        "tests/**",
+        "test/**",
+        "**/*_test.py",
+        "**/test_*.py"
+      ],
+      "docs": [
+        "common/testing.md",
+        "common/scenario-driven-testing.md",
+        "common/verification-policy.md"
+      ],
+      "reason": "Test-surface changes need testing strategy and verification evidence guidance."
+    },
+    {
+      "name": "skill_docs",
+      "patterns": [
+        "common/skills/**",
+        "workflows/skills/**",
+        "platforms/**/skills/**",
+        "product-patterns/skills/**",
+        "docs/skills/**"
+      ],
+      "docs": [
+        "common/agent-skill-card-anatomy.md",
+        "workflows/documentation-update.md",
+        "common/source-driven-development.md"
+      ],
+      "reason": "Skill-card changes need skill anatomy, documentation update, and source-driven guidance."
+    },
+    {
+      "name": "agent_instructions",
+      "patterns": [
+        "AGENTS.md",
+        "AGENTS.override.md",
+        "CLAUDE.md",
+        "CODEX.md",
+        ".agents/**",
+        ".codex/**"
+      ],
+      "docs": [
+        "common/agent-operating-skill.md",
+        "workflows/scripted-agent-workflow.md",
+        "common/agent-editing-safety.md"
+      ],
+      "reason": "Agent instruction changes affect startup behavior, route discipline, and editing safety."
+    },
+    {
+      "name": "playbook_docs",
+      "patterns": [
+        "README.md",
+        "index.md",
+        "workflows/README.md",
+        "common/**/*.md",
+        "workflows/**/*.md",
+        "platforms/**/*.md",
+        "product-patterns/**/*.md",
+        "docs/**/*.md"
+      ],
+      "docs": [
+        "workflows/documentation-update.md",
+        "common/source-driven-development.md",
+        "common/human-authored-writing.md"
+      ],
+      "reason": "Shared playbook documentation changes need documentation update, source-driven, and writing guidance."
+    }
+  ]
+}

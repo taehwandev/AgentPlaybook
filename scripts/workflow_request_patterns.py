@@ -45,6 +45,7 @@ QUESTION_ACTION_PATTERNS = (
     "\ud478\uc26c\ud574\uc918",
     "\uc2e4\ud589\ud574\uc918",
     "\ub9cc\ub4e4\uc5b4\uc918",
+    "\uad6c\uc131\ud574\uc918",
     r"(\ud574\ubcf4\uc790|\uc9c4\ud589\ud574\uc918|\ud30c\uc545\ud574\uc918|\ud30c\uc545\uc880)",
 )
 EXACT_PATTERNS = (
@@ -68,6 +69,35 @@ INSPECTION_PATTERNS = (
     "\uccb4\ud06c",
     "\ud30c\uc545",
     "\uc815\ub9ac",
+)
+REFACTOR_ACTION_PATTERNS = (
+    r"\b(refactor|cleanup|clean up|clean-up|simplify)\b",
+    r"\bcode\b.*\b(clean|cleanup|simplify)\b",
+    "\ucf54\ub4dc.*\uc815\ub9ac",
+    "\ub9ac\ud329\ud130",
+    "\ub2e8\uc21c\ud654",
+)
+REVIEW_ACTION_PATTERNS = (
+    r"\b(review|inspect|check|verify)\b.*\b(diff|changes?|patch|working tree|worktree)\b",
+    r"\b(diff|changes?|patch|working tree|worktree)\b.*\b(review|inspect|check|verify)\b",
+    "\ubcc0\uacbd\uc0ac\ud56d.*(\uac80\ud1a0|\ud655\uc778|\uccb4\ud06c)",
+    "\uc791\uc5c5.*(\uac80\ud1a0|\ud655\uc778|\uccb4\ud06c)",
+)
+TEST_ACTION_PATTERNS = (
+    r"\b(run|execute)\s+(tests?|checks?)\b",
+    r"\bverification\s+only\b",
+    r"\bverify\b.*\b(tests?|checks?)\b",
+    "\ud14c\uc2a4\ud2b8.*(\uc2e4\ud589|\uac80\uc99d|\ud655\uc778)",
+    "\uac80\uc99d\ub9cc",
+)
+UI_FEATURE_ACTION_PATTERNS = (
+    r"\b(screen|screens|ui|layout|list|lists|favorite|favorites|navigation|tab)\b.*\b(build|create|implement|compose|design|add|make)\b",
+    r"\b(build|create|implement|compose|design|add|make)\b.*\b(screen|screens|ui|layout|list|lists|favorite|favorites|navigation|tab)\b",
+    r"\b(android|ios|web|app)\b.*\b(screen|screens|ui|layout|list|lists|favorite|favorites|navigation|tab)\b",
+    "(\uc548\ub4dc\ub85c\uc774\ub4dc|android).*(\ud654\uba74|\ubaa9\ub85d|\ub9ac\uc2a4\ud2b8|\uc990\uaca8\ucc3e\uae30|\ud0ed|\ub124\ube44|\ub0b4\ube44)",
+    "(\ud654\uba74|\ubaa9\ub85d|\ub9ac\uc2a4\ud2b8|\uc990\uaca8\ucc3e\uae30|\ud0ed|\ub124\ube44|\ub0b4\ube44).*(\uad6c\uc131|\uad6c\ud604|\ub9cc\ub4e4|\uc791\uc131|\ucd94\uac00|\uc9dc\uc918)",
+    "(\uccab|1|one).*\ud654\uba74.*(\ub450|2|two).*\ud654\uba74",
+    "(compose|\ucef4\ud3ec\uc988).*(screen|ui|\ud654\uba74|\uc791\uc131|\uad6c\uc131|\uad6c\ud604)",
 )
 BROAD_PATTERNS = (
     r"\b(build|implement|design|create|add|plan)\b.*\b(feature|flow|system|architecture|prd|ard|product)\b",

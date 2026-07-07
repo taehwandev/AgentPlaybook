@@ -43,6 +43,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     route.add_argument("--request", help="Current user request text. Required unless --request-classified is used.")
     route.add_argument(
+        "--surface-path",
+        action="append",
+        default=[],
+        help="Path already known to be in scope; can be repeated. Used to promote required docs from workflow-doc-surfaces.json.",
+    )
+    route.add_argument(
         "--request-classified",
         action="store_true",
         help="Assert the current request was already classified or answered before routing.",
@@ -145,6 +151,8 @@ def print_route(args: argparse.Namespace) -> int:
         request_classification=request_classification,
         request_classified=args.request_classified,
         classification_evidence=args.classification_evidence or "",
+        request_text=args.request or "",
+        surface_paths=args.surface_path,
     )
     if newly_inferred:
         route["inferred_concerns"] = newly_inferred
