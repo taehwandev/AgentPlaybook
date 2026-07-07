@@ -103,6 +103,30 @@ freshness challenge when the provider/domain rules require it.
 
 ## Compose Migration, Adaptive UI, And Navigation
 
+### Compose preview tooling and parameters
+
+Read when Android Compose guidance or implementation changes preview creation,
+preview sample data, `@PreviewParameter`, or preview case naming.
+
+Reference groups:
+
+- Compose preview tooling guide:
+  `https://developer.android.com/develop/ui/compose/tooling/previews`
+- `@PreviewParameter` API reference:
+  `https://developer.android.com/reference/kotlin/androidx/compose/ui/tooling/preview/PreviewParameter`
+- `PreviewParameterProvider` API reference:
+  `https://developer.android.com/reference/kotlin/androidx/compose/ui/tooling/preview/PreviewParameterProvider`
+
+Local rule: every named stateless UI composable needs a colocated preview; do
+not substitute a parent preview, screenshot test, UI test, or manual smoke path
+for that requirement. Keep one-off preview functions, preview-only sample state,
+and private `PreviewParameterProvider` classes in the same Kotlin file as the
+stateless composable they render. Use a separate preview package only for
+providers or examples reused by several composable files or owned by a shared
+design-system module. Use `@PreviewParameter` for multi-state previews, cap
+large provider sequences with `limit`, and use provider display names only when
+the repo's Compose tooling artifact supports that API.
+
 ### `jetpack-compose/adaptive/SKILL.md`
 
 Read when making phone/tablet/foldable/desktop-like Compose UI adaptive.
