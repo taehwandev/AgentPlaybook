@@ -24,3 +24,8 @@ build/
 .env.vibeguard.local
 # VibeGuard local state
 .vibeguard/
+
+# Graphify local cache/runtime state. Keep graph.json and reports visible.
+graphify-out/cache/
+graphify-out/.graphify_*
+graphify-out/**/.graphify_*
