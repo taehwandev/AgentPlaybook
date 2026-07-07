@@ -258,11 +258,14 @@ and hook signals must use only
 reports or machine-readable hook status. Completion requires every required
 gate to be `🐱🟢 SUCCESS`. If a
 required gate fails or lacks evidence, report `🐱🔴 FAIL`, follow missed-gate
-recovery, and do not finalize. On the first `FAIL`, request exactly one retry
-for the same hook or gate scope. On the second `FAIL` for that scope, stop and
-run `workflows/skills/retrospective-learning/SKILL.md` before handoff, commit, release, or a
-completion report. See `workflows/skills/scripted-agent-workflow/SKILL.md` for the full
-consumption rules.
+recovery, and do not finalize. On the first `FAIL`, run an actionable
+retrospective for that hook or gate scope, record the immediate correction
+plan, apply safe scoped fixes, and then use the one allowed retry for that same
+scope. The retry must cite or apply the retrospective correction plan. On the
+second `FAIL` for that scope, stop and promote the lesson to shared docs, tests,
+workflow validation, or hooks, or hand off the blocker before continuing. See
+`workflows/skills/scripted-agent-workflow/SKILL.md` for the full consumption
+rules.
 
 For local commit creation or commit preparation, use the lightweight `commit`
 route, or `git_commit` when the runtime labels the task that way. Do not route
@@ -388,10 +391,12 @@ concrete evidence. Do not claim wrapper evidence exists unless the wrapper was
 actually run.
 
 When `agent-finish-check.py` marks `retrospective_required`, run the
-retrospective workflow before retrying or reporting completion, then resume at
-the first missed gate or same failed scope. Repeated or high-risk lessons should
-be promoted from `~/.agentplaybook/lessons/inbox/` into shared docs, tests,
-workflow validation, or hooks.
+retrospective workflow before retrying or reporting completion, record the
+immediate correction plan, apply safe scoped fixes, then resume at the first
+missed gate or same failed scope. The resumed attempt must cite or apply that
+plan. Repeated or high-risk lessons should be promoted from
+`~/.agentplaybook/lessons/inbox/` into shared docs, tests, workflow validation,
+or hooks.
 
 VibeGuard `Needs review` is not completion unless the agent explicitly reports
 the review state and passes `--allow-vibeguard-review "<reason>"`. `🐱🔴 FAIL`,

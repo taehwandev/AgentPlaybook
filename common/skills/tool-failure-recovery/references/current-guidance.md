@@ -61,12 +61,15 @@ Hook failure:
 - Treat a hook `FAIL` as an active recovery task, not a handoff summary.
 - Read every failure detail and classify it as safe scoped fix, scope decision,
   environment blocker, external-state risk, or broader refactor.
+- Run an actionable retrospective for the first failed hook scope and record
+  the immediate correction plan.
 - Fix safe scoped issues immediately outside the hook, preserving the hook as a
   read-only checker.
-- Rerun the same hook once with `--retry-attempt 1` after the fix.
+- Rerun the same hook once with `--retry-attempt 1` after the retrospective and
+  fix. The retry evidence must cite or apply the correction plan.
 - If recovery requires destructive action, credentials, external state, or a
   broader refactor, ask before acting. If the retry fails again for the same
-  scope, run retrospective before finalizing.
+  scope, stop and promote the lesson or hand off the blocker before continuing.
 
 Lint or formatting failure:
 

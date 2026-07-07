@@ -110,9 +110,10 @@ from memory.
     creation, compare the final diff and evidence against
     `common/definition-of-done.md`.
 19. Retrospective restart: when finish-check sets `retrospective_required`, run
-    `workflows/retrospective-learning.md`, use or update the generated global
-    lesson candidate when safe, then restart at the first missed gate or same
-    failed scope.
+    `workflows/retrospective-learning.md`, record the immediate correction
+    plan, use or update the generated global lesson candidate when safe, apply
+    safe scoped fixes, then restart at the first missed gate or same failed
+    scope. The restarted attempt must cite or apply the plan.
 20. Review: inspect the final diff, output, or artifact against the request and
     risks.
 21. Report: state what changed or was found, verification status, skipped

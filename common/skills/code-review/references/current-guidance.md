@@ -177,10 +177,12 @@ as a read-only gate:
 - On `FAIL`, explain the failing check in detail: exact path and line when
   available, observed size, configured threshold, why it blocks approval, and
   the smallest safe next action.
-- Do not stop at a vague failure report. After a first `FAIL`, immediately fix
-  scoped and safe issues outside the hook, then rerun the same hook once with
-  `--retry-attempt 1`. Ask only when recovery requires a scope decision,
-  destructive action, credential change, external state, or a broader refactor.
+- Do not stop at a vague failure report. After a first `FAIL`, immediately run
+  an actionable retrospective for the failed review scope, record the correction
+  plan, fix scoped and safe issues outside the hook, then rerun the same hook
+  once with `--retry-attempt 1`. The retry must cite or apply that plan. Ask
+  only when recovery requires a scope decision, destructive action, credential
+  change, external state, or a broader refactor.
 - If the review finds a required fix, report the smallest actionable failure and
   run the normal workflow for that fix. Do not hide the fix inside the hook.
 - If a hook command changes the worktree, treat that as a hook failure.

@@ -587,9 +587,10 @@ failed gate or task step. Stop if any document is listed under `missing`.
 Completion requires every required gate to be `🐱🟢 SUCCESS`. `🐱🔴 FAIL` means
 blocked, failed, missed, or missing evidence and triggers missed-gate recovery:
 stop finalization, return to the first missed gate only, roll back dependent
-agent-made changes when safe, and run the retrospective workflow. The missed
-gate gets one recovery retry; the whole route is not restarted. Do not report
-any third gate state.
+agent-made changes when safe, run an actionable retrospective, record the
+correction plan, and apply safe scoped fixes before the one recovery retry. The
+retry must cite or apply that plan; the whole route is not restarted. Do not
+report any third gate state.
 
 ## Executable Evidence Gate
 

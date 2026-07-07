@@ -105,9 +105,11 @@ exit code and the first state token. Do not introduce any third hook state.
 
 Failure handling is also binary:
 
-- first `FAIL`: request exactly one retry for the same hook and failed scope
-- second `FAIL` for that hook/scope: stop and run
-  `workflows/skills/retrospective-learning/SKILL.md`
+- first `FAIL`: run an actionable retrospective for the same hook and failed
+  scope, record the correction plan, apply safe scoped fixes, then use the one
+  allowed retry
+- second `FAIL` for that hook/scope: stop and promote the lesson or hand off the
+  blocker before continuing
 
 Use the same public states for route gate signals and hook status:
 `🐱🟢 SUCCESS` and `🐱🔴 FAIL`. Do not report any third state.
@@ -176,8 +178,10 @@ the update.
   worktree before and after the hook so scoped reviews cannot hide
   out-of-scope mutations. On `FAIL`, it must explain the exact failing
   check, threshold, affected path or line when available, and recovery action.
-  Fix scoped and safe failures outside the hook, then rerun the same hook once
-  with `--retry-attempt 1`; do not finalize with an unresolved `FAIL`. It also
+  Run an actionable retrospective, record the correction plan, fix scoped and
+  safe failures outside the hook, then rerun the same hook once with
+  `--retry-attempt 1` and cite or apply that plan; do not finalize with an
+  unresolved `FAIL`. It also
   fails by default when the changed path count is too broad for one review pass,
   so the work must be split before retrying.
   Use

@@ -195,9 +195,10 @@ Before finishing:
 - If verification cannot run, state why and what risk remains.
 - Include file references when explaining non-trivial changes.
 - If any required gate is missed or fails, run the retrospective workflow before
-  retrying the same scope or reporting completion. Treat the generated global
-  lesson candidate as a prompt to promote a recurring lesson into shared docs,
-  tests, validation, or hooks.
+  retrying the same scope or reporting completion. The retrospective must record
+  an immediate correction plan, apply safe scoped fixes, and the retry must cite
+  or apply that plan. Treat the generated global lesson candidate as a prompt to
+  promote a recurring lesson into shared docs, tests, validation, or hooks.
 
 ## Task Routing
 

@@ -28,6 +28,11 @@ Run this workflow when any of these happened:
 - The next agent is likely to repeat the issue without a rule, doc, or test change.
 
 Do not run a formal retrospective for trivial work with no reusable lesson.
+For hook, finish-check, or required-gate recovery, use a short actionable
+retrospective instead of a ceremonial write-up. It must name the immediate
+correction plan, what can be fixed now, and what the next attempt must apply.
+If nothing can be fixed safely, state the blocker and stop instead of writing an
+empty retrospective.
 
 ## Read
 
@@ -55,7 +60,8 @@ Do not run a formal retrospective for trivial work with no reusable lesson.
 7. Apply the doc, test, hook, validation, or task update when it is safe and in
    scope; otherwise record the follow-up owner and location.
 8. Restart at the first missed gate or same failed scope after the retrospective
-   decision is recorded.
+   decision and correction plan are recorded. The next attempt must cite or
+   apply that plan.
 9. Report the learning in a short, reusable form.
 
 ## Output

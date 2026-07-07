@@ -639,19 +639,24 @@ If the agent missed any required gate:
 3. Resume at the first missed gate only; do not restart the whole route.
 4. Roll back only dependent agent-made changes after the missed gate when safe.
    Preserve pre-existing user changes and ask before destructive cleanup.
-5. Re-execute the missed gate one time, then refresh any downstream gate
-   evidence that depended on work after the missed gate.
-6. If finish-check sets `retrospective_required`, run
-   `workflows/retrospective-learning.md`, inspect the generated global lesson
-   candidate when available, and restart at the first missed gate or same failed
-   scope before any handoff, commit, release, or completion report.
+5. If finish-check sets `retrospective_required` or the hook/gate returns the
+   first `FAIL`, run `workflows/retrospective-learning.md`, inspect the
+   generated global lesson candidate when available, record the immediate
+   correction plan, and apply safe scoped fixes before retrying.
+   For finish-check evidence failures, the correction plan must copy the
+   validator's required evidence fields into the next gate evidence; a summary
+   that sounds complete but omits those fields is another missed gate.
+6. Re-execute the missed gate one time. The retry evidence must cite or apply
+   the retrospective correction plan, then refresh any downstream gate evidence
+   that depended on work after the missed gate.
 7. If the same missed-gate scope fails again after retrospective restart, stop
    and promote the lesson to shared docs, tests, workflow validation, or hooks
    before continuing.
 
 The missed gate gets one recovery retry: original execution plus one recovery
-pass. If that recovery pass misses the gate again, stop and report the blocker,
-the missed gate, the rollback status, and the retrospective summary.
+pass. The retrospective happens before that recovery pass. If that recovery pass
+misses the gate again, stop and report the blocker, the missed gate, the
+rollback status, and the retrospective summary.
 
 ## Command Profiles
 
