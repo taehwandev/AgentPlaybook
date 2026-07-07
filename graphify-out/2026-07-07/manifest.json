@@ -1,7 +1,7 @@
 {
   ".claude/settings.json": {
-    "mtime": 1783425417.9772635,
-    "ast_hash": "6e0d0d4c9ed2cc353169db931962c363",
+    "mtime": 1783426387.37218,
+    "ast_hash": "d3b650c1a9406a314acd34c1d9201b36",
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
@@ -10,8 +10,8 @@
     "semantic_hash": ""
   },
   ".codex/hooks.json": {
-    "mtime": 1783425412.8278763,
-    "ast_hash": "dd6a9e43cac4614b40951429c566a0a4",
+    "mtime": 1783426387.2685208,
+    "ast_hash": "05935c0919496bb0c417d1d59d36442d",
     "semantic_hash": ""
   },
   ".vibeguard.json": {
@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "scripts/agent-finish-check.py": {
-    "mtime": 1782795265.751419,
-    "ast_hash": "0660fc27698cdab5f06dd901f497184c",
+    "mtime": 1783432739.0824482,
+    "ast_hash": "833fc34e813c3704935ad533b637422b",
     "semantic_hash": ""
   },
   "scripts/agent-hook.py": {
@@ -55,8 +55,8 @@
     "semantic_hash": ""
   },
   "scripts/agent_finish_common.py": {
-    "mtime": 1781834074.8827398,
-    "ast_hash": "e3b269497c1b06f77fa0fe260ea1d9f8",
+    "mtime": 1783432738.9737103,
+    "ast_hash": "b81946beba73d02e9c169832c5f6edee",
     "semantic_hash": ""
   },
   "scripts/agent_finish_final_checks.py": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "scripts/agent_global_lessons.py": {
-    "mtime": 1782347161.0100772,
-    "ast_hash": "5825c442bd8934355303ca806cf5db70",
+    "mtime": 1783430824.6009254,
+    "ast_hash": "963355a6b425e8185a407e8283cab2da",
     "semantic_hash": ""
   },
   "scripts/agent_hook_gate_records.py": {
@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "scripts/agent_hook_runtime.py": {
-    "mtime": 1783251206.5537915,
-    "ast_hash": "4b21be3b88b643865d93348fab7d88fe",
+    "mtime": 1783430824.3082879,
+    "ast_hash": "140e60ae56ab0522ca722a49e4cf490e",
     "semantic_hash": ""
   },
   "scripts/agent_inprocess.py": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "scripts/agent_review_hook.py": {
-    "mtime": 1783250608.7784245,
-    "ast_hash": "929fe53dd6abde9ccf9a278737a3b1d5",
+    "mtime": 1783430824.4047859,
+    "ast_hash": "f1c8dd217aa416243cd8864e6720ab96",
     "semantic_hash": ""
   },
   "scripts/agent_review_purpose.py": {
@@ -335,8 +335,8 @@
     "semantic_hash": ""
   },
   "scripts/workflow_output.py": {
-    "mtime": 1783244263.492814,
-    "ast_hash": "c94354f56a3c1cf2c1941a231159f6ac",
+    "mtime": 1783430824.697779,
+    "ast_hash": "812ebc8791cdda678abe43a3a2abd902",
     "semantic_hash": ""
   },
   "scripts/workflow_parallel.py": {
@@ -420,8 +420,8 @@
     "semantic_hash": ""
   },
   "tests/test_workflow_routing.py": {
-    "mtime": 1783419319.41628,
-    "ast_hash": "b4315817c70f15f28b9d8b36673b4b19",
+    "mtime": 1783432758.8338487,
+    "ast_hash": "dc294638367bee7ae761d29b2505759e",
     "semantic_hash": ""
   },
   "workflow-doc-surfaces.json": {
@@ -580,8 +580,8 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1783425598.7308173,
-    "ast_hash": "896455b76cd7e82d1064117d488c2472",
+    "mtime": 1783430897.5444412,
+    "ast_hash": "fce2e39910576d5d62cb15345692b6c1",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -590,8 +590,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1783419164.0259304,
-    "ast_hash": "477f58d44cc72b3b2a937aecc0e4145e",
+    "mtime": 1783430947.2276373,
+    "ast_hash": "bc78fa93f08950b0261ad4154941ead4",
     "semantic_hash": ""
   },
   "VIBEGUARD.md": {
@@ -870,8 +870,8 @@
     "semantic_hash": ""
   },
   "common/skills/agent-operating-skill/references/current-guidance.md": {
-    "mtime": 1783341343.8799372,
-    "ast_hash": "d3d6eead57e2d0629ce942cbfe081949",
+    "mtime": 1783430913.5501676,
+    "ast_hash": "9866b057e420e59b207f593fe276e55d",
     "semantic_hash": ""
   },
   "common/skills/agent-skill-card-anatomy/SKILL.md": {
@@ -980,8 +980,8 @@
     "semantic_hash": ""
   },
   "common/skills/code-review/references/current-guidance.md": {
-    "mtime": 1783252029.8946512,
-    "ast_hash": "f6ee556783694391ccb8d3bc41e9e87f",
+    "mtime": 1783430913.6412373,
+    "ast_hash": "e1ba1d5248f85d1633c0938df059129e",
     "semantic_hash": ""
   },
   "common/skills/code-structure-ownership/SKILL.md": {
@@ -1375,8 +1375,8 @@
     "semantic_hash": ""
   },
   "common/skills/tool-failure-recovery/references/current-guidance.md": {
-    "mtime": 1783216190.009791,
-    "ast_hash": "dcbbd40c8e6f273356bb6c360d5ba250",
+    "mtime": 1783430913.4576545,
+    "ast_hash": "51e5df38fefc0b54ce3f632af668d35c",
     "semantic_hash": ""
   },
   "common/skills/ui-visual-verification/SKILL.md": {
@@ -2510,8 +2510,8 @@
     "semantic_hash": ""
   },
   "workflows/README.md": {
-    "mtime": 1783418077.6388803,
-    "ast_hash": "1ad12a9d468e4c2425e57cf0cd74556a",
+    "mtime": 1783430947.139395,
+    "ast_hash": "39f50b7ef83082043e008e8084a3c2e8",
     "semantic_hash": ""
   },
   "workflows/agent-handoff-continuation.md": {
@@ -2625,8 +2625,8 @@
     "semantic_hash": ""
   },
   "workflows/skills/agent-task-lifecycle/references/current-guidance.md": {
-    "mtime": 1783244508.457232,
-    "ast_hash": "81a47c2af662f068bc37fb0c0fb1eb62",
+    "mtime": 1783430913.7332807,
+    "ast_hash": "5d7028e4c57de4242794c26d7171c318",
     "semantic_hash": ""
   },
   "workflows/skills/ambiguity-gate/SKILL.md": {
@@ -2775,8 +2775,8 @@
     "semantic_hash": ""
   },
   "workflows/skills/retrospective-learning/references/current-guidance.md": {
-    "mtime": 1783216190.030304,
-    "ast_hash": "8f659ced15fc545dcca86692a9164df6",
+    "mtime": 1783430931.4573133,
+    "ast_hash": "4ba24459ef177fa79ecc2430c699fc53",
     "semantic_hash": ""
   },
   "workflows/skills/review-and-commit/SKILL.md": {
@@ -2795,8 +2795,8 @@
     "semantic_hash": ""
   },
   "workflows/skills/scripted-agent-workflow/references/current-guidance.md": {
-    "mtime": 1783418067.0273232,
-    "ast_hash": "22a64d13993d8f1d19d247ff8b1c8b89",
+    "mtime": 1783431246.929766,
+    "ast_hash": "da2fdbf5f1fc8a002fefba752ce52caf",
     "semantic_hash": ""
   },
   "docs/favicon.svg": {
