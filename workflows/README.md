@@ -122,6 +122,13 @@ the update.
 
 - `Start Hook`: run before work that needs routing or evidence. It records
   request classification, route, git status, and pre-work VibeGuard evidence.
+  The preflight route promotes required docs from `workflow-doc-surfaces.json`
+  using request intent, selected platform, request path references, and current
+  `git status` paths, so agents do not need the user to name every relevant
+  skill card explicitly. UI-capable platform work such as Android Compose,
+  Application desktop UI, Flutter widgets, iOS SwiftUI/UIKit, KMP Compose,
+  Swift design-system UI, and Web React UI must promote the matching UI, state,
+  structure, review, visual verification, and performance guidance.
   Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.
 - `Docs-Read Hook`: run after Start Hook and before edits when the route
   includes `route docs read`. It reads the route's `required_docs` from the

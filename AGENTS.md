@@ -195,6 +195,24 @@ routing, or running project-specific work. If the script is unavailable, cannot
 run, or the route is missing a clearly relevant concern, stop and report the gap
 before continuing. Use `index.md` as a fallback only for simple answer-only work
 or after the user explicitly accepts the fallback.
+
+The workflow router also promotes required docs from
+`workflow-doc-surfaces.json` when request intent or known/touched paths reveal a
+specific work surface. This is the root-level document routing map for common
+agent tasks such as workflow script changes, request classifier work, tests,
+skill cards, agent instruction files, UI-capable platform work, and shared
+playbook docs. Request-intent rules may match the route command, selected
+platform, request text, and reusable document sets; for example screen, list,
+favorites, or explicit framework choices on Android, Application, Flutter, iOS,
+KMP, Swift, and Web promote the matching UI, state, structure, review, visual
+verification, and performance guidance. `workflow.py route` automatically
+extracts path-like references from `--request`, and `agent-preflight.py` also
+adds paths from `git status --short --untracked-files=all`. Use
+`--surface-path <path>` only when a launcher already knows an in-scope path that
+does not appear in the request or current git status. Surface promotion may
+move a document from `reference_docs` to `required_docs`; it never replaces
+repo-local instructions or the normal route command/profile selection.
+
 Discover valid commands, platforms, and concerns with:
 
 ```text

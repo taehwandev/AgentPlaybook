@@ -497,6 +497,20 @@ Before editing, reviewing, committing, or reporting completion:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
+The route may promote additional `required_docs` from the root
+`workflow-doc-surfaces.json` map when the request text or known/touched paths
+show a specific work surface. Rules may match route command, selected platform,
+request text, request path references, explicit `--surface-path` values, and
+paths from `git status --short --untracked-files=all`. UI-capable platform
+work must be covered as a matrix, not as a one-off Android rule: Android
+Compose, Application desktop UI, Flutter widgets, iOS SwiftUI/UIKit, KMP
+Compose, Swift design-system UI, and Web React UI should each promote the
+matching UI, state, structure, review, visual verification, and performance
+guidance. This surface routing is for document selection only: it does not
+replace request classification, command/profile selection, repo-local
+instructions, or the requirement to record a task-specific docs-read takeaway
+before edits.
+
 The command includes task-specific arguments, but persistent runtime permission
 prefixes must not. For Codex escalation, request only
 `["python3", "/absolute/path/to/AgentPlaybook/scripts/agent-hook.py"]` as the
