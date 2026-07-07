@@ -9,6 +9,11 @@ from support.permission_entries import (
     claude_legacy_permission_entries,
     claude_permission_entries,
 )
+from support.runtime_bridge import (
+    merge_runtime_bridge,
+    runtime_bridge_block,
+    runtime_bridge_required_phrases,
+)
 from support.setup_config_files import merge_permissions_allow, quote, read_json, write_json
 
 _BASELINE_COMMAND_RE = re.compile(
@@ -23,6 +28,7 @@ _CLASSIFICATION_EVIDENCE = (
 def configure_claude(
     dry_run: bool,
     *,
+    root: Path,
     scripts_dir: Path,
     launcher_path: Path,
     spill_available: bool = True,
@@ -35,6 +41,20 @@ def configure_claude(
         f" --classification-evidence {quote(_CLASSIFICATION_EVIDENCE)}"
     )
     results = []
+
+    bridge_target = Path.home() / ".claude" / "CLAUDE.md"
+    status = merge_runtime_bridge(
+        bridge_target,
+        dry_run,
+        block=runtime_bridge_block(root, "Claude", "CLAUDE.md"),
+        required_phrases=runtime_bridge_required_phrases("Claude", "CLAUDE.md"),
+    )
+    results.append({
+        "tool": "claude",
+        "hook": "runtime_bridge.CLAUDE",
+        "status": status,
+        "path": str(bridge_target),
+    })
 
     if spill_available:
         status = _merge_claude_user_prompt_submit(target, baseline_cmd, dry_run)

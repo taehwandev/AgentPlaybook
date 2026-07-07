@@ -72,6 +72,13 @@ For multi-step tasks, run `agent-hook.py start` first with `--request
 hooks for the route. Use its output as the command manifest before selecting
 task documents, editing, reviewing, committing, or reporting completion. If the
 current user message is a direct question, answer it before routing or editing.
+Do not wait for the user to name document keywords. Let routing/search infer
+the work surface from the request, platform, concern, and touched files; use
+`workflow-doc-surfaces.json` and the local document graph as inputs; read the
+route `required_docs` before editing or reviewing; and treat graph neighbors as
+`reference_docs` unless the route promotes them to `required_docs`. If
+routing/search misses a clearly relevant platform, concern, or document
+surface, stop and report the gap instead of proceeding from memory.
 If the direct question asks how to start app, product, or feature work, answer
 with the PRD -> ARD -> implementation path before lower-level coding steps. If
 the work then proceeds into code, use the `product` route unless an existing

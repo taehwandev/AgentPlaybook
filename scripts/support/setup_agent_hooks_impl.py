@@ -17,6 +17,11 @@ from support.permission_entries import (
     codex_prefix_rule_entries,
 )
 from support.project_type_detection import detect_project_permissions
+from support.runtime_bridge import (
+    merge_runtime_bridge,
+    runtime_bridge_block,
+    runtime_bridge_required_phrases,
+)
 from support.setup_config_files import merge_codex_prefix_rules, merge_permissions_allow, print_results
 from support.stable_launcher import ensure_stable_launcher, stable_launcher_path
 
@@ -31,7 +36,7 @@ DEFAULT_GITHUB_DIR = Path.home() / "GitHub"
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Configure AI runtime hooks and permissions for AgentPlaybook."
+        description="Configure AI runtime bridges, hooks, and permissions for AgentPlaybook."
     )
     parser.add_argument(
         "--dry-run",
@@ -65,13 +70,14 @@ def main() -> None:
         launcher_configured = True
         results += configure_claude(
             dry_run,
+            root=ROOT,
             scripts_dir=SCRIPTS_DIR,
             launcher_path=stable_launcher_path(),
             spill_available=spill_available,
         )
 
     if _has_codex():
-        results += configure_codex(dry_run)
+        results += configure_codex(dry_run, root=ROOT)
 
     if _has_agy():
         results += configure_agy(
@@ -102,7 +108,7 @@ def main() -> None:
         missing = [r for r in results if r["status"] == "missing"]
         if missing:
             print(
-                "\nRun `python3 scripts/setup-agent-hooks.py` to install missing hooks or permissions.",
+                "\nRun `python3 scripts/setup-agent-hooks.py` to install missing bridges, hooks, or permissions.",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -135,10 +141,30 @@ def _has_spill_setup_helper() -> bool:
     return _spill_setup_helper_path().is_file()
 
 
-def configure_codex(dry_run: bool) -> list[dict]:
-    target = Path.home() / ".codex" / "rules" / "default.rules"
-    status = merge_codex_prefix_rules(target, codex_prefix_rule_entries(SCRIPTS_DIR), dry_run)
-    return [{"tool": "codex", "hook": "rules.AgentPlaybookPython", "status": status, "path": str(target)}]
+def configure_codex(dry_run: bool, *, root: Path) -> list[dict]:
+    bridge_target = Path.home() / ".codex" / "AGENTS.md"
+    bridge_status = merge_runtime_bridge(
+        bridge_target,
+        dry_run,
+        block=runtime_bridge_block(root, "Codex", "AGENTS.md"),
+        required_phrases=runtime_bridge_required_phrases("Codex", "AGENTS.md"),
+    )
+    rules_target = Path.home() / ".codex" / "rules" / "default.rules"
+    rules_status = merge_codex_prefix_rules(rules_target, codex_prefix_rule_entries(SCRIPTS_DIR), dry_run)
+    return [
+        {
+            "tool": "codex",
+            "hook": "runtime_bridge.AGENTS",
+            "status": bridge_status,
+            "path": str(bridge_target),
+        },
+        {
+            "tool": "codex",
+            "hook": "rules.AgentPlaybookPython",
+            "status": rules_status,
+            "path": str(rules_target),
+        },
+    ]
 
 
 def configure_external_project(

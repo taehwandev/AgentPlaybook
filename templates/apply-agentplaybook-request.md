@@ -60,12 +60,12 @@ scripts/workflow.py. Validate it with:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 
-Check user-level runtime hooks and permission allowlists:
+Check user-level runtime bridges, hooks, and permission allowlists:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
 
-If the check reports missing hooks or permissions, ask for approval to update
-user-level runtime config, then run:
+If the check reports missing bridges, hooks, or permissions, ask for approval
+to update user-level runtime config, then run:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 
@@ -210,8 +210,8 @@ Also run the AgentPlaybook runtime setup check:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
 
-If hooks or permissions are missing, ask for approval to update user-level
-runtime config and then run:
+If bridges, hooks, or permissions are missing, ask for approval to update
+user-level runtime config and then run:
 
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 
@@ -220,6 +220,8 @@ entrypoints by suffix-aware runtime matcher, not broad `python3`. For Claude
 managed hooks, prefer the stable `~/.agentplaybook/bin/agentplaybook-hook`
 launcher plus the refreshed root pointer over a moving checkout's absolute
 `scripts/workflow.py` path.
+The setup command should install or repair the managed bridge block for Codex,
+Claude, and Antigravity when those runtimes are present.
 
 Update the active user-level file for the runtime I choose:
 Codex -> ~/.codex/AGENTS.md
@@ -239,6 +241,16 @@ The bridge must force this behavior:
 - Claude reads CLAUDE.md.
 - Antigravity reads AGENTS.md.
 - Do not claim an instruction file was read unless you actually opened it.
+- Before selecting task documents manually, run AgentPlaybook workflow routing
+  with my current request.
+- Do not wait for me to name document keywords. Infer the work surface from the
+  request, platform, concern, and touched files, then read the route
+  `required_docs` before editing or reviewing.
+- Use `workflow-doc-surfaces.json` and the local document graph as
+  routing/search inputs. Treat graph neighbors as `reference_docs` unless the
+  route promotes them to `required_docs`.
+- If routing/search misses a clearly relevant platform, concern, or document
+  surface, stop and report the gap instead of proceeding from memory.
 - If the active runtime is Antigravity and this bridge or the project-root
   AGENTS.md cannot be confirmed, stop before routing, editing, testing,
   committing, or reporting completion and ask for bridge repair.

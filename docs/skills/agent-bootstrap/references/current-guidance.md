@@ -207,22 +207,23 @@ After installing or selecting a root, run:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 ```
 
-Then check runtime hooks and permission allowlists:
+Then check runtime bridges, hooks, and permission allowlists:
 
 ```bash
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
 ```
 
-If the check reports missing hooks or permissions, ask for approval before
-writing user-level runtime config, then run:
+If the check reports missing bridges, hooks, or permissions, ask for approval
+before writing user-level runtime config, then run:
 
 ```bash
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 ```
 
-The setup is global because the workflow router and evidence wrappers are shared
-across target repos. It must allow only the current AgentPlaybook Python
-entrypoints by exact path, not broad `python3` execution:
+The setup is global because the workflow router, graph-backed document routing,
+and evidence wrappers are shared across target repos. It must install or repair
+only AgentPlaybook-managed bridge blocks and allow only the current
+AgentPlaybook Python entrypoints by exact path, not broad `python3` execution:
 
 ```text
 <AGENTPLAYBOOK_ROOT>/scripts/*.py
@@ -295,8 +296,8 @@ Before reporting success:
 
 - The selected AgentPlaybook root exists.
 - `AGENTS.md` and `index.md` exist under that root.
-- `setup-agent-hooks.py --check` either passed or missing user-level hooks or
-  permissions were installed after approval.
+- `setup-agent-hooks.py --check` either passed or missing user-level bridges,
+  hooks, or permissions were installed after approval.
 - `agent-entry.py` or `project-discover.py` selects the target repo when the
   runtime starts outside it, or stops with `ambiguous` / `not_found`.
 - The VibeGuard gate ran with the selected AgentPlaybook root as the rule

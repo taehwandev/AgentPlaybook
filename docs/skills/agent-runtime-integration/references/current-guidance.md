@@ -41,22 +41,24 @@ Validate the selected root with:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 ```
 
-Check runtime hooks and permission allowlists with:
+Check runtime bridges, hooks, and permission allowlists with:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
 ```
 
-If hooks or permissions are missing, ask for approval to write user-level
-runtime config, then run:
+If bridges, hooks, or permissions are missing, ask for approval to write
+user-level runtime config, then run:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 ```
 
-This permission setup is global because the AgentPlaybook Python wrappers are
-shared by every target repo. Keep it narrow: allow only AgentPlaybook-managed
-entrypoints and suffix-aware runtime matchers. Do not broadly allow `python3`.
+This setup is global because the AgentPlaybook Python wrappers and graph-backed
+document routing are shared by every target repo. Keep it narrow: install or
+repair only AgentPlaybook-managed bridge blocks and allow only
+AgentPlaybook-managed entrypoints and suffix-aware runtime matchers. Do not
+broadly allow `python3`.
 For Claude, `setup-agent-hooks.py` installs a stable user-level launcher at
 `~/.agentplaybook/bin/agentplaybook-hook` and writes the current checkout to
 `~/.agentplaybook/agentplaybook-root`. Rerun setup after moving or migrating
@@ -74,12 +76,15 @@ and runtime env for that bridge. If the helper is absent, the setup removes
 only those AgentPlaybook-managed Spill label hooks/env and keeps the Python
 wrapper permissions installed.
 
-For Antigravity/AGY, the runtime bridge is fail-closed. `setup-agent-hooks.py`
-manages a short block in `~/.antigravity/AGENTS.md`; `--check` reports it as
-missing when the block is absent or stale. The block must tell AGY to stop before
+For Codex, Claude, and Antigravity/AGY, `setup-agent-hooks.py` manages a short
+user-level bridge block in the runtime's instruction file; `--check` reports it
+as missing when the block is absent or stale. The block must tell the runtime
+to identify the target project, open the project-root instruction file, route
+the current request, use `workflow-doc-surfaces.json` and the local document
+graph for document discovery, read the route's `required_docs`, and stop before
 routing, editing, testing, committing, or reporting completion when it cannot
-confirm the bridge or project-root `AGENTS.md`. It must also keep setup, hook,
-permission, helper, label, and background metering details out of normal
+confirm the bridge or project-root instruction file. It must also keep setup,
+hook, permission, helper, label, and background metering details out of normal
 conversation unless the user explicitly asks about that subsystem.
 
 If a usable root is found, runtime setup must stop install selection there and
@@ -402,6 +407,9 @@ Antigravity:
 - The managed user-level bridge installed by `setup-agent-hooks.py` must tell
   AGY to run `agent-entry.py` or `project-discover.py` before project work when
   it starts outside the target repo or cannot identify one clear target.
+- The same bridge must require graph-backed routing/search before document
+  selection so AGY reads route `required_docs` for the current task instead of
+  depending on user-supplied keywords.
 - Do not create an extra Antigravity-specific file only to duplicate guidance
   already available from `AGENTS.md`.
 - If Antigravity-specific docs already exist, update their pointer in the same
@@ -445,9 +453,9 @@ For every runtime:
    exists, reuse it unless the user explicitly approves a new download or
    pinned copy.
 5. Install only when no usable root exists, then validate the selected root.
-6. Run `scripts/setup-agent-hooks.py --check`. If hooks or permissions are
-   missing, ask for approval to update user-level runtime config, then run
-   `scripts/setup-agent-hooks.py`.
+6. Run `scripts/setup-agent-hooks.py --check`. If bridges, hooks, or
+   permissions are missing, ask for approval to update user-level runtime
+   config, then run `scripts/setup-agent-hooks.py`.
 7. Inspect existing VibeGuard files and agent instructions. Ask the application
    drill before running setup or update when the repo already has custom
    instructions or guardrails. Use VibeGuard `update` only when the user

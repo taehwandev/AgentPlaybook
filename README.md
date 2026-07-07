@@ -470,7 +470,10 @@ file or a pasted prompt.
   [templates/apply-agentplaybook-request.md](templates/apply-agentplaybook-request.md)
   to update user-level runtime bridges such as `~/.codex/AGENTS.md`,
   `~/.claude/CLAUDE.md`, `~/.antigravity`, `~/.antigravitycli`, or
-  `~/.antigravity-ide`.
+  `~/.antigravity-ide`. The managed bridge must route the current request
+  before document selection, use the local document graph and
+  `workflow-doc-surfaces.json`, and read the route's `required_docs` even when
+  the user did not name document keywords.
 - When a runtime starts from `~` or another non-project directory, resolve the
   target first with
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>`.
@@ -480,24 +483,26 @@ file or a pasted prompt.
 - To avoid repeated prompts for AgentPlaybook's required Python wrappers, run
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check`, then run
   `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py` after approval if
-  user-level hooks or permissions are missing. This writes global runtime
-  config only for AgentPlaybook-managed entrypoints; it does not broadly allow
+  user-level bridges, hooks, or permissions are missing. This writes short
+  managed bridge blocks for Codex, Claude, and AGY plus global runtime config
+  only for AgentPlaybook-managed entrypoints; it does not broadly allow
   `python3`. Codex and AGY direct wrapper permissions use the resolved absolute
   AgentPlaybook path, not `$HOME`, `~`, relative paths, or shell `-lc` strings.
   Claude managed hooks use `~/.agentplaybook/bin/agentplaybook-hook` plus a
   refreshed `~/.agentplaybook/agentplaybook-root` pointer so moving or
   migrating the checkout does not leave `~/.claude/settings.json` pointing at
   a stale `scripts/workflow.py` path. Rerun setup after moving AgentPlaybook to
-  refresh that pointer and repair stale managed hooks.
+  refresh that pointer and repair stale managed bridges and hooks.
 - Spill token metering is optional and separate. AgentPlaybook does not install
   token-usage event hooks. If the local Spill setup helper is present,
   `setup-agent-hooks.py` may wire a safe workflow label bridge; if the helper is
   absent, it removes only AgentPlaybook-managed Spill label hooks/env and leaves
   AgentPlaybook routing and evidence wrappers working normally.
-- For Antigravity/AGY, `setup-agent-hooks.py --check` also verifies the managed
-  user bridge in `~/.antigravity/AGENTS.md`. A missing or stale bridge is treated
-  as missing setup so AGY cannot proceed as if the fail-closed and silence rules
-  were installed.
+- For Codex, Claude, and Antigravity/AGY, `setup-agent-hooks.py --check` also
+  verifies the managed user bridge in the runtime's user-level instruction
+  file. A missing or stale bridge is treated as missing setup so the runtime
+  cannot proceed as if project discovery, graph-backed document routing,
+  fail-closed, and silence rules were installed.
 - For runtime-specific setup rules, read
   [docs/skills/agent-runtime-integration/SKILL.md](docs/skills/agent-runtime-integration/SKILL.md).
 

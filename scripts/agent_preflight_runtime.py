@@ -14,6 +14,7 @@ from support.permission_entries import (
     claude_permission_entries,
     codex_prefix_rule_entries,
 )
+from support.runtime_bridge import runtime_bridge_required_phrases
 from support.stable_launcher import stable_launcher_issue
 
 
@@ -24,14 +25,7 @@ CLASSIFIED_HOOK_EVIDENCE_RE = re.compile(
     r"(?:workflow\.py.*route|agentplaybook-hook.*workflow.*route).*triage.*--request-classified.*--classification-evidence"
 )
 AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
-AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = [
-    "Antigravity reads AGENTS.md",
-    "If the runtime starts outside the target repo or the target repo is not explicit, run AgentPlaybook agent-entry.py or project-discover.py before project work.",
-    "If project discovery returns ambiguous or not_found, ask the user for the target project before routing, editing, testing, committing, or reporting completion.",
-    "Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
-    "Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
-    "If this bridge or the project-root AGENTS.md cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
-]
+AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = runtime_bridge_required_phrases("Antigravity", "AGENTS.md")
 
 
 def check_agent_hooks(playbook_root: Path) -> tuple[list[str], list[str]]:

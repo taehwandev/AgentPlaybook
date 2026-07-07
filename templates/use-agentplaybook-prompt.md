@@ -74,6 +74,13 @@ Rules:
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<USER_REQUEST>"
    python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
    Use the route output as the command manifest.
+   Do not wait for me to name document keywords. Let routing/search infer the
+   work surface from the request, platform, concern, and touched files; use
+   workflow-doc-surfaces.json and the local document graph as inputs; read the
+   route `required_docs` before editing or reviewing; and treat graph neighbors
+   as `reference_docs` unless the route promotes them to `required_docs`.
+   If routing/search misses a clearly relevant platform, concern, or document
+   surface, stop and report the gap instead of proceeding from memory.
    If the request is a direct question, answer it before routing or editing.
    If the direct question asks how to start app, product, or feature work,
    answer with PRD -> ARD -> implementation gates before lower-level coding

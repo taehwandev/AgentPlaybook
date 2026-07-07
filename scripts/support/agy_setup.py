@@ -2,23 +2,22 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from support.permission_entries import agy_legacy_permission_entries, agy_permission_entries
+from support.runtime_bridge import (
+    RUNTIME_BRIDGE_BEGIN,
+    RUNTIME_BRIDGE_END,
+    merge_runtime_bridge,
+    runtime_bridge_block,
+    runtime_bridge_required_phrases,
+)
 from support.setup_config_files import merge_permissions_allow
 
 AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
-AGY_RUNTIME_BRIDGE_BEGIN = "<!-- agentplaybook-runtime-bridge:start -->"
-AGY_RUNTIME_BRIDGE_END = "<!-- agentplaybook-runtime-bridge:end -->"
-AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = [
-    "Antigravity reads AGENTS.md",
-    "If the runtime starts outside the target repo or the target repo is not explicit, run AgentPlaybook agent-entry.py or project-discover.py before project work.",
-    "If project discovery returns ambiguous or not_found, ask the user for the target project before routing, editing, testing, committing, or reporting completion.",
-    "Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
-    "Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
-    "If this bridge or the project-root AGENTS.md cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
-]
+AGY_RUNTIME_BRIDGE_BEGIN = RUNTIME_BRIDGE_BEGIN
+AGY_RUNTIME_BRIDGE_END = RUNTIME_BRIDGE_END
+AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = runtime_bridge_required_phrases("Antigravity", "AGENTS.md")
 
 
 def configure_agy(
@@ -72,55 +71,13 @@ def configure_agy(
 
 
 def _merge_agy_runtime_bridge(target: Path, dry_run: bool, *, root: Path) -> str:
-    text = target.read_text() if target.exists() else ""
-    block = _agy_runtime_bridge_block(root)
-    pattern = re.compile(
-        re.escape(AGY_RUNTIME_BRIDGE_BEGIN)
-        + r"[\s\S]*?"
-        + re.escape(AGY_RUNTIME_BRIDGE_END)
-        + r"\n?",
-        re.MULTILINE,
+    return merge_runtime_bridge(
+        target,
+        dry_run,
+        block=_agy_runtime_bridge_block(root),
+        required_phrases=AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
     )
-    match = pattern.search(text)
-    if match:
-        if match.group(0) == block:
-            return "ok"
-        if dry_run:
-            return "missing"
-        updated = pattern.sub(block, text)
-    else:
-        missing = [phrase for phrase in AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES if phrase not in text]
-        if not missing:
-            return "ok"
-        if dry_run:
-            return "missing"
-        separator = "" if not text or text.endswith("\n") else "\n"
-        updated = f"{text}{separator}{block}"
-
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(updated)
-    return "installed"
 
 
 def _agy_runtime_bridge_block(root: Path) -> str:
-    return "\n".join([
-        AGY_RUNTIME_BRIDGE_BEGIN,
-        "## AgentPlaybook Runtime Bridge",
-        "",
-        "Apply this bridge before project work in Antigravity/AGY sessions.",
-        "",
-        f"- Shared AgentPlaybook root: `{root}`",
-        "- Start every task by identifying the current project root.",
-        "- If the runtime starts outside the target repo or the target repo is not explicit, run AgentPlaybook agent-entry.py or project-discover.py before project work.",
-        "- If project discovery returns ambiguous or not_found, ask the user for the target project before routing, editing, testing, committing, or reporting completion.",
-        "- Before project work, open the project-root instruction file for the active runtime.",
-        "- Antigravity reads AGENTS.md.",
-        "- Read project-root instructions before AgentPlaybook shared guidance.",
-        "- For multi-step work, run AgentPlaybook preflight before edits and finish-check before final report, commit, release, or handoff.",
-        "- If this bridge or the project-root AGENTS.md cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
-        "- Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
-        "- Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
-        "- If a response exposed those background details, do not answer with an apology-only message; continue by repairing the action path or stopping with the specific blocker.",
-        AGY_RUNTIME_BRIDGE_END,
-        "",
-    ])
+    return runtime_bridge_block(root, "Antigravity", "AGENTS.md")
