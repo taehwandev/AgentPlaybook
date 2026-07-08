@@ -46,6 +46,7 @@ MARKDOWN_VALIDATE_IGNORED_DIRS = {
     "build",
     "coverage",
     "dist",
+    "graphify-out",
     "node_modules",
     "venv",
 }

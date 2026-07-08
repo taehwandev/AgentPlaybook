@@ -41,6 +41,13 @@ Repo-local rules decide what is committed.
   when it is published, committed, or reviewed. If it is stored as a build
   artifact, keep the source docs and generation manifest as the reviewable
   source of truth.
+- Generated knowledge graphs, wiki exports, search indexes, HTML reports, and
+  source maps are publishable only when they are intentionally selected
+  artifacts, reproducible from committed/public-safe inputs, and reviewed for
+  secrets, local paths, private source material, internal endpoints, and stale
+  source references. Keep local cache, temporary extraction files, token/cost
+  trackers, and intermediate runtime sidecars ignored unless the repo explicitly
+  treats one of them as a source-of-truth artifact.
 
 ## When Generated Diff Is Large
 
@@ -50,6 +57,9 @@ Record:
 - source input that changed
 - whether the diff is expected mechanical output
 - how the generated result was verified
+- for generated documentation or graph outputs, the publish/commit boundary:
+  ignored runtime state, committed reviewable artifact, or separately deployed
+  release artifact
 
 ## Check
 
