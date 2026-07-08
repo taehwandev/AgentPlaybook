@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+from agent_finish_gate_validators import (
+    NO_DOC_DECISIONS,
+    UNCHANGED_COVERAGE_PHRASES,
+    UNCHANGED_DECISIONS,
+    _has_durable_doc_change_signal,
+    has_any,
+)
+
 
 def validate_documentation(evidence: str) -> list[str]:
     text = evidence.lower()
@@ -64,6 +72,19 @@ def validate_documentation(evidence: str) -> list[str]:
             "문서 영향",
         )
     )
+    if has_any(text, NO_DOC_DECISIONS) and _has_durable_doc_change_signal(text):
+        return [
+            "documentation evidence cannot use not-applicable/no-docs when it "
+            "also names a durable planning, requirements, acceptance, workflow "
+            "policy, public contract, operator, architecture, API, release, or "
+            "test-plan change"
+        ]
+    if has_any(text, UNCHANGED_DECISIONS) and not has_any(text, UNCHANGED_COVERAGE_PHRASES):
+        return [
+            "documentation evidence can use unchanged only when it names the "
+            "existing doc path/class inspected and why that doc already covers "
+            "the planning, behavior, contract, or acceptance change"
+        ]
     if has_decision and names_target and explains_reason:
         return []
     return [

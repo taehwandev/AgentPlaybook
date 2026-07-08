@@ -23,6 +23,7 @@ from agent_finish_gate_policy import (
 )
 from agent_finish_check_steps import (
     check_request_intake,
+    read_route_docs_receipt_for_preflight,
     validate_grill_me_skill_evidence,
     validate_route_docs_manifest_evidence,
 )
@@ -41,6 +42,7 @@ from agent_preflight_runtime import (
     _claude_spill_warnings,
 )
 from agent_review_hook import review_hook, review_vibeguard_command
+from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from agent_route_docs import (
     preflight_evidence_sha256,
@@ -125,14 +127,17 @@ class WorkflowRoutingTests(unittest.TestCase):
             root = Path(temp_dir)
             docs_dir = root / "docs"
             cache_dir = root / ".pytest_cache"
+            graphify_dir = root / "graphify-out"
             docs_dir.mkdir()
             cache_dir.mkdir()
+            graphify_dir.mkdir()
             valid_doc = docs_dir / "guide.md"
             valid_doc.write_text(
                 "---\nkeyflow_id: test\nstatus: stable\ntype: human-reviewed\n---\n# Guide\n",
                 encoding="utf-8",
             )
             (cache_dir / "README.md").write_text("# Cache\n", encoding="utf-8")
+            (graphify_dir / "GRAPH_REPORT.md").write_text("# Generated graph report\n", encoding="utf-8")
 
             self.assertEqual([valid_doc], markdown_files_to_validate(root))
 
@@ -1046,6 +1051,22 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(route_doc("common/source-driven-development.md"), route["required_docs"])
         self.assertTrue(any(match["name"] == "natural_language_doc_routing" for match in route["doc_surface_matches"]))
 
+    def test_planning_change_request_promotes_documentation_impact_docs(self) -> None:
+        route = resolve_docs(
+            "task",
+            None,
+            [],
+            request_classified=True,
+            request_text="기획변경인데 예상 문서 정리가 누락되는 경우를 막아줘",
+        )
+
+        self.assertIn(route_doc("workflows/documentation-update.md"), route["required_docs"])
+        self.assertIn(route_doc("common/product-spec-to-implementation.md"), route["required_docs"])
+        self.assertIn(route_doc("common/source-driven-development.md"), route["required_docs"])
+        self.assertIn(route_doc("common/definition-of-done.md"), route["required_docs"])
+        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["required_docs"])
+        self.assertTrue(any(match["name"] == "planning_change_documentation" for match in route["doc_surface_matches"]))
+
     def test_route_exposes_document_graph_neighbors_as_reference_docs(self) -> None:
         route = resolve_docs(
             "workflow-setup",
@@ -1366,7 +1387,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             {
                 DOCUMENTATION_IMPACT_GATE: (
                     "pre-code/pre-edit artifact selection: workflow card and README; "
-                    "impact decision: unchanged; reason: no durable behavior, "
+                    "impact decision: not applicable; reason: no durable behavior, "
                     "no workflow policy, no public contract, no operator action, "
                     "and no acceptance criteria changed, so this does not require "
                     "creating/updating that artifact"
@@ -2096,6 +2117,43 @@ class WorkflowRoutingTests(unittest.TestCase):
             command(ROOT, ROOT),
         )
 
+    def test_structure_review_warns_for_preexisting_oversized_block_without_growth(self) -> None:
+        base_lines = ["def run_import():"]
+        base_lines.extend(f"    value_{index} = {index}" for index in range(125))
+        base_text = "\n".join(base_lines) + "\n"
+        changed_text = base_text.replace("value_50 = 50", "value_50 = 51")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            source = project / "large.py"
+            source.write_text(changed_text, encoding="utf-8")
+
+            def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+                if command[:3] == ["git", "rev-parse", "--verify"]:
+                    stdout = "abc\n"
+                elif command[:3] == ["git", "diff", "--name-status"]:
+                    stdout = "M\tlarge.py\n"
+                elif command[:3] == ["git", "diff", "--numstat"]:
+                    stdout = "1\t1\tlarge.py\n"
+                elif command[:2] == ["git", "ls-files"]:
+                    stdout = ""
+                elif command[:2] == ["git", "show"]:
+                    stdout = base_text
+                else:
+                    stdout = ""
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": stdout,
+                    "stderr": "",
+                }
+
+            result = structure_review(project, 500, 120, run_command)
+
+        self.assertFalse(any("large.py:1 block `run_import` spans" in failure for failure in result["failures"]))
+        self.assertTrue(any("pre-existing oversized unit" in warning for warning in result["warnings"]))
+
     def test_gate_evidence_ledger_ignores_stale_preflight(self) -> None:
         route = {
             "command": "workflow-setup",
@@ -2339,6 +2397,23 @@ class WorkflowRoutingTests(unittest.TestCase):
                 receipt_path_for_evidence(root / "worker-a.json"),
             )
 
+    def test_finish_can_read_default_receipt_bound_to_custom_preflight(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            evidence_path = root / "preflight-release-retry.json"
+            evidence_path.write_text('{"route":"release"}\n', encoding="utf-8")
+            receipt = {
+                "schema_version": 1,
+                "preflight_evidence": str(evidence_path),
+                "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
+                "route_fingerprint": "abc",
+                "doc_count": 0,
+                "docs": [],
+            }
+            (root / "route-docs-read.json").write_text(json.dumps(receipt), encoding="utf-8")
+
+            self.assertEqual(receipt, read_route_docs_receipt_for_preflight(evidence_path))
+
     def test_prd_and_product_routes_require_alignment_brief(self) -> None:
         prd_route = resolve_docs("prd", None, [], request_classified=True)
         product_route = resolve_docs("product", None, [], request_classified=True)
@@ -2478,6 +2553,36 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertEqual("clear-scoped", classification["clarity"])
         self.assertEqual("task", classification["recommended_route"])
+        self.assertFalse(classification["grill_me"])
+        self.assertEqual("work", classification["response_mode"])
+
+    def test_planning_change_doc_omission_request_routes_to_workflow_setup(self) -> None:
+        classification = classify_request("기획변경 때 문서 정리가 누락되는 걸 막아줘")
+
+        self.assertEqual("clear-scoped", classification["clarity"])
+        self.assertEqual("workflow-setup", classification["recommended_route"])
+        self.assertFalse(classification["grill_me"])
+        self.assertEqual("work", classification["response_mode"])
+
+    def test_scoped_release_request_routes_without_grill_me(self) -> None:
+        classification = classify_request(
+            "Deploy Spill macOS app release v2026.28.4 from main HEAD with local "
+            "verification, package artifact, tag push, and GitHub Release publication."
+        )
+
+        self.assertEqual("clear-scoped", classification["clarity"])
+        self.assertEqual("release", classification["recommended_route"])
+        self.assertFalse(classification["grill_me"])
+        self.assertEqual("work", classification["response_mode"])
+
+    def test_commit_first_release_substep_uses_commit_route(self) -> None:
+        classification = classify_request(
+            "Commit the current Swift warning cleanup first before continuing the "
+            "Spill macOS release sequence."
+        )
+
+        self.assertEqual("clear-scoped", classification["clarity"])
+        self.assertEqual("commit", classification["recommended_route"])
         self.assertFalse(classification["grill_me"])
         self.assertEqual("work", classification["response_mode"])
 
@@ -2936,6 +3041,32 @@ class WorkflowRoutingTests(unittest.TestCase):
 
                 self.assertEqual(0, resolved.returncode, resolved.stderr)
 
+    def test_release_classification_evidence_can_use_structured_release_scope(self) -> None:
+        evidence = (
+            "broad-product clarify_first release scope: Spill macOS app version "
+            "v2026.28.4, source revision bc3c4a5, package artifact DMG, tag push "
+            "and GitHub Release publication after verification"
+        )
+
+        self.assertIsNone(classified_route_block_reason("release", evidence))
+
+        gate_signals: list[dict[str, str]] = []
+        missed_gates: list[str] = []
+        failures: list[str] = []
+        grill_me_required = check_request_intake(
+            {"command": "release", "request_classified": True},
+            {"request_classified": True, "classification_evidence": evidence},
+            {},
+            {},
+            gate_signals,
+            missed_gates,
+            failures,
+        )
+
+        self.assertFalse(grill_me_required)
+        self.assertEqual([], missed_gates)
+        self.assertEqual([], failures)
+
     def test_question_routes_do_not_get_code_work_gates(self) -> None:
         route = resolve_docs("triage", None, [], request_classified=True)
 
@@ -3175,7 +3306,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                 ),
                 AGENTIC_RUN_STATE_GATE: (
                     "run state: scoped; next transition: scoped -> acting; "
-                    "evidence: boundary gate and unittest verification command recorded"
+                    "evidence: boundary gate and unittest verification command recorded; "
+                    "checkpoint: implementation handoff; blocker status: no blockers"
                 ),
                 SIDE_EFFECT_AUDIT_GATE: "final diff checked; no unexpected generated files or lockfile changes",
             },
@@ -3321,9 +3453,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             [DOCUMENTATION_IMPACT_GATE],
         )
 
-        self.assertTrue(
-            any("cannot use unchanged/not-applicable/no-docs" in failure for failure in failures)
-        )
+        self.assertTrue(any("cannot use not-applicable/no-docs" in failure for failure in failures))
 
         failures = validate_gate_evidence(
             {
@@ -3333,6 +3463,72 @@ class WorkflowRoutingTests(unittest.TestCase):
                 )
             },
             [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_impact_rejects_no_docs_for_requirements_change(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "not applicable because no public contract, but requirements changed "
+                    "the acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("cannot use not-applicable/no-docs" in failure for failure in failures))
+
+    def test_documentation_impact_allows_unchanged_when_existing_doc_covers_change(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "unchanged docs/product/spec.md because existing doc already covers "
+                    "the revised acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_impact_rejects_vague_unchanged_decision(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "unchanged because requirements changed"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("can use unchanged only" in failure for failure in failures))
+
+    def test_documentation_gate_rejects_no_docs_for_requirements_change(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "not applicable for docs/product/spec.md because no public contract, "
+                    "but requirements changed the acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("cannot use not-applicable/no-docs" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "unchanged docs/product/spec.md because existing doc already covers "
+                    "the revised acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_GATE],
         )
 
         self.assertEqual([], failures)
@@ -3391,6 +3587,20 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertTrue(any("immediate next action" in failure for failure in failures))
 
+    def test_route_docs_read_evidence_allows_commit_before_work_terms(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                ROUTE_DOCS_READ_GATE: (
+                    "required skill docs read before committing; "
+                    "applied rule: one commit should carry one reviewable intent; "
+                    "immediate next action: commit the staged graphify artifact unit"
+                )
+            },
+            [ROUTE_DOCS_READ_GATE],
+        )
+
+        self.assertEqual([], failures)
+
     def test_route_docs_read_evidence_rejects_receipt_only_takeaway(self) -> None:
         route = {
             "command": "workflow-setup",
@@ -3439,8 +3649,23 @@ class WorkflowRoutingTests(unittest.TestCase):
             [MULTI_AGENT_GATE],
         )
 
-        self.assertTrue(any("owned scope, forbidden scope, contract/brief, and verification" in failure for failure in failures))
+        self.assertTrue(any("acceptance checks, integration owner, and verification" in failure for failure in failures))
 
+        failures = validate_gate_evidence(
+            {
+                MULTI_AGENT_GATE: (
+                    "parallel subagent split: worker docs owns workflows/*.md; "
+                    "forbidden scope: scripts/*.py; contract brief: report only doc gaps; "
+                    "acceptance checks: findings include file and rule; "
+                    "integration owner: lead agent; verification: workflow validate"
+                )
+            },
+            [MULTI_AGENT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_parallel_subagent_evidence_requires_acceptance_and_integration_owner(self) -> None:
         failures = validate_gate_evidence(
             {
                 MULTI_AGENT_GATE: (
@@ -3452,14 +3677,15 @@ class WorkflowRoutingTests(unittest.TestCase):
             [MULTI_AGENT_GATE],
         )
 
-        self.assertEqual([], failures)
+        self.assertTrue(any("acceptance checks, integration owner" in failure for failure in failures))
 
     def test_parallel_subagent_finish_requires_structured_delegation_plan(self) -> None:
         evidence = {
             MULTI_AGENT_GATE: (
                 "parallel subagent split: worker docs owns workflows/*.md; "
                 "forbidden scope: scripts/*.py; contract brief: report doc gaps; "
-                "verification: workflow validate"
+                "acceptance checks: findings include file and rule; "
+                "integration owner: lead agent; verification: workflow validate"
             )
         }
 
@@ -3482,12 +3708,46 @@ class WorkflowRoutingTests(unittest.TestCase):
                 }
             ],
             "integration_review": {
+                "owner": "lead agent",
                 "contract_drift_check": "compare worker findings with route gate policy",
                 "final_verification": ["python3 -m unittest discover tests"],
             },
         }
 
         self.assertEqual([], validate_delegation_plan_evidence([MULTI_AGENT_GATE], evidence, plan))
+
+    def test_parallel_delegation_plan_requires_integration_owner(self) -> None:
+        evidence = {
+            MULTI_AGENT_GATE: (
+                "parallel subagent split: worker docs owns workflows/*.md; "
+                "forbidden scope: scripts/*.py; contract brief: report doc gaps; "
+                "acceptance checks: findings include file and rule; "
+                "integration owner: lead agent; verification: workflow validate"
+            )
+        }
+        plan = {
+            "schema_version": 1,
+            "mode": "parallel",
+            "workers": [
+                {
+                    "id": "docs-a",
+                    "role": "docs reviewer",
+                    "owned_scope": ["workflows/*.md"],
+                    "forbidden_scope": ["scripts/*.py"],
+                    "contract": "report documentation gaps only",
+                    "acceptance": ["findings include file and rule"],
+                    "verification": ["python3 scripts/workflow.py validate"],
+                }
+            ],
+            "integration_review": {
+                "contract_drift_check": "compare worker findings with route gate policy",
+                "final_verification": ["python3 -m unittest discover tests"],
+            },
+        }
+
+        failures = validate_delegation_plan_evidence([MULTI_AGENT_GATE], evidence, plan)
+
+        self.assertTrue(any("owner/integration_owner" in failure for failure in failures))
 
     def test_serial_multi_agent_decision_does_not_require_delegation_plan(self) -> None:
         failures = validate_delegation_plan_evidence(
@@ -3556,13 +3816,27 @@ class WorkflowRoutingTests(unittest.TestCase):
             {
                 AGENTIC_RUN_STATE_GATE: (
                     "run state: reviewing; next transition: reviewing -> done; "
-                    "evidence: review hook and validation check passed"
+                    "evidence: review hook and validation check passed; "
+                    "checkpoint: final handoff; blocker status: no blockers"
                 )
             },
             [AGENTIC_RUN_STATE_GATE],
         )
 
         self.assertEqual([], failures)
+
+    def test_agentic_run_state_evidence_requires_checkpoint_and_blocker_status(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                AGENTIC_RUN_STATE_GATE: (
+                    "run state: reviewing; next transition: reviewing -> done; "
+                    "evidence: review hook and validation check passed"
+                )
+            },
+            [AGENTIC_RUN_STATE_GATE],
+        )
+
+        self.assertTrue(any("checkpoint or stop condition" in failure for failure in failures))
 
 
 if __name__ == "__main__":

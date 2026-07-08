@@ -46,6 +46,31 @@ signing, or handing off release-sensitive work.
 8. Confirm CI/CD gates, publish/deploy permissions, and rollback automation are
    scoped to the intended branch, tag, environment, or approval path.
 
+## Release Orchestration Context
+
+Treat a scoped release request as one release sequence, not as unrelated
+requests for commit, review, packaging, tagging, and publishing. Once the
+artifact, source revision policy, version/tag candidate, verification boundary,
+publication action, and rollback or forward-fix path are known, carry that
+release context through the substeps. Do not reclassify a commit-first,
+review-first, package-first, or tag-push substep as broad product work solely
+because the release sequence is mentioned.
+
+Commit and code review still belong before releasing pending source changes,
+but they must stay scoped to the intended commit unit. A review hook may flag a
+pre-existing oversized function, file, or owner as structure evidence and
+residual risk; it should force an immediate refactor only when the current diff
+grows that unit, adds responsibility, changes public owner surface, or the
+release cannot be verified without the split.
+
+Evidence should be durable release evidence, not repeated prose reconstruction.
+Prefer one release ledger that names the source revision, version/tag,
+artifact, verification, publish boundary, and rollback/forward-fix path. Use
+substep evidence for the commit, package, tag, and push only where it proves a
+real release condition; do not create extra retrospective files for a receipt
+path or wording correction unless the same gate fails again or the failure
+reveals a reusable process bug.
+
 ## Verification
 
 Release evidence should cover the artifact that will actually ship:

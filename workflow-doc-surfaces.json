@@ -161,6 +161,27 @@
       "reason": "Natural-language document routing work must treat hooks as enforcement points and load the routing, intake, source, skill-card, and tool-failure guidance that defines how required docs are selected and verified."
     },
     {
+      "name": "planning_change_documentation",
+      "commands": ["task", "feature", "product", "prd", "spec", "docs", "review", "workflow-setup"],
+      "request_any": [
+        "\\b(planning|plan|requirements?|spec|scope|acceptance criteria)\\b.*\\b(change|changed|update|updated|revise|revised|revision)\\b",
+        "\\b(change|changed|update|updated|revise|revised|revision)\\b.*\\b(planning|plan|requirements?|spec|scope|acceptance criteria)\\b",
+        "\\b(docs?|documentation)\\b.*\\b(missing|omitted|skipped|forgotten|stale)\\b",
+        "\\b(missing|omitted|skipped|forgotten|stale)\\b.*\\b(docs?|documentation)\\b",
+        "\\uae30\\ud68d\\s*\\ubcc0\\uacbd",
+        "(\\uc694\\uad6c\\uc0ac\\ud56d|\\uc694\\uac74|\\uc2a4\\ud399|\\ubc94\\uc704|\\uc218\\uc6a9\\s*\\uae30\\uc900|\\uc218\\ub77d\\s*\\uae30\\uc900).*(\\ubcc0\\uacbd|\\uc218\\uc815|\\uac31\\uc2e0|\\ucd94\\uac00|\\uc0ad\\uc81c)",
+        "(\\ubb38\\uc11c|\\ubb38\\uc11c\\s*\\uc815\\ub9ac).*(\\ube60\\uc9c0|\\ub204\\ub77d|\\uc0dd\\ub7b5)"
+      ],
+      "docs": [
+        "workflows/documentation-update.md",
+        "common/product-spec-to-implementation.md",
+        "common/source-driven-development.md",
+        "common/definition-of-done.md",
+        "workflows/scripted-agent-workflow.md"
+      ],
+      "reason": "Planning, requirements, acceptance-criteria, or stale-documentation requests must load source-doc, documentation-impact, and completion guidance so expected durable docs cannot be skipped as a generic no-docs decision."
+    },
+    {
       "name": "android_compose_ui_feature",
       "commands": ["feature", "task", "build"],
       "platforms": ["android"],

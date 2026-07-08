@@ -127,8 +127,8 @@ Record the delegation decision before code work:
   migration/dependency-sensitive, release-sensitive, or otherwise unsafe to
   split.
 - `parallel`: list each worker, run state, owned files/modules, forbidden
-  files/modules, input contract, expected output, acceptance checks, and
-  verification command or manual scenario.
+  files/modules, input contract, expected output, acceptance checks,
+  integration owner, and verification command or manual scenario.
 
 Delegation is not a handoff of responsibility. The lead agent owns the shared
 contract, integration point, review of worker changes, side-effect audit, and
@@ -161,6 +161,7 @@ Use this schema:
     }
   ],
   "integration_review": {
+    "owner": "lead agent",
     "contract_drift_check": "compare worker findings with route gate policy",
     "final_verification": ["python3 -m unittest discover tests"]
   }

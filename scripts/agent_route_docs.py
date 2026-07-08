@@ -32,6 +32,14 @@ def receipt_path_for_evidence(evidence_path: Path) -> Path:
     return evidence_path.parent / f"{evidence_path.stem}-{RECEIPT_FILENAME}"
 
 
+def receipt_candidate_paths_for_evidence(evidence_path: Path) -> list[Path]:
+    primary = receipt_path_for_evidence(evidence_path)
+    fallback = evidence_path.parent / RECEIPT_FILENAME
+    if fallback == primary:
+        return [primary]
+    return [primary, fallback]
+
+
 def preflight_evidence_sha256(evidence_path: Path) -> str:
     return hashlib.sha256(evidence_path.read_bytes()).hexdigest()
 

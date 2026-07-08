@@ -102,6 +102,7 @@ def validate_delegation_plan_evidence(
     if not isinstance(integration, dict):
         failures.append("agent delegation plan must include integration_review")
     else:
+        _require_any_text(integration, ("owner", "integration_owner"), "integration_review", failures)
         _require_text(integration, "contract_drift_check", "integration_review", failures)
         _require_string_list(integration, "final_verification", "integration_review", failures)
 
@@ -111,6 +112,17 @@ def validate_delegation_plan_evidence(
 def _require_text(payload: dict[str, Any], key: str, label: str, failures: list[str]) -> None:
     if not isinstance(payload.get(key), str) or not payload[key].strip():
         failures.append(f"agent delegation plan {label} missing non-empty {key}")
+
+
+def _require_any_text(
+    payload: dict[str, Any],
+    keys: tuple[str, ...],
+    label: str,
+    failures: list[str],
+) -> None:
+    if any(isinstance(payload.get(key), str) and payload[key].strip() for key in keys):
+        return
+    failures.append(f"agent delegation plan {label} missing non-empty {'/'.join(keys)}")
 
 
 def _require_string_list(payload: dict[str, Any], key: str, label: str, failures: list[str]) -> None:

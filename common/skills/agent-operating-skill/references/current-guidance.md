@@ -62,9 +62,10 @@ Use this before implementation, review, refactoring, debugging, documentation, o
     reconstructing validator-ready prose at finish. Show a short gate signal
     after each completed gate or task step.
 11. For work-producing or delegated tasks, record the agentic run state:
-    current state, next transition or resume point, and the gate/command/check
-    evidence. Use it as the continuation and recovery anchor after interruption,
-    subagent delegation, failed verification, or missed-gate recovery.
+    current state, next transition or resume point, gate/command/check
+    evidence, checkpoint or stop condition, and blocker status. Use it as the
+    continuation and recovery anchor after interruption, subagent delegation,
+    failed verification, or missed-gate recovery.
 12. For work-producing routes, record a cycle contract before editing: cycle
     type, input/source scope, allowed and forbidden changes, acceptance or
     verification method, stop condition, and checkpoint or next cycle.
@@ -133,7 +134,8 @@ Before editing:
   decision.
 - For work-producing and multi-agent routes, record `agentic run state`
   evidence before implementation: current state, next transition or resume
-  point, and the gate/command/check evidence.
+  point, gate/command/check evidence, checkpoint or stop condition, and blocker
+  status.
 - For work-producing routes, record `cycle contract` evidence before editing:
   cycle type, input/source scope, allowed and forbidden changes, acceptance or
   verification method, stop condition, and checkpoint or next cycle. Keep code
@@ -170,9 +172,10 @@ While editing:
 - Do not claim mocked, placeholder, or TODO behavior is complete.
 - For larger implementation work, split work across parallel agents only when
   the owned files, packages, contracts, and forbidden files are explicit and do
-  not overlap. Serialize shared contracts, generated files, migrations,
-  dependency changes, release config, and architecture boundaries. When work is
-  actually delegated or parallelized, write
+  not overlap, and when acceptance checks plus an integration owner can be
+  named before workers start. Serialize shared contracts, generated files,
+  migrations, dependency changes, release config, and architecture boundaries.
+  When work is actually delegated or parallelized, write
   `.agentplaybook/agent-delegation-plan.json` before workers start and keep the
   lead agent responsible for integration review and final verification.
 

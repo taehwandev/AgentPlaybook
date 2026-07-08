@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 
 def has_any(text: str, phrases: tuple[str, ...]) -> bool:
     return any(phrase in text for phrase in phrases)
@@ -25,12 +27,37 @@ NO_DURABLE_DOC_REASONS = (
     "no workflow policy", "no public contract", "no operator action",
     "no acceptance criteria", "no product behavior", "no architecture",
     "no runtime behavior", "docs-only typo", "format-only",
+    "no workflow policy changed", "no public contract changed",
+    "no operator action changed", "no acceptance criteria changed",
+    "no product behavior changed", "no architecture changed",
+    "no release behavior changed", "no test plan changed",
     "답변만", "기계적", "동작 변경 없음", "문서 영향 없음",
 )
 
 NON_CREATION_DECISIONS = (
     "unchanged", "not applicable", "no doc", "no docs",
     "변경 없음", "해당 없음",
+)
+
+UNCHANGED_DECISIONS = ("unchanged", "변경 없음")
+
+NO_DOC_DECISIONS = ("not applicable", "no doc", "no docs", "해당 없음")
+
+UNCHANGED_COVERAGE_PHRASES = (
+    "already covered", "already covers", "already documented",
+    "existing doc", "existing docs", "inspected", "current doc",
+    "current docs", "up to date", "still current", "no edit needed",
+    "covered by", "coverage:", "covered_by=", "covers the",
+    "이미", "커버", "반영되어", "반영됨", "현재 문서",
+)
+
+DURABLE_DOC_CHANGE_PATTERNS = (
+    r"\b(planning|plan|requirements?|spec|scope|acceptance criteria)\b.*\b(changed?|updated?|new|added|removed|revised?)\b",
+    r"\b(changed?|updated?|new|added|removed|revised?)\b.*\b(planning|plan|requirements?|spec|scope|acceptance criteria)\b",
+    r"\b(product behavior|workflow policy|public contract|operator action|architecture|api contract|schema|migration|release|runbook|test plan)\b.*\b(changed?|updated?|new|added|removed|revised?)\b",
+    r"\b(changed?|updated?|new|added|removed|revised?)\b.*\b(product behavior|workflow policy|public contract|operator action|architecture|api contract|schema|migration|release|runbook|test plan)\b",
+    r"(기획|요구사항|요건|스펙|범위|수용 기준|수락 기준|제품 동작|워크플로우 정책|공개 계약|운영자 조치|아키텍처|api|스키마|마이그레이션|배포|릴리즈|런북|테스트 계획)\s*(변경|수정|갱신|추가|삭제)",
+    r"(변경|수정|갱신|추가|삭제).*(기획|요구사항|요건|스펙|범위|수용 기준|수락 기준|제품 동작|워크플로우 정책|공개 계약|운영자 조치|아키텍처|api|스키마|마이그레이션|배포|릴리즈|런북|테스트 계획)",
 )
 
 
@@ -117,10 +144,24 @@ def validate_documentation_impact_evidence(evidence: str) -> list[str]:
             "operator action", "이유", "왜", "변경",
         ),
     )
-    non_creation = has_any(text, NON_CREATION_DECISIONS)
-    if non_creation and not has_any(text, NO_DURABLE_DOC_REASONS):
+    no_doc_decision = has_any(text, NO_DOC_DECISIONS)
+    unchanged_decision = has_any(text, UNCHANGED_DECISIONS)
+    if no_doc_decision and _has_durable_doc_change_signal(text):
         return [
-            "documentation impact evidence cannot use unchanged/not-applicable/no-docs "
+            "documentation impact evidence cannot use not-applicable/no-docs "
+            "when it also names a durable planning, requirements, acceptance, "
+            "workflow policy, public contract, operator, architecture, API, "
+            "release, or test-plan change"
+        ]
+    if unchanged_decision and not _has_existing_doc_coverage(text):
+        return [
+            "documentation impact evidence can use unchanged only when it names "
+            "the existing doc path/class inspected and why that doc already "
+            "covers the planning, behavior, contract, or acceptance change"
+        ]
+    if no_doc_decision and not has_any(text, NO_DURABLE_DOC_REASONS):
+        return [
+            "documentation impact evidence cannot use not-applicable/no-docs "
             "without a no-durable-doc reason such as answer-only, purely local, "
             "mechanical, no durable behavior, no public contract, no operator "
             "action, or no acceptance criteria"
@@ -161,6 +202,17 @@ def validate_documentation_source_to_artifact_evidence(
             "card, platform card, workflow card, or agent instruction update"
         ]
     return []
+
+
+def _has_existing_doc_coverage(text: str) -> bool:
+    return has_any(text, UNCHANGED_COVERAGE_PHRASES)
+
+
+def _has_durable_doc_change_signal(text: str) -> bool:
+    searchable = text
+    for phrase in NO_DURABLE_DOC_REASONS:
+        searchable = searchable.replace(phrase, "")
+    return any(re.search(pattern, searchable) for pattern in DURABLE_DOC_CHANGE_PATTERNS)
 
 
 PRD_CONTENT_PHRASES = (

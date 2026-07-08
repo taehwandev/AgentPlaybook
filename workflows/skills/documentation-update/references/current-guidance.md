@@ -60,6 +60,26 @@ docs"; different work types need different durable documentation.
 | Shared agent behavior, workflow rule, review rule, or platform guidance | AgentPlaybook common card, workflow card, skill card, platform card, repo `AGENTS.md` |
 | Local command, repo path, product policy, domain term, or service-specific rule | repo-local `AGENTS.md`, `README.md`, wiki, runbook, or task doc |
 
+Common miss cases to check explicitly:
+
+- Planning, requirements, scope, or acceptance criteria changed but only code or
+  tests were updated. Expected artifact: PRD, feature spec, or acceptance
+  criteria note.
+- Architecture, ownership, dependency, API, schema, persistence, release,
+  migration, or operator behavior changed but the update was treated as a local
+  implementation detail. Expected artifact: ARD/ADR/RFC, module README, API
+  contract, migration note, runbook, release note, or rollback note.
+- Test strategy, QA scenario, verification harness, or definition of done
+  changed but only the implementation diff was checked. Expected artifact: test
+  plan, QA checklist, or verification runbook.
+- Agent workflow, routing, hook, review, generated-output, or platform guidance
+  changed but only the script/test was updated. Expected artifact: workflow
+  card, common card, skill card, platform card, or repo `AGENTS.md`.
+- Generated documentation, wiki, search index, graph, or public build artifact
+  changed but the source revision, generator, publish boundary, and private-data
+  review were not recorded. Expected artifact: generated-files policy note,
+  source-doc update, manifest, or release/publishing note.
+
 Record:
 
 - selected artifact class and affected doc path or doc class
@@ -73,6 +93,12 @@ purely local, mechanical, no runtime behavior, no public contract, no operator
 action, or no acceptance criteria. If no source doc exists and the work changes
 durable behavior, create the smallest useful artifact from the table instead of
 continuing with "no docs."
+
+`Unchanged` is different from `not applicable`. Use `unchanged` only after
+opening the existing doc path or doc class and confirming that it already covers
+the planning, behavior, contract, operator, or acceptance change. Evidence such
+as "docs unchanged" without the inspected source and coverage reason is a missed
+documentation gate.
 
 This checkpoint does not replace the final documentation decision. If the
 implementation changes meaning, revisit the checkpoint and update the final

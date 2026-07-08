@@ -83,6 +83,15 @@ REVIEW_ACTION_PATTERNS = (
     "\ubcc0\uacbd\uc0ac\ud56d.*(\uac80\ud1a0|\ud655\uc778|\uccb4\ud06c)",
     "\uc791\uc5c5.*(\uac80\ud1a0|\ud655\uc778|\uccb4\ud06c)",
 )
+RELEASE_ACTION_PATTERNS = (
+    r"\b(deploy|deployment|release|publish|ship|tag|push)\b",
+    r"\bgithub release\b",
+    r"\bappcast\b",
+    "\ubc30\ud3ec",
+    "\ub9b4\ub9ac\uc2a4",
+    "\ud478\uc26c",
+    "\ud0dc\uadf8",
+)
 TEST_ACTION_PATTERNS = (
     r"\b(run|execute)\s+(tests?|checks?)\b",
     r"\bverification\s+only\b",
@@ -94,9 +103,13 @@ WORKFLOW_SETUP_ACTION_PATTERNS = (
     r"\b(natural language|semantic)\b.*\b(search|routing|retrieval|docs?|documents?|skills?)\b",
     r"\b(doc routing|document routing|doc-route|route docs|docs-read)\b",
     r"\b(hook|hooks?)\b.*\b(docs?|documents?|search|read|routing)\b",
+    r"\b(planning|requirements?|acceptance criteria)\b.*\b(docs?|documentation)\b.*\b(missing|omitted|skipped|forgotten|enforce|gate|guard)\b",
+    r"\b(docs?|documentation)\b.*\b(missing|omitted|skipped|forgotten|enforce|gate|guard)\b.*\b(planning|requirements?|acceptance criteria)\b",
     r"(\uc790\uc5f0\uc5b4|\uc758\ubbf8).*(\uac80\uc0c9|\ubb38\uc11c|\ub77c\uc6b0\ud305)",
     r"(\ubb38\uc11c|\uc2a4\ud0ac).*(\uac80\uc0c9|\ub77c\uc6b0\ud305|\ubd88\ub7ec|\uc77d)",
     r"(\ud6c5|hook).*(\ubb38\uc11c|\uac80\uc0c9|\uc77d|\ub77c\uc6b0\ud305)",
+    r"(\uae30\ud68d|\uc694\uad6c\uc0ac\ud56d|\uc694\uac74|\uc218\uc6a9\s*\uae30\uc900).*(\ubb38\uc11c).*(\ube60\uc9c0|\ub204\ub77d|\uc0dd\ub7b5|\ub9c9|\uac15\uc81c)",
+    r"(\ubb38\uc11c).*(\ube60\uc9c0|\ub204\ub77d|\uc0dd\ub7b5|\ub9c9|\uac15\uc81c).*(\uae30\ud68d|\uc694\uad6c\uc0ac\ud56d|\uc694\uac74|\uc218\uc6a9\s*\uae30\uc900)",
 )
 UI_FEATURE_ACTION_PATTERNS = (
     r"\b(screen|screens|ui|layout|list|lists|favorite|favorites|navigation|tab)\b.*\b(build|create|implement|compose|design|add|make)\b",

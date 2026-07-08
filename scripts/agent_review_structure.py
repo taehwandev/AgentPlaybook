@@ -146,7 +146,16 @@ def structure_review(
 
         metadata = discovery["path_metadata"].get(str(relative), {})
         check_file_size(relative, lines, max_file_lines, metadata, result)
-        result["failures"].extend(large_block_failures(relative, lines, max_block_lines))
+        block_failures, block_warnings = large_block_findings(
+            project,
+            relative,
+            lines,
+            max_block_lines,
+            metadata,
+            run_command,
+        )
+        result["failures"].extend(block_failures)
+        result["warnings"].extend(block_warnings)
     result["failures"].extend(
         purpose_failures(
             project,
@@ -362,13 +371,65 @@ def check_file_size(
 
 
 def large_block_failures(path: Path, lines: list[str], max_block_lines: int) -> list[str]:
+    failures, _warnings = large_block_findings(
+        Path("."),
+        path,
+        lines,
+        max_block_lines,
+        {"status": "A"},
+        lambda _command, _cwd: {"returncode": 1, "stdout": "", "stderr": ""},
+    )
+    return failures
+
+
+def large_block_findings(
+    project: Path,
+    path: Path,
+    lines: list[str],
+    max_block_lines: int,
+    metadata: dict[str, Any],
+    run_command: CommandRunner,
+) -> tuple[list[str], list[str]]:
+    current = oversized_blocks(path, lines, max_block_lines)
+    if not current:
+        return [], []
+
+    previous = previous_oversized_blocks(project, path, metadata, run_command, max_block_lines)
+    previous_by_label = {str(record["label"]): record for record in previous}
+    failures: list[str] = []
+    warnings: list[str] = []
+    for record in current:
+        previous_record = previous_by_label.get(str(record["label"]))
+        if previous_record and int(record["span"]) <= int(previous_record["span"]):
+            warnings.append(preexisting_block_warning(record, int(previous_record["span"]), max_block_lines))
+        else:
+            failures.append(block_failure(record, max_block_lines))
+    return failures, warnings
+
+
+def previous_oversized_blocks(
+    project: Path,
+    path: Path,
+    metadata: dict[str, Any],
+    run_command: CommandRunner,
+    max_block_lines: int,
+) -> list[dict[str, Any]]:
+    if metadata.get("status") == "A":
+        return []
+    previous = run_command(["git", "show", f"HEAD:{path.as_posix()}"], project)
+    if previous.get("returncode") != 0:
+        return []
+    return oversized_blocks(path, str(previous.get("stdout") or "").splitlines(), max_block_lines)
+
+
+def oversized_blocks(path: Path, lines: list[str], max_block_lines: int) -> list[dict[str, Any]]:
     if path.suffix.lower() == ".py":
         return python_blocks(path, lines, max_block_lines)
     return brace_blocks(path, lines, max_block_lines)
 
 
-def python_blocks(path: Path, lines: list[str], max_block_lines: int) -> list[str]:
-    failures: list[str] = []
+def python_blocks(path: Path, lines: list[str], max_block_lines: int) -> list[dict[str, Any]]:
+    blocks: list[dict[str, Any]] = []
     starts: list[tuple[int, int, str]] = []
     for index, line in enumerate(lines):
         match = PYTHON_BLOCK_RE.match(line)
@@ -378,8 +439,8 @@ def python_blocks(path: Path, lines: list[str], max_block_lines: int) -> list[st
     for start_index, start_indent, name in starts:
         span = python_block_span(lines, start_index, start_indent)
         if span > max_block_lines:
-            failures.append(block_failure(path, start_index, name, span, max_block_lines))
-    return failures
+            blocks.append(block_record(path, start_index, name, span))
+    return blocks
 
 
 def python_block_span(lines: list[str], start_index: int, start_indent: int) -> int:
@@ -398,8 +459,8 @@ def count_line_indent(line: str) -> int:
     return len(line) - len(line.lstrip(" "))
 
 
-def brace_blocks(path: Path, lines: list[str], max_block_lines: int) -> list[str]:
-    failures: list[str] = []
+def brace_blocks(path: Path, lines: list[str], max_block_lines: int) -> list[dict[str, Any]]:
+    blocks: list[dict[str, Any]] = []
     for index, line in enumerate(lines):
         stripped = line.strip()
         if "{" not in stripped or not starts_review_block(path, stripped):
@@ -407,8 +468,8 @@ def brace_blocks(path: Path, lines: list[str], max_block_lines: int) -> list[str
         span = brace_block_span(lines, index)
         if span > max_block_lines:
             label = stripped[:80].replace("`", "'")
-            failures.append(block_failure(path, index, label, span, max_block_lines))
-    return failures
+            blocks.append(block_record(path, index, label, span))
+    return blocks
 
 
 def starts_review_block(path: Path, stripped_line: str) -> bool:
@@ -426,15 +487,32 @@ def brace_block_span(lines: list[str], start_index: int) -> int:
     return len(lines) - start_index
 
 
-def block_failure(
-    path: Path,
-    start_index: int,
-    label: str,
-    span: int,
+def block_record(path: Path, start_index: int, label: str, span: int) -> dict[str, Any]:
+    return {
+        "path": path,
+        "line": start_index + 1,
+        "label": label,
+        "span": span,
+    }
+
+
+def block_failure(record: dict[str, Any], max_block_lines: int) -> str:
+    return (
+        f"{record['path']}:{record['line']} block `{record['label']}` spans {record['span']} lines; "
+        f"limit is {max_block_lines}; split responsibilities or justify why the unit "
+        "must stay together before approval"
+    )
+
+
+def preexisting_block_warning(
+    record: dict[str, Any],
+    previous_span: int,
     max_block_lines: int,
 ) -> str:
     return (
-        f"{path}:{start_index + 1} block `{label}` spans {span} lines; "
-        f"limit is {max_block_lines}; split responsibilities or justify why the unit "
-        "must stay together before approval"
+        f"{record['path']}:{record['line']} block `{record['label']}` is a pre-existing "
+        f"oversized unit spanning {record['span']} lines (previously {previous_span}); "
+        f"limit is {max_block_lines}; structure-review evidence is required, but this "
+        "does not block the current scoped change unless the diff grows the unit or adds "
+        "a new responsibility"
     )

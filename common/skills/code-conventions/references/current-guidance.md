@@ -167,7 +167,11 @@ gates but still need clear ownership and reviewable structure:
   usually fit in one review pass; about 40 to 80 lines is a useful pressure
   range for orchestration code.
 - A runtime function, component, hook, handler, script step, or style block over
-  about 120 lines fails review by default.
+  about 120 lines fails review by default when it is new, grows in the current
+  diff, or takes on a new responsibility. If the block was already over the
+  limit and the current scoped change does not grow it or expand its owner
+  surface, record structure-review evidence and residual risk instead of
+  forcing an unrelated refactor into the current change.
 - A development source/style file over about 300 lines requires
   structure-review evidence that names the owner, allowed imports, callers,
   tests, verification path, and split decision.

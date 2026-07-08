@@ -274,6 +274,10 @@ forgets them:
   current user request is enough for a no-durable-doc slice. Evidence must name
   the discovered source or the no-source result and say how it affected the
   work or documentation artifact decision.
+  Treat planning, requirements, scope, acceptance-criteria, workflow-policy,
+  public-contract, operator, architecture, API, release, migration, test-plan,
+  and generated-public-artifact changes as durable-source signals until evidence
+  proves otherwise.
   This is a pre-edit hard gate. Do not start implementation first and
   reconstruct the source-doc search afterward.
 - `documentation impact`: before code, implementation, install/repair, or other
@@ -283,12 +287,18 @@ forgets them:
   intended decision (`updated`, `created`, `unchanged`, or `not applicable`),
   and why the changed behavior, workflow policy, public contract, operator
   action, or acceptance criteria do or do not require a documentation update.
-  `Not applicable`, `unchanged`, or `no docs` is valid only with a
-  no-durable-doc reason such as answer-only, purely local, mechanical, no
-  public contract, no operator action, or no acceptance criteria. If source
-  docs are missing and the task changes durable behavior, create or update the
-  smallest useful artifact instead of treating documentation as absent. Do not
-  wait until finish to discover that docs were relevant.
+  `Not applicable` or `no docs` is valid only with a no-durable-doc reason such
+  as answer-only, purely local, mechanical, no public contract, no operator
+  action, or no acceptance criteria. If source docs are missing and the task
+  changes durable behavior, create or update the smallest useful artifact
+  instead of treating documentation as absent. Do not wait until finish to
+  discover that docs were relevant.
+  Use `unchanged` only when the evidence names the existing doc path or doc
+  class inspected and why that document already covers the change. Do not use a
+  generic `not applicable` or `no docs` decision when the same evidence says
+  planning, requirements, acceptance criteria, workflow policy, public contract,
+  operator action, architecture, API, release, migration, generated public
+  output, or test strategy changed.
 - `ambiguity check`: classify unknowns before implementation. If any blocker
   can change behavior, scope, risk, acceptance criteria, or verification, stop
   and ask the maintainer before editing. Do not continue with silent invented
@@ -316,10 +326,11 @@ forgets them:
   the shared contract is stable. If work stays serial, record why the change is
   too small, same-file, contract-bound, or otherwise not safe to split.
 - `agentic run state`: for work-producing or multi-agent routes, record the
-  current state, the next transition or resume point, and the gate/command
-  evidence that justifies that transition. This is the workflow's memory for
-  continuation, retry, review, delegation, and retrospective restart; route
-  output alone is not execution evidence.
+  current state, the next transition or resume point, the gate/command
+  evidence that justifies that transition, the checkpoint or stop condition,
+  and blocker status. This is the workflow's memory for continuation, retry,
+  review, delegation, and retrospective restart; route output alone is not
+  execution evidence.
 - `cycle contract`: for work-producing routes, state the current cycle type,
   input/source scope, allowed and forbidden changes, acceptance or verification
   method, stop condition, and next cycle/checkpoint before editing. This turns
@@ -423,6 +434,8 @@ the gate ledger:
 run_state: scoped
 transition: scoped -> acting
 evidence: boundary plan + multi-agent split decision recorded
+checkpoint: implementation handoff
+blockers: no blockers
 next: implementation
 ```
 
@@ -434,7 +447,8 @@ gate or same failed scope instead of restarting unrelated work.
 
 Do not use run-state notes to hide missing gate evidence. A run state is valid
 only when the named route gates, commands, checks, or manual observations also
-exist.
+exist, and when it names the checkpoint or stop condition plus current blocker
+status.
 
 ## Gate Signals
 
@@ -582,7 +596,7 @@ evidence in the ledger. For gates that only the active agent can prove, batch
 structured records instead of spawning one shell process per gate:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py gate-batch --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"cycle contract","fields":{"cycle_type":"workflow_setup","input_scope":"<safe-source-scope>","allowed_changes":"<safe-scope>","forbidden_changes":"<safe-boundary>","acceptance_criteria":"<safe-criteria>","verification":"<check>","stop_condition":"<condition>","checkpoint":"<handoff-or-next-cycle>"}},{"gate":"boundary plan","fields":{"scope":"<owned-scope>","verification":"<nearest-check>"}}]'
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py gate-batch --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"cycle contract","fields":{"cycle_type":"workflow_setup","input_scope":"<safe-source-scope>","allowed_changes":"<safe-scope>","forbidden_changes":"<safe-boundary>","acceptance_criteria":"<safe-criteria>","verification":"<check>","stop_condition":"<condition>","checkpoint":"<handoff-or-next-cycle>"}},{"gate":"agentic run state","fields":{"state":"scoped","transition":"scoped -> acting","evidence":"<gate-or-command>","checkpoint":"<resume-or-handoff>","blockers":"<none-or-current-blocker>"}},{"gate":"boundary plan","fields":{"scope":"<owned-scope>","verification":"<nearest-check>"}}]'
 ```
 
 Use this ledger to capture what happened, not to craft magic validator prose.

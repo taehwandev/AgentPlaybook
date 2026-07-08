@@ -338,11 +338,13 @@ acceptance criteria does or does not require a doc update. Artifact classes can
 include PRD/spec/ARD, ADR/RFC, module README, API contract, runbook, migration
 note, release note, test plan, skill/platform/workflow card, repo
 `AGENTS.md`, or another source-of-truth class that fits the work. Do not treat
-PRD as the only documentation shape. `Unchanged`, `not applicable`, or `no
-docs` is valid only when the evidence states a no-durable-doc reason such as
-answer-only, purely local, mechanical, no public contract, no operator action,
-or no acceptance criteria. The later `documentation` gate must then prove the
-actual update or unchanged/not-applicable decision.
+PRD as the only documentation shape. `Not applicable` or `no docs` is valid
+only when the evidence states a no-durable-doc reason such as answer-only,
+purely local, mechanical, no public contract, no operator action, or no
+acceptance criteria. `Unchanged` is valid only when the evidence names the
+existing doc path or doc class inspected and why it already covers the change.
+The later `documentation` gate must then prove the actual update or
+unchanged/not-applicable decision.
 
 Before final report, commit, release, or handoff, run the finish check and pass
 evidence for every required route gate:
@@ -528,4 +530,13 @@ Rules:
 - Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- Treat tracked graphify outputs such as `graphify-out/graph.json`,
+  `graphify-out/GRAPH_REPORT.md`, `graphify-out/graph.html`, and
+  `graphify-out/manifest.json` as generated, reviewable navigation artifacts,
+  not as local cache. They may be committed or deployed only when intentionally
+  selected for publication, reproducible from committed/public-safe inputs, and
+  reviewed for secrets, local paths, private source material, internal endpoints,
+  and stale references. Keep graphify cache, `.graphify_*` sidecars, token/cost
+  trackers, automatic dated backups, and temporary extraction files ignored
+  unless a repo-local policy explicitly promotes one as a source of truth.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

@@ -16,7 +16,7 @@ SCHEMA_VERSION = 1
 
 
 FIELD_REQUIREMENTS: dict[str, tuple[str, ...]] = {
-    "agentic run state": ("state", "transition", "evidence"),
+    "agentic run state": ("state", "transition", "evidence", "checkpoint", "blockers"),
     "boundary plan": ("scope", "verification"),
     "cycle contract": (
         "cycle_type",
@@ -228,7 +228,8 @@ def synthesize_gate_evidence(
     if gate == "agentic run state":
         return (
             f"run state: {fields['state']}; next transition: {fields['transition']}; "
-            f"gate/command/check evidence: {fields['evidence']}",
+            f"gate/command/check evidence: {fields['evidence']}; "
+            f"checkpoint: {fields['checkpoint']}; blocker status: {fields['blockers']}",
             [],
         )
     if gate == "boundary plan":
@@ -247,7 +248,13 @@ def synthesize_gate_evidence(
             )
         extra_missing = [
             field
-            for field in ("owned_scope", "forbidden_scope", "contract")
+            for field in (
+                "owned_scope",
+                "forbidden_scope",
+                "contract",
+                "acceptance",
+                "integration_owner",
+            )
             if not fields.get(field)
         ]
         if extra_missing:
@@ -255,7 +262,8 @@ def synthesize_gate_evidence(
         return (
             "multi-agent/subagent split; owned scope: "
             f"{fields['owned_scope']}; forbidden scope: {fields['forbidden_scope']}; "
-            f"contract/brief: {fields['contract']}; verification: {fields['verification']}",
+            f"contract/brief: {fields['contract']}; acceptance checks: {fields['acceptance']}; "
+            f"integration owner: {fields['integration_owner']}; verification: {fields['verification']}",
             [],
         )
     if gate == "side-effect audit":

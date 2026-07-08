@@ -3,6 +3,19 @@
 from __future__ import annotations
 
 
+RUN_STATE_NAMES = (
+    "intake",
+    "oriented",
+    "scoped",
+    "acting",
+    "verifying",
+    "reviewing",
+    "done",
+    "blocked",
+    "retrospective",
+)
+
+
 def validate_boundary_plan(evidence: str) -> list[str]:
     text = evidence.lower()
     if not text:
@@ -91,21 +104,12 @@ def validate_agentic_run_state(evidence: str) -> list[str]:
     text = evidence.lower()
     if not text:
         return []
-    has_state = any(
+    has_state = any(state in text for state in RUN_STATE_NAMES) or any(
         phrase in text
         for phrase in (
             "run state",
             "state:",
             "state=",
-            "intake",
-            "oriented",
-            "scoped",
-            "acting",
-            "verifying",
-            "reviewing",
-            "done",
-            "blocked",
-            "retrospective",
             "상태",
         )
     )
@@ -116,8 +120,7 @@ def validate_agentic_run_state(evidence: str) -> list[str]:
             "next",
             "entered",
             "moved",
-            "from",
-            "to",
+            "->",
             "resume",
             "restart",
             "다음",
@@ -142,9 +145,40 @@ def validate_agentic_run_state(evidence: str) -> list[str]:
             "검증",
         )
     )
-    if has_state and has_transition and has_evidence:
+    has_checkpoint = any(
+        phrase in text
+        for phrase in (
+            "checkpoint",
+            "resume point",
+            "recovery point",
+            "next gate",
+            "handoff",
+            "rollback point",
+            "stop condition",
+            "체크포인트",
+            "재개 지점",
+            "중단 조건",
+        )
+    )
+    has_blocker_status = any(
+        phrase in text
+        for phrase in (
+            "blocker",
+            "blocked",
+            "no blocker",
+            "no blockers",
+            "not blocked",
+            "unblocked",
+            "fail",
+            "failed",
+            "실패",
+            "블로커",
+        )
+    )
+    if has_state and has_transition and has_evidence and has_checkpoint and has_blocker_status:
         return []
     return [
         "agentic run state evidence must state the current run state, "
-        "the next transition or resume point, and the gate/command/check evidence"
+        "the next transition or resume point, the gate/command/check evidence, "
+        "the checkpoint or stop condition, and the blocker status"
     ]

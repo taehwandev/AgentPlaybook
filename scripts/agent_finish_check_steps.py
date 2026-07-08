@@ -11,9 +11,17 @@ from typing import Any
 from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_finish_common import add_gate_signal, append_unique
 from agent_finish_gate_policy import ROUTE_DOCS_READ_GATE, validate_gate_evidence
-from agent_route_docs import read_route_doc_receipt, receipt_path_for_evidence, validate_route_doc_receipt
+from agent_route_docs import (
+    read_route_doc_receipt,
+    receipt_candidate_paths_for_evidence,
+    validate_route_doc_receipt,
+)
 from workflow_common import QUESTION_ROUTE_COMMANDS
-from workflow_request import classified_route_block_reason, classification_evidence_requires_clarification
+from workflow_request import (
+    classified_route_block_reason,
+    classification_evidence_allows_command_work,
+    classification_evidence_requires_clarification,
+)
 from workflow_request_patterns import GRILL_ME_REQUEST_PATTERNS
 
 
@@ -103,7 +111,19 @@ def check_required_gates(
 
 
 def read_route_docs_receipt_for_preflight(evidence_path: Path) -> dict[str, Any]:
-    return read_route_doc_receipt(receipt_path_for_evidence(evidence_path))
+    first_invalid: dict[str, Any] = {}
+    for path in receipt_candidate_paths_for_evidence(evidence_path):
+        receipt = read_route_doc_receipt(path)
+        if not receipt:
+            continue
+        if receipt.get("invalid_json"):
+            first_invalid = first_invalid or receipt
+            continue
+        if receipt.get("preflight_evidence") == str(evidence_path):
+            return receipt
+        if not receipt.get("preflight_evidence"):
+            return receipt
+    return first_invalid
 
 
 def validate_route_docs_manifest_evidence(
@@ -132,6 +152,12 @@ def check_request_intake(
 ) -> bool:
     request_classified = bool(route.get("request_classified") or request_intake.get("request_classified"))
     question_resolution_route = route.get("command") in QUESTION_ROUTE_COMMANDS
+    command = str(route.get("command") or "")
+    classification_evidence = request_intake.get("classification_evidence", "")
+    evidence_allows_command_work = classification_evidence_allows_command_work(
+        command,
+        classification_evidence,
+    )
 
     if request_classified and not request_intake.get("classification_evidence"):
         append_unique(missed_gates, "request intake")
@@ -149,8 +175,8 @@ def check_request_intake(
         and not question_resolution_route
     ):
         block_reason = classified_route_block_reason(
-            str(route.get("command") or ""),
-            request_intake.get("classification_evidence", ""),
+            command,
+            classification_evidence,
         )
     else:
         block_reason = ""
@@ -167,7 +193,10 @@ def check_request_intake(
 
     grill_me_required = (
         _classification_requires_grill_me(request_classification)
-        or classification_evidence_requires_clarification(request_intake.get("classification_evidence", ""))
+        or (
+            classification_evidence_requires_clarification(classification_evidence)
+            and not evidence_allows_command_work
+        )
         or grill_me_requested(_request_text(request_intake, request_classification))
     )
     grill_me_gate = next((gate for gate in GRILL_ME_EVIDENCE_GATES if gate_evidence.get(gate)), "")

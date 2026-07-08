@@ -35,6 +35,7 @@ AgentPlaybook supports agentic coding by making the active agent's state,
 delegation decision, evidence, and recovery point explicit. Runtime-specific
 agents, subagents, or external launchers can use this state to continue,
 delegate, review, and recover work without guessing what already happened.
+This is a bounded state machine, not an autonomous polling loop.
 
 Use this compact state model for multi-step work:
 
@@ -43,10 +44,11 @@ intake -> oriented -> scoped -> acting -> verifying -> reviewing -> done
                                    |-> blocked -> retrospective -> scoped/acting
 ```
 
-Record the current state, the next transition, and the gate or command evidence
-that justified the transition. If the task is interrupted, transferred, or fails
-a gate, resume from the last evidenced state instead of reconstructing the work
-from memory.
+Record the current state, the next transition, the gate or command evidence
+that justified the transition, the checkpoint or stop condition, and the
+blocker status. If the task is interrupted, transferred, or fails a gate,
+resume from the last evidenced state instead of reconstructing the work from
+memory.
 
 ## Steps
 
@@ -76,9 +78,10 @@ from memory.
    executed, and show a short `SUCCESS` or `FAIL` gate signal after each
    completed or failed gate or task step.
 8. Agentic run state: record the current run state, next transition or resume
-   point, and the gate/command evidence. This is required before implementation
-   work on scripted work-producing routes and before delegating work to
-   subagents or parallel sessions.
+   point, gate/command evidence, checkpoint or stop condition, and blocker
+   status. This is required before implementation work on scripted
+   work-producing routes and before delegating work to subagents or parallel
+   sessions.
 9. Global lessons: when preflight includes accepted or promoted lessons from
    `~/.agentplaybook/`, check whether any apply to the current task before
    editing or reviewing.

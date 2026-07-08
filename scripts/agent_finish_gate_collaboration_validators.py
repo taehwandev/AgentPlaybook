@@ -52,6 +52,20 @@ def validate_multi_agent(evidence: str) -> list[str]:
     has_owned = "owned" in text or "owner" in text or "scope" in text
     has_forbidden = "forbidden" in text or "do not touch" in text or "excluded" in text
     has_contract = "contract" in text or "brief" in text or "input" in text or "output" in text
+    has_acceptance = any(
+        phrase in text
+        for phrase in (
+            "acceptance",
+            "acceptance check",
+            "acceptance criteria",
+            "done means",
+        )
+    )
+    has_integration_owner = (
+        ("integration" in text and any(phrase in text for phrase in ("owner", "lead", "integrator")))
+        or "integration_owner" in text
+        or "integration owner" in text
+    )
     has_verification = any(
         phrase in text
         for phrase in (
@@ -63,12 +77,20 @@ def validate_multi_agent(evidence: str) -> list[str]:
             "smoke",
         )
     )
-    if parallel and has_owned and has_forbidden and has_contract and has_verification:
+    if (
+        parallel
+        and has_owned
+        and has_forbidden
+        and has_contract
+        and has_acceptance
+        and has_integration_owner
+        and has_verification
+    ):
         return []
     return [
         "multi-agent split decision evidence must state either serial/single-agent with a concrete "
-        "reason, or parallel/subagent work with owned scope, forbidden scope, contract/brief, and "
-        "verification"
+        "reason, or parallel/subagent work with owned scope, forbidden scope, contract/brief, "
+        "acceptance checks, integration owner, and verification"
     ]
 
 
