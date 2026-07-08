@@ -1,16 +1,16 @@
 # Graph Report - AgentPlaybook  (2026-07-08)
 
 ## Corpus Check
-- 559 files · ~294,316 words
+- 559 files · ~294,368 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4182 nodes · 5223 edges · 526 communities (510 shown, 16 thin omitted)
-- Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 576 edges (avg confidence: 0.8)
+- 4186 nodes · 5082 edges · 503 communities (483 shown, 20 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 434 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `968a9df0`
+- Built from commit: `2e1f901c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -40,12 +40,10 @@
 - [[_COMMUNITY_migrate_skill_bundles.py|migrate_skill_bundles.py]]
 - [[_COMMUNITY_workflow_request.py|workflow_request.py]]
 - [[_COMMUNITY_Human-Authored Writing|Human-Authored Writing]]
-- [[_COMMUNITY_project_type_detection.py|project_type_detection.py]]
 - [[_COMMUNITY_setup_config_files.py|setup_config_files.py]]
 - [[_COMMUNITY_agent_global_lessons.py|agent_global_lessons.py]]
 - [[_COMMUNITY_infer_surface_docs|infer_surface_docs]]
 - [[_COMMUNITY_Testing Principles|Testing Principles]]
-- [[_COMMUNITY_Agent Runtime Integration|Agent Runtime Integration]]
 - [[_COMMUNITY_Android ViewModel And State|Android ViewModel And State]]
 - [[_COMMUNITY_KMP Module Structure|KMP Module Structure]]
 - [[_COMMUNITY_Web React UI|Web React UI]]
@@ -54,14 +52,10 @@
 - [[_COMMUNITY_ensure_stable_launcher|ensure_stable_launcher]]
 - [[_COMMUNITY_Scenario-Driven Testing|Scenario-Driven Testing]]
 - [[_COMMUNITY_Writing Workspace|Writing Workspace]]
-- [[_COMMUNITY_iOS SwiftUI UI|iOS SwiftUI UI]]
-- [[_COMMUNITY_Agent Credential Broker Ideation|Agent Credential Broker Ideation]]
 - [[_COMMUNITY_print_route|print_route]]
 - [[_COMMUNITY_workflow_doc_surface_rules.py|workflow_doc_surface_rules.py]]
 - [[_COMMUNITY_Product Architecture Delivery Workflow|Product Architecture Delivery Workflow]]
 - [[_COMMUNITY_CICD And Automation|CI/CD And Automation]]
-- [[_COMMUNITY_Commit Workflow|Commit Workflow]]
-- [[_COMMUNITY_Deprecation And Migration|Deprecation And Migration]]
 - [[_COMMUNITY_LLM Wiki Documentation|LLM Wiki Documentation]]
 - [[_COMMUNITY_Performance Verification|Performance Verification]]
 - [[_COMMUNITY_Source-Driven Development|Source-Driven Development]]
@@ -72,7 +66,6 @@
 - [[_COMMUNITY_Agent Skill Card Anatomy|Agent Skill Card Anatomy]]
 - [[_COMMUNITY_Architecture Design|Architecture Design]]
 - [[_COMMUNITY_Browser Runtime Testing|Browser Runtime Testing]]
-- [[_COMMUNITY_Definition Of Done|Definition Of Done]]
 - [[_COMMUNITY_Doubt-Driven Development|Doubt-Driven Development]]
 - [[_COMMUNITY_Incremental Implementation|Incremental Implementation]]
 - [[_COMMUNITY_Local Tools Policy|Local Tools Policy]]
@@ -99,7 +92,6 @@
 - [[_COMMUNITY_Multi-Agent Collaboration|Multi-Agent Collaboration]]
 - [[_COMMUNITY_Error Modeling|Error Modeling]]
 - [[_COMMUNITY_Public Discovery|Public Discovery]]
-- [[_COMMUNITY_Release Deployment|Release Deployment]]
 - [[_COMMUNITY_State Modeling|State Modeling]]
 - [[_COMMUNITY_Chris Banes Source Map|Chris Banes Source Map]]
 - [[_COMMUNITY_Application Command And UI|Application Command And UI]]
@@ -112,7 +104,6 @@
 - [[_COMMUNITY_Ambiguity Gate|Ambiguity Gate]]
 - [[_COMMUNITY_Documentation Update Workflow|Documentation Update Workflow]]
 - [[_COMMUNITY_Multi-Perspective Review|Multi-Perspective Review]]
-- [[_COMMUNITY_graphify reference extra exports and benchmark|graphify reference: extra exports and benchmark]]
 - [[_COMMUNITY_graphify reference extra exports and benchmark|graphify reference: extra exports and benchmark]]
 - [[_COMMUNITY_graphify reference extra exports and benchmark|graphify reference: extra exports and benchmark]]
 - [[_COMMUNITY_Agent Editing Safety|Agent Editing Safety]]
@@ -142,9 +133,7 @@
 - [[_COMMUNITY_VIBEGUARD.md(httpVIBEGUARD.md)|[VIBEGUARD.md](http://VIBEGUARD.md)]]
 - [[_COMMUNITY_Development Cycle Workflow|Development Cycle Workflow]]
 - [[_COMMUNITY_Retrospective Learning Workflow|Retrospective Learning Workflow]]
-- [[_COMMUNITY_Application Boundary Principles|Application Boundary Principles]]
 - [[_COMMUNITY_Architecture Selection|Architecture Selection]]
-- [[_COMMUNITY_Change Size Policy|Change Size Policy]]
 - [[_COMMUNITY_Data Persistence Sync|Data Persistence Sync]]
 - [[_COMMUNITY_Dependency Policy|Dependency Policy]]
 - [[_COMMUNITY_LLM Coding Discipline|LLM Coding Discipline]]
@@ -165,7 +154,6 @@
 - [[_COMMUNITY_Asset Lifecycle|Asset Lifecycle]]
 - [[_COMMUNITY_Commit Review|Commit Review]]
 - [[_COMMUNITY_Product Spec To Implementation|Product Spec To Implementation]]
-- [[_COMMUNITY_Open Graph And Social Preview Debugging|Open Graph And Social Preview Debugging]]
 - [[_COMMUNITY_README|README.md]]
 - [[_COMMUNITY_AgentPlaybook 최신화 안내|AgentPlaybook 최신화 안내]]
 - [[_COMMUNITY_Agent Index|Agent Index]]
@@ -183,10 +171,7 @@
 - [[_COMMUNITY_validate|validate]]
 - [[_COMMUNITY_Agent Handoff Continuation Workflow|Agent Handoff Continuation Workflow]]
 - [[_COMMUNITY_Agent Task Lifecycle Workflow|Agent Task Lifecycle Workflow]]
-- [[_COMMUNITY_Cycle Contract Workflow|Cycle Contract Workflow]]
-- [[_COMMUNITY_Feature Implementation Workflow|Feature Implementation Workflow]]
 - [[_COMMUNITY_Review And Commit Workflow|Review And Commit Workflow]]
-- [[_COMMUNITY_add_workspace_group_candidates|add_workspace_group_candidates]]
 - [[_COMMUNITY_graphify reference query, path, explain|graphify reference: query, path, explain]]
 - [[_COMMUNITY_graphify reference query, path, explain|graphify reference: query, path, explain]]
 - [[_COMMUNITY_Accessibility I18n|Accessibility I18n]]
@@ -529,82 +514,70 @@
 - [[_COMMUNITY_workflow_platform_concerns.py|workflow_platform_concerns.py]]
 - [[_COMMUNITY_setup-agent-hooks.py|setup-agent-hooks.py]]
 - [[_COMMUNITY_Any|Any]]
-- [[_COMMUNITY_AgentReviewPurposeTests|AgentReviewPurposeTests]]
-- [[_COMMUNITY_load_structure_rule_configs|load_structure_rule_configs]]
 - [[_COMMUNITY_workflow_platform_concerns.py|workflow_platform_concerns.py]]
 - [[_COMMUNITY_workflow_request_patterns.py|workflow_request_patterns.py]]
-- [[_COMMUNITY_agent_project_search.py|agent_project_search.py]]
 - [[_COMMUNITY_Namespace|Namespace]]
-- [[_COMMUNITY_CommandRunner|CommandRunner]]
-- [[_COMMUNITY_setup-agent-hooks.py|setup-agent-hooks.py]]
 - [[_COMMUNITY_Quick Start|Quick Start]]
-- [[_COMMUNITY_workflow_doc_graph.py|workflow_doc_graph.py]]
-- [[_COMMUNITY_workflow_doc_graph_refs.py|workflow_doc_graph_refs.py]]
-- [[_COMMUNITY_agent_finish_gate_collaboration_validators.py|agent_finish_gate_collaboration_validators.py]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `WorkflowRoutingTests` - 167 edges
-2. `validate_gate_evidence()` - 60 edges
-3. `resolve_docs()` - 58 edges
-4. `route_doc()` - 33 edges
-5. `discover_projects()` - 29 edges
-6. `unique()` - 25 edges
-7. `review_hook()` - 24 edges
-8. `classify_request()` - 22 edges
-9. `run_preflight()` - 21 edges
-10. `check_request_intake()` - 21 edges
+1. `WorkflowRoutingTests` - 168 edges
+2. `route_doc()` - 32 edges
+3. `discover_projects()` - 29 edges
+4. `unique()` - 24 edges
+5. `validate_gate_evidence()` - 23 edges
+6. `review_hook()` - 23 edges
+7. `classify_request()` - 22 edges
+8. `run_preflight()` - 21 edges
+9. `Android Compose UI` - 21 edges
+10. `Agent Playbook` - 20 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `declarations()` --calls--> `top_level_type_declarations()`  [INFERRED]
-  tests/test_agent_review_purpose.py → scripts/agent_review_purpose.py
-- `route_doc()` --calls--> `canonical_doc_path()`  [INFERRED]
-  tests/test_workflow_routing.py → scripts/workflow_skill_paths.py
 - `build_parser()` --indirect_call--> `parse_gate()`  [INFERRED]
   scripts/agent-finish-check.py → scripts/agent_finish_common.py
-- `_add_common_arguments()` --indirect_call--> `retry_attempt()`  [INFERRED]
-  scripts/agent-hook.py → scripts/agent_hook_runtime.py
-- `validate_gate_evidence()` --calls--> `validate_boundary_plan()`  [INFERRED]
-  scripts/agent_finish_gate_policy.py → scripts/agent_finish_gate_boundary_validators.py
+- `main()` --calls--> `requires_retrospective()`  [INFERRED]
+  scripts/agent-finish-check.py → scripts/agent_finish_common.py
+- `declarations()` --calls--> `top_level_type_declarations()`  [INFERRED]
+  tests/test_agent_review_purpose.py → scripts/agent_review_purpose.py
+- `main()` --calls--> `check_request_intake()`  [INFERRED]
+  scripts/agent-finish-check.py → scripts/agent_finish_check_steps.py
+- `check_request_intake()` --calls--> `classification_evidence_allows_command_work()`  [INFERRED]
+  scripts/agent_finish_check_steps.py → scripts/workflow_request.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (526 total, 16 thin omitted)
+## Communities (503 total, 20 thin omitted)
 
 ### Community 1 - "agent_review_purpose.py"
-Cohesion: 0.06
-Nodes (69): build_parser(), main(), ArgumentParser, build_entry_manifest(), discover_projects(), Path, Project discovery orchestration for user-level AgentPlaybook bridges., Find the target project for a runtime bridge without editing anything. (+61 more)
+Cohesion: 0.05
+Nodes (70): build_parser(), main(), ArgumentParser, build_entry_manifest(), discover_projects(), Path, Project discovery orchestration for user-level AgentPlaybook bridges., Find the target project for a runtime bridge without editing anything. (+62 more)
 
 ### Community 2 - "agent_gate_evidence.py"
-Cohesion: 0.22
-Nodes (18): diff_check_command(), format_checked_paths(), git_status_for_review(), Any, CommandRunner, Path, Review-hook execution for AgentPlaybook., record_review_gate() (+10 more)
+Cohesion: 0.08
+Nodes (55): parse_field(), _add_common_arguments(), _add_docs_read_arguments(), _add_finish_arguments(), _add_gate_arguments(), _add_review_arguments(), _add_start_arguments(), build_parser() (+47 more)
 
 ### Community 3 - "WorkflowRoutingTests"
-Cohesion: 0.20
-Nodes (15): check_preflight_vibeguard(), check_required_gates(), _classification_requires_grill_me(), grill_me_requested(), Any, Namespace, Path, Step functions for AgentPlaybook finish checks. (+7 more)
+Cohesion: 0.22
+Nodes (17): _add_compat_edges(), _add_edge(), _add_markdown_edges(), _add_surface_rule_edges(), build_doc_graph(), clear_doc_graph_cache(), _connect_group(), _doc_sets() (+9 more)
 
 ### Community 4 - "workflow_doc_graph_build.py"
-Cohesion: 0.29
-Nodes (15): _atomic_write_json(), _count_json_files(), _failure_type(), lesson_summary(), _policy_failure_count(), Any, Path, Local cross-agent lesson storage for missed workflow gates. (+7 more)
+Cohesion: 0.22
+Nodes (13): is_migrated_source(), Build workflow route manifests., resolve_docs(), _review_hook_command(), _review_hook_timing(), route_gates(), route_hooks(), route_required_docs() (+5 more)
 
 ### Community 5 - "agent-hook.py"
-Cohesion: 0.15
-Nodes (11): Boundary, side-effect, and run-state finish gate validators., validate_agentic_run_state(), validate_boundary_plan(), validate_side_effect_audit(), Cycle, boundary, and run-state finish gate validators., validate_cycle_contract(), Evidence validation rules for finish-check route gates., _evidence_names_unresolved_issue() (+3 more)
+Cohesion: 0.23
+Nodes (12): unique(), _edge_sort_key(), expand_doc_matches(), expand_doc_paths(), graph_required_docs(), Path, Public document graph expansion API for workflow routing and search., Return seed docs followed by graph-related docs. (+4 more)
 
 ### Community 6 - "review_hook"
-Cohesion: 0.20
-Nodes (9): is_git_status_review_only(), is_writing_workspace(), non_git_writing_workspace_note(), Any, Path, Workspace policy helpers shared by AgentPlaybook hooks., Return true for a draft-only writing workspace documented by AGENTS.md., AgentWorkspacePolicyTests (+1 more)
+Cohesion: 0.42
+Nodes (9): _collapse_path(), _doc_refs_from_value(), _frontmatter_block(), frontmatter_doc_refs(), markdown_doc_refs(), normalize_doc_seed(), Path, Parse document references for the local AgentPlaybook graph. (+1 more)
 
 ### Community 7 - "validate_gate_evidence"
 Cohesion: 0.06
 Nodes (30): All-Platform File And Type Baseline, API / Impl / Assertions Trio, API / Impl Pair, Architecture-To-Structure Drill, Assertions And Test-Support ISP, Boundary Pressure Signals, Boundary Rules, Capability Naming And Boundary Inference (+22 more)
 
-### Community 8 - "resolve_docs"
-Cohesion: 0.07
-Nodes (3): infer_concerns_from_request(), resolve_docs(), route_doc()
-
 ### Community 9 - "run_preflight"
-Cohesion: 0.13
+Cohesion: 0.15
 Nodes (28): _doc_sets(), extract_request_surface_paths(), git_status_surface_paths(), normalize_path(), path_matches(), _pattern_groups(), Any, Helpers for workflow document surface rule matching. (+20 more)
 
 ### Community 10 - "Code Structure And Ownership"
@@ -612,8 +585,8 @@ Cohesion: 0.07
 Nodes (28): `build/agp/agp-9-upgrade/SKILL.md`, Build And Toolchain, `camera/camera1-to-camerax/SKILL.md`, Camera, Device AI, And Identity, Compose Migration, Adaptive UI, And Navigation, Compose preview tooling and parameters, `device-ai/appfunctions/SKILL.md`, `devtools/android-cli/SKILL.md` (+20 more)
 
 ### Community 11 - "Official Android Source Map"
-Cohesion: 0.19
-Nodes (26): Match, component_or_hook_name(), declaration_keys(), declaration_limit_failed(), exported_by_default(), format_declarations(), match_kind(), match_name() (+18 more)
+Cohesion: 0.15
+Nodes (28): Match, component_or_hook_name(), declaration_keys(), declaration_limit_failed(), exported_by_default(), format_declarations(), match_kind(), match_name() (+20 more)
 
 ### Community 12 - "Android Compose UI"
 Cohesion: 0.08
@@ -636,8 +609,8 @@ Cohesion: 0.10
 Nodes (20): DDD And Domain Modeling, Default, Dependency Inversion, Do Not, Inspect First, Interface Segregation, Liskov Substitution, Module Dependency Inversion (+12 more)
 
 ### Community 17 - "Android Module Structure"
-Cohesion: 0.12
-Nodes (39): build_parser(), clean_output(), collect_failures(), main(), parse_overall(), parse_route_payload(), Any, ArgumentParser (+31 more)
+Cohesion: 0.09
+Nodes (54): _atomic_write_json(), _count_json_files(), _failure_type(), lesson_summary(), _policy_failure_count(), Any, Path, Local cross-agent lesson storage for missed workflow gates. (+46 more)
 
 ### Community 18 - "Agent Playbook"
 Cohesion: 0.10
@@ -648,32 +621,24 @@ Cohesion: 0.10
 Nodes (20): Actual Application Flow, Agent Playbook, Apply With Any AI Agent, Concrete Implementation Guides, Contributing Guidance, Core Rules, Distribution Modes, Executable Evidence Gate (+12 more)
 
 ### Community 20 - "Scripted Agent Workflow"
-Cohesion: 0.24
-Nodes (24): block_failure(), block_record(), brace_block_span(), brace_blocks(), changed_source_paths(), collect_head_diff(), config_or_generated_path(), count_line_indent() (+16 more)
+Cohesion: 0.07
+Nodes (51): CommandRunner, block_failure(), block_record(), brace_block_span(), brace_blocks(), changed_source_paths(), check_file_size(), collect_head_diff() (+43 more)
 
 ### Community 21 - "AgentPlaybook Shared Agent Instructions"
-Cohesion: 0.23
-Nodes (19): _add_permission_command_entries(), _agentplaybook_python_scripts(), agy_legacy_permission_entries(), agy_permission_entries(), claude_legacy_permission_entries(), claude_permission_entries(), claude_project_permission_entries(), _codex_prefix_rule() (+11 more)
+Cohesion: 0.05
+Nodes (83): _agy_runtime_bridge_block(), configure_agy(), _merge_agy_runtime_bridge(), Path, Antigravity/AGY runtime bridge and permission setup., configure_claude(), _is_managed_claude_spill_bridge_command(), _merge_claude_user_prompt_submit() (+75 more)
 
 ### Community 22 - "migrate_skill_bundles.py"
 Cohesion: 0.10
 Nodes (19): Agent Consumption Rule, Agentic Control Plane, Automatic Gates, Command Profiles, Default Script, Executable Evidence Wrappers, Gate Execution Ledger, Gate Signals (+11 more)
 
-### Community 23 - "workflow_request.py"
-Cohesion: 0.36
-Nodes (5): Validation for workflow route parallel execution hints., validate_parallel_execution_plan(), _validate_phase_gates(), _validate_phase_header(), _validate_string_list()
-
 ### Community 24 - "Human-Authored Writing"
 Cohesion: 0.11
 Nodes (17): AgentPlaybook Shared Agent Instructions, Always Read For Agent Work, graphify, Language Policy, Metadata Policy, Operating Rule, Priority, Project Discovery Entry (+9 more)
 
-### Community 25 - "project_type_detection.py"
-Cohesion: 0.24
-Nodes (16): import_candidates(), imports_for_path(), matches_any(), matches_one(), Path, Import extraction and pattern matching for structure rule checks., should_check_allowed_import(), apply_config() (+8 more)
-
 ### Community 26 - "setup_config_files.py"
-Cohesion: 0.22
-Nodes (17): gate_evidence_path_for_preflight(), _ledger_matches_preflight(), _ledger_matches_route(), merge_gate_evidence_from_ledger(), _missing_fields(), _new_ledger(), Any, Path (+9 more)
+Cohesion: 0.06
+Nodes (66): Namespace, delegation_plan_path(), evidence_requires_delegation_plan(), Any, Path, Structured evidence for delegated or parallel agent work., read_delegation_plan(), _require_any_text() (+58 more)
 
 ### Community 27 - "agent_global_lessons.py"
 Cohesion: 0.29
@@ -687,13 +652,9 @@ Nodes (16): Audit Passes, Check, Common Rationalizations, Common Signals, Core P
 Cohesion: 0.29
 Nodes (16): _cmd_entries(), _dedupe(), detect_project_permissions(), _entries_for_package_json(), _find_package_jsons(), _go_permissions(), _gradle_permissions(), _node_permissions() (+8 more)
 
-### Community 30 - "Agent Runtime Integration"
-Cohesion: 0.16
-Nodes (26): configure_claude(), _is_managed_claude_spill_bridge_command(), _merge_claude_user_prompt_submit(), Path, Claude Code hook and permission setup., _remove_claude_env(), _remove_claude_user_prompt_submit(), _set_claude_env() (+18 more)
-
 ### Community 31 - "Android ViewModel And State"
-Cohesion: 0.16
-Nodes (15): _append_graph_expansions(), dedupe(), facet_docs(), query_terms(), Natural-language query facets for AgentPlaybook document search., tokenize(), _parse_index_descriptions(), print_query_results() (+7 more)
+Cohesion: 0.05
+Nodes (48): Path, build_parser(), Profile, Static route and platform catalogs for workflow.py., Concern-to-document routes for workflow routing., Keyword-to-concern inference rules for workflow routing., main(), print_markdown() (+40 more)
 
 ### Community 32 - "KMP Module Structure"
 Cohesion: 0.13
@@ -715,21 +676,9 @@ Nodes (14): Build Logic And Version Catalog, Default Rule, Dependency Direction,
 Cohesion: 0.13
 Nodes (14): Architecture Tracks, Component Reuse, Container And Screen Split, Feature Folder Shape, Hooks, Mandatory Component Split, React Layers, React Runtime Boundaries (+6 more)
 
-### Community 37 - "Scenario-Driven Testing"
-Cohesion: 0.24
-Nodes (14): OverallParser, _cache_path(), _cacheable_result(), cached_vibeguard(), _git_state(), Any, CommandRunner, Path (+6 more)
-
 ### Community 38 - "Writing Workspace"
-Cohesion: 0.14
-Nodes (18): add_automatic_gates(), automatic_docs(), automatic_gates(), _insert_after_any(), _insert_before_any(), Automatic workflow gates for work-producing routes., Build workflow route manifests., _review_hook_command() (+10 more)
-
-### Community 39 - "iOS SwiftUI UI"
-Cohesion: 0.26
-Nodes (12): configure_external_project(), _find_github_projects(), _git_path_matches(), _has_agy(), _has_claude(), _has_codex(), _has_spill_setup_helper(), main() (+4 more)
-
-### Community 40 - "Agent Credential Broker Ideation"
-Cohesion: 0.29
-Nodes (11): ensure_stable_launcher(), _is_executable(), _launcher_script_text(), Path, Install a stable AgentPlaybook launcher for user-level runtime hooks., Install or verify the home-stable launcher and root pointer., Return a preflight warning when the stable launcher is absent or stale., _read_text() (+3 more)
+Cohesion: 0.48
+Nodes (6): add_automatic_gates(), automatic_docs(), automatic_gates(), _insert_after_any(), _insert_before_any(), Automatic workflow gates for work-producing routes.
 
 ### Community 41 - "print_route"
 Cohesion: 0.14
@@ -746,14 +695,6 @@ Nodes (13): Architecture Tracks, File Layout, iOS SwiftUI UI, Mandatory View Spl
 ### Community 44 - "CI/CD And Automation"
 Cohesion: 0.14
 Nodes (13): Agent Credential Broker Ideation, Brokered Proxy, Decision Rule, Design Questions, Do Not, Egress-Allowlisted Sandbox, External Secret Store Backend, Pattern Families (+5 more)
-
-### Community 45 - "Commit Workflow"
-Cohesion: 0.12
-Nodes (12): Profile, Static route and platform catalogs for workflow.py., Concern-to-document routes for workflow routing., Keyword-to-concern inference rules for workflow routing., Platform-specific concern-to-document routes for workflow routing., _normal_tool_label(), Any, Local workflow label helpers used by the workflow CLI. (+4 more)
-
-### Community 46 - "Deprecation And Migration"
-Cohesion: 0.24
-Nodes (18): _add_common_arguments(), _add_docs_read_arguments(), _add_finish_arguments(), _add_gate_arguments(), _add_review_arguments(), _add_start_arguments(), build_parser(), docs_read_hook() (+10 more)
 
 ### Community 47 - "LLM Wiki Documentation"
 Cohesion: 0.14
@@ -792,12 +733,8 @@ Cohesion: 0.15
 Nodes (12): API And Mutation State, Browser Storage, Cache And Invalidation, Check, Defaults, Mock To Real Boundary, Next.js Data Pattern, Server-To-Client Data Boundary (+4 more)
 
 ### Community 56 - "Browser Runtime Testing"
-Cohesion: 0.29
-Nodes (12): added_runtime_source(), boundary_note_requirements(), boundary_reasons(), format_boundary_note_requirements(), missing_boundary_note_fields(), package_missing_in_head(), Any, CommandRunner (+4 more)
-
-### Community 57 - "Definition Of Done"
-Cohesion: 0.24
-Nodes (11): _agy_runtime_bridge_block(), configure_agy(), _merge_agy_runtime_bridge(), Path, Antigravity/AGY runtime bridge and permission setup., merge_runtime_bridge(), Path, User-level runtime bridge helpers for AgentPlaybook setup. (+3 more)
+Cohesion: 0.06
+Nodes (68): OverallParser, add_gate_signal(), clean_output(), parse_gate(), parse_overall(), Any, Path, Shared helpers for AgentPlaybook finish checks. (+60 more)
 
 ### Community 58 - "Doubt-Driven Development"
 Cohesion: 0.17
@@ -900,12 +837,8 @@ Cohesion: 0.18
 Nodes (10): Design-System Checks, Next.js App Router Checks, React Checks, Review, SEO And AI Search Checks, Service Checks, Structure Checks, Tools (+2 more)
 
 ### Community 83 - "Public Discovery"
-Cohesion: 0.21
-Nodes (15): extract_title(), is_migrated_source(), keyflow_id(), main(), migrate_doc(), Path, rewrite_links(), skill_text() (+7 more)
-
-### Community 84 - "Release Deployment"
-Cohesion: 0.22
-Nodes (13): clean_output(), finish_with_result(), git_status(), hook_failure_policy(), non_negative_int(), parse_overall(), Any, Path (+5 more)
+Cohesion: 0.36
+Nodes (9): extract_title(), keyflow_id(), main(), migrate_doc(), Path, rewrite_links(), skill_text(), source_docs() (+1 more)
 
 ### Community 85 - "State Modeling"
 Cohesion: 0.18
@@ -958,10 +891,6 @@ Nodes (9): Design-System Checks, Do Not Approve When, Findings Priority, Output,
 ### Community 97 - "graphify reference: extra exports and benchmark"
 Cohesion: 0.20
 Nodes (9): Adoption And Migration, Component API Shape, Layer Model, Primitive Contracts, Product-Prefixed Wrappers, Styling Ownership, Token Rules, Verification (+1 more)
-
-### Community 99 - "graphify reference: extra exports and benchmark"
-Cohesion: 0.28
-Nodes (15): parse_field(), gate_batch_hook(), gate_hook(), _gate_records_from_args(), _normalize_gate_record(), _parse_gate_records(), preflight_evidence_path(), Any (+7 more)
 
 ### Community 100 - "Agent Editing Safety"
 Cohesion: 0.20
@@ -1071,17 +1000,9 @@ Nodes (8): Acceptance Rules, Creation Rules, Invitation Implementation, Invite R
 Cohesion: 0.42
 Nodes (8): _dedupe(), _double_quote(), Path, _quote(), Build narrow Spill helper permission command variants., _shell_path_spellings(), spill_helper_path_variants(), spill_helper_permission_commands()
 
-### Community 127 - "Application Boundary Principles"
-Cohesion: 0.20
-Nodes (12): build_parser(), Shared constants and helpers for workflow routing., main(), print_markdown(), Markdown rendering for workflow routes., print_query(), print_request_classification(), print_route() (+4 more)
-
 ### Community 128 - "Architecture Selection"
 Cohesion: 0.47
 Nodes (8): _after(), _append_phase(), _append_worker_phase(), _existing(), parallel_execution_plan(), Any, Parallel execution hints for workflow route manifests., Return safe, content-free parallelization guidance for a route.
-
-### Community 129 - "Change Size Policy"
-Cohesion: 0.36
-Nodes (4): ensure_local_claude_excluded(), Keep generated project Claude permissions local unless already tracked., Path, SetupAgentHooksTests
 
 ### Community 130 - "Data Persistence Sync"
 Cohesion: 0.22
@@ -1163,10 +1084,6 @@ Nodes (7): Auth RBAC Implementation, Enforcement Layers, Model Separation, Permi
 Cohesion: 0.25
 Nodes (7): Audit, Do Not, Flow, Invitation Workflows, Rules, Tests, UI States
 
-### Community 150 - "Open Graph And Social Preview Debugging"
-Cohesion: 0.46
-Nodes (3): AgentReviewPurposeTests, declarations(), Path
-
 ### Community 151 - "README.md"
 Cohesion: 0.25
 Nodes (7): Completion Evidence, Current Workflows, Decision Rule, Essential Hooks, Lifecycle Aliases, Rule, Workflows
@@ -1235,21 +1152,9 @@ Nodes (6): Auth, RBAC, Permissions, Check, Do Not, Rules, Separate, Tests
 Cohesion: 0.29
 Nodes (6): Billing Entitlements, Check, Do Not, Rules, Separate, Tests
 
-### Community 168 - "Cycle Contract Workflow"
-Cohesion: 0.21
-Nodes (15): build_parser(), main(), ArgumentParser, Path, build_route_doc_receipt(), preflight_evidence_sha256(), Any, Path (+7 more)
-
-### Community 169 - "Feature Implementation Workflow"
-Cohesion: 0.43
-Nodes (6): display_path(), load_structure_rule_configs(), Any, Path, Structure rule config loading helpers., string_list()
-
 ### Community 170 - "Review And Commit Workflow"
 Cohesion: 0.62
 Nodes (6): actual_files(), git_head(), is_manifest_relevant(), listed_files(), main(), Path
-
-### Community 171 - "add_workspace_group_candidates"
-Cohesion: 0.26
-Nodes (15): _add_compat_edges(), _add_edge(), _add_markdown_edges(), _add_surface_rule_edges(), build_doc_graph(), _connect_group(), _doc_sets(), graph_summary() (+7 more)
 
 ### Community 172 - "graphify reference: query, path, explain"
 Cohesion: 0.29
@@ -1832,8 +1737,8 @@ Cohesion: 0.33
 Nodes (5): Do Not, Invitation Workflows, Process, Read, Verification
 
 ### Community 317 - "Bugfix Debugging Workflow"
-Cohesion: 0.24
-Nodes (13): Documentation and test finish gate validators., validate_documentation(), validate_tests(), has_any(), _has_durable_doc_change_signal(), _has_existing_doc_coverage(), Focused validators for route gates with larger evidence contracts., validate_documentation_impact_evidence() (+5 more)
+Cohesion: 0.08
+Nodes (40): Boundary, side-effect, and run-state finish gate validators., validate_agentic_run_state(), validate_boundary_plan(), validate_side_effect_audit(), Collaboration and workspace finish gate validators., validate_multi_agent(), validate_multi_agent_briefs(), validate_multi_agent_integration_review() (+32 more)
 
 ### Community 318 - "Cycle Contract Workflow"
 Cohesion: 0.33
@@ -2567,69 +2472,33 @@ Nodes (3): Read, Review And Commit Workflow, Verification
 Cohesion: 0.50
 Nodes (3): Read, Scripted Agent Workflow, Verification
 
-### Community 514 - "AgentReviewPurposeTests"
-Cohesion: 0.20
-Nodes (11): append_unique(), clean_output(), parse_gate(), parse_overall(), Any, Path, Shared helpers for AgentPlaybook finish checks., requires_retrospective() (+3 more)
-
-### Community 515 - "load_structure_rule_configs"
-Cohesion: 0.23
-Nodes (11): delegation_plan_path(), evidence_requires_delegation_plan(), Any, Path, Structured evidence for delegated or parallel agent work., read_delegation_plan(), _require_any_text(), _require_contract() (+3 more)
-
-### Community 517 - "workflow_request_patterns.py"
-Cohesion: 0.42
-Nodes (8): build_parser(), build_result(), main(), print_result(), Any, ArgumentParser, Namespace, Path
-
-### Community 518 - "agent_project_search.py"
-Cohesion: 0.43
-Nodes (7): add_gate_signal(), Any, Path, Final validation, diff, and VibeGuard checks for finish-check., _record_final_check_signals(), _record_vibeguard_signal(), run_final_checks()
-
 ### Community 519 - "Namespace"
 Cohesion: 0.14
 Nodes (4): check_request_intake(), validate_grill_me_skill_evidence(), classified_route_block_reason(), Block work routes unless --request-classified proves the request is actionable.
-
-### Community 520 - "CommandRunner"
-Cohesion: 0.40
-Nodes (9): _load_script_module(), Any, Path, Run local AgentPlaybook Python entrypoints without spawning Python again., run_callable_as_command(), run_script_main(), run_workflow_validate(), _system_exit_code() (+1 more)
-
-### Community 521 - "setup-agent-hooks.py"
-Cohesion: 0.31
-Nodes (8): _has_actionable_next_action(), _is_generic_route_docs_evidence(), _is_generic_route_docs_takeaway(), Core finish gate evidence validators., validate_alignment_brief(), validate_ambiguity(), validate_route_docs_application_fields(), validate_route_docs_read()
 
 ### Community 523 - "Quick Start"
 Cohesion: 0.29
 Nodes (7): Connect The Target Repo, Path A: Existing Local Install, Path B: First-Time Local Shared Install, Path C: Team-Pinned Install, Quick Start, Safety Gate, Updating An Existing Install
 
-### Community 524 - "workflow_doc_graph.py"
-Cohesion: 0.18
-Nodes (14): unique(), clear_doc_graph_cache(), Clear graph cache for tests or long-lived processes after docs change., _edge_sort_key(), expand_doc_matches(), expand_doc_paths(), graph_required_docs(), Path (+6 more)
-
-### Community 526 - "workflow_doc_graph_refs.py"
-Cohesion: 0.42
-Nodes (9): _collapse_path(), _doc_refs_from_value(), _frontmatter_block(), frontmatter_doc_refs(), markdown_doc_refs(), normalize_doc_seed(), Path, Parse document references for the local AgentPlaybook graph. (+1 more)
-
-### Community 527 - "agent_finish_gate_collaboration_validators.py"
-Cohesion: 0.25
-Nodes (7): Collaboration and workspace finish gate validators., validate_multi_agent(), validate_multi_agent_briefs(), validate_multi_agent_integration_review(), validate_multi_agent_roles(), validate_multi_agent_write_scopes(), validate_workspace_scope_checkpoint()
-
 ## Knowledge Gaps
-- **2206 isolated node(s):** `Profile`, `graphify`, `Usage`, `What graphify is for`, `Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)` (+2201 more)
+- **2206 isolated node(s):** `Purpose`, `Project Discovery Entry`, `Shared Guidance Boundary`, `Project LLM Wiki Boundary`, `Language Policy` (+2201 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **20 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `WorkflowRoutingTests` connect `discover_projects` to `AgentReviewPurposeTests`, `WorkflowRoutingTests`, `workflow_platform_concerns.py`, `load_structure_rule_configs`, `workflow_doc_graph_build.py`, `Namespace`, `resolve_docs`, `agent_gate_evidence.py`, `run_preflight`, `workflow_doc_graph.py`, `Android Module Structure`, `Scripted Agent Workflow`, `AgentPlaybook Shared Agent Instructions`, `workflow_request.py`, `setup_config_files.py`, `Agent Runtime Integration`, `Android ViewModel And State`, `Scenario-Driven Testing`, `Writing Workspace`, `Cycle Contract Workflow`, `Agent Credential Broker Ideation`, `Commit Workflow`, `Definition Of Done`, `Release Deployment`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **Why does `ensure_local_claude_excluded()` connect `Change Size Policy` to `iOS SwiftUI UI`?**
+- **Why does `WorkflowRoutingTests` connect `discover_projects` to `workflow_platform_concerns.py`, `Scenario-Driven Testing`, `Namespace`, `resolve_docs`, `Scripted Agent Workflow`, `setup_config_files.py`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `unique()` connect `agent-hook.py` to `agent_review_purpose.py`, `WorkflowRoutingTests`, `workflow_doc_graph_build.py`, `review_hook`, `run_preflight`, `Android Module Structure`, `Android ViewModel And State`?**
   _High betweenness centrality (0.003) - this node is a cross-community bridge._
-- **Why does `clear_doc_graph_cache()` connect `workflow_doc_graph.py` to `add_workspace_group_candidates`?**
+- **Why does `detect_project_permissions()` connect `Testing Principles` to `AgentPlaybook Shared Agent Instructions`?**
   _High betweenness centrality (0.003) - this node is a cross-community bridge._
-- **Are the 59 inferred relationships involving `validate_gate_evidence()` (e.g. with `check_required_gates()` and `validate_agentic_run_state()`) actually correct?**
-  _`validate_gate_evidence()` has 59 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 54 inferred relationships involving `resolve_docs()` (e.g. with `route_payload()` and `print_route()`) actually correct?**
-  _`resolve_docs()` has 54 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 22 inferred relationships involving `discover_projects()` (e.g. with `add_candidate()` and `build_candidate()`) actually correct?**
   _`discover_projects()` has 22 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Structured evidence for delegated or parallel agent work.`, `Step functions for AgentPlaybook finish checks.`, `Shared helpers for AgentPlaybook finish checks.` to the rest of the system?**
+- **Are the 22 inferred relationships involving `unique()` (e.g. with `route_payload()` and `_rescore_for_request()`) actually correct?**
+  _`unique()` has 22 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 22 inferred relationships involving `validate_gate_evidence()` (e.g. with `validate_agentic_run_state()` and `validate_boundary_plan()`) actually correct?**
+  _`validate_gate_evidence()` has 22 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `Purpose`, `Project Discovery Entry`, `Shared Guidance Boundary` to the rest of the system?**
   _2303 weakly-connected nodes found - possible documentation gaps or missing edges._
