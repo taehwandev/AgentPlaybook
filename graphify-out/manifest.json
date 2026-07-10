@@ -355,8 +355,8 @@
     "semantic_hash": ""
   },
   "scripts/workflow_request.py": {
-    "mtime": 1783648483.563627,
-    "ast_hash": "7a644bf447a98d661ffa4bd2dd2be5cc",
+    "mtime": 1783654738.017023,
+    "ast_hash": "e9aca432ecf130ed8cf0236872ea51b4",
     "semantic_hash": ""
   },
   "scripts/workflow_request_patterns.py": {
@@ -420,8 +420,8 @@
     "semantic_hash": ""
   },
   "tests/test_workflow_routing.py": {
-    "mtime": 1783652313.48804,
-    "ast_hash": "c98f6d5c9bb8344987ed7a0bc3d04ca5",
+    "mtime": 1783654697.3361182,
+    "ast_hash": "2f200db9bc5655b6bd2de1b941181936",
     "semantic_hash": ""
   },
   "workflow-doc-surfaces.json": {
@@ -1120,8 +1120,8 @@
     "semantic_hash": ""
   },
   "common/skills/task-intake-effort-routing/references/current-guidance.md": {
-    "mtime": 1783651847.6828182,
-    "ast_hash": "e90ad4f2dcda06a66a270de733e32557",
+    "mtime": 1783654510.3428469,
+    "ast_hash": "4cb8877f2d07eae1de078d49ecb1545b",
     "semantic_hash": ""
   },
   "common/skills/testing/SKILL.md": {
@@ -1230,8 +1230,8 @@
     "semantic_hash": ""
   },
   "docs/skills/agent-runtime-integration/references/current-guidance.md": {
-    "mtime": 1783652022.4708073,
-    "ast_hash": "0277d52b8640719f343f3dd76a248867",
+    "mtime": 1783654510.218934,
+    "ast_hash": "625a16fce7db6f64b6f289f6ebd57cae",
     "semantic_hash": ""
   },
   "docs/skills/agentplaybook-skill-bundle-migration/SKILL.md": {
@@ -1910,8 +1910,8 @@
     "semantic_hash": ""
   },
   "workflows/skills/agent-task-lifecycle/references/current-guidance.md": {
-    "mtime": 1783651847.6902337,
-    "ast_hash": "3bdf400a17638aacd56a3b9b865d2e70",
+    "mtime": 1783655084.621684,
+    "ast_hash": "121d0a90f29d9f2a035fcb35e35fc506",
     "semantic_hash": ""
   },
   "workflows/skills/ambiguity-gate/SKILL.md": {
@@ -2130,13 +2130,13 @@
     "semantic_hash": ""
   },
   "scripts/workflow_dispatch.py": {
-    "mtime": 1783652021.9907086,
-    "ast_hash": "4ae20586c5ccdb77bb6d52162d33aed7",
+    "mtime": 1783654861.0522578,
+    "ast_hash": "b7ba8a9270ad9c03212d0c024e87ddb4",
     "semantic_hash": ""
   },
   "scripts/workflow_dispatch_profiles.py": {
-    "mtime": 1783652021.8146696,
-    "ast_hash": "628329782fc3824e570e60604d0ce03b",
+    "mtime": 1783654697.2021673,
+    "ast_hash": "6922b413963c28006e2c8bf97b04b38c",
     "semantic_hash": ""
   }
 }
