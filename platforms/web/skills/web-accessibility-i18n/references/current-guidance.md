@@ -8,7 +8,7 @@ type: ai-generated
 
 Use for web-specific UI text, forms, menus, dialogs, keyboard flow, focus,
 localization, and responsive text behavior. Also use
-`common/accessibility-i18n.md` for platform-neutral accessibility and
+`common/skills/accessibility-i18n/SKILL.md` for platform-neutral accessibility and
 internationalization rules.
 
 ## Web Accessibility

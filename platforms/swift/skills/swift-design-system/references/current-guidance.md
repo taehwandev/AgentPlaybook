@@ -12,12 +12,12 @@ interaction states, previews, or visual QA rules.
 
 Also use:
 
-- `../../common/design-system.md` for the cross-platform design-system
+- `../../common/skills/design-system/SKILL.md` for the cross-platform design-system
   baseline.
-- `../../common/component-api-design.md` for reusable component contracts,
+- `../../common/skills/component-api-design/SKILL.md` for reusable component contracts,
   slots, callbacks, and caller-owned policy.
-- `../../common/ui-visual-verification.md` for visual and interaction evidence.
-- `../../common/accessibility-i18n.md` for labels, Dynamic Type, localization,
+- `../../common/skills/ui-visual-verification/SKILL.md` for visual and interaction evidence.
+- `../../common/skills/accessibility-i18n/SKILL.md` for labels, Dynamic Type, localization,
   input, and accessible states.
 - `swift-code-structure.md` for design-system package ownership and resource
   boundaries.

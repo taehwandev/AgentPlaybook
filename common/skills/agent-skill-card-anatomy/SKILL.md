@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_common_agent_skill_card_anatomy_md_skill
-status: review
+status: stable
 type: ai-generated
 ---
 
@@ -14,7 +14,7 @@ templates.
 
 - `references/current-guidance.md` for strict card sections, rationalizations,
   red flags, stop conditions, and bundle layout rules.
-- `../../../docs/skills/agentplaybook-skill-bundle-migration/SKILL.md` before
+- `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md` before
   broad structure or router changes.
 
 ## Process

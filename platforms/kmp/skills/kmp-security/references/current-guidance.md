@@ -10,8 +10,8 @@ Use when Kotlin Multiplatform work touches credentials, local files, shell or
 process execution, network clients, secure storage, platform permissions,
 native interop, logging, release builds, signing, or open-source-safe setup.
 
-Also use `common/secure-development-baseline.md` and
-`common/security-privacy-review.md`. For desktop shell, IPC, signing,
+Also use `common/skills/secure-development-baseline/SKILL.md` and
+`common/skills/security-privacy-review/SKILL.md`. For desktop shell, IPC, signing,
 notarization, updates, or privileged APIs, also use the application security
 card.
 

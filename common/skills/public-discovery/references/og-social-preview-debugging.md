@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_public_discovery_og_social_preview_debugging
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

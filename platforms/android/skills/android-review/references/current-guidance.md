@@ -41,9 +41,9 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 - Check design-system ownership when shared UI changes: tokens, wrappers,
   defaults, and accessibility contracts belong there; product copy, routes,
   analytics, permissions, fake data, and repository calls do not.
-- Confirm every named stateless composable that renders UI has a colocated
-  preview. Screenshot tests, UI tests, and manual smoke paths are additional
-  checks, not replacements for missing stateless UI previews.
+- Apply the canonical Compose preview rule from
+  `../../android-compose-ui/references/current-guidance.md` when reviewing
+  stateless UI previews.
 - Verify loading, empty, error, permission-denied, and offline states.
 - Ensure repository/data source boundaries are not bypassed from UI.
 - Check permission, activity result, navigation argument, and process recreation behavior.
@@ -68,7 +68,7 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 - Static: Gradle lint, `ktlint` or `ktfmt` for formatting, and `detekt` for
   naming, complexity, size, and maintainability when configured. If the repo has
   no tool config, review against the strict static quality profile in
-  `common/code-conventions.md` and document the missing automation.
+  `common/skills/code-conventions/SKILL.md` and document the missing automation.
 - Unit: JVM tests for mapper, validator, policy, ViewModel state.
 - Instrumented: AndroidJUnitRunner for framework-dependent behavior.
 - UI: Compose UI Test or Espresso for screen interactions.
@@ -90,13 +90,8 @@ Use for Android app, Compose/ViewModel, permission, and UI flow review.
 ## UI Test Focus
 
 - Screen renders expected state from fake ViewModel/state.
-- Every named stateless UI composable has a colocated preview, with no omissions.
-  A parent preview does not cover a separately named stateless child unless the
-  child is inlined and no longer exists as its own visual owner.
-- One-off `@Preview` functions, private preview data, and private
-  `PreviewParameterProvider` classes are colocated with the stateless
-  composable they render; separate preview packages have a named reuse or
-  design-system ownership reason.
+- Stateless UI preview coverage follows the canonical Compose preview rule in
+  `../../android-compose-ui/references/current-guidance.md`.
 - User actions emit correct events or trigger expected navigation.
 - Lists use stable keys/content types when items reorder, update independently,
   animate, or hold local state.

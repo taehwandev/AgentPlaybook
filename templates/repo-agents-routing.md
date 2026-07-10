@@ -131,70 +131,70 @@ Core direct routes:
 
 ```text
 Document index: <AGENTPLAYBOOK_ROOT>/index.md
-Agent operating skill: <AGENTPLAYBOOK_ROOT>/common/agent-operating-skill.md
-Task intake/effort routing: <AGENTPLAYBOOK_ROOT>/common/task-intake-effort-routing.md
-Stack discovery: <AGENTPLAYBOOK_ROOT>/common/stack-discovery.md
-LLM discipline: <AGENTPLAYBOOK_ROOT>/common/llm-coding-discipline.md
-Code conventions: <AGENTPLAYBOOK_ROOT>/common/code-conventions.md
-Code structure/ownership: <AGENTPLAYBOOK_ROOT>/common/code-structure-ownership.md
-Reusable code design: <AGENTPLAYBOOK_ROOT>/common/reusable-code-design.md
-Component API design: <AGENTPLAYBOOK_ROOT>/common/component-api-design.md
-State modeling: <AGENTPLAYBOOK_ROOT>/common/state-modeling.md
-Error modeling: <AGENTPLAYBOOK_ROOT>/common/error-modeling.md
-Tool failure recovery: <AGENTPLAYBOOK_ROOT>/common/tool-failure-recovery.md
-Agent interaction: <AGENTPLAYBOOK_ROOT>/common/agent-interaction.md
-LLM wiki documentation: <AGENTPLAYBOOK_ROOT>/common/llm-wiki-documentation.md
-Editing safety: <AGENTPLAYBOOK_ROOT>/common/agent-editing-safety.md
-Worktree hygiene: <AGENTPLAYBOOK_ROOT>/common/worktree-hygiene.md
-Defensive boundaries: <AGENTPLAYBOOK_ROOT>/common/defensive-boundaries.md
-UI visual verification: <AGENTPLAYBOOK_ROOT>/common/ui-visual-verification.md
+Agent operating skill: <AGENTPLAYBOOK_ROOT>/common/skills/agent-operating-skill/SKILL.md
+Task intake/effort routing: <AGENTPLAYBOOK_ROOT>/common/skills/task-intake-effort-routing/SKILL.md
+Stack discovery: <AGENTPLAYBOOK_ROOT>/common/skills/stack-discovery/SKILL.md
+LLM discipline: <AGENTPLAYBOOK_ROOT>/common/skills/llm-coding-discipline/SKILL.md
+Code conventions: <AGENTPLAYBOOK_ROOT>/common/skills/code-conventions/SKILL.md
+Code structure/ownership: <AGENTPLAYBOOK_ROOT>/common/skills/code-structure-ownership/SKILL.md
+Reusable code design: <AGENTPLAYBOOK_ROOT>/common/skills/reusable-code-design/SKILL.md
+Component API design: <AGENTPLAYBOOK_ROOT>/common/skills/component-api-design/SKILL.md
+State modeling: <AGENTPLAYBOOK_ROOT>/common/skills/state-modeling/SKILL.md
+Error modeling: <AGENTPLAYBOOK_ROOT>/common/skills/error-modeling/SKILL.md
+Tool failure recovery: <AGENTPLAYBOOK_ROOT>/common/skills/tool-failure-recovery/SKILL.md
+Agent interaction: <AGENTPLAYBOOK_ROOT>/common/skills/agent-interaction/SKILL.md
+LLM wiki documentation: <AGENTPLAYBOOK_ROOT>/common/skills/llm-wiki-documentation/SKILL.md
+Editing safety: <AGENTPLAYBOOK_ROOT>/common/skills/agent-editing-safety/SKILL.md
+Worktree hygiene: <AGENTPLAYBOOK_ROOT>/common/skills/worktree-hygiene/SKILL.md
+Defensive boundaries: <AGENTPLAYBOOK_ROOT>/common/skills/defensive-boundaries/SKILL.md
+UI visual verification: <AGENTPLAYBOOK_ROOT>/common/skills/ui-visual-verification/SKILL.md
 Workflow script: <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 Agent hook wrapper: <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py
 Agent entry manifest: <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
 Project discovery: <AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
 Preflight evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
 Finish evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
-Android architecture: <AGENTPLAYBOOK_ROOT>/platforms/android/android-architecture.md
-Android Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/android/android-compose-ui.md
-Android module/package structure: <AGENTPLAYBOOK_ROOT>/platforms/android/android-module-structure.md
-Android ViewModel/state: <AGENTPLAYBOOK_ROOT>/platforms/android/android-viewmodel-state.md
-Android state/data: <AGENTPLAYBOOK_ROOT>/platforms/android/android-state-data.md
+Android architecture: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-architecture/SKILL.md
+Android Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-compose-ui/SKILL.md
+Android module/package structure: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-module-structure/SKILL.md
+Android ViewModel/state: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-viewmodel-state/SKILL.md
+Android state/data: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-state-data/SKILL.md
 Android DataStore persistence: <AGENTPLAYBOOK_ROOT>/platforms/android/references/android-datastore.md
-Android background work: <AGENTPLAYBOOK_ROOT>/platforms/android/android-background-work.md
-Android security: <AGENTPLAYBOOK_ROOT>/platforms/android/android-security.md
-Android review: <AGENTPLAYBOOK_ROOT>/platforms/android/android-review.md
-KMP architecture: <AGENTPLAYBOOK_ROOT>/platforms/kmp/kmp-architecture.md
-KMP module/source-set structure: <AGENTPLAYBOOK_ROOT>/platforms/kmp/kmp-module-structure.md
-KMP Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/kmp/kmp-compose-ui.md
-Flutter architecture: <AGENTPLAYBOOK_ROOT>/platforms/flutter/flutter-architecture.md
-Flutter project/package structure: <AGENTPLAYBOOK_ROOT>/platforms/flutter/flutter-project-structure.md
-Flutter widget UI: <AGENTPLAYBOOK_ROOT>/platforms/flutter/flutter-widget-ui.md
-iOS target/package structure: <AGENTPLAYBOOK_ROOT>/platforms/ios/ios-module-structure.md
-iOS SwiftUI UI: <AGENTPLAYBOOK_ROOT>/platforms/ios/ios-swiftui-ui.md
-iOS UIKit UI: <AGENTPLAYBOOK_ROOT>/platforms/ios/ios-uikit-ui.md
-Web React UI: <AGENTPLAYBOOK_ROOT>/platforms/web/web-react-ui.md
-Server API implementation: <AGENTPLAYBOOK_ROOT>/platforms/server/server-api-implementation.md
-Application command/UI: <AGENTPLAYBOOK_ROOT>/platforms/application/application-command-ui.md
-Auth/RBAC implementation: <AGENTPLAYBOOK_ROOT>/product-patterns/auth-rbac-implementation.md
-Invitation implementation: <AGENTPLAYBOOK_ROOT>/product-patterns/invitation-implementation.md
-Billing/entitlements implementation: <AGENTPLAYBOOK_ROOT>/product-patterns/billing-entitlements-implementation.md
-Agent task lifecycle: <AGENTPLAYBOOK_ROOT>/workflows/agent-task-lifecycle.md
-Request triage workflow: <AGENTPLAYBOOK_ROOT>/workflows/request-triage.md
-Agent handoff/continuation: <AGENTPLAYBOOK_ROOT>/workflows/agent-handoff-continuation.md
-Scripted agent workflow: <AGENTPLAYBOOK_ROOT>/workflows/scripted-agent-workflow.md
-Ambiguity gate: <AGENTPLAYBOOK_ROOT>/workflows/ambiguity-gate.md
-Product architecture delivery: <AGENTPLAYBOOK_ROOT>/workflows/product-architecture-delivery.md
-Development cycle: <AGENTPLAYBOOK_ROOT>/workflows/development-cycle.md
-Multi-agent collaboration: <AGENTPLAYBOOK_ROOT>/workflows/multi-agent-collaboration.md
-Multi-perspective review: <AGENTPLAYBOOK_ROOT>/workflows/multi-perspective-review.md
-Retrospective learning: <AGENTPLAYBOOK_ROOT>/workflows/retrospective-learning.md
-Planning/research workflow: <AGENTPLAYBOOK_ROOT>/workflows/planning-research.md
-Documentation workflow: <AGENTPLAYBOOK_ROOT>/workflows/documentation-update.md
-Feature workflow: <AGENTPLAYBOOK_ROOT>/workflows/feature-implementation.md
-Bugfix/debugging workflow: <AGENTPLAYBOOK_ROOT>/workflows/bugfix-debugging.md
-Refactor workflow: <AGENTPLAYBOOK_ROOT>/workflows/refactor-cleanup.md
-Release readiness workflow: <AGENTPLAYBOOK_ROOT>/workflows/release-readiness.md
-Review/commit workflow: <AGENTPLAYBOOK_ROOT>/workflows/review-and-commit.md
+Android background work: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-background-work/SKILL.md
+Android security: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-security/SKILL.md
+Android review: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-review/SKILL.md
+KMP architecture: <AGENTPLAYBOOK_ROOT>/platforms/kmp/skills/kmp-architecture/SKILL.md
+KMP module/source-set structure: <AGENTPLAYBOOK_ROOT>/platforms/kmp/skills/kmp-module-structure/SKILL.md
+KMP Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/kmp/skills/kmp-compose-ui/SKILL.md
+Flutter architecture: <AGENTPLAYBOOK_ROOT>/platforms/flutter/skills/flutter-architecture/SKILL.md
+Flutter project/package structure: <AGENTPLAYBOOK_ROOT>/platforms/flutter/skills/flutter-project-structure/SKILL.md
+Flutter widget UI: <AGENTPLAYBOOK_ROOT>/platforms/flutter/skills/flutter-widget-ui/SKILL.md
+iOS target/package structure: <AGENTPLAYBOOK_ROOT>/platforms/ios/skills/ios-module-structure/SKILL.md
+iOS SwiftUI UI: <AGENTPLAYBOOK_ROOT>/platforms/ios/skills/ios-swiftui-ui/SKILL.md
+iOS UIKit UI: <AGENTPLAYBOOK_ROOT>/platforms/ios/skills/ios-uikit-ui/SKILL.md
+Web React UI: <AGENTPLAYBOOK_ROOT>/platforms/web/skills/web-react-ui/SKILL.md
+Server API implementation: <AGENTPLAYBOOK_ROOT>/platforms/server/skills/server-api-implementation/SKILL.md
+Application command/UI: <AGENTPLAYBOOK_ROOT>/platforms/application/skills/application-command-ui/SKILL.md
+Auth/RBAC implementation: <AGENTPLAYBOOK_ROOT>/product-patterns/skills/auth-rbac-implementation/SKILL.md
+Invitation implementation: <AGENTPLAYBOOK_ROOT>/product-patterns/skills/invitation-implementation/SKILL.md
+Billing/entitlements implementation: <AGENTPLAYBOOK_ROOT>/product-patterns/skills/billing-entitlements-implementation/SKILL.md
+Agent task lifecycle: <AGENTPLAYBOOK_ROOT>/workflows/skills/agent-task-lifecycle/SKILL.md
+Request triage workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/request-triage/SKILL.md
+Agent handoff/continuation: <AGENTPLAYBOOK_ROOT>/workflows/skills/agent-handoff-continuation/SKILL.md
+Scripted agent workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/scripted-agent-workflow/SKILL.md
+Ambiguity gate: <AGENTPLAYBOOK_ROOT>/workflows/skills/ambiguity-gate/SKILL.md
+Product architecture delivery: <AGENTPLAYBOOK_ROOT>/workflows/skills/product-architecture-delivery/SKILL.md
+Development cycle: <AGENTPLAYBOOK_ROOT>/workflows/skills/development-cycle/SKILL.md
+Multi-agent collaboration: <AGENTPLAYBOOK_ROOT>/workflows/skills/multi-agent-collaboration/SKILL.md
+Multi-perspective review: <AGENTPLAYBOOK_ROOT>/workflows/skills/multi-perspective-review/SKILL.md
+Retrospective learning: <AGENTPLAYBOOK_ROOT>/workflows/skills/retrospective-learning/SKILL.md
+Planning/research workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/planning-research/SKILL.md
+Documentation workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/documentation-update/SKILL.md
+Feature workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/feature-implementation/SKILL.md
+Bugfix/debugging workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/bugfix-debugging/SKILL.md
+Refactor workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/refactor-cleanup/SKILL.md
+Release readiness workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/release-readiness/SKILL.md
+Review/commit workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/review-and-commit/SKILL.md
 ```
 
 Use `index.md` for platform, product-pattern, and task-specific common cards

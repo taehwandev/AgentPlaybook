@@ -21,7 +21,7 @@ Also use:
 - `../application/application-architecture.md` for macOS desktop shells, menu
   bar/tray apps, windows, commands, IPC, files, shell, clipboard, and native
   packaging.
-- `../../common/architecture-design.md` for architecture track selection.
+- `../../common/skills/architecture-design/SKILL.md` for architecture track selection.
 
 ## Boundary Model
 

@@ -40,14 +40,15 @@ Gradle.
 
 ## File And Class Split
 
-Apply `../../common/code-structure-ownership.md` before growing Android runtime
-files. Kotlin and Java source should default to one primary public or internal
-top-level class, interface, object, composable screen/state owner, repository,
-adapter, mapper, fake, or assertion subject per file.
-Every named stateless UI composable must have a colocated private `@Preview`.
-Same-file private preview data and private `PreviewParameterProvider` classes
-belong beside the stateless composable they render. They are part of the
-component's visual contract, not separate runtime owners.
+Apply
+`../../../../common/skills/code-structure-ownership/references/current-guidance.md`
+before growing Android runtime files. Kotlin and Java source should default to
+one primary public or internal top-level class, interface, object, composable
+screen/state owner, repository, adapter, mapper, fake, or assertion subject per
+file.
+For stateless UI preview placement, apply the canonical Compose preview rule in
+`../../android-compose-ui/references/current-guidance.md`; this document only
+owns Android package and module boundaries.
 
 Split files before adding behavior when a feature file contains separate owners
 such as route contract, `NavEntry` mapping, screen rendering, ViewModel,
@@ -642,13 +643,10 @@ dependency direction:
   navigation/                local graph or route registration when needed
 ```
 
-For small screens, keeping `Route`, `Screen`, `UiState`, and preview provider in
-one package is fine, but one-off `@Preview` functions and their
-`PreviewParameterProvider` must stay in the same file as the `Screen`, section,
-or component they render. Do not leave a named stateless UI composable without a
-preview; inline it into a previewed parent if it is too small to own one. Split
-preview providers into `preview/` only when several composable files reuse the
-same deterministic states or a design-system module owns shared examples.
+For small screens, keeping `Route`, `Screen`, `UiState`, and preview support in
+one package is fine. Use `preview/` only for shared deterministic states or
+design-system-owned examples; one-off stateless UI preview placement follows
+`../../android-compose-ui/references/current-guidance.md`.
 
 ## Repository Package Layout
 

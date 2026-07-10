@@ -10,8 +10,8 @@ Use when creating, changing, moving, or reviewing Flutter routes, pages,
 widgets, design-system components, forms, gestures, navigation UI, golden tests,
 or widget tests.
 
-For reusable UI extraction, also read `common/reusable-code-design.md`,
-`common/component-api-design.md`, and `common/design-system.md`.
+For reusable UI extraction, also read `common/skills/reusable-code-design/SKILL.md`,
+`common/skills/component-api-design/SKILL.md`, and `common/skills/design-system/SKILL.md`.
 For feature folders, local packages, package exports, and design-system
 promotion decisions, also read `flutter-project-structure.md`.
 

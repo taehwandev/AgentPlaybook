@@ -174,15 +174,15 @@ maps are current. A matching file count alone is insufficient.
 
 ## Local Mapping
 
-- `platforms/android/android-compose-ui.md`: Compose state, performance,
+- `platforms/android/skills/android-compose-ui/SKILL.md`: Compose state, performance,
   deferred reads, lazy layouts, slots, modifiers, focus, animations, previews,
   adaptive layouts, Wear Material3, XR/Glimmer UI rules.
-- `platforms/android/android-architecture.md`: Navigation 3, deep links,
+- `platforms/android/skills/android-architecture/SKILL.md`: Navigation 3, deep links,
   Activity route boundaries, AppFunctions, Credential Manager, Play SDK, CameraX
   runtime ownership.
-- `platforms/android/android-module-structure.md`: AGP, KSP/KAPT, build logic,
+- `platforms/android/skills/android-module-structure/SKILL.md`: AGP, KSP/KAPT, build logic,
   module boundaries, Navigation 3 modularization, test assertion boundaries.
-- `platforms/android/android-security.md`: intent security, Credential Manager,
+- `platforms/android/skills/android-security/SKILL.md`: intent security, Credential Manager,
   WebView, exported components, providers, broadcasts, bound services.
-- `platforms/android/android-review.md`: acceptance criteria across all Android
+- `platforms/android/skills/android-review/SKILL.md`: acceptance criteria across all Android
   source surfaces.

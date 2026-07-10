@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_agent_skill_card_anatomy
-status: review
+status: stable
 type: human-reviewed-needed
 agentplaybook_card_contract: strict
 ---
@@ -60,31 +60,20 @@ evidence gaps, and output shape.
 ## Skill Bundle Layout
 
 For new broad-use guidance, or when an existing card is becoming too large to
-scan, prefer a skill bundle over a single long Markdown file:
+scan, prefer a skill bundle over a single long Markdown file. The canonical
+layout and migration procedure are owned by
+`docs/skills/agentplaybook-skill-bundle-migration/SKILL.md`.
 
 ```text
 <area>/skills/<skill-name>/SKILL.md
 <area>/skills/<skill-name>/references/<focused-detail>.md
 ```
 
-The `SKILL.md` file is the required entrypoint. It should stay small enough to
-load by default and should route the agent to the exact reference files needed
-for the task. Put long examples, source coverage, migration checklists,
-version-specific details, and deep review matrices in `references/`.
-
-Use the same pattern across shared areas:
-
-- `common/skills/<skill-name>/SKILL.md`
-- `workflows/skills/<workflow-name>/SKILL.md`
-- `platforms/<platform>/skills/<skill-name>/SKILL.md`
-- `product-patterns/skills/<pattern-name>/SKILL.md`
-
-Flat paths are compatibility entrypoints. The canonical load target is the
-bundle `SKILL.md`, and detailed guidance belongs under `references/`. Do not
-put full guidance back into a flat compatibility file.
-
-Read `../../../../docs/skills/agentplaybook-skill-bundle-migration/SKILL.md` before
-restructuring a large card family or changing workflow router paths.
+This card owns the anatomy of an executable skill card. It does not own the full
+bundle migration policy. Read the migration skill before restructuring a large
+card family, changing workflow router paths, or cleaning duplicated
+source-of-truth rules. For duplicate guidance cleanup, also read
+`docs/skills/agentplaybook-skill-bundle-migration/references/source-of-truth-ownership.md`.
 
 ## Common Rationalizations
 
@@ -95,7 +84,7 @@ restructuring a large card family or changing workflow router paths.
 | "The card is shared, so examples should be broad." | Keep examples small and remove repo-specific names, commands, and policy. |
 | "A new card is easier than updating the old one." | Check overlap first and update the existing source of truth when possible. |
 | "More context will make the card safer." | Use progressive disclosure; link detailed references instead of loading everything by default. |
-| "The old flat path is still there, so it can hold the real guidance." | Keep the flat path as a stub; put the real guidance in the bundle reference. |
+| "The old flat path is still there, so it can hold the real guidance." | Remove the flat path after canonical routing is updated; use a temporary stub only for a named compatibility dependency. |
 
 ## Red Flags
 

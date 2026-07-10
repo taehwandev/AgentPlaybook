@@ -95,7 +95,7 @@ Use for iOS SwiftUI/UIKit, navigation, concurrency, permission, and UI flow revi
 - Static: Swift compiler, `swift-format` or SwiftFormat for formatting, and
   SwiftLint for naming, line length, complexity, file/type size, force unwraps,
   and maintainability when configured. If no Swift lint config exists, review
-  against `common/code-conventions.md` plus `../swift/swift-review.md`.
+  against `common/skills/code-conventions/SKILL.md` plus `../swift/swift-review.md`.
 - Unit: XCTest or Swift Testing for mapper, policy, service, ViewModel state.
 - UI: XCUITest for navigation, forms, permissions, and critical flows.
 - Snapshot: use only when visual regression matters and repo already supports it.

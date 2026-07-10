@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_task_intake_effort_routing
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -110,8 +110,10 @@ alignment brief and from Grill-Me.
 ## Effort Profiles
 
 Use runtime-specific model or reasoning controls only when the runtime supports
-them. If model selection is not available, apply the same profile through
-context loading, planning depth, and verification scope.
+them. First choose an abstract model tier from the effort profile, then let the
+active runtime map that tier to a concrete model id. If model selection is not
+available, apply the same profile through context loading, planning depth, and
+verification scope.
 
 | Effort | Use When | Behavior |
 | --- | --- | --- |
@@ -119,6 +121,33 @@ context loading, planning depth, and verification scope.
 | `standard` | Scoped implementation, bugfix, refactor, or docs work with normal local context. | Use workflow route, relevant platform/common cards, focused plan, focused verification. |
 | `deep` | Ambiguous product behavior, architecture choice, security/data/release risk, cross-module changes, or repeated failure. | Use ambiguity/product/multi-perspective routes, more context, explicit tradeoffs, stronger verification. |
 | `specialist` | Platform/security/release/billing/auth/database/AI-tooling risk requires a specific skill or expert agent. | Route to the specialist card/agent and keep write scopes explicit. |
+
+## Model Tier Selection
+
+Model tier is a runtime-neutral routing result. Do not make Codex model names the
+shared workflow policy; they are one runtime mapping for the abstract tier.
+
+| Effort | Model Tier | Codex Mapping | Typical Work |
+| --- | --- | --- | --- |
+| `quick` | `fast` | `gpt-5.6-luna` | exact search, small status checks, narrow docs lookup, simple test reruns, low-risk summaries |
+| `standard` | `balanced` | `gpt-5.6-terra` | scoped code edits, documentation updates, normal review, focused debugging |
+| `deep` | `frontier` | `gpt-5.6-sol` | architecture, security/data/release risk, cross-module changes, repeated failure recovery, broad planning |
+| `specialist` | `specialist` | `gpt-5.6-sol` unless a runtime specialist is configured | platform/security/release/billing/auth/database/AI-tooling expert work |
+
+Runtime rules:
+
+- Codex may map `fast` / `balanced` / `frontier` to the configured Luna / Terra /
+  Sol model ids above when those models are available.
+- Claude and other runtimes must map the same tiers to their own configured
+  model choices. Do not pass Codex model ids to non-Codex runtimes.
+- If a runtime cannot switch models for the current session, keep the current
+  model and apply the effort profile through smaller context, deeper planning,
+  or stronger verification.
+- Switch only at a task, subagent, or session boundary unless the runtime has a
+  safe mid-task handoff mechanism. Preserve the route, docs read, gate ledger,
+  and unresolved blockers across the handoff.
+- Do not route secret, credential, destructive, deployment, or external-state
+  work to a cheaper tier only for cost. Risk controls win over cost controls.
 
 Do not default to the strongest model, longest reasoning, or full-document
 loading when the request is clear and low risk. Escalate when evidence shows the

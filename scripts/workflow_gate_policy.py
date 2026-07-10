@@ -128,46 +128,46 @@ def automatic_docs(command: str) -> list[str]:
     if command in {"commit", "git_commit"}:
         return docs
     if AMBIGUITY_GATE in gates:
-        docs.append("workflows/ambiguity-gate.md")
+        docs.append("workflows/skills/ambiguity-gate/SKILL.md")
     if ALIGNMENT_BRIEF_GATE in gates:
         docs.extend(
             [
-                "common/task-intake-effort-routing.md",
-                "common/product-spec-to-implementation.md",
+                "common/skills/task-intake-effort-routing/SKILL.md",
+                "common/skills/product-spec-to-implementation/SKILL.md",
             ]
         )
         if command in {"prd", "product", "spec"}:
-            docs.append("workflows/prd-creation.md")
+            docs.append("workflows/skills/prd-creation/SKILL.md")
     if DOCUMENTATION_GATE in gates or DOCUMENTATION_IMPACT_GATE in gates:
-        docs.append("workflows/documentation-update.md")
+        docs.append("workflows/skills/documentation-update/SKILL.md")
     if CYCLE_CONTRACT_GATE in gates:
-        docs.append("workflows/cycle-contract.md")
+        docs.append("workflows/skills/cycle-contract/SKILL.md")
     if SOURCE_DOCS_GATE in gates:
         docs.extend(
             [
-                "common/product-spec-to-implementation.md",
-                "common/source-driven-development.md",
+                "common/skills/product-spec-to-implementation/SKILL.md",
+                "common/skills/source-driven-development/SKILL.md",
             ]
         )
     if TEST_GATE in gates:
         docs.extend(
             [
-                "common/testing.md",
-                "common/scenario-driven-testing.md",
-                "common/verification-policy.md",
+                "common/skills/testing/SKILL.md",
+                "common/skills/scenario-driven-testing/SKILL.md",
+                "common/skills/verification-policy/SKILL.md",
             ]
         )
     if BOUNDARY_PLAN_GATE in gates:
-        docs.append("common/code-structure-ownership.md")
+        docs.append("common/skills/code-structure-ownership/SKILL.md")
     if MULTI_AGENT_GATE in gates:
-        docs.append("workflows/multi-agent-collaboration.md")
+        docs.append("workflows/skills/multi-agent-collaboration/SKILL.md")
     if SIDE_EFFECT_AUDIT_GATE in gates:
-        docs.append("workflows/development-cycle.md")
+        docs.append("workflows/skills/development-cycle/SKILL.md")
     if AGENTIC_RUN_STATE_GATE in gates:
         docs.extend(
             [
-                "workflows/agent-task-lifecycle.md",
-                "workflows/scripted-agent-workflow.md",
+                "workflows/skills/agent-task-lifecycle/SKILL.md",
+                "workflows/skills/scripted-agent-workflow/SKILL.md",
             ]
         )
     return docs

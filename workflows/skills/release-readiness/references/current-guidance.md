@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_release_readiness_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -11,21 +11,21 @@ signing, or handing off release-sensitive work.
 
 ## Read
 
-- `common/release-deployment.md`
-- `common/release-versioning.md`
-- `common/commit-workflow.md` and `common/worktree-hygiene.md` when the release
+- `common/skills/release-deployment/SKILL.md`
+- `common/skills/release-versioning/SKILL.md`
+- `common/skills/commit-workflow/SKILL.md` and `common/skills/worktree-hygiene/SKILL.md` when the release
   action creates, moves, pushes, or publishes a source-control tag or branch
-- `common/ci-cd-automation.md` when workflow files, release automation,
+- `common/skills/ci-cd-automation/SKILL.md` when workflow files, release automation,
   package publishing, deployment jobs, or CI gates are touched
-- `common/deprecation-migration.md` when release work removes, renames,
+- `common/skills/deprecation-migration/SKILL.md` when release work removes, renames,
   migrates, or changes compatibility
-- `common/verification-policy.md`
-- `common/secure-development-baseline.md`
-- `common/generated-files-policy.md`
-- `common/runtime-url-configuration.md` when runtime URLs, callback URLs,
+- `common/skills/verification-policy/SKILL.md`
+- `common/skills/secure-development-baseline/SKILL.md`
+- `common/skills/generated-files-policy/SKILL.md`
+- `common/skills/runtime-url-configuration/SKILL.md` when runtime URLs, callback URLs,
   redirect URIs, webhook endpoints, CORS origins, or asset hosts vary by
   environment
-- `common/dependency-policy.md` when packages or lockfiles changed
+- `common/skills/dependency-policy/SKILL.md` when packages or lockfiles changed
 - matching platform security or review card from `index.md`
 
 ## Steps

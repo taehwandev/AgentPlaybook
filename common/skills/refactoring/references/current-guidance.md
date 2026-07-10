@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_f6cb537c3133
-status: review
+status: stable
 type: ai-generated
 ---
 

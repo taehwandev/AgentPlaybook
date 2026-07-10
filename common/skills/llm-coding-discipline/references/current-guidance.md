@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_llm_coding_discipline
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -35,7 +35,7 @@ Use before coding. These rules reduce common LLM mistakes. Bias toward caution o
 - Use DDD only when real domain pressure exists; start with a smaller use case,
   policy, mapper, reducer, or state owner when the rules are still local.
 
-For detailed checks, use `common/solid-design-principles.md`.
+For detailed checks, use `common/skills/solid-design-principles/SKILL.md`.
 
 ## Do Not Pack Everything Together
 

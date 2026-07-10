@@ -12,7 +12,7 @@ presentation hints, persistence, permission state, or navigation events.
 
 For Compose screen/component structure, also read `android-compose-ui.md`. For
 background work, also read `android-background-work.md`. For reusable extraction,
-also read `../../common/reusable-code-design.md`.
+also read `../../common/skills/reusable-code-design/SKILL.md`.
 
 ## State Ownership
 

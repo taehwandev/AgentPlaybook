@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_cycle_contract_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

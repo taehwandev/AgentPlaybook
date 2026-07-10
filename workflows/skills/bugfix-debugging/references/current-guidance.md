@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_bugfix_debugging_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -11,13 +11,13 @@ production-like failure.
 
 ## Read
 
-- `common/agent-operating-skill.md`
-- `common/testing.md`
-- `common/verification-policy.md`
-- `common/tool-failure-recovery.md` when a command, compiler, linter, or test
+- `common/skills/agent-operating-skill/SKILL.md`
+- `common/skills/testing/SKILL.md`
+- `common/skills/verification-policy/SKILL.md`
+- `common/skills/tool-failure-recovery/SKILL.md` when a command, compiler, linter, or test
   failure is part of the bug signal
-- `common/observability-error-handling.md`
-- `common/defensive-boundaries.md` when the bug involves external, persisted,
+- `common/skills/observability-error-handling/SKILL.md`
+- `common/skills/defensive-boundaries/SKILL.md` when the bug involves external, persisted,
   generated, cached, or user-provided values
 - matching platform architecture or review card from `index.md`
 - security, persistence, API contract, or product-pattern cards when affected

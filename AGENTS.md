@@ -126,6 +126,17 @@ For implementation, review, refactoring, debugging, documentation, or planning t
 
 Then load only the supporting documents relevant to the task.
 
+## Document Output Conventions
+
+When creating PRDs, specs, or ARDs, follow the path and naming rules in:
+
+```text
+<AGENTPLAYBOOK_ROOT>/common/skills/doc-conventions/SKILL.md
+```
+
+Repo-local instructions override this guide. Always state the output path in the
+handoff.
+
 ## Required VibeGuard Gate
 
 VibeGuard is mandatory for AgentPlaybook maintenance and for repos that apply
@@ -212,8 +223,8 @@ adds paths from `git status --short --untracked-files=all`. Use
 does not appear in the request or current git status. Surface promotion may
 move a document from `reference_docs` to `required_docs`; it never replaces
 repo-local instructions or the normal route command/profile selection.
-The router also builds a local document graph from Markdown links,
-compatibility stubs, and `workflow-doc-surfaces.json` document sets. Natural
+The router also builds a local document graph from Markdown links, canonical
+skill-bundle entrypoints, and `workflow-doc-surfaces.json` document sets. Natural
 language search should find seed docs; the graph then follows nearby relations
 so agents see connected guidance without the user naming every keyword. Loose
 graph relations become `reference_docs`; only explicit required relations such

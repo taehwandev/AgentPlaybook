@@ -114,7 +114,7 @@ Use for React/web UI, browser behavior, and frontend PR review.
 ## SEO And AI Search Checks
 
 When a public route, marketing page, content page, profile, article, docs page,
-or share surface changed, load `common/public-discovery.md` and review it as a
+or share surface changed, load `common/skills/public-discovery/SKILL.md` and review it as a
 public output contract.
 
 - Metadata title, description, canonical URL, locale alternates, robots policy,
@@ -142,7 +142,7 @@ public output contract.
 - Static: TypeScript, ESLint, framework lint, and Prettier. Use ESLint for
   naming, complexity, hook rules, import boundaries, unsafe async patterns,
   accessibility lint, unused code, and no-floating-promises when configured. If
-  no config exists, review against `common/code-conventions.md` and document the
+  no config exists, review against `common/skills/code-conventions/SKILL.md` and document the
   missing lint/typecheck automation.
 - Structure: import-boundary lint, route snapshots, or final import inspection
   when the repo lacks automated boundary checks.

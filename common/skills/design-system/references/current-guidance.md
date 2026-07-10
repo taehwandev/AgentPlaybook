@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_3ebdb5c993eb
-status: review
+status: stable
 type: ai-generated
 ---
 
@@ -10,8 +10,8 @@ Use when creating or changing shared UI primitives, tokens, patterns, component
 defaults, or reusable interaction rules.
 
 For general reusable-code extraction rules, also use
-`common/reusable-code-design.md`. For Android Compose UI, also use
-`platforms/android/android-compose-ui.md`.
+`common/skills/reusable-code-design/SKILL.md`. For Android Compose UI, also use
+`platforms/android/skills/android-compose-ui/SKILL.md`.
 For reusable component API shape, controlled/uncontrolled state, slots, and
 caller-owned product policy, also use `component-api-design.md`.
 

@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_deprecation_migration
-status: review
+status: stable
 type: human-reviewed-needed
 agentplaybook_card_contract: strict
 ---

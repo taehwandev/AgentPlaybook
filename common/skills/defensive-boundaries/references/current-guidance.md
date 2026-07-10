@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_defensive_boundaries
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

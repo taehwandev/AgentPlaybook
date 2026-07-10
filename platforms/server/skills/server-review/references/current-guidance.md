@@ -29,7 +29,7 @@ Use for API, worker, database, auth, tenancy, migration, and integration review.
 - Ensure errors and logs do not leak secrets, tokens, or personal data.
 - Check API/service origins, callback URLs, webhook endpoints, CORS origins,
   redirect hosts, and asset/CDN hosts against
-  `common/runtime-url-configuration.md` when runtime config or generated clients
+  `common/skills/runtime-url-configuration/SKILL.md` when runtime config or generated clients
   changed.
 
 ## Do Not Approve When
@@ -52,7 +52,7 @@ Use for API, worker, database, auth, tenancy, migration, and integration review.
   lint, and mypy/pyright when typed; for TypeScript use Prettier, ESLint, and
   `tsc`; for Kotlin use `ktlint`/`ktfmt` and `detekt`; for Go use
   `gofmt`/`goimports`, `go vet`, and staticcheck when configured. If no repo
-  config exists, review against `common/code-conventions.md` and document the
+  config exists, review against `common/skills/code-conventions/SKILL.md` and document the
   missing automation.
 - Unit: services, policies, validators, mappers.
 - Integration: database, cache, queue, external client fakes.

@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_runtime_url_configuration
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

@@ -42,7 +42,7 @@ dependency leakage creates real pressure.
 
 ## File And Class Split
 
-Apply `../../common/code-structure-ownership.md` in every source set. KMP source
+Apply `../../common/skills/code-structure-ownership/SKILL.md` in every source set. KMP source
 files should default to one primary public or internal top-level class,
 interface, object, state holder, use case, repository, adapter, mapper, fixture,
 or assertion owner per file.

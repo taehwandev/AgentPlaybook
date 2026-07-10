@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_agent_task_lifecycle_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -14,18 +14,18 @@ or task-specific workflow to load next.
 
 ## Read
 
-- `common/agent-operating-skill.md`
-- `common/task-intake-effort-routing.md` before loading broad context or using
+- `common/skills/agent-operating-skill/SKILL.md`
+- `common/skills/task-intake-effort-routing/SKILL.md` before loading broad context or using
   deep effort
-- `common/stack-discovery.md` when commands, dependencies, runtime, or framework
+- `common/skills/stack-discovery/SKILL.md` when commands, dependencies, runtime, or framework
   APIs matter
-- `common/agent-editing-safety.md`
-- `common/agent-interaction.md` when a blocker question or approval is needed
-- `common/local-tools.md` when commands, local tools, runtime usage telemetry,
+- `common/skills/agent-editing-safety/SKILL.md`
+- `common/skills/agent-interaction/SKILL.md` when a blocker question or approval is needed
+- `common/skills/local-tools/SKILL.md` when commands, local tools, runtime usage telemetry,
   or metering evidence matter
-- `common/tool-failure-recovery.md` when a command fails
-- `common/verification-policy.md` when the task has a checkable result
-- `common/definition-of-done.md` before final report, handoff, commit, release,
+- `common/skills/tool-failure-recovery/SKILL.md` when a command fails
+- `common/skills/verification-policy/SKILL.md` when the task has a checkable result
+- `common/skills/definition-of-done/SKILL.md` before final report, handoff, commit, release,
   or PR creation
 - `index.md` to select only task-specific cards
 
@@ -108,12 +108,12 @@ memory.
     evidence and `SUCCESS`/`FAIL` state. Completion requires every required gate
     to be `🐱🟢 SUCCESS`. If any required gate is missing, blocked, failed, or
     lacks evidence, report `🐱🔴 FAIL` and follow missed-gate recovery in
-    `workflows/scripted-agent-workflow.md`.
+    `workflows/skills/scripted-agent-workflow/SKILL.md`.
 18. Definition of Done: before final report, handoff, commit, release, or PR
     creation, compare the final diff and evidence against
-    `common/definition-of-done.md`.
+    `common/skills/definition-of-done/SKILL.md`.
 19. Retrospective restart: when finish-check sets `retrospective_required`, run
-    `workflows/retrospective-learning.md`, record the immediate correction
+    `workflows/skills/retrospective-learning/SKILL.md`, record the immediate correction
     plan, use or update the generated global lesson candidate when safe, apply
     safe scoped fixes, then restart at the first missed gate or same failed
     scope. The restarted attempt must cite or apply the plan.
@@ -124,18 +124,18 @@ memory.
 
 ## Route To
 
-- Product or feature delivery with PRD/ARD gates: `workflows/product-architecture-delivery.md`
-- Request clarity, effort routing, or Grill-Me: `workflows/request-triage.md`
-- Bounded work cycles and stop conditions: `workflows/cycle-contract.md`
-- Lower-level coding work: `workflows/development-cycle.md`
-- Feature behavior: `workflows/feature-implementation.md`
-- Bug or regression: `workflows/bugfix-debugging.md`
-- Refactor or cleanup: `workflows/refactor-cleanup.md`
-- Release-sensitive work: `workflows/release-readiness.md`
-- Final review or commit: `workflows/review-and-commit.md`
+- Product or feature delivery with PRD/ARD gates: `workflows/skills/product-architecture-delivery/SKILL.md`
+- Request clarity, effort routing, or Grill-Me: `workflows/skills/request-triage/SKILL.md`
+- Bounded work cycles and stop conditions: `workflows/skills/cycle-contract/SKILL.md`
+- Lower-level coding work: `workflows/skills/development-cycle/SKILL.md`
+- Feature behavior: `workflows/skills/feature-implementation/SKILL.md`
+- Bug or regression: `workflows/skills/bugfix-debugging/SKILL.md`
+- Refactor or cleanup: `workflows/skills/refactor-cleanup/SKILL.md`
+- Release-sensitive work: `workflows/skills/release-readiness/SKILL.md`
+- Final review or commit: `workflows/skills/review-and-commit/SKILL.md`
 - Repeatable lesson after task, handoff, incident, or missed signal:
-  `workflows/retrospective-learning.md`
-- Long-running, interrupted, or transferred work: `workflows/agent-handoff-continuation.md`
+  `workflows/skills/retrospective-learning/SKILL.md`
+- Long-running, interrupted, or transferred work: `workflows/skills/agent-handoff-continuation/SKILL.md`
 
 ## Stop If
 

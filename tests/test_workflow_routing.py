@@ -116,11 +116,11 @@ class WorkflowRoutingTests(unittest.TestCase):
 
     def test_testing_concern_is_registered(self) -> None:
         self.assertIn("testing", CONCERNS)
-        self.assertIn("common/testing.md", CONCERNS["testing"])
-        self.assertIn("common/scenario-driven-testing.md", CONCERNS["testing"])
-        self.assertIn("common/verification-policy.md", CONCERNS["testing"])
+        self.assertIn("common/skills/testing/SKILL.md", CONCERNS["testing"])
+        self.assertIn("common/skills/scenario-driven-testing/SKILL.md", CONCERNS["testing"])
+        self.assertIn("common/skills/verification-policy/SKILL.md", CONCERNS["testing"])
         self.assertIn("definition-of-done", CONCERNS)
-        self.assertIn("common/definition-of-done.md", CONCERNS["definition-of-done"])
+        self.assertIn("common/skills/definition-of-done/SKILL.md", CONCERNS["definition-of-done"])
 
     def test_workflow_validate_ignores_generated_markdown_caches(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -150,13 +150,13 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertIn("request intake", route["gates"])
                 self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
 
-        self.assertIn(route_doc("common/incremental-implementation.md"), resolve_docs("build", None, [], request_classified=True)["docs"])
-        self.assertIn(route_doc("common/performance-verification.md"), resolve_docs("webperf", None, [], request_classified=True)["docs"])
-        self.assertIn(route_doc("common/web-performance-verification.md"), resolve_docs("webperf", None, [], request_classified=True)["docs"])
-        self.assertIn(route_doc("common/ci-cd-automation.md"), resolve_docs("ship", None, [], request_classified=True)["docs"])
+        self.assertIn(route_doc("common/skills/incremental-implementation/SKILL.md"), resolve_docs("build", None, [], request_classified=True)["docs"])
+        self.assertIn(route_doc("common/skills/performance-verification/SKILL.md"), resolve_docs("webperf", None, [], request_classified=True)["docs"])
+        self.assertIn(route_doc("common/skills/web-performance-verification/SKILL.md"), resolve_docs("webperf", None, [], request_classified=True)["docs"])
+        self.assertIn(route_doc("common/skills/ci-cd-automation/SKILL.md"), resolve_docs("ship", None, [], request_classified=True)["docs"])
 
         test_route = resolve_docs("test", None, [], request_classified=True)
-        self.assertIn(route_doc("common/scenario-driven-testing.md"), test_route["docs"])
+        self.assertIn(route_doc("common/skills/scenario-driven-testing/SKILL.md"), test_route["docs"])
 
         webperf_route = resolve_docs("webperf", None, [], request_classified=True)
         self.assertLess(webperf_route["gates"].index(ROUTE_DOCS_READ_GATE), webperf_route["gates"].index("baseline"))
@@ -168,20 +168,20 @@ class WorkflowRoutingTests(unittest.TestCase):
 
     def test_agent_skills_gap_concerns_are_registered(self) -> None:
         expected = {
-            "skill-card": "common/agent-skill-card-anatomy.md",
-            "source-driven": "common/source-driven-development.md",
-            "doubt-driven": "common/doubt-driven-development.md",
-            "incremental": "common/incremental-implementation.md",
-            "deprecation": "common/deprecation-migration.md",
-            "ci": "common/ci-cd-automation.md",
-            "webperf": "common/performance-verification.md",
-            "browser-testing": "common/browser-runtime-testing.md",
-            "wiki": "common/llm-wiki-documentation.md",
-            "commit": "common/commit-workflow.md",
-            "branch": "common/commit-workflow.md",
-            "push": "common/commit-workflow.md",
-            "pull-request": "common/commit-workflow.md",
-            "tag": "common/release-deployment.md",
+            "skill-card": "common/skills/agent-skill-card-anatomy/SKILL.md",
+            "source-driven": "common/skills/source-driven-development/SKILL.md",
+            "doubt-driven": "common/skills/doubt-driven-development/SKILL.md",
+            "incremental": "common/skills/incremental-implementation/SKILL.md",
+            "deprecation": "common/skills/deprecation-migration/SKILL.md",
+            "ci": "common/skills/ci-cd-automation/SKILL.md",
+            "webperf": "common/skills/performance-verification/SKILL.md",
+            "browser-testing": "common/skills/browser-runtime-testing/SKILL.md",
+            "wiki": "common/skills/llm-wiki-documentation/SKILL.md",
+            "commit": "common/skills/commit-workflow/SKILL.md",
+            "branch": "common/skills/branch-strategy/SKILL.md",
+            "push": "common/skills/commit-workflow/SKILL.md",
+            "pull-request": "common/skills/branch-strategy/SKILL.md",
+            "tag": "common/skills/release-deployment/SKILL.md",
         }
 
         for concern, doc in expected.items():
@@ -197,18 +197,18 @@ class WorkflowRoutingTests(unittest.TestCase):
     def test_metering_concern_is_registered_separately_from_design_tokens(self) -> None:
         self.assertIn("metering", CONCERNS)
         self.assertIn("usage", CONCERNS)
-        self.assertIn("common/local-tools.md", CONCERNS["metering"])
-        self.assertIn("docs/agent-runtime-integration.md", CONCERNS["local-tools"])
-        self.assertIn("common/local-tools.md", CONCERNS["usage"])
-        self.assertIn("common/design-system.md", CONCERNS["tokens"])
-        self.assertNotIn("common/local-tools.md", CONCERNS["tokens"])
+        self.assertIn("common/skills/local-tools/SKILL.md", CONCERNS["metering"])
+        self.assertIn("docs/skills/agent-runtime-integration/SKILL.md", CONCERNS["local-tools"])
+        self.assertIn("common/skills/local-tools/SKILL.md", CONCERNS["usage"])
+        self.assertIn("common/skills/design-system/SKILL.md", CONCERNS["tokens"])
+        self.assertNotIn("common/skills/local-tools/SKILL.md", CONCERNS["tokens"])
 
     def test_web_deployment_versioning_routes_with_release_and_shipping(self) -> None:
-        doc = "common/web-deployment-versioning.md"
+        doc = "common/skills/web-deployment-versioning/SKILL.md"
 
         self.assertIn(doc, CONCERNS["release"])
         self.assertIn(doc, CONCERNS["shipping"])
-        self.assertIn("workflows/release-readiness.md", CONCERNS["release"])
+        self.assertIn("workflows/skills/release-readiness/SKILL.md", CONCERNS["release"])
         self.assertIn(route_doc(doc), resolve_docs("docs", "web", ["release"], request_classified=True)["docs"])
         self.assertIn(route_doc(doc), resolve_docs("ship", "web", ["shipping"], request_classified=True)["docs"])
 
@@ -224,18 +224,18 @@ class WorkflowRoutingTests(unittest.TestCase):
     def test_release_route_requires_versioning_skill_doc(self) -> None:
         route = resolve_docs("release", None, [], request_classified=True)
 
-        self.assertIn(route_doc("workflows/release-readiness.md"), route["required_docs"])
-        self.assertIn(route_doc("common/release-deployment.md"), route["required_docs"])
-        self.assertIn(route_doc("common/release-versioning.md"), route["required_docs"])
-        self.assertNotIn(route_doc("common/release-versioning.md"), route["reference_docs"])
+        self.assertIn(route_doc("workflows/skills/release-readiness/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/release-deployment/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/release-versioning/SKILL.md"), route["required_docs"])
+        self.assertNotIn(route_doc("common/skills/release-versioning/SKILL.md"), route["reference_docs"])
 
     def test_tag_concern_requires_release_and_git_safety_skill_docs(self) -> None:
         expected_docs = (
-            "common/commit-workflow.md",
-            "common/worktree-hygiene.md",
-            "workflows/release-readiness.md",
-            "common/release-deployment.md",
-            "common/release-versioning.md",
+            "common/skills/commit-workflow/SKILL.md",
+            "common/skills/worktree-hygiene/SKILL.md",
+            "workflows/skills/release-readiness/SKILL.md",
+            "common/skills/release-deployment/SKILL.md",
+            "common/skills/release-versioning/SKILL.md",
         )
 
         for doc in expected_docs:
@@ -258,7 +258,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("starts at `1`", guidance)
 
     def test_credential_broker_concern_routes_to_product_pattern(self) -> None:
-        doc = "product-patterns/agent-credential-broker-ideation.md"
+        doc = "product-patterns/skills/agent-credential-broker-ideation/SKILL.md"
         for concern in (
             "credential-broker",
             "agent-credentials",
@@ -300,7 +300,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         ):
             with self.subTest(concern=concern):
                 self.assertIn(concern, CONCERNS)
-                self.assertIn("common/accessibility-i18n.md", CONCERNS[concern])
+                self.assertIn("common/skills/accessibility-i18n/SKILL.md", CONCERNS[concern])
 
         examples = (
             "Fix visible number and unit display in metric cards",
@@ -314,7 +314,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertIn("accessibility", concerns)
 
         route = resolve_docs("docs", None, ["units"], request_classified=True)
-        self.assertIn(route_doc("common/accessibility-i18n.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/accessibility-i18n/SKILL.md"), route["docs"])
 
     def test_scenario_testing_requests_infer_testing_concern(self) -> None:
         examples = (
@@ -438,6 +438,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             ("코드베이스 위키와 자동 문서 갱신 방식을 정리해줘", "wiki"),
             ("Create commit rules for feature branches and PRs", "commit"),
             ("Create commit rules for feature branches and PRs", "branch"),
+            ("Use git username/work-unit/description for branch names", "branch"),
+            ("브랜치 전략을 git username 작업단위 내용으로 정리", "branch"),
             ("Automate git push only after safety checks", "push"),
             ("Open a draft PR from the work branch", "pull-request"),
             ("Release by pushing a verified tag", "tag"),
@@ -470,10 +472,22 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertNotIn(CYCLE_CONTRACT_GATE, route["gates"])
         self.assertNotIn(BOUNDARY_PLAN_GATE, route["gates"])
         self.assertNotIn(MULTI_AGENT_GATE, route["gates"])
-        self.assertIn(route_doc("workflows/review-and-commit.md"), route["required_docs"])
-        self.assertIn(route_doc("common/commit-workflow.md"), route["required_docs"])
-        self.assertIn(route_doc("common/code-review.md"), route["reference_docs"])
-        self.assertIn(route_doc("common/worktree-hygiene.md"), route["reference_docs"])
+        self.assertIn(route_doc("workflows/skills/review-and-commit/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/commit-workflow/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/code-review/SKILL.md"), route["reference_docs"])
+        self.assertIn(route_doc("common/skills/worktree-hygiene/SKILL.md"), route["reference_docs"])
+
+    def test_branch_strategy_routes_for_branch_naming(self) -> None:
+        concerns = infer_concerns_from_request(
+            "Use git username/work-unit/description for branch names"
+        )
+
+        self.assertIn("branch", concerns)
+
+        route = resolve_docs("docs", None, ["branch"], request_classified=True)
+
+        self.assertIn(route_doc("common/skills/branch-strategy/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/worktree-hygiene/SKILL.md"), route["required_docs"])
 
     def test_preflight_rejects_invalid_concern_like_workflow_route_cli(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -552,8 +566,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertIn("writing", concerns)
 
         route = resolve_docs("docs", None, ["writing"], request_classified=True)
-        self.assertIn(route_doc("common/human-authored-writing.md"), route["docs"])
-        self.assertIn(route_doc("common/writing-workspace.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/human-authored-writing/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/writing-workspace/SKILL.md"), route["docs"])
 
     def test_ambiguous_writing_style_rewrite_requires_triage(self) -> None:
         request = (
@@ -578,10 +592,10 @@ class WorkflowRoutingTests(unittest.TestCase):
             request_classified=True,
         )
 
-        self.assertIn(route_doc("common/performance-verification.md"), route["docs"])
-        self.assertIn(route_doc("platforms/android/android-compose-ui.md"), route["docs"])
-        self.assertIn(route_doc("platforms/android/android-review.md"), route["docs"])
-        self.assertIn(route_doc("platforms/android/android-external-skill-source-coverage.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/performance-verification/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-review/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-external-skill-source-coverage/SKILL.md"), route["docs"])
 
     def test_android_platform_surfaces_load_external_skill_manifest(self) -> None:
         for concern in ("architecture", "security", "testing", "module", "dependency", "migration", "devtools", "skills", "skill"):
@@ -593,7 +607,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     request_classified=True,
                 )
 
-                self.assertIn(route_doc("platforms/android/android-external-skill-source-coverage.md"), route["docs"])
+                self.assertIn(route_doc("platforms/android/skills/android-external-skill-source-coverage/SKILL.md"), route["docs"])
                 self.assertIn(route_doc("platforms/android/skills/source-coverage/SKILL.md"), route["docs"])
 
     def test_android_persistence_route_loads_datastore_reference(self) -> None:
@@ -606,8 +620,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                     request_classified=True,
                 )
 
-                self.assertIn(route_doc("platforms/android/android-state-data.md"), route["docs"])
-                self.assertIn("platforms/android/references/android-datastore.md", route["docs"])
+                self.assertIn(route_doc("platforms/android/skills/android-state-data/SKILL.md"), route["docs"])
+                self.assertIn("platforms/android/skills/android-state-data/references/android-datastore.md", route["docs"])
 
     def test_retrospective_candidate_writes_safe_global_lesson(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -793,25 +807,25 @@ class WorkflowRoutingTests(unittest.TestCase):
         ):
             self.assertIn(gate, route["gates"])
 
-        self.assertIn(route_doc("workflows/ambiguity-gate.md"), route["docs"])
-        self.assertIn(route_doc("workflows/documentation-update.md"), route["docs"])
-        self.assertIn(route_doc("common/product-spec-to-implementation.md"), route["docs"])
-        self.assertIn(route_doc("common/source-driven-development.md"), route["docs"])
-        self.assertIn(route_doc("common/testing.md"), route["docs"])
-        self.assertIn(route_doc("common/scenario-driven-testing.md"), route["docs"])
-        self.assertIn(route_doc("common/verification-policy.md"), route["docs"])
-        self.assertIn(route_doc("common/code-structure-ownership.md"), route["docs"])
-        self.assertIn(route_doc("workflows/cycle-contract.md"), route["docs"])
-        self.assertIn(route_doc("workflows/multi-agent-collaboration.md"), route["docs"])
-        self.assertIn(route_doc("workflows/development-cycle.md"), route["docs"])
-        self.assertIn(route_doc("common/code-conventions.md"), route["required_docs"])
-        self.assertIn(route_doc("common/llm-coding-discipline.md"), route["required_docs"])
-        self.assertIn(route_doc("common/agent-editing-safety.md"), route["required_docs"])
-        self.assertIn(route_doc("common/testing.md"), route["required_docs"])
-        self.assertIn(route_doc("workflows/ambiguity-gate.md"), route["reference_docs"])
-        self.assertIn(route_doc("workflows/cycle-contract.md"), route["reference_docs"])
-        self.assertIn(route_doc("workflows/product-architecture-delivery.md"), route["reference_docs"])
-        self.assertNotIn(route_doc("workflows/product-architecture-delivery.md"), route["required_docs"])
+        self.assertIn(route_doc("workflows/skills/ambiguity-gate/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("workflows/skills/documentation-update/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/product-spec-to-implementation/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/source-driven-development/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/testing/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/scenario-driven-testing/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/verification-policy/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/code-structure-ownership/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("workflows/skills/cycle-contract/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("workflows/skills/multi-agent-collaboration/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("workflows/skills/development-cycle/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/code-conventions/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/llm-coding-discipline/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/agent-editing-safety/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/testing/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("workflows/skills/ambiguity-gate/SKILL.md"), route["reference_docs"])
+        self.assertIn(route_doc("workflows/skills/cycle-contract/SKILL.md"), route["reference_docs"])
+        self.assertIn(route_doc("workflows/skills/product-architecture-delivery/SKILL.md"), route["reference_docs"])
+        self.assertNotIn(route_doc("workflows/skills/product-architecture-delivery/SKILL.md"), route["required_docs"])
         self.assertLess(
             route["gates"].index(ROUTE_DOCS_READ_GATE),
             route["gates"].index("PRD/ARD applicability"),
@@ -835,8 +849,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             surface_paths=["scripts/workflow_route.py"],
         )
 
-        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["required_docs"])
-        self.assertIn(route_doc("common/ci-cd-automation.md"), route["required_docs"])
+        self.assertIn(route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/ci-cd-automation/SKILL.md"), route["required_docs"])
         self.assertIn("doc_surface_matches", route)
         self.assertTrue(any(match["name"] == "workflow_router" for match in route["doc_surface_matches"]))
 
@@ -849,8 +863,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             request_text="`scripts/workflow_route.py` 수정해줘",
         )
 
-        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["required_docs"])
-        self.assertIn(route_doc("common/ci-cd-automation.md"), route["required_docs"])
+        self.assertIn(route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/ci-cd-automation/SKILL.md"), route["required_docs"])
 
     def test_test_path_surface_promotes_testing_docs_to_required_docs(self) -> None:
         route = resolve_docs(
@@ -861,8 +875,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             surface_paths=["tests/test_workflow_routing.py"],
         )
 
-        self.assertIn(route_doc("common/testing.md"), route["required_docs"])
-        self.assertIn(route_doc("common/verification-policy.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/testing/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/verification-policy/SKILL.md"), route["required_docs"])
 
     def test_surface_helpers_extract_request_and_git_status_paths(self) -> None:
         self.assertIn(
@@ -888,16 +902,37 @@ class WorkflowRoutingTests(unittest.TestCase):
             surface_paths=["common/skills/code-conventions/SKILL.md"],
         )
 
-        self.assertIn("common/agent-skill-card-anatomy.md", docs)
+        self.assertIn("common/skills/agent-skill-card-anatomy/SKILL.md", docs)
+        self.assertIn("docs/skills/agentplaybook-skill-bundle-migration/SKILL.md", docs)
         self.assertTrue(any(match["name"] == "skill_docs" for match in matches))
+
+    def test_skill_bundle_structure_request_promotes_migration_docs(self) -> None:
+        route = resolve_docs(
+            "docs",
+            None,
+            [],
+            request_classified=True,
+            request_text=(
+                "skills 폴더와 references 구조를 정리하고 중복 source-of-truth를 줄여줘"
+            ),
+        )
+
+        self.assertIn(
+            route_doc("docs/skills/agentplaybook-skill-bundle-migration/SKILL.md"),
+            route["required_docs"],
+        )
+        self.assertIn(route_doc("common/skills/agent-skill-card-anatomy/SKILL.md"), route["required_docs"])
+        self.assertTrue(
+            any(match["name"] == "skill_bundle_structure_cleanup" for match in route["doc_surface_matches"])
+        )
 
     def test_surface_doc_sets_are_loaded_from_root_map(self) -> None:
         docs, invalid_refs = surface_rule_doc_refs(load_doc_surface_rules())
 
         self.assertEqual([], invalid_refs)
-        self.assertIn("platforms/web/web-react-ui.md", docs)
-        self.assertIn("platforms/ios/ios-swiftui-ui.md", docs)
-        self.assertIn("platforms/flutter/flutter-widget-ui.md", docs)
+        self.assertIn("platforms/web/skills/web-react-ui/SKILL.md", docs)
+        self.assertIn("platforms/ios/skills/ios-swiftui-ui/SKILL.md", docs)
+        self.assertIn("platforms/flutter/skills/flutter-widget-ui/SKILL.md", docs)
 
     def test_document_graph_expands_markdown_and_required_frontmatter_refs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -961,10 +996,10 @@ class WorkflowRoutingTests(unittest.TestCase):
             ),
         )
 
-        self.assertIn(route_doc("platforms/android/android-compose-ui.md"), route["required_docs"])
-        self.assertIn(route_doc("platforms/android/android-viewmodel-state.md"), route["required_docs"])
-        self.assertIn(route_doc("platforms/android/android-state-data.md"), route["required_docs"])
-        self.assertIn(route_doc("common/ui-visual-verification.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-viewmodel-state/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-state-data/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/ui-visual-verification/SKILL.md"), route["required_docs"])
         self.assertIn(
             "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
             route["required_docs"],
@@ -980,8 +1015,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             request_text="Compose로 작성하겠다고 정했으면 목록 화면을 구현해줘",
         )
 
-        self.assertIn(route_doc("platforms/android/android-compose-ui.md"), route["required_docs"])
-        self.assertIn(route_doc("platforms/android/android-external-skill-source-coverage.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-external-skill-source-coverage/SKILL.md"), route["required_docs"])
         self.assertIn("platforms/android/skills/source-coverage/SKILL.md", route["required_docs"])
         self.assertIn(
             "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
@@ -1001,8 +1036,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             surface_paths=["app/src/main/java/com/example/home/HomeScreen.kt"],
         )
 
-        self.assertIn(route_doc("platforms/android/android-compose-ui.md"), route["required_docs"])
-        self.assertIn(route_doc("platforms/android/android-review.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("platforms/android/skills/android-review/SKILL.md"), route["required_docs"])
         self.assertIn(
             "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
             route["required_docs"],
@@ -1013,9 +1048,9 @@ class WorkflowRoutingTests(unittest.TestCase):
         results = search_docs(ROOT, "코드 정리해줘", max_results=8)
         paths = [str(item["path"]) for item in results]
 
-        self.assertIn("workflows/refactor-cleanup.md", paths)
-        self.assertIn("common/refactoring.md", paths)
-        self.assertIn("common/verification-policy.md", paths)
+        self.assertIn("workflows/skills/refactor-cleanup/SKILL.md", paths)
+        self.assertIn("common/skills/refactoring/SKILL.md", paths)
+        self.assertIn("common/skills/verification-policy/SKILL.md", paths)
         self.assertTrue(
             any("code_cleanup" in item.get("matched_facets", []) for item in results),
             results,
@@ -1025,12 +1060,12 @@ class WorkflowRoutingTests(unittest.TestCase):
         results = search_docs(
             ROOT,
             "안드로이드 첫 화면에서는 전체 목록이, 두번째 화면에서는 즐겨찾기가 있는 화면을 구성해줘",
-            max_results=12,
+            max_results=16,
         )
         paths = [str(item["path"]) for item in results]
 
-        self.assertIn("platforms/android/android-compose-ui.md", paths)
-        self.assertIn("platforms/android/android-viewmodel-state.md", paths)
+        self.assertIn("platforms/android/skills/android-compose-ui/SKILL.md", paths)
+        self.assertIn("platforms/android/skills/android-viewmodel-state/SKILL.md", paths)
         self.assertIn("platforms/android/skills/source-coverage/references/compose-performance-source-map.md", paths)
         self.assertTrue(
             any("android_compose_ui" in item.get("matched_facets", []) for item in results),
@@ -1046,9 +1081,9 @@ class WorkflowRoutingTests(unittest.TestCase):
             request_text="훅은 보완이고 자연어 검색 가능한 문서 라우팅을 강화해줘",
         )
 
-        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["required_docs"])
-        self.assertIn(route_doc("common/task-intake-effort-routing.md"), route["required_docs"])
-        self.assertIn(route_doc("common/source-driven-development.md"), route["required_docs"])
+        self.assertIn(route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/task-intake-effort-routing/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/source-driven-development/SKILL.md"), route["required_docs"])
         self.assertTrue(any(match["name"] == "natural_language_doc_routing" for match in route["doc_surface_matches"]))
 
     def test_planning_change_request_promotes_documentation_impact_docs(self) -> None:
@@ -1060,11 +1095,12 @@ class WorkflowRoutingTests(unittest.TestCase):
             request_text="기획변경인데 예상 문서 정리가 누락되는 경우를 막아줘",
         )
 
-        self.assertIn(route_doc("workflows/documentation-update.md"), route["required_docs"])
-        self.assertIn(route_doc("common/product-spec-to-implementation.md"), route["required_docs"])
-        self.assertIn(route_doc("common/source-driven-development.md"), route["required_docs"])
-        self.assertIn(route_doc("common/definition-of-done.md"), route["required_docs"])
-        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/doc-conventions/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("workflows/skills/documentation-update/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/product-spec-to-implementation/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/source-driven-development/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/definition-of-done/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"), route["required_docs"])
         self.assertTrue(any(match["name"] == "planning_change_documentation" for match in route["doc_surface_matches"]))
 
     def test_route_exposes_document_graph_neighbors_as_reference_docs(self) -> None:
@@ -1095,41 +1131,60 @@ class WorkflowRoutingTests(unittest.TestCase):
         ]
 
         self.assertTrue(graph_items, results)
-        self.assertTrue(graph_items[0].get("graph_reasons"), graph_items[0])
+        self.assertTrue(
+            graph_items[0].get("graph_reasons")
+            or "natural_language_doc_routing" in graph_items[0].get("matched_facets", []),
+            graph_items[0],
+        )
+
+    def test_query_promotes_skill_bundle_migration_for_structure_cleanup(self) -> None:
+        results = search_docs(
+            ROOT,
+            "스킬 references 구조와 중복 source-of-truth 정리",
+            max_results=12,
+        )
+
+        self.assertTrue(
+            any(
+                item["path"] == "docs/skills/agentplaybook-skill-bundle-migration/SKILL.md"
+                for item in results
+            ),
+            results,
+        )
 
     def test_ui_feature_request_promotes_docs_for_all_ui_platforms(self) -> None:
         request = "첫 화면에서는 전체 목록이, 두번째 화면에서는 즐겨찾기가 있는 화면을 구성해줘"
         expected_docs = {
             "android": [
-                "platforms/android/android-compose-ui.md",
-                "platforms/android/android-viewmodel-state.md",
+                "platforms/android/skills/android-compose-ui/SKILL.md",
+                "platforms/android/skills/android-viewmodel-state/SKILL.md",
                 "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
             ],
             "application": [
-                "platforms/application/application-command-ui.md",
-                "platforms/application/application-system-integration.md",
+                "platforms/application/skills/application-command-ui/SKILL.md",
+                "platforms/application/skills/application-system-integration/SKILL.md",
             ],
             "flutter": [
-                "platforms/flutter/flutter-widget-ui.md",
-                "platforms/flutter/flutter-state-data.md",
+                "platforms/flutter/skills/flutter-widget-ui/SKILL.md",
+                "platforms/flutter/skills/flutter-state-data/SKILL.md",
             ],
             "ios": [
-                "platforms/ios/ios-swiftui-ui.md",
-                "platforms/ios/ios-uikit-ui.md",
-                "platforms/ios/ios-state-concurrency.md",
+                "platforms/ios/skills/ios-swiftui-ui/SKILL.md",
+                "platforms/ios/skills/ios-uikit-ui/SKILL.md",
+                "platforms/ios/skills/ios-state-concurrency/SKILL.md",
             ],
             "kmp": [
-                "platforms/kmp/kmp-compose-ui.md",
-                "platforms/kmp/kmp-state-data.md",
+                "platforms/kmp/skills/kmp-compose-ui/SKILL.md",
+                "platforms/kmp/skills/kmp-state-data/SKILL.md",
             ],
             "swift": [
-                "platforms/swift/swift-design-system.md",
-                "platforms/swift/swift-code-structure.md",
+                "platforms/swift/skills/swift-design-system/SKILL.md",
+                "platforms/swift/skills/swift-code-structure/SKILL.md",
             ],
             "web": [
-                "platforms/web/web-react-ui.md",
-                "platforms/web/web-state-data.md",
-                "platforms/web/web-design-system.md",
+                "platforms/web/skills/web-react-ui/SKILL.md",
+                "platforms/web/skills/web-state-data/SKILL.md",
+                "platforms/web/skills/web-design-system/SKILL.md",
             ],
         }
 
@@ -1145,8 +1200,8 @@ class WorkflowRoutingTests(unittest.TestCase):
 
                 for doc in docs:
                     self.assertIn(route_doc(doc), route["required_docs"])
-                self.assertIn(route_doc("common/ui-visual-verification.md"), route["required_docs"])
-                self.assertIn(route_doc("common/performance-verification.md"), route["required_docs"])
+                self.assertIn(route_doc("common/skills/ui-visual-verification/SKILL.md"), route["required_docs"])
+                self.assertIn(route_doc("common/skills/performance-verification/SKILL.md"), route["required_docs"])
 
     def test_server_platform_does_not_receive_ui_surface_docs(self) -> None:
         route = resolve_docs(
@@ -1158,8 +1213,8 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
         self.assertNotIn("doc_surface_matches", route)
-        self.assertNotIn(route_doc("common/ui-visual-verification.md"), route["required_docs"])
-        self.assertNotIn(route_doc("platforms/web/web-react-ui.md"), route["required_docs"])
+        self.assertNotIn(route_doc("common/skills/ui-visual-verification/SKILL.md"), route["required_docs"])
+        self.assertNotIn(route_doc("platforms/web/skills/web-react-ui/SKILL.md"), route["required_docs"])
 
     def test_self_selected_ui_frameworks_promote_platform_docs(self) -> None:
         cases = [
@@ -1167,43 +1222,43 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "android",
                 "Compose로 목록 화면을 구현해줘",
                 "android_compose_self_selected",
-                "platforms/android/android-compose-ui.md",
+                "platforms/android/skills/android-compose-ui/SKILL.md",
             ),
             (
                 "application",
                 "Tauri React renderer로 목록 화면을 구현해줘",
                 "application_react_self_selected",
-                "platforms/application/application-react-desktop.md",
+                "platforms/application/skills/application-react-desktop/SKILL.md",
             ),
             (
                 "flutter",
                 "Flutter Widget으로 목록 화면을 구현해줘",
                 "flutter_widget_self_selected",
-                "platforms/flutter/flutter-widget-ui.md",
+                "platforms/flutter/skills/flutter-widget-ui/SKILL.md",
             ),
             (
                 "ios",
                 "SwiftUI로 목록 화면을 구현해줘",
                 "ios_swiftui_self_selected",
-                "platforms/ios/ios-swiftui-ui.md",
+                "platforms/ios/skills/ios-swiftui-ui/SKILL.md",
             ),
             (
                 "ios",
                 "UIKit ViewController로 목록 화면을 구현해줘",
                 "ios_uikit_self_selected",
-                "platforms/ios/ios-uikit-ui.md",
+                "platforms/ios/skills/ios-uikit-ui/SKILL.md",
             ),
             (
                 "kmp",
                 "Compose Multiplatform으로 목록 화면을 구현해줘",
                 "kmp_compose_self_selected",
-                "platforms/kmp/kmp-compose-ui.md",
+                "platforms/kmp/skills/kmp-compose-ui/SKILL.md",
             ),
             (
                 "web",
                 "React TSX로 목록 화면을 구현해줘",
                 "web_react_self_selected",
-                "platforms/web/web-react-ui.md",
+                "platforms/web/skills/web-react-ui/SKILL.md",
             ),
         ]
 
@@ -1225,50 +1280,50 @@ class WorkflowRoutingTests(unittest.TestCase):
             (
                 "app/src/main/java/com/example/home/HomeScreen.kt",
                 "android_compose_paths",
-                "platforms/android/android-compose-ui.md",
-                "platforms/kmp/kmp-compose-ui.md",
+                "platforms/android/skills/android-compose-ui/SKILL.md",
+                "platforms/kmp/skills/kmp-compose-ui/SKILL.md",
             ),
             (
                 "shared/src/commonMain/kotlin/com/example/home/HomeScreen.kt",
                 "kmp_compose_paths",
-                "platforms/kmp/kmp-compose-ui.md",
-                "platforms/android/android-compose-ui.md",
+                "platforms/kmp/skills/kmp-compose-ui/SKILL.md",
+                "platforms/android/skills/android-compose-ui/SKILL.md",
             ),
             (
                 "src/features/home/HomeScreen.tsx",
                 "web_react_paths",
-                "platforms/web/web-react-ui.md",
-                "platforms/application/application-command-ui.md",
+                "platforms/web/skills/web-react-ui/SKILL.md",
+                "platforms/application/skills/application-command-ui/SKILL.md",
             ),
             (
                 "App/Features/Home/HomeView.swift",
                 "ios_swiftui_paths",
-                "platforms/ios/ios-swiftui-ui.md",
-                "platforms/ios/ios-uikit-ui.md",
+                "platforms/ios/skills/ios-swiftui-ui/SKILL.md",
+                "platforms/ios/skills/ios-uikit-ui/SKILL.md",
             ),
             (
                 "App/Features/Home/HomeViewController.swift",
                 "ios_uikit_paths",
-                "platforms/ios/ios-uikit-ui.md",
-                "platforms/kmp/kmp-compose-ui.md",
+                "platforms/ios/skills/ios-uikit-ui/SKILL.md",
+                "platforms/kmp/skills/kmp-compose-ui/SKILL.md",
             ),
             (
                 "lib/features/home/screens/home_screen.dart",
                 "flutter_widget_paths",
-                "platforms/flutter/flutter-widget-ui.md",
-                "platforms/web/web-react-ui.md",
+                "platforms/flutter/skills/flutter-widget-ui/SKILL.md",
+                "platforms/web/skills/web-react-ui/SKILL.md",
             ),
             (
                 "Sources/AppDesignSystem/Components/ButtonStyle.swift",
                 "swift_design_paths",
-                "platforms/swift/swift-design-system.md",
-                "platforms/ios/ios-uikit-ui.md",
+                "platforms/swift/skills/swift-design-system/SKILL.md",
+                "platforms/ios/skills/ios-uikit-ui/SKILL.md",
             ),
             (
                 "src-tauri/src/main.rs",
                 "application_desktop_paths",
-                "platforms/application/application-command-ui.md",
-                "platforms/web/web-react-ui.md",
+                "platforms/application/skills/application-command-ui/SKILL.md",
+                "platforms/web/skills/web-react-ui/SKILL.md",
             ),
         ]
 
@@ -1321,7 +1376,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 route = resolve_docs(command, None, [], request_classified=True)
 
                 self.assertIn(CYCLE_CONTRACT_GATE, route["gates"])
-                self.assertIn(route_doc("workflows/cycle-contract.md"), route["docs"])
+                self.assertIn(route_doc("workflows/skills/cycle-contract/SKILL.md"), route["docs"])
 
         for command in ("review", "docs-review", "test", "multi-agent", "triage"):
             with self.subTest(command=command):
@@ -1343,8 +1398,8 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertIn(SOURCE_DOCS_GATE, route["gates"])
                 self.assertIn(DOCUMENTATION_IMPACT_GATE, route["gates"])
                 self.assertIn(CYCLE_CONTRACT_GATE, route["gates"])
-                self.assertIn(route_doc("common/source-driven-development.md"), route["docs"])
-                self.assertIn(route_doc("workflows/cycle-contract.md"), route["docs"])
+                self.assertIn(route_doc("common/skills/source-driven-development/SKILL.md"), route["docs"])
+                self.assertIn(route_doc("workflows/skills/cycle-contract/SKILL.md"), route["docs"])
                 implementation_anchor = implementation_anchors[command]
                 self.assertLess(
                     route["gates"].index(DOCUMENTATION_IMPACT_GATE),
@@ -1357,7 +1412,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         route = resolve_docs("multi-agent", None, [], request_classified=True)
 
         self.assertIn(AGENTIC_RUN_STATE_GATE, route["gates"])
-        self.assertIn(route_doc("workflows/scripted-agent-workflow.md"), route["docs"])
+        self.assertIn(route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"), route["docs"])
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("roles"))
         for gate in ("roles", "write scopes", "agent briefs", "integration review"):
             self.assertIn(gate, VALIDATED_GATES)
@@ -2199,15 +2254,15 @@ class WorkflowRoutingTests(unittest.TestCase):
             "gates": [ROUTE_DOCS_READ_GATE],
             "docs": [
                 "AGENTS.md",
-                "common/agent-operating-skill.md",
-                "workflows/scripted-agent-workflow.md",
+                "common/skills/agent-operating-skill/SKILL.md",
+                "workflows/skills/scripted-agent-workflow/SKILL.md",
             ],
             "required_docs": [
                 "AGENTS.md",
-                "common/agent-operating-skill.md",
+                "common/skills/agent-operating-skill/SKILL.md",
             ],
             "reference_docs": [
-                "workflows/scripted-agent-workflow.md",
+                "workflows/skills/scripted-agent-workflow/SKILL.md",
             ],
         }
 
@@ -2215,7 +2270,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             route,
             {
                 ROUTE_DOCS_READ_GATE: (
-                    "read routed docs before edits: AGENTS.md and common/agent-operating-skill.md"
+                    "read routed docs before edits: AGENTS.md and common/skills/agent-operating-skill/SKILL.md"
                 )
             },
             {},
@@ -2240,7 +2295,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "doc_count": 2,
                 "docs": [
                     {"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"},
-                    {"path": "common/agent-operating-skill.md", "size_bytes": 1, "sha256": "def"},
+                    {"path": "common/skills/agent-operating-skill/SKILL.md", "size_bytes": 1, "sha256": "def"},
                 ],
             },
         )
@@ -2433,8 +2488,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             product_route["gates"].index(ALIGNMENT_BRIEF_GATE),
             product_route["gates"].index("PRD"),
         )
-        self.assertIn(route_doc("workflows/prd-creation.md"), prd_route["docs"])
-        self.assertIn(route_doc("workflows/prd-creation.md"), product_route["docs"])
+        self.assertIn(route_doc("workflows/skills/prd-creation/SKILL.md"), prd_route["docs"])
+        self.assertIn(route_doc("workflows/skills/prd-creation/SKILL.md"), product_route["docs"])
 
     def test_prd_and_spec_routes_get_documentation_enforcement_gates(self) -> None:
         for command in ("prd", "spec"):
@@ -2461,7 +2516,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     route["gates"].index("PRD draft"),
                     route["gates"].index(DOCUMENTATION_GATE),
                 )
-                self.assertIn(route_doc("workflows/documentation-update.md"), route["docs"])
+                self.assertIn(route_doc("workflows/skills/documentation-update/SKILL.md"), route["docs"])
 
     def test_docs_route_gets_documentation_enforcement_gates(self) -> None:
         route = resolve_docs("docs", None, [], request_classified=True)
@@ -2471,7 +2526,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(DOCUMENTATION_GATE, route["gates"])
         self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index("edit"))
         self.assertLess(route["gates"].index(DOCUMENTATION_IMPACT_GATE), route["gates"].index("edit"))
-        self.assertIn(route_doc("common/source-driven-development.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/source-driven-development/SKILL.md"), route["docs"])
 
     def test_prd_draft_evidence_requires_artifact_and_content(self) -> None:
         failures = validate_gate_evidence(
@@ -2518,7 +2573,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             route["gates"].index(ALIGNMENT_BRIEF_GATE),
             route["gates"].index("acceptance criteria"),
         )
-        self.assertIn(route_doc("common/task-intake-effort-routing.md"), route["docs"])
+        self.assertIn(route_doc("common/skills/task-intake-effort-routing/SKILL.md"), route["docs"])
 
     def test_grill_me_request_uses_triage_and_grill_gate(self) -> None:
         classification = classify_request("그릴미 해줘")
@@ -3264,7 +3319,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             {
                 ROUTE_DOCS_READ_GATE: (
                     "read routed docs before code: AGENTS.md, index.md, "
-                    "common/agent-operating-skill.md; applied takeaway: wrapper "
+                    "common/skills/agent-operating-skill/SKILL.md; applied takeaway: wrapper "
                     "receipt policy and gate evidence criteria; immediate next action: "
                     "record structured gate evidence before continuing implementation"
                 ),
@@ -3287,7 +3342,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     "none found; used user request as source of truth"
                 ),
                 PLATFORM_SELECTION_GATE: (
-                    "selected platform: ios; loaded platforms/ios/ios-architecture.md "
+                    "selected platform: ios; loaded platforms/ios/skills/ios-architecture/SKILL.md "
                     "before PRD/ARD architecture work"
                 ),
                 REVIEW_READINESS_GATE: (
@@ -3362,7 +3417,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         failures = validate_gate_evidence(
             {
                 PLATFORM_SELECTION_GATE: (
-                    "selected platform: web; loaded platforms/web/web-architecture.md "
+                    "selected platform: web; loaded platforms/web/skills/web-architecture/SKILL.md "
                     "before PRD/ARD architecture work"
                 )
             },

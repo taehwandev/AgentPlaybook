@@ -10,8 +10,8 @@ Use when touching Flutter state owners, Riverpod, BLoC, Provider,
 ChangeNotifier, ValueNotifier, streams, repositories, storage, sync, isolates,
 or async effects.
 
-For general state-shape guidance, also use `common/state-modeling.md` and
-`common/error-modeling.md`.
+For general state-shape guidance, also use `common/skills/state-modeling/SKILL.md` and
+`common/skills/error-modeling/SKILL.md`.
 For repository package boundaries, local packages, and plugin/service ownership,
 also use `flutter-project-structure.md`.
 

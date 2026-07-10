@@ -135,7 +135,7 @@ the update.
   hook enforces that routed docs were read, but it does not become the search
   engine or mutate the route by itself. The router/search layer may expand
   matched seed docs through the local document graph built from Markdown links,
-  compatibility stubs, and `workflow-doc-surfaces.json`; loose graph neighbors
+  canonical skill-bundle entrypoints, and `workflow-doc-surfaces.json`; loose graph neighbors
   stay in `reference_docs`, while explicit `requires_docs` relations may become
   required.
   Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.

@@ -10,10 +10,10 @@ Use when web work touches auth, session state, browser storage, cookies, tokens,
 forms, uploads, embeds, third-party scripts, client-visible config, redirects,
 or protected UI actions.
 
-Also use `common/secure-development-baseline.md` and
-`common/security-privacy-review.md` for shared secret handling, authorization,
+Also use `common/skills/secure-development-baseline/SKILL.md` and
+`common/skills/security-privacy-review/SKILL.md` for shared secret handling, authorization,
 logging, diagnostics, and open-source repository safety rules.
-Use `common/runtime-url-configuration.md` for environment-specific API origins,
+Use `common/skills/runtime-url-configuration/SKILL.md` for environment-specific API origins,
 client/server runtime config, callback URLs, redirect URIs, CORS origins,
 WebSocket/EventSource endpoints, and asset hosts.
 

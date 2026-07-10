@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_change_size_policy
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

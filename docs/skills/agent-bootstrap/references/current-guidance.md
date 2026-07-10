@@ -45,7 +45,7 @@ For one-shot task use without editing repo-local instructions, use
 `templates/use-agentplaybook-prompt.md`.
 
 For runtime-specific setup across Codex, Claude, Antigravity, and generic
-agents, use `docs/agent-runtime-integration.md`.
+agents, use `docs/skills/agent-runtime-integration/SKILL.md`.
 
 ## Setup Decision
 

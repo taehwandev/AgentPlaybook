@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_performance_verification
-status: review
+status: stable
 type: human-reviewed-needed
 agentplaybook_card_contract: strict
 ---

@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_request_triage_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -17,9 +17,9 @@ When this route is executed through `scripts/workflow.py`, run the route's
 prevents bad work from starting, so it must not rely only on memory of these
 rules.
 
-- `common/task-intake-effort-routing.md`
-- `common/agent-interaction.md`
-- `workflows/ambiguity-gate.md` when blockers remain
+- `common/skills/task-intake-effort-routing/SKILL.md`
+- `common/skills/agent-interaction/SKILL.md`
+- `workflows/skills/ambiguity-gate/SKILL.md` when blockers remain
 - `index.md` only after the task is classified
 
 ## Steps

@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Convert flat AgentPlaybook guidance docs into skill bundles.
 
-The migration is intentionally mechanical: each flat guidance card becomes a
-short compatibility entrypoint, while its full previous content moves to the
-bundle's references/current-guidance.md file. Route code then loads SKILL.md
-entrypoints by default.
+The migration is intentionally mechanical: each flat guidance card moves into a
+small SKILL.md entrypoint plus references/current-guidance.md. Flat source
+files are removed by default so agents do not retrieve duplicate guidance.
+Use --keep-stubs only for a named temporary downstream/runtime compatibility
+need.
 """
 
 from __future__ import annotations
 
+import argparse
 import os
 import re
 from pathlib import Path
@@ -23,12 +25,24 @@ STUB_MARKER = "agentplaybook_skill_bundle_stub: true"
 
 
 def main() -> int:
+    args = parse_args()
     migrated = 0
     for source in source_docs():
-        migrate_doc(source)
+        migrate_doc(source, keep_stub=args.keep_stubs)
         migrated += 1
-    print(f"migrated {migrated} flat guidance docs into skill bundles")
+    mode = "kept temporary stubs" if args.keep_stubs else "removed flat sources"
+    print(f"migrated {migrated} flat guidance docs into skill bundles; {mode}")
     return 0
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--keep-stubs",
+        action="store_true",
+        help="keep temporary flat compatibility stubs instead of deleting migrated source files",
+    )
+    return parser.parse_args()
 
 
 def source_docs() -> list[Path]:
@@ -43,7 +57,7 @@ def source_docs() -> list[Path]:
     return [path for path in docs if "/skills/" not in path.as_posix()]
 
 
-def migrate_doc(source: Path) -> None:
+def migrate_doc(source: Path, *, keep_stub: bool = False) -> None:
     relative = source.relative_to(ROOT).as_posix()
     skill_relative = canonical_doc_path(relative)
     reference_relative = guidance_reference_path(relative)
@@ -60,8 +74,11 @@ def migrate_doc(source: Path) -> None:
         reference.write_text(rewrite_links(original_text, source, reference), encoding="utf-8")
 
     title = extract_title(original_text, source.stem)
-    skill.write_text(skill_text(relative, reference_relative, title), encoding="utf-8")
-    source.write_text(stub_text(relative, skill_relative, reference_relative, title), encoding="utf-8")
+    skill.write_text(skill_text(skill_relative, title), encoding="utf-8")
+    if keep_stub:
+        source.write_text(stub_text(relative, skill_relative, reference_relative, title), encoding="utf-8")
+    else:
+        source.unlink()
 
 
 def rewrite_links(text: str, old_path: Path, new_path: Path) -> str:
@@ -108,8 +125,8 @@ def extract_title(text: str, fallback: str) -> str:
     return fallback.replace("-", " ").title()
 
 
-def skill_text(source_relative: str, reference_relative: str, title: str) -> str:
-    key = keyflow_id(source_relative, "skill")
+def skill_text(skill_relative: str, title: str) -> str:
+    key = keyflow_id(skill_relative, "skill")
     return (
         f"---\n"
         f"keyflow_id: {key}\n"
@@ -117,11 +134,10 @@ def skill_text(source_relative: str, reference_relative: str, title: str) -> str
         f"type: ai-generated\n"
         f"---\n\n"
         f"# {title}\n\n"
-        f"Use when routed to `{source_relative}` or when work needs this "
+        f"Use when routed to `{skill_relative}` or when work needs this "
         f"AgentPlaybook guidance area.\n\n"
         f"## Read\n\n"
-        f"- `references/current-guidance.md` for the full guidance previously held in "
-        f"`{source_relative}`.\n"
+        f"- `references/current-guidance.md` for the detailed guidance for this skill.\n"
         f"- Related `SKILL.md` entrypoints named by the reference before loading their "
         f"detailed references.\n\n"
         f"## Process\n\n"
@@ -131,8 +147,8 @@ def skill_text(source_relative: str, reference_relative: str, title: str) -> str
         f"3. Follow the reference's decision rules, stop conditions, and verification "
         f"requirements before editing, reviewing, or reporting completion.\n\n"
         f"## Do Not\n\n"
-        f"- Do not treat the compatibility path `{source_relative}` as the canonical "
-        f"context-loading target.\n"
+        f"- Do not look for legacy flat compatibility paths; load this skill bundle "
+        f"as the canonical context-loading target.\n"
         f"- Do not load broad references for unrelated work just because this skill was "
         f"nearby in the route.\n\n"
         f"## Verification\n\n"

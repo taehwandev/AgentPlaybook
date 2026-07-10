@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_planning_research_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -11,10 +11,10 @@ plan, assess risk, or prepare a recommendation before editing code.
 
 ## Read
 
-- `workflows/agent-task-lifecycle.md`
-- `common/architecture-selection.md` or `common/architecture-design.md` when structure is affected
-- `common/product-spec-to-implementation.md` when behavior or acceptance criteria are unclear
-- `common/security-privacy-review.md` when sensitive surfaces are involved
+- `workflows/skills/agent-task-lifecycle/SKILL.md`
+- `common/skills/architecture-selection/SKILL.md` or `common/skills/architecture-design/SKILL.md` when structure is affected
+- `common/skills/product-spec-to-implementation/SKILL.md` when behavior or acceptance criteria are unclear
+- `common/skills/security-privacy-review/SKILL.md` when sensitive surfaces are involved
 - platform or product-pattern cards from `index.md` for the affected domain
 
 ## Steps

@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_security_privacy_review
-status: review
+status: stable
 type: ai-generated
 ---
 
@@ -9,19 +9,19 @@ type: ai-generated
 Use for auth, permissions, secrets, personal data, logs, storage, browser bundles, mobile storage, and external integrations.
 
 For implementation work or open-source-safe setup, also use
-`common/secure-development-baseline.md`.
+`common/skills/secure-development-baseline/SKILL.md`.
 For environment-specific API origins, callback URLs, redirect URIs, webhook
 endpoints, CORS origins, deep link hosts, or asset hosts, also use
-`common/runtime-url-configuration.md`.
+`common/skills/runtime-url-configuration/SKILL.md`.
 
 For platform-specific surfaces, also consult the matching security or review document:
 
 ```text
-Android: platforms/android/android-security.md
-iOS: platforms/ios/ios-security.md
-Application/Desktop: platforms/application/application-security.md
-Server: platforms/server/server-security.md
-Web: platforms/web/web-security.md
+Android: platforms/android/skills/android-security/SKILL.md
+iOS: platforms/ios/skills/ios-security/SKILL.md
+Application/Desktop: platforms/application/skills/application-security/SKILL.md
+Server: platforms/server/skills/server-security/SKILL.md
+Web: platforms/web/skills/web-security/SKILL.md
 ```
 
 ## Priority
@@ -34,7 +34,7 @@ Web: platforms/web/web-security.md
 
 ## Rules
 
-- Follow `common/secure-development-baseline.md` for secret handling,
+- Follow `common/skills/secure-development-baseline/SKILL.md` for secret handling,
   authorization boundaries, local config, client app keys, logs, diagnostics, and
   open-source repository safety.
 - Do not put service-role keys, API secrets, tokens, or private credentials in client bundles.

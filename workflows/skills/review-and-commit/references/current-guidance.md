@@ -1,7 +1,7 @@
 ---
 keyflow_id: sys_d1a668105819
-status: review
-type: ai-generated
+status: stable
+type: human-reviewed-needed
 ---
 
 # Review And Commit Workflow
@@ -10,16 +10,18 @@ Use after implementation, before handing off or committing.
 
 ## Read
 
-- `common/code-review.md`
-- `common/change-size-policy.md`
-- `common/worktree-hygiene.md`
-- `workflows/development-cycle.md` for side-effect audit questions
+- `common/skills/code-review/SKILL.md`
+- `common/skills/change-size-policy/SKILL.md`
+- `common/skills/worktree-hygiene/SKILL.md`
+- `workflows/skills/development-cycle/SKILL.md` for side-effect audit questions
 - matching platform review card
-- `common/commit-workflow.md`
-- `common/commit-review.md` when reviewing existing commits
-- `common/generated-files-policy.md` when generated files, lockfiles, or snapshots changed
-- `common/api-contract-compatibility.md` when API, route, DTO, event, webhook, or fixture contracts changed
-- `common/release-deployment.md` when packaging, deployment, signing, migration rollout, or release config changed
+- `common/skills/commit-workflow/SKILL.md`
+- `common/skills/branch-strategy/SKILL.md` when branch creation, branch naming, PR source
+  branch, or push target is in scope
+- `common/skills/commit-review/SKILL.md` when reviewing existing commits
+- `common/skills/generated-files-policy/SKILL.md` when generated files, lockfiles, or snapshots changed
+- `common/skills/api-contract-compatibility/SKILL.md` when API, route, DTO, event, webhook, or fixture contracts changed
+- `common/skills/release-deployment/SKILL.md` when packaging, deployment, signing, migration rollout, or release config changed
 
 ## Steps
 
@@ -36,7 +38,7 @@ Use after implementation, before handing off or committing.
 6. Run or record the nearest useful verification.
 7. Remove only unused code created by the change.
 8. Split unrelated work before committing.
-9. Confirm Commit Readiness Gate evidence from `common/commit-workflow.md`.
+9. Confirm Commit Readiness Gate evidence from `common/skills/commit-workflow/SKILL.md`.
 10. Discover repo-local policy before any branch creation, push, PR, tag, or
    release publication.
 11. Write a commit message that states intent, context, and verification.

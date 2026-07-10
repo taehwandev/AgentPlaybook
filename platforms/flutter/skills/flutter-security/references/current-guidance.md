@@ -11,9 +11,9 @@ plugins, WebViews, deep links, local files, clipboard, notifications, network
 clients, logs, analytics, crash reports, release builds, signing, or
 open-source-safe setup.
 
-Also use `common/secure-development-baseline.md` and
-`common/security-privacy-review.md`.
-Use `common/runtime-url-configuration.md` for environment-specific API origins,
+Also use `common/skills/secure-development-baseline/SKILL.md` and
+`common/skills/security-privacy-review/SKILL.md`.
+Use `common/skills/runtime-url-configuration/SKILL.md` for environment-specific API origins,
 deep link hosts, redirect/callback URLs, WebView origins, asset hosts, and
 release-channel config.
 

@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_worktree_hygiene
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -86,10 +86,10 @@ git branch --show-current
 git remote -v
 ```
 
-Use repo-local policy to decide whether the current branch is a work branch,
-integration branch, release branch, or protected branch. If the repo has
-multiple plausible bases or targets, stop before moving work or mutating remote
-state.
+Use repo-local policy and `common/skills/branch-strategy/SKILL.md` to decide whether the
+current branch is a work branch, integration branch, release branch, or
+protected branch. If the repo has multiple plausible bases or targets, stop
+before moving work or mutating remote state.
 
 ## Never
 

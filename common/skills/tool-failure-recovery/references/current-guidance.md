@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_tool_failure_recovery
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

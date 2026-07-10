@@ -54,6 +54,13 @@ user-level runtime config, then run:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 ```
 
+To repair only one runtime without touching other agent settings, pass its
+runtime selector. For example, Codex-only setup uses:
+
+```text
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --runtime codex
+```
+
 This setup is global because the AgentPlaybook Python wrappers and graph-backed
 document routing are shared by every target repo. Keep it narrow: install or
 repair only AgentPlaybook-managed bridge blocks and allow only
@@ -330,6 +337,60 @@ target repo, task, AgentPlaybook root, and VibeGuard docs placeholders.
 
 The prompt explicitly tells the runtime to read `AGENTS.md` and `index.md`,
 because not every agent automatically discovers Codex-style `AGENTS.md` files.
+
+## Runtime Model Tier Mapping
+
+Workflow request classification may emit a runtime-neutral `model_tier` such as
+`fast`, `balanced`, `frontier`, or `specialist`. Runtime bridges should preserve
+that abstract tier in handoff state and map it to a concrete model only for the
+active runtime.
+
+Codex bridges may map the current configured tiers to `gpt-5.6-luna`,
+`gpt-5.6-terra`, and `gpt-5.6-sol` when those model ids are available. Claude,
+Antigravity, and generic bridges must not use Codex model ids directly; map to
+their own configured fast/balanced/frontier choices, or keep the current model
+and apply the same effort profile through context size, planning depth, and
+verification strength.
+
+Switch models only at a task, subagent, or session boundary unless the runtime
+provides a safe mid-task handoff. A handoff must preserve the selected project,
+route, required docs, docs-read receipt, gate ledger, unresolved blockers, and
+verification plan.
+
+For Codex, use `workflow.py dispatch <command> --request "<USER_REQUEST>"
+--execute` at one bounded task boundary. The main session remains responsible
+for orchestration and automatically runs the selected worker only at that
+boundary. Omit `--execute` to inspect a non-executing handoff manifest. The
+profiles are explicit:
+
+| Stage | Tier and reasoning effort |
+| --- | --- |
+| PRD or design | Sol / high |
+| Research | Terra / low |
+| General analysis | Terra / medium |
+| Normal code implementation | Terra / medium |
+| Complex implementation with deep or specialist evidence | Sol / high |
+| Simple repetitive work | Luna / low |
+| Final review | Sol / xhigh |
+
+Automatic stage selection is command-based: `prd` and `spec` select PRD/design,
+`plan` and `planning` select research, `task` selects general analysis,
+`feature`/`build`/`bugfix`/`refactor`/`workflow-setup` select implementation,
+quick `test` work selects simple repetition, and `review`/`docs-review` select
+final review. Deep or specialist evidence promotes implementation commands to
+complex implementation. This keeps a quick exact code change on Terra unless
+it is explicitly a simple repeat.
+
+Do not infer complex implementation from line count or a subjective impression.
+Normal implementation stays on Terra / medium. Promote only when the request
+classification or local inspection provides deep or specialist evidence, such
+as cross-module architecture, security, data, migration, release, or repeated
+failure risk. When the orchestrator explicitly selects
+`complex_implementation` after local inspection, it must pass the concrete
+`--complexity-evidence`; the dispatcher rejects an unexplained promotion. The
+handoff carries the parent preflight evidence, docs-read receipt, gate ledger,
+and verification plan. A delegated worker must not dispatch another child or
+overwrite those parent evidence files.
 
 ## Runtime Notes
 

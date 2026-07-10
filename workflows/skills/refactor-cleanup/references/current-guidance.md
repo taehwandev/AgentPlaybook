@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_refactor_cleanup_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -11,15 +11,15 @@ ownership, deletion, or maintainability.
 
 ## Read
 
-- `common/refactoring.md`
-- `common/code-conventions.md`
-- `common/change-size-policy.md`
-- `common/testing.md`
-- `common/verification-policy.md`
+- `common/skills/refactoring/SKILL.md`
+- `common/skills/code-conventions/SKILL.md`
+- `common/skills/change-size-policy/SKILL.md`
+- `common/skills/testing/SKILL.md`
+- `common/skills/verification-policy/SKILL.md`
 - matching platform architecture card from `index.md`
-- `common/api-contract-compatibility.md` when routes, DTOs, schemas, events,
+- `common/skills/api-contract-compatibility/SKILL.md` when routes, DTOs, schemas, events,
   persisted fields, generated clients, or public APIs may change
-- `common/server-side-caching.md` when cache keys, tags, TTL, materialized read
+- `common/skills/server-side-caching/SKILL.md` when cache keys, tags, TTL, materialized read
   models, or invalidation may change
 - generated-files, dependency, security, persistence, or release policy when
   those surfaces change

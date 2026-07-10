@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_reusable_code_design
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

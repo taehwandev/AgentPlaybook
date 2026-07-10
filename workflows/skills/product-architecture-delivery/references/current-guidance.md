@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_product_architecture_delivery_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -30,7 +30,7 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "<USER_
 Use that output as the command manifest before writing PRD or ARD.
 
 When the requested deliverable is only a PRD or product requirements note, use
-`workflows/prd-creation.md` through the PRD route instead:
+`workflows/skills/prd-creation/SKILL.md` through the PRD route instead:
 
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
@@ -60,15 +60,15 @@ because the first implementation slice is small.
 
 ## Read
 
-- `workflows/agent-task-lifecycle.md`
-- `workflows/ambiguity-gate.md` when product behavior, risk, scope, or verification is unclear
-- `workflows/development-cycle.md`
-- `common/product-spec-to-implementation.md`
-- `common/architecture-selection.md`
-- `common/architecture-design.md`
-- `common/api-contract-compatibility.md` when contracts, DTOs, routes, events, or
+- `workflows/skills/agent-task-lifecycle/SKILL.md`
+- `workflows/skills/ambiguity-gate/SKILL.md` when product behavior, risk, scope, or verification is unclear
+- `workflows/skills/development-cycle/SKILL.md`
+- `common/skills/product-spec-to-implementation/SKILL.md`
+- `common/skills/architecture-selection/SKILL.md`
+- `common/skills/architecture-design/SKILL.md`
+- `common/skills/api-contract-compatibility/SKILL.md` when contracts, DTOs, routes, events, or
   shared fixtures are touched
-- `common/security-privacy-review.md` and `common/secure-development-baseline.md`
+- `common/skills/security-privacy-review/SKILL.md` and `common/skills/secure-development-baseline/SKILL.md`
   when auth, permissions, user data, secrets, logs, external services, or public
   repositories are touched
 - matching platform architecture, state/data, security, and review cards from
@@ -158,13 +158,13 @@ Review PRD and ARD before implementation:
 Do not start code work when this review finds a blocking product or architecture
 decision.
 
-For broad or high-risk changes, use `workflows/multi-perspective-review.md` to
+For broad or high-risk changes, use `workflows/skills/multi-perspective-review/SKILL.md` to
 check product, UX, architecture, reliability, security, release, and QA risk
 before implementation.
 
 ## 4. Code Work
 
-Use `workflows/development-cycle.md` for implementation.
+Use `workflows/skills/development-cycle/SKILL.md` for implementation.
 
 Rules:
 
@@ -178,7 +178,7 @@ Rules:
 ## 5. Review
 
 Inspect the final diff against PRD, ARD, repo-local rules, platform cards, and
-`workflows/development-cycle.md` side-effect audit.
+`workflows/skills/development-cycle/SKILL.md` side-effect audit.
 
 Review must confirm:
 
@@ -194,7 +194,7 @@ Review must confirm:
 Run the minimum verification that proves the changed boundary first. Then broaden
 only when the side-effect audit or risk surface requires it.
 
-Use `common/verification-policy.md` and the matching platform review card for the
+Use `common/skills/verification-policy/SKILL.md` and the matching platform review card for the
 exact command style.
 
 ## 7. UI Tests
@@ -237,7 +237,7 @@ Commit-ready: partial - safe subset: ... / remaining risk: ...
 ```
 
 If PRD, ARD, verification, UI test, handoff, or commit-readiness gaps revealed a
-repeatable lesson, run `workflows/retrospective-learning.md` after handoff.
+repeatable lesson, run `workflows/skills/retrospective-learning/SKILL.md` after handoff.
 
 ## Stop If
 

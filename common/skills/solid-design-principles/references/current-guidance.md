@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_solid_design_principles
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -22,13 +22,13 @@ dependency edge.
 
 Load these related cards when the change touches their surface:
 
-- `common/code-structure-ownership.md` for file, package, module, and
+- `common/skills/code-structure-ownership/SKILL.md` for file, package, module, and
   `api`/`impl` splits.
-- `common/reusable-code-design.md` for shared code extraction and caller
+- `common/skills/reusable-code-design/SKILL.md` for shared code extraction and caller
   contracts.
-- `common/component-api-design.md` for reusable component, hook, widget, and
+- `common/skills/component-api-design/SKILL.md` for reusable component, hook, widget, and
   view API surfaces.
-- `common/architecture-design.md` and `common/app-architecture.md` for state,
+- `common/skills/architecture-design/SKILL.md` and `common/skills/app-architecture/SKILL.md` for state,
   use case, repository, adapter, and dependency-direction decisions.
 
 ## Inspect First

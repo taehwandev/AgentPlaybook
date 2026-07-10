@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_observability_error_handling
-status: review
+status: stable
 type: ai-generated
 ---
 

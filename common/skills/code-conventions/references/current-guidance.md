@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_code_conventions
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -13,22 +13,23 @@ Repo-local conventions, formatter, linter, and language idioms win over this
 common baseline.
 
 For app, repo, package, module, CLI, service, slug, or bundle-id naming, also
-use `common/project-naming.md`.
+use `common/skills/project-naming/SKILL.md`.
 
 For SOLID, Interface Segregation, Dependency Inversion, and DDD/domain-modeling
-fit, also use `common/solid-design-principles.md`.
+fit, also use `common/skills/solid-design-principles/SKILL.md`.
 
 For file/module ownership, public contract, package layout, or `api`/`impl`
-split decisions, also use `common/code-structure-ownership.md`.
+split decisions, also use
+`../../code-structure-ownership/references/current-guidance.md`.
 
 For code that is being extracted, moved into shared modules, reused by multiple
 callers, or promoted to a package/API, also use
-`common/reusable-code-design.md`.
+`common/skills/reusable-code-design/SKILL.md`.
 
 For reusable component-like APIs, callbacks, slots, and controlled state, also
-use `common/component-api-design.md`. For state shape, source of truth, async
-states, and one-off effects, use `common/state-modeling.md`. For typed failures
-and retry/recovery behavior, use `common/error-modeling.md`.
+use `common/skills/component-api-design/SKILL.md`. For state shape, source of truth, async
+states, and one-off effects, use `common/skills/state-modeling/SKILL.md`. For typed failures
+and retry/recovery behavior, use `common/skills/error-modeling/SKILL.md`.
 
 ## Priority
 
@@ -52,8 +53,8 @@ defaults and CI candidates for new projects:
 | Naming | Types and modules are nouns or capability names. Functions and commands are verbs or verb phrases. Boolean values read as predicates. Avoid vague names such as `manager`, `helper`, `util`, `data`, `temp`, `doStuff`, or caller-specific abbreviations. |
 | Parameters | Keep public functions and components to about five parameters or fewer. Prefer a typed request/options object only when the fields are a real caller-facing contract, not a dumping bag. |
 | Complexity | Keep cyclomatic/cognitive complexity low enough that one branch can be reviewed in one pass. More than about 10 decision points, nested depth over 3, or several unrelated branches is split pressure. |
-| Function size | Normal units should fit in about 40-80 lines. Runtime units over about 120 lines fail review by default unless a local policy has a documented exception. |
-| File ownership | Every human-authored file should have one primary owner or role. Development files over about 300 lines need structure-review evidence; new development files over about 500 lines or more than about 200 added lines in one file fail review by default. |
+| Function size | Apply the unit-size gates in `../../code-structure-ownership/references/current-guidance.md`; local policy wins when stricter or explicitly different. |
+| File ownership | Apply the file ownership and size gates in `../../code-structure-ownership/references/current-guidance.md`; local policy wins when stricter or explicitly different. |
 | Imports | Imports are formatter-sorted and boundary-safe. Do not use wildcard imports, deep implementation imports, or barrel/index imports that hide forbidden dependencies unless the repo documents that pattern. |
 | Suppressions | Lint suppressions, `// swiftlint:disable`, `@Suppress`, `eslint-disable`, `# noqa`, or equivalent require a short reason and the narrowest scope. Do not suppress file-wide to make new code pass. |
 
@@ -115,28 +116,18 @@ instead of inventing a one-off style.
 
 ## Do Not Ship Monoliths
 
-These are hard review failures for new or changed runtime code. Line-count hard
-gates apply only to files whose extension is in the development-file extension
-allowlist. Tests, specs, mocks, fixtures, generated files, config/build files,
-Markdown, MDX, and prose docs are excluded from the hard size gates unless
-repo-local policy opts them in, but they still need clear ownership:
+This document keeps convention-level guidance. The canonical split criteria for
+functions, files, classes, packages, modules, CSS, and shared code live in
+`../../code-structure-ownership/references/current-guidance.md`; use that file
+for detailed structure decisions and review evidence.
+
+Hard convention failures for new or changed runtime code:
 
 - Do not put a feature, screen, endpoint, job, script, style surface, and helper
   set into one file because it is faster.
-- Do not put parse, validate, authorize, fetch, map, render, mutate, persist,
-  navigate, log, and error handling into one function or component.
 - Do not add a second responsibility to an already large function, component,
   class, hook, service, or source file. Split the new responsibility first or
   keep it in a named local unit with a clear owner.
-- Do not keep more than one public or independently importable primary class,
-  component, hook, handler, service, repository, adapter, type, struct, enum,
-  protocol, or interface in a runtime file by default. Move separate owners to
-  purpose-named files unless the repo documents a generated, sealed, or
-  framework-mandated contract family exception.
-- Do not let an independently importable class, component, hook, handler,
-  service, repository, adapter, DTO, mapper, validator, command, job, state
-  owner, or platform bridge share a runtime file with other owners just because
-  they were created together or seem small today.
 - Do not create `utils`, `helpers`, `common`, `misc`, or `shared` buckets for
   unrelated behavior. A new file must be named by responsibility and owner.
 - Do not write reusable-looking functions, classes, hooks, components, or
@@ -157,40 +148,10 @@ repo-local policy opts them in, but they still need clear ownership:
 
 ## Size Signals
 
-These are review signals for all code and hard gates only for changed files
-whose extension is in the development-file extension allowlist, unless
-repo-local policy is more specific. Tests, specs, mocks, fixtures, generated
-files, config/build files, Markdown, MDX, and prose docs are exempt from hard size
-gates but still need clear ownership and reviewable structure:
-
-- A normal function, method, component, hook, handler, or script step should
-  usually fit in one review pass; about 40 to 80 lines is a useful pressure
-  range for orchestration code.
-- A runtime function, component, hook, handler, script step, or style block over
-  about 120 lines fails review by default when it is new, grows in the current
-  diff, or takes on a new responsibility. If the block was already over the
-  limit and the current scoped change does not grow it or expand its owner
-  surface, record structure-review evidence and residual risk instead of
-  forcing an unrelated refactor into the current change.
-- A development source/style file over about 300 lines requires
-  structure-review evidence that names the owner, allowed imports, callers,
-  tests, verification path, and split decision.
-- A new development source/style file over about 500 lines fails review by
-  default.
-- An existing development source/style file already over about 500 lines should
-  not grow by adding a new responsibility. If the current change only edits an
-  existing owner without expanding the public owner surface, require structure
-  review evidence instead of failing solely on the pre-existing size.
-- More than about 200 added lines in one development source/style file fails
-  review by default.
-
-Split only when it improves ownership, testability, or review. Do not create
-extra files just to satisfy a line count.
-Function-only files are not exempt: several unrelated free functions in one
-file are the same ownership problem as several unrelated classes or components.
-For function, file, class, package, module, CSS, and shared-code split criteria,
-use `common/code-structure-ownership.md`. For diff-size and split decisions, use
-`common/change-size-policy.md`.
+Use `../../code-structure-ownership/references/current-guidance.md` for unit
+size, ownership, and split criteria. Use
+`../../change-size-policy/references/current-guidance.md` for diff-size
+decisions.
 
 ## Check
 

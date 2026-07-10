@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_multi_agent_collaboration_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -45,7 +45,7 @@ otherwise:
 intake -> ambiguity gate -> PRD -> ARD -> task breakdown -> agent briefs -> implementation -> review -> verification -> closeout
 ```
 
-Use `workflows/product-architecture-delivery.md` for the PRD, ARD, and commit
+Use `workflows/skills/product-architecture-delivery/SKILL.md` for the PRD, ARD, and commit
 readiness gates.
 
 ## Parallel Work

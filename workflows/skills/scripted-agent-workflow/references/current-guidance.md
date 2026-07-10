@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_scripted_agent_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -73,7 +73,7 @@ PRD -> ARD -> implementation gates before lower-level coding steps. If
 (typically `triage` or `ambiguity`) with `--request`, run a Grill-Me
 `/grilling` session before implementation, and ask only the missing blocker
 questions before proceeding. Prefer an installed Grill-Me skill when available;
-otherwise use the built-in protocol from `common/task-intake-effort-routing.md`
+otherwise use the built-in protocol from `common/skills/task-intake-effort-routing/SKILL.md`
 and record its output.
 
 Discover the supported values from the script itself:
@@ -368,7 +368,7 @@ permissions, or local metering setup, preserve the workflow label contract:
 - `workflow.py validate` and the routing tests must fail when a route, action,
   or concern change drops the metering contract.
 
-Use `common/local-tools.md` for the usage evidence boundary. For actual usage
+Use `common/skills/local-tools/SKILL.md` for the usage evidence boundary. For actual usage
 proof, require exact queued/imported local usage event evidence or the runtime's
 approved exact-usage success marker; otherwise record no usage event and avoid
 private-content reconstruction.
@@ -526,10 +526,11 @@ instructions, or the requirement to record a task-specific docs-read takeaway
 before edits.
 
 The route/search layer also maintains a local document graph derived from
-Markdown links, compatibility stubs, and `workflow-doc-surfaces.json` document
-sets. Natural-language matching should identify seed documents; graph expansion
-should then surface directly connected skill entrypoints, detailed references,
-and explicit document dependencies. Treat ordinary graph links as
+Markdown links, canonical skill-bundle entrypoints, and
+`workflow-doc-surfaces.json` document sets. Natural-language matching should
+identify seed documents; graph expansion should then surface directly connected
+skill entrypoints, detailed references, and explicit document dependencies.
+Treat ordinary graph links as
 `reference_docs` so broad surfaces do not overload required reading. Promote a
 graph neighbor to `required_docs` only when the source declares an explicit
 required relation such as frontmatter `requires_docs`.
@@ -654,7 +655,7 @@ If the agent missed any required gate:
 4. Roll back only dependent agent-made changes after the missed gate when safe.
    Preserve pre-existing user changes and ask before destructive cleanup.
 5. If finish-check sets `retrospective_required` or the hook/gate returns the
-   first `FAIL`, run `workflows/retrospective-learning.md`, inspect the
+   first `FAIL`, run `workflows/skills/retrospective-learning/SKILL.md`, inspect the
    generated global lesson candidate when available, record the immediate
    correction plan, and apply safe scoped fixes before retrying.
    For finish-check evidence failures, the correction plan must copy the

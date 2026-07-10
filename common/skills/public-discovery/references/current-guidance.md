@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_public_discovery
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

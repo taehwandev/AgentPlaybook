@@ -6,11 +6,11 @@ type: ai-generated
 
 # Android Review
 
-Use when routed to `platforms/android/android-review.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/android/skills/android-review/SKILL.md` or when work needs this AgentPlaybook guidance area.
 
 ## Read
 
-- `references/current-guidance.md` for the full guidance previously held in `platforms/android/android-review.md`.
+- `references/current-guidance.md` for the detailed guidance for this skill.
 - Related `SKILL.md` entrypoints named by the reference before loading their detailed references.
 
 ## Process
@@ -21,7 +21,7 @@ Use when routed to `platforms/android/android-review.md` or when work needs this
 
 ## Do Not
 
-- Do not treat the compatibility path `platforms/android/android-review.md` as the canonical context-loading target.
+- Do not look for legacy flat compatibility paths; load this skill bundle as the canonical context-loading target.
 - Do not load broad references for unrelated work just because this skill was nearby in the route.
 
 ## Verification

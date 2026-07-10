@@ -10,13 +10,13 @@ Use when iOS work touches credentials, Keychain, local storage, permissions,
 Universal Links, URL schemes, app groups, extensions, WebViews, networking,
 signing, entitlements, or release builds.
 
-Also use `common/secure-development-baseline.md` for shared secret handling,
+Also use `common/skills/secure-development-baseline/SKILL.md` for shared secret handling,
 authorization, logging, diagnostics, and open-source repository safety rules.
-Use `common/runtime-url-configuration.md` for environment-specific API origins,
+Use `common/skills/runtime-url-configuration/SKILL.md` for environment-specific API origins,
 Universal Link domains, URL scheme callback hosts, redirect/callback URLs,
 asset hosts, and release-channel config.
 
-Also use `../../common/observability-error-handling.md` when adding or changing
+Also use `../../common/skills/observability-error-handling/SKILL.md` when adding or changing
 crash reporting, error telemetry, logging, diagnostics, or analytics.
 
 References:

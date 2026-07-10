@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_data_persistence_sync
-status: review
+status: stable
 type: ai-generated
 ---
 

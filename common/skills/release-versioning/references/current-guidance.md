@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_release_versioning
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

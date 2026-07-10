@@ -28,7 +28,7 @@ def _build_doc_graph(root_text: str) -> dict[str, list[dict[str, object]]]:
         graph.setdefault(rel, [])
 
     _add_markdown_edges(root, docs, graph)
-    _add_compat_edges(docs, graph)
+    _add_legacy_alias_edges(docs, graph)
     _add_surface_rule_edges(root, graph)
     return graph
 
@@ -72,7 +72,7 @@ def _add_markdown_edges(root: Path, docs: set[str], graph: dict[str, list[dict[s
             _add_edge(graph, rel, target, relation, "Frontmatter document relation", 80)
 
 
-def _add_compat_edges(docs: set[str], graph: dict[str, list[dict[str, object]]]) -> None:
+def _add_legacy_alias_edges(docs: set[str], graph: dict[str, list[dict[str, object]]]) -> None:
     for rel in sorted(docs):
         canonical = canonical_doc_path(rel)
         if canonical == rel or canonical not in docs:
@@ -81,16 +81,16 @@ def _add_compat_edges(docs: set[str], graph: dict[str, list[dict[str, object]]])
             graph,
             rel,
             canonical,
-            "compat:canonical-skill",
-            "Compatibility path maps to canonical SKILL.md",
+            "legacy-alias:canonical-skill",
+            "Legacy flat alias maps to canonical SKILL.md",
             90,
         )
         _add_edge(
             graph,
             canonical,
             rel,
-            "compat:flat-path",
-            "Canonical SKILL.md has a flat compatibility path",
+            "legacy-alias:flat-path",
+            "Canonical SKILL.md has a temporary legacy flat alias",
             20,
         )
 

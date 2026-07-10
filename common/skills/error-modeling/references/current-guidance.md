@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_error_modeling
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

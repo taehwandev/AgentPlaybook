@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_agent_interaction
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -68,7 +68,7 @@ Default if safe:
 Grill-Me is the blocker-question protocol used to run a `/grilling` session
 that turns a vague or broad product request into blocker questions and captured
 decisions. Prefer an installed Grill-Me skill when available; otherwise use the
-built-in protocol from `common/task-intake-effort-routing.md`. Use it when the
+built-in protocol from `common/skills/task-intake-effort-routing/SKILL.md`. Use it when the
 user asks for Grill-Me or requirements discovery, when a broad product or
 architecture request lacks known acceptance criteria, or when ambiguity changes
 behavior, risk, scope, acceptance criteria, or verification.

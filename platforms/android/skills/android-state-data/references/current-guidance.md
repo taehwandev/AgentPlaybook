@@ -18,10 +18,10 @@ package ownership, also use `android-module-structure.md`.
 
 For Jetpack DataStore persistence, migration, corruption handling, and
 Preferences-vs-typed-vs-Room decisions, also read
-`references/android-datastore.md`.
+`android-datastore.md`.
 
 For cross-platform persistence, cache, source-of-truth, storage-tier, migration,
-and cleanup rules, also use `../../common/data-persistence-sync.md`.
+and cleanup rules, also use `common/skills/data-persistence-sync/SKILL.md`.
 
 ## Defaults
 

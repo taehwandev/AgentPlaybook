@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_stack_discovery
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

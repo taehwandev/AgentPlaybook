@@ -8,9 +8,9 @@ type: ai-generated
 
 Use for desktop/native app security: Mac apps, Tauri, Electron, menu bar tools, local files, shell access, update flows, IPC, and privileged OS APIs.
 
-Also use `common/secure-development-baseline.md` for shared secret handling,
+Also use `common/skills/secure-development-baseline/SKILL.md` for shared secret handling,
 authorization, logging, diagnostics, and open-source repository safety rules.
-Use `common/runtime-url-configuration.md` for environment-specific service
+Use `common/skills/runtime-url-configuration/SKILL.md` for environment-specific service
 origins, callback URLs, URL scheme hosts, update channels, asset hosts, and
 release-channel config.
 

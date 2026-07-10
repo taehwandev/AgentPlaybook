@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_api_contract_compatibility
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -11,7 +11,7 @@ deep links, events, webhooks, queues, import/export formats, or shared fixtures.
 
 For SOLID, Interface Segregation, substitutable implementations, and dependency
 direction around code-level contracts, also use
-`common/solid-design-principles.md`.
+`common/skills/solid-design-principles/SKILL.md`.
 
 ## Default
 

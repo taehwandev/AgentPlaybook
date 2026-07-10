@@ -1,7 +1,7 @@
 ---
 keyflow_id: sys_0086dc0e66ec
-status: review
-type: ai-generated
+status: stable
+type: human-reviewed-needed
 ---
 
 # Feature Implementation Workflow
@@ -11,17 +11,17 @@ the product front matter is known.
 
 Do not use this workflow to skip PRD and ARD. If the request is broad app,
 product, multi-screen, data, route, contract, auth, billing, release, or
-architecture work, use `workflows/product-architecture-delivery.md` first and
+architecture work, use `workflows/skills/product-architecture-delivery/SKILL.md` first and
 return here only for the ARD-scoped code slice.
 
 ## Read
 
-- `common/agent-operating-skill.md`
-- `common/llm-coding-discipline.md`
-- `common/code-conventions.md`
-- `common/product-spec-to-implementation.md`
-- `workflows/product-architecture-delivery.md` when PRD and ARD gates are needed
-- `workflows/development-cycle.md` for the full verify and side-effect audit cycle
+- `common/skills/agent-operating-skill/SKILL.md`
+- `common/skills/llm-coding-discipline/SKILL.md`
+- `common/skills/code-conventions/SKILL.md`
+- `common/skills/product-spec-to-implementation/SKILL.md`
+- `workflows/skills/product-architecture-delivery/SKILL.md` when PRD and ARD gates are needed
+- `workflows/skills/development-cycle/SKILL.md` for the full verify and side-effect audit cycle
 - one matching platform architecture card
 - task-specific common cards for touched API contracts, release config,
   accessibility, persistence, security, dependencies, or generated files
@@ -42,7 +42,7 @@ return here only for the ARD-scoped code slice.
 7. Implement only the requested behavior.
 8. Update source-of-truth docs or record why docs are intentionally unchanged.
 9. Verify with the nearest useful command or manual smoke check.
-10. Run the side-effect audit from `workflows/development-cycle.md`.
+10. Run the side-effect audit from `workflows/skills/development-cycle/SKILL.md`.
 11. Report what changed, how it was verified, and any residual risk.
 
 ## Pre-Code Packet

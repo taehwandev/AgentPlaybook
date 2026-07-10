@@ -1,14 +1,13 @@
 ---
 keyflow_id: sys_common_llm_wiki_documentation_md_skill
-status: review
+status: stable
 type: ai-generated
 ---
 
 # LLM Wiki Documentation
 
-Use when routed to `common/skills/llm-wiki-documentation/SKILL.md`,
-the compatibility path `common/llm-wiki-documentation.md`, or when work needs
-this AgentPlaybook guidance area.
+Use when routed to `common/skills/llm-wiki-documentation/SKILL.md` or when work
+needs this AgentPlaybook guidance area.
 
 ## Read
 
@@ -24,7 +23,7 @@ this AgentPlaybook guidance area.
 
 ## Do Not
 
-- Do not treat the compatibility path `common/llm-wiki-documentation.md` as the canonical context-loading target.
+- Do not look for legacy flat compatibility paths; load this skill bundle as the canonical context-loading target.
 - Do not load broad references for unrelated work just because this skill was nearby in the route.
 
 ## Verification

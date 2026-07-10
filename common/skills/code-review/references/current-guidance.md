@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_739117e591d2
-status: review
+status: stable
 type: ai-generated
 ---
 
@@ -122,58 +122,19 @@ as a read-only gate:
   workflow evidence checks, not optional review commentary.
 - If the diff is too broad to review confidently in one pass, fail the hook and
   split the work before retrying.
-- Check file-size gates only for changed files whose extension is in the
-  development-file extension allowlist. For those files, check file size,
-  added-line budget, top-level independent owner count, and function,
-  component, hook, handler, job, script-step, or style-block size. Test,
+- For changed development source/style files, apply the default size and
+  ownership gates from
+  `../../code-structure-ownership/references/current-guidance.md`. Test,
   fixture, mock, spec, generated, config/build, Markdown, MDX, prose
-  documentation, and other docs are excluded from these code-size hard gates
-  unless a repo-local rule explicitly treats them as runtime source.
-- Enforce these default gates only on development source/style files: a file
-  over 300 lines requires structure-review evidence; a new file over 500 lines
-  fails; a file adding more than 200 lines fails; a function, component, hook,
-  handler, script-step, or style block over 120 lines fails. An existing
-  oversized file that grows should require structure-review evidence and fail
-  only when the current change expands the public owner surface, adds another
-  unclear responsibility, or crosses another hard gate.
-- Enforce purpose-based file ownership, not only line count. A runtime file
-  should expose one public/exported top-level class, interface, component,
-  hook, handler, service, repository, adapter, DTO, mapper, validator, command,
-  job, type, struct, enum, protocol, object, or equivalent primary contract by
-  default. Multiple public top-level owners in one runtime file fail unless a
-  repo-local rule explicitly treats that file shape as a single generated,
-  sealed, framework-mandated, or tightly coupled contract family.
-- Fail runtime files that mix top-level roles such as UI, state, data, domain,
-  platform, contract, implementation, or test-support declarations. Split by
-  purpose: screen/component code, state owner, repository/client/mapper,
-  domain policy, platform adapter, public contract, and reusable fixtures should
-  live in purpose-named files or packages.
-- Fail runtime files that dump several independently named owners together only
-  because they are small, feature-local, or convenient to create in one pass.
-  Extensibility review must check whether future callers can extend, replace,
-  test, or preview one owner without importing unrelated owners.
-- Fail function-only grab bags on the same basis. A group of free functions is
-  one file owner only when it is one cohesive contract family, pipeline, or
-  private support set for one exported owner; unrelated helpers should be split
-  by purpose even when there are no classes.
-- Fail new runtime files added under grab-bag package names such as `utils`,
-  `helpers`, `common`, `shared`, `misc`, `manager`, or `service`. Treat
-  pre-existing mixed-role packages as review pressure: require boundary evidence
-  for new packages or new runtime files, and fail only when the current change
-  expands the package's public owner surface or adds another unclear grab-bag
-  boundary. A package is an ownership and import boundary, not a storage bin.
-- When a change creates a new runtime package/folder or grows a package across
-  purpose roles, require structured boundary evidence before approval. The
-  hook must fail unless `--structure-review-evidence` explicitly names owner,
-  allowed imports, forbidden imports, callers or tests, and verification. A
-  vague statement such as "structure reviewed" is not enough.
-- A development source/style file over the review-pressure threshold requires
-  explicit structure-review evidence before approval, but evidence must not
-  override the hard gates.
-- Check large units against responsibility splits, not only line count. A unit
-  that mixes parse, validate, fetch, map, render, mutate, persist, log, navigate,
-  retry, or recovery concerns should fail even when it is still under the
-  numeric limit.
+  documentation, and other docs are excluded from those hard gates unless a
+  repo-local rule explicitly treats them as runtime source.
+- Enforce purpose-based file, function, package, and module ownership using the
+  canonical split criteria in
+  `../../code-structure-ownership/references/current-guidance.md`. This review
+  document owns the decision to fail unclear structure; the structure skill owns
+  the detailed criteria and evidence shape.
+- Require the structure evidence named by that canonical guidance before
+  approving review-pressure cases; evidence must not override hard gates.
 - On `FAIL`, explain the failing check in detail: exact path and line when
   available, observed size, configured threshold, why it blocks approval, and
   the smallest safe next action.

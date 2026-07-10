@@ -364,16 +364,16 @@ Skill coverage:
 
 These AgentPlaybook cards consume this source coverage:
 
-- `platforms/android/android-module-structure.md` for Android modularization,
+- `platforms/android/skills/android-module-structure/SKILL.md` for Android modularization,
   source-set, SDK-surface, toolchain, and package-boundary routing.
-- `platforms/android/android-compose-ui.md` for Compose state, performance,
+- `platforms/android/skills/android-compose-ui/SKILL.md` for Compose state, performance,
   layout, modifiers, effects, slots, focus, animation, previews, and testing.
-- `platforms/android/android-review.md` for review acceptance criteria across
+- `platforms/android/skills/android-review/SKILL.md` for review acceptance criteria across
   Android module, Compose, performance, security, and SDK surfaces.
-- `platforms/android/android-architecture.md` for app architecture, Navigation
+- `platforms/android/skills/android-architecture/SKILL.md` for app architecture, Navigation
   3, deep links, route contracts, and app-runtime boundaries.
-- `platforms/kmp/kmp-architecture.md` and
-  `platforms/kmp/kmp-module-structure.md` when Kotlin Multiplatform,
+- `platforms/kmp/skills/kmp-architecture/SKILL.md` and
+  `platforms/kmp/skills/kmp-module-structure/SKILL.md` when Kotlin Multiplatform,
   expect/actual, common source sets, or platform adapters are involved.
 
 When a source doc is missing from these mappings, update this manifest first,

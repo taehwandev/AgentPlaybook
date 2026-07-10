@@ -17,7 +17,7 @@ QUERY_FACETS: tuple[dict[str, object], ...] = (
             r"코드.*정리", r"리팩터", r"단순화",
         ),
         "terms": ("refactor", "cleanup", "simplification", "behavior-preserving", "ownership", "equivalence", "verification", "testing"),
-        "docs": ("workflows/refactor-cleanup.md", "common/refactoring.md", "common/code-structure-ownership.md", "common/testing.md", "common/verification-policy.md"),
+        "docs": ("workflows/skills/refactor-cleanup/SKILL.md", "common/skills/refactoring/SKILL.md", "common/skills/code-structure-ownership/SKILL.md", "common/skills/testing/SKILL.md", "common/skills/verification-policy/SKILL.md"),
     },
     {
         "name": "change_review",
@@ -27,13 +27,13 @@ QUERY_FACETS: tuple[dict[str, object], ...] = (
             r"변경사항.*(검토|확인|체크)", r"작업.*(검토|확인|체크)",
         ),
         "terms": ("review", "diff", "risk", "verification", "worktree", "commit readiness"),
-        "docs": ("workflows/review-and-commit.md", "workflows/multi-perspective-review.md", "common/code-review.md", "common/worktree-hygiene.md", "common/verification-policy.md"),
+        "docs": ("workflows/skills/review-and-commit/SKILL.md", "workflows/skills/multi-perspective-review/SKILL.md", "common/skills/code-review/SKILL.md", "common/skills/worktree-hygiene/SKILL.md", "common/skills/verification-policy/SKILL.md"),
     },
     {
         "name": "verification",
         "patterns": (r"\b(run|execute)\s+(tests?|checks?)\b", r"\bverify\b.*\b(tests?|checks?)\b", r"\bverification\b", r"테스트.*(실행|검증|확인)", r"검증"),
         "terms": ("testing", "scenario", "verification", "evidence", "definition of done"),
-        "docs": ("common/testing.md", "common/scenario-driven-testing.md", "common/verification-policy.md", "common/definition-of-done.md"),
+        "docs": ("common/skills/testing/SKILL.md", "common/skills/scenario-driven-testing/SKILL.md", "common/skills/verification-policy/SKILL.md", "common/skills/definition-of-done/SKILL.md"),
     },
     {
         "name": "android_compose_ui",
@@ -45,9 +45,9 @@ QUERY_FACETS: tuple[dict[str, object], ...] = (
         ),
         "terms": ("android", "compose", "screen", "state", "viewmodel", "ui", "preview", "performance"),
         "docs": (
-            "platforms/android/android-compose-ui.md", "platforms/android/android-module-structure.md",
-            "platforms/android/android-viewmodel-state.md", "platforms/android/android-state-data.md",
-            "platforms/android/android-review.md", "platforms/android/android-external-skill-source-coverage.md",
+            "platforms/android/skills/android-compose-ui/SKILL.md", "platforms/android/skills/android-module-structure/SKILL.md",
+            "platforms/android/skills/android-viewmodel-state/SKILL.md", "platforms/android/skills/android-state-data/SKILL.md",
+            "platforms/android/skills/android-review/SKILL.md", "platforms/android/skills/android-external-skill-source-coverage/SKILL.md",
             "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
         ),
     },
@@ -60,13 +60,24 @@ QUERY_FACETS: tuple[dict[str, object], ...] = (
             r"(첫|1|one).*화면.*(두|2|two).*화면",
         ),
         "terms": ("ui", "screen", "state", "structure", "review", "visual verification", "performance"),
-        "docs": ("common/ui-visual-verification.md", "common/performance-verification.md", "platforms/web/web-react-ui.md", "platforms/web/web-state-data.md", "platforms/flutter/flutter-widget-ui.md", "platforms/ios/ios-swiftui-ui.md", "platforms/kmp/kmp-compose-ui.md", "platforms/application/application-command-ui.md"),
+        "docs": ("common/skills/ui-visual-verification/SKILL.md", "common/skills/performance-verification/SKILL.md", "platforms/web/skills/web-react-ui/SKILL.md", "platforms/web/skills/web-state-data/SKILL.md", "platforms/flutter/skills/flutter-widget-ui/SKILL.md", "platforms/ios/skills/ios-swiftui-ui/SKILL.md", "platforms/kmp/skills/kmp-compose-ui/SKILL.md", "platforms/application/skills/application-command-ui/SKILL.md"),
     },
     {
         "name": "skill_docs",
-        "patterns": (r"\b(skill cards?|skill docs?|skill anatomy|agent skills?)\b", r"스킬\s*문서", r"스킬\s*카드"),
-        "terms": ("skill", "card", "anatomy", "progressive disclosure", "source"),
-        "docs": ("common/agent-skill-card-anatomy.md", "workflows/documentation-update.md", "common/source-driven-development.md"),
+        "patterns": (
+            r"\b(skill cards?|skill docs?|skill anatomy|agent skills?|skill bundles?|SKILL\.md|references?)\b",
+            r"\b(source[- ]of[- ]truth|duplicate|dedupe|fragmented|misplaced|canonical)\b.*\b(skills?|docs?|documents?|references?)\b",
+            r"스킬\s*문서",
+            r"스킬\s*카드",
+            r"(스킬|references?|레퍼런스).*(구조|폴더|중복|파편|위치|source-of-truth)",
+        ),
+        "terms": ("skill", "card", "bundle", "references", "canonical", "duplicate", "anatomy", "progressive disclosure", "source"),
+        "docs": (
+            "common/skills/agent-skill-card-anatomy/SKILL.md",
+            "docs/skills/agentplaybook-skill-bundle-migration/SKILL.md",
+            "workflows/skills/documentation-update/SKILL.md",
+            "common/skills/source-driven-development/SKILL.md",
+        ),
     },
     {
         "name": "natural_language_doc_routing",
@@ -78,7 +89,7 @@ QUERY_FACETS: tuple[dict[str, object], ...] = (
             r"(훅|hook).*(문서|검색|읽)",
         ),
         "terms": ("workflow", "routing", "required docs", "reference docs", "docs-read", "source-driven", "task intake", "skill card"),
-        "docs": ("workflows/scripted-agent-workflow.md", "workflows/agent-task-lifecycle.md", "common/task-intake-effort-routing.md", "common/source-driven-development.md", "common/agent-skill-card-anatomy.md", "common/tool-failure-recovery.md"),
+        "docs": ("workflows/skills/scripted-agent-workflow/SKILL.md", "workflows/skills/agent-task-lifecycle/SKILL.md", "common/skills/task-intake-effort-routing/SKILL.md", "common/skills/source-driven-development/SKILL.md", "common/skills/agent-skill-card-anatomy/SKILL.md", "common/skills/tool-failure-recovery/SKILL.md"),
     },
 )
 

@@ -1,16 +1,16 @@
 ---
 keyflow_id: sys_common_tool_failure_recovery_md_skill
-status: review
+status: stable
 type: ai-generated
 ---
 
 # Tool Failure Recovery
 
-Use when routed to `common/tool-failure-recovery.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/tool-failure-recovery/SKILL.md` or when work needs this AgentPlaybook guidance area.
 
 ## Read
 
-- `references/current-guidance.md` for the full guidance previously held in `common/tool-failure-recovery.md`.
+- `references/current-guidance.md` for the detailed guidance for this skill.
 - Related `SKILL.md` entrypoints named by the reference before loading their detailed references.
 
 ## Process
@@ -21,7 +21,7 @@ Use when routed to `common/tool-failure-recovery.md` or when work needs this Age
 
 ## Do Not
 
-- Do not treat the compatibility path `common/tool-failure-recovery.md` as the canonical context-loading target.
+- Do not look for legacy flat compatibility paths; load this skill bundle as the canonical context-loading target.
 - Do not load broad references for unrelated work just because this skill was nearby in the route.
 
 ## Verification

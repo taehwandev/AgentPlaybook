@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_component_api_design
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

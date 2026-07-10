@@ -11,9 +11,9 @@ component variants, layout patterns, themes, interaction states, or visual QA
 rules.
 
 Also use:
-- `../../common/design-system.md` for the cross-platform design-system baseline.
-- `../../common/component-api-design.md` for reusable component API contracts.
-- `../../common/ui-visual-verification.md` for visual and interaction evidence.
+- `../../common/skills/design-system/SKILL.md` for the cross-platform design-system baseline.
+- `../../common/skills/component-api-design/SKILL.md` for reusable component API contracts.
+- `../../common/skills/ui-visual-verification/SKILL.md` for visual and interaction evidence.
 - `web-accessibility-i18n.md` for labels, focus, keyboard, responsive copy, and
   localization.
 - `web-react-ui.md` when a component also owns React state, hooks, or feature

@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_retrospective_learning_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -36,11 +36,11 @@ empty retrospective.
 
 ## Read
 
-- `workflows/development-cycle.md` for verification and side-effect audit context
-- `workflows/product-architecture-delivery.md` when PRD or ARD gaps caused the issue
-- `common/code-review.md` for finding severity and evidence style
-- `common/verification-policy.md` when test or evidence gaps caused the issue
-- `common/agent-editing-safety.md` when user changes, external state, or secrets were involved
+- `workflows/skills/development-cycle/SKILL.md` for verification and side-effect audit context
+- `workflows/skills/product-architecture-delivery/SKILL.md` when PRD or ARD gaps caused the issue
+- `common/skills/code-review/SKILL.md` for finding severity and evidence style
+- `common/skills/verification-policy/SKILL.md` when test or evidence gaps caused the issue
+- `common/skills/agent-editing-safety/SKILL.md` when user changes, external state, or secrets were involved
 - matching platform, product-pattern, or concern cards from `index.md`
 
 ## Steps

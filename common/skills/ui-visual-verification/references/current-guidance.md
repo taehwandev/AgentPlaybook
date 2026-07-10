@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_ui_visual_verification
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -44,7 +44,7 @@ Use repo-local tooling first. Common evidence sources include:
 - Desktop/application: platform smoke tests, WebDriver/Playwright when
   applicable, screenshot checks, menu/tray/window interaction smoke.
 
-Also load `common/accessibility-i18n.md` for user-facing text, forms, labels,
+Also load `common/skills/accessibility-i18n/SKILL.md` for user-facing text, forms, labels,
 dates, numbers, units, measurements, localization, focus, or screen-reader behavior. Load the
 matching platform review card when platform UI tooling or conventions matter.
 

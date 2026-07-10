@@ -12,11 +12,11 @@ new Swift code should live.
 
 Also use:
 
-- `../../common/code-structure-ownership.md` for generic ownership level,
+- `../../common/skills/code-structure-ownership/SKILL.md` for generic ownership level,
   module split, and `api`/`impl` decisions.
-- `../../common/reusable-code-design.md` before promoting Swift code into a
+- `../../common/skills/reusable-code-design/SKILL.md` before promoting Swift code into a
   shared package or public API.
-- `../../common/component-api-design.md` before extracting reusable UI
+- `../../common/skills/component-api-design/SKILL.md` before extracting reusable UI
   components.
 - `swift-architecture.md` for Swift app, state, domain, data, and adapter
   boundary choices.

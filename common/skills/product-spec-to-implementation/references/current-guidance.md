@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_product_spec_to_implementation
-status: review
+status: stable
 type: ai-generated
 ---
 
@@ -17,7 +17,7 @@ Use when turning a product request, PRD, design note, or vague feature idea into
 - Treat this as a pre-edit hard gate. Do not implement first and reconstruct
   the PRD/spec/ARD search afterward.
 - Ask only when ambiguity changes the result or risk.
-- Use `workflows/ambiguity-gate.md` when an unknown might change behavior,
+- Use `workflows/skills/ambiguity-gate/SKILL.md` when an unknown might change behavior,
   architecture, security, release risk, or verification.
 
 If no product source exists and the work introduces a new capability, flow,

@@ -36,7 +36,7 @@ Window/Panel/View -> Presentation State -> Command/Use Case
 
 ## File And Command Split
 
-Apply `../../common/code-structure-ownership.md` before growing desktop/native
+Apply `../../common/skills/code-structure-ownership/SKILL.md` before growing desktop/native
 runtime files. Default to one primary window/panel, presentation state owner,
 command/use case, app service, system adapter, IPC contract, fixture, or
 assertion owner per file.

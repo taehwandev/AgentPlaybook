@@ -9,8 +9,8 @@ type: human-reviewed-needed
 Use when creating, changing, moving, or reviewing Compose Multiplatform screens,
 state holders, reusable UI components, previews, resources, or UI tests.
 
-For reusable UI extraction, also read `common/reusable-code-design.md`,
-`common/component-api-design.md`, and `common/design-system.md`.
+For reusable UI extraction, also read `common/skills/reusable-code-design/SKILL.md`,
+`common/skills/component-api-design/SKILL.md`, and `common/skills/design-system/SKILL.md`.
 For shared Compose module placement, source-set ownership, and feature/shared UI
 splits, also read `kmp-module-structure.md`.
 

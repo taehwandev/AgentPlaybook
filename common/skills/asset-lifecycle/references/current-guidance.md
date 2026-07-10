@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_asset_lifecycle
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

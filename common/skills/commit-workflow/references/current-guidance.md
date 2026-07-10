@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_f20b4c0c0d16
-status: review
+status: stable
 type: ai-generated
 ---
 
@@ -17,6 +17,8 @@ after the code work is already done.
 ## Read
 
 - Repo-local commit, branch, signing, and generated-file rules.
+- `common/skills/branch-strategy/SKILL.md` when creating, checking, naming, pushing, or
+  opening PRs from work branches.
 - Current `git status --short --untracked-files=all`.
 - Final diff for every file to be committed.
 - Verification output for the changed boundary.
@@ -28,8 +30,8 @@ after the code work is already done.
 - Do not mix feature, refactor, formatting, generated files, and dependency churn unless they are inseparable.
 - Every changed line should trace to the commit purpose.
 - If a commit needs a long explanation, consider splitting it first.
-- Use `common/change-size-policy.md` when a diff is broad or hard to review.
-- Use `common/generated-files-policy.md` when generated files, lockfiles, or snapshots changed.
+- Use `common/skills/change-size-policy/SKILL.md` when a diff is broad or hard to review.
+- Use `common/skills/generated-files-policy/SKILL.md` when generated files, lockfiles, or snapshots changed.
 
 ## Decision Rule
 

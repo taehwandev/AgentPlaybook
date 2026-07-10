@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_development_cycle_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -17,19 +17,19 @@ the command manifest and keep the implementation inside its listed gates.
 
 ## Read
 
-- `common/agent-operating-skill.md`
-- `common/llm-coding-discipline.md`
-- `common/code-conventions.md`
-- `common/stack-discovery.md`
-- `common/incremental-implementation.md` when the change can be split into
+- `common/skills/agent-operating-skill/SKILL.md`
+- `common/skills/llm-coding-discipline/SKILL.md`
+- `common/skills/code-conventions/SKILL.md`
+- `common/skills/stack-discovery/SKILL.md`
+- `common/skills/incremental-implementation/SKILL.md` when the change can be split into
   verified slices
-- `common/source-driven-development.md` when framework, SDK, platform, API, or
+- `common/skills/source-driven-development/SKILL.md` when framework, SDK, platform, API, or
   external documentation behavior can change over time
-- `common/doubt-driven-development.md` when the plan depends on high-risk or
+- `common/skills/doubt-driven-development/SKILL.md` when the plan depends on high-risk or
   non-obvious assumptions
-- `common/change-size-policy.md`
-- `common/worktree-hygiene.md` when the checkout already contains changes
-- `common/tool-failure-recovery.md` when verification or build commands fail
+- `common/skills/change-size-policy/SKILL.md`
+- `common/skills/worktree-hygiene/SKILL.md` when the checkout already contains changes
+- `common/skills/tool-failure-recovery/SKILL.md` when verification or build commands fail
 - one matching platform architecture card from `index.md`
 - task-specific concern cards from `index.md`
 
@@ -182,11 +182,11 @@ behavior were found.
 
 ## Route To
 
-- New feature or behavior: `workflows/feature-implementation.md`
-- Bug, regression, or flaky behavior: `workflows/bugfix-debugging.md`
-- Behavior-preserving cleanup: `workflows/refactor-cleanup.md`
-- Release, package, deployment, or migration handoff: `workflows/release-readiness.md`
-- Final review or commit: `workflows/review-and-commit.md`
+- New feature or behavior: `workflows/skills/feature-implementation/SKILL.md`
+- Bug, regression, or flaky behavior: `workflows/skills/bugfix-debugging/SKILL.md`
+- Behavior-preserving cleanup: `workflows/skills/refactor-cleanup/SKILL.md`
+- Release, package, deployment, or migration handoff: `workflows/skills/release-readiness/SKILL.md`
+- Final review or commit: `workflows/skills/review-and-commit/SKILL.md`
 
 ## Stop If
 

@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_verification_policy
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -10,7 +10,7 @@ Work is not done just because files changed. Completion requires evidence or a
 clear explanation of why evidence could not be collected.
 
 For the final completion bar before handoff, commit, release, PR, or final
-report, also use `common/definition-of-done.md`.
+report, also use `common/skills/definition-of-done/SKILL.md`.
 
 ## Verification Order
 
@@ -125,7 +125,7 @@ If no useful test exists:
 
 ## When Commands Fail
 
-Use `common/tool-failure-recovery.md`. A failed command is evidence, not a
+Use `common/skills/tool-failure-recovery/SKILL.md`. A failed command is evidence, not a
 reason to guess. Read stdout/stderr, identify the failing file, line, error code,
 or test name, make the smallest relevant correction, and rerun the narrowest
 proving command. Do not repeat the same command blindly or downgrade assertions

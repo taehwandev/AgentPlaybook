@@ -8,9 +8,9 @@ type: ai-generated
 
 Use when Android work touches credentials, local storage, IPC, deep links, WebView, permissions, exported components, or release builds.
 
-Also use `common/secure-development-baseline.md` for shared secret handling,
+Also use `common/skills/secure-development-baseline/SKILL.md` for shared secret handling,
 authorization, logging, diagnostics, and open-source repository safety rules.
-Use `common/runtime-url-configuration.md` for environment-specific API origins,
+Use `common/skills/runtime-url-configuration/SKILL.md` for environment-specific API origins,
 deep link hosts, app link hosts, redirect/callback URLs, asset hosts, and
 release-channel config.
 

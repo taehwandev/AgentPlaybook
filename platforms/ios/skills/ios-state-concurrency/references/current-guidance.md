@@ -15,7 +15,7 @@ For repository/client contracts, adapter packages, local Swift packages, and
 target ownership, also use `ios-module-structure.md`.
 
 For shared persistence, cache, sync, migration, and source-of-truth rules, also
-use `../../common/data-persistence-sync.md`.
+use `../../common/skills/data-persistence-sync/SKILL.md`.
 
 References:
 

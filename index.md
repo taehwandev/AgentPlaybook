@@ -54,8 +54,9 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `common/skills/writing-workspace/SKILL.md`
 - AgentPlaybook card anatomy, anti-rationalization, red flags, and evidence
   sections: `common/skills/agent-skill-card-anatomy/SKILL.md`
-- AgentPlaybook skill bundle migration and `SKILL.md` plus `references/`
-  structure: `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md`
+- AgentPlaybook skill bundle migration, `SKILL.md` plus `references/`
+  structure, and duplicate source-of-truth cleanup:
+  `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md`
 - Architecture choice/change: `common/skills/architecture-selection/SKILL.md`
 - Architecture design: `common/skills/architecture-design/SKILL.md`
 - Source-driven framework, SDK, platform, API, and external-doc decisions:
@@ -105,6 +106,8 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `common/skills/error-modeling/SKILL.md`
 - Code review: `common/skills/code-review/SKILL.md`
 - Commit review: start with code review, then add `common/skills/commit-review/SKILL.md`
+- Branch strategy and branch naming:
+  `common/skills/branch-strategy/SKILL.md`
 - Commit creation, branch/PR/push safety, staged diff policy:
   `common/skills/commit-workflow/SKILL.md`
 
@@ -123,7 +126,7 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `platforms/android/skills/android-compose-ui/SKILL.md`
 - Android state/data: `platforms/android/skills/android-state-data/SKILL.md`
 - Android DataStore persistence reference:
-  `platforms/android/references/android-datastore.md`
+  `platforms/android/skills/android-state-data/references/android-datastore.md`
 - Android background work: `platforms/android/skills/android-background-work/SKILL.md`
 - Android security: `platforms/android/skills/android-security/SKILL.md`
 - Android review: `platforms/android/skills/android-review/SKILL.md`
@@ -241,11 +244,13 @@ When wrapper scripts are available, run `agent-preflight.py` before editing and
 `agent-finish-check.py` before final report, commit, release, or handoff.
 Missing wrapper evidence or missing route gate evidence is non-compliant.
 
-For any new request, first classify clarity and effort with
+For any new request, first classify clarity, effort, and model tier with
 `common/skills/task-intake-effort-routing/SKILL.md`. Do not use the strongest model, longest
-reasoning, or full-document loading by default. Use quick effort for exact
-low-risk requests, standard effort for scoped implementation, and deep effort
-only for ambiguous, broad, high-risk, or cross-boundary work.
+reasoning, or full-document loading by default. Use quick/fast for exact
+low-risk requests, standard/balanced for scoped implementation, and deep/frontier
+only for ambiguous, broad, high-risk, or cross-boundary work. Runtime bridges may
+map the abstract tier to concrete model ids such as Codex Luna, Terra, or Sol;
+non-Codex runtimes must use their own mapping or keep the current model.
 
 Before running project commands, adding dependencies, or using framework-specific
 APIs, use `common/skills/stack-discovery/SKILL.md`. When a command fails, use
@@ -458,12 +463,12 @@ repo, read `common/skills/secure-development-baseline/SKILL.md` before implement
 For React/web feature work, usually read:
 
 ```text
-common/llm-coding-discipline.md
-common/code-conventions.md
-platforms/web/web-architecture.md
-platforms/web/web-react-ui.md
-platforms/web/web-state-data.md when state/data/storage is touched
-platforms/web/web-accessibility-i18n.md when UI text, forms, menus, dialogs,
+common/skills/llm-coding-discipline/SKILL.md
+common/skills/code-conventions/SKILL.md
+platforms/web/skills/web-architecture/SKILL.md
+platforms/web/skills/web-react-ui/SKILL.md
+platforms/web/skills/web-state-data/SKILL.md when state/data/storage is touched
+platforms/web/skills/web-accessibility-i18n/SKILL.md when UI text, forms, menus, dialogs,
 or localization are touched
 ```
 

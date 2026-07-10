@@ -10,8 +10,8 @@ Use when creating, changing, moving, or reviewing Jetpack Compose screens,
 state holders, design-system components, feature UI components, previews, or UI
 tests.
 
-For reusable UI extraction, also read `common/reusable-code-design.md` and
-`common/design-system.md`.
+For reusable UI extraction, also read `common/skills/reusable-code-design/SKILL.md` and
+`common/skills/design-system/SKILL.md`.
 
 For feature module boundaries, `api`/implementation splits, package ownership,
 and shared holder/design-system promotion, also read

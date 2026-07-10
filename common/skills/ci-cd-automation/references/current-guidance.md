@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_ci_cd_automation
-status: review
+status: stable
 type: human-reviewed-needed
 agentplaybook_card_contract: strict
 ---
@@ -22,8 +22,8 @@ release, credential, cost, or environment risk.
 - A release or merge gate depends on automation evidence.
 - CI failures need triage before code changes.
 
-For ordinary local tests, use `common/testing.md` and
-`common/verification-policy.md`.
+For ordinary local tests, use `common/skills/testing/SKILL.md` and
+`common/skills/verification-policy/SKILL.md`.
 
 ## Inspect First
 

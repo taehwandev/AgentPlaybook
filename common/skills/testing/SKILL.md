@@ -1,16 +1,16 @@
 ---
 keyflow_id: sys_common_testing_md_skill
-status: review
+status: stable
 type: ai-generated
 ---
 
 # Testing Principles
 
-Use when routed to `common/testing.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/testing/SKILL.md` or when work needs this AgentPlaybook guidance area.
 
 ## Read
 
-- `references/current-guidance.md` for the full guidance previously held in `common/testing.md`.
+- `references/current-guidance.md` for the detailed guidance for this skill.
 - Related `SKILL.md` entrypoints named by the reference before loading their detailed references.
 
 ## Process
@@ -21,7 +21,7 @@ Use when routed to `common/testing.md` or when work needs this AgentPlaybook gui
 
 ## Do Not
 
-- Do not treat the compatibility path `common/testing.md` as the canonical context-loading target.
+- Do not look for legacy flat compatibility paths; load this skill bundle as the canonical context-loading target.
 - Do not load broad references for unrelated work just because this skill was nearby in the route.
 
 ## Verification

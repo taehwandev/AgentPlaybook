@@ -117,15 +117,10 @@ Reference groups:
 - `PreviewParameterProvider` API reference:
   `https://developer.android.com/reference/kotlin/androidx/compose/ui/tooling/preview/PreviewParameterProvider`
 
-Local rule: every named stateless UI composable needs a colocated preview; do
-not substitute a parent preview, screenshot test, UI test, or manual smoke path
-for that requirement. Keep one-off preview functions, preview-only sample state,
-and private `PreviewParameterProvider` classes in the same Kotlin file as the
-stateless composable they render. Use a separate preview package only for
-providers or examples reused by several composable files or owned by a shared
-design-system module. Use `@PreviewParameter` for multi-state previews, cap
-large provider sequences with `limit`, and use provider display names only when
-the repo's Compose tooling artifact supports that API.
+Local ownership: this source map owns official links only. Apply the canonical
+local preview policy from
+`../../android-compose-ui/references/current-guidance.md` instead of restating
+Compose preview rules here.
 
 ### `jetpack-compose/adaptive/SKILL.md`
 

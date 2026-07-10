@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_common_performance_verification_md_skill
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

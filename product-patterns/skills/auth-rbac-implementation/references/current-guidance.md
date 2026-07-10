@@ -10,7 +10,7 @@ Use when implementing login, session refresh, organization/workspace
 membership, role assignment, permissions, entitlement checks, tenant scoping,
 protected actions, or authorization tests.
 
-Also read `auth-rbac-permissions.md`, `../common/security-privacy-review.md`,
+Also read `auth-rbac-permissions.md`, `../common/skills/security-privacy-review/SKILL.md`,
 and the matching server/client platform cards.
 
 ## Model Separation

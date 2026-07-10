@@ -1,27 +1,28 @@
 ---
 keyflow_id: sys_common_task_intake_effort_routing_md_skill
-status: review
+status: stable
 type: ai-generated
 ---
 
 # Task Intake And Effort Routing
 
-Use when routed to `common/task-intake-effort-routing.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/task-intake-effort-routing/SKILL.md` or when work needs this AgentPlaybook guidance area.
 
 ## Read
 
-- `references/current-guidance.md` for the full guidance previously held in `common/task-intake-effort-routing.md`.
+- `references/current-guidance.md` for the detailed guidance for this skill.
 - Related `SKILL.md` entrypoints named by the reference before loading their detailed references.
 
 ## Process
 
 1. Read this entrypoint first to confirm this guidance area applies.
-2. Open `references/current-guidance.md` only when the task actually touches this area.
-3. Follow the reference's decision rules, stop conditions, and verification requirements before editing, reviewing, or reporting completion.
+2. Open `references/current-guidance.md` only when the task touches request clarity, effort, model tier selection, Grill-Me, or token controls.
+3. Select the abstract effort/model tier before applying runtime-specific model ids.
+4. Follow the reference's decision rules, stop conditions, and verification requirements before editing, reviewing, or reporting completion.
 
 ## Do Not
 
-- Do not treat the compatibility path `common/task-intake-effort-routing.md` as the canonical context-loading target.
+- Do not look for legacy flat compatibility paths; load this skill bundle as the canonical context-loading target.
 - Do not load broad references for unrelated work just because this skill was nearby in the route.
 
 ## Verification

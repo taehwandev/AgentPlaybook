@@ -10,12 +10,12 @@ Use when creating, changing, moving, or reviewing React routes, pages, feature
 components, hooks, forms, UI state, server-state wiring, reusable components, or
 frontend tests.
 
-For architecture choice, also read `../../common/architecture-design.md`. For
+For architecture choice, also read `../../common/skills/architecture-design/SKILL.md`. For
 data ownership, cache, forms, mocks, and browser persistence, also read
 `web-state-data.md`. For route/file layout and import direction, also read
 `web-code-structure.md`. For reusable UI extraction and design-system work,
-also read `../../common/reusable-code-design.md`,
-`../../common/design-system.md`, and `web-design-system.md`.
+also read `../../common/skills/reusable-code-design/SKILL.md`,
+`../../common/skills/design-system/SKILL.md`, and `web-design-system.md`.
 
 ## React Layers
 

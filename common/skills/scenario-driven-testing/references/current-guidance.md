@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_scenario_driven_testing
-status: review
+status: stable
 type: human-reviewed-needed
 agentplaybook_card_contract: strict
 ---
@@ -11,7 +11,7 @@ Use this before writing or reviewing test code. Tests should prove the workflow 
 user, operator, API caller, or downstream component depends on, not only that a
 single data shape was accepted.
 
-This card complements `common/testing.md` and `common/verification-policy.md`.
+This card complements `common/skills/testing/SKILL.md` and `common/skills/verification-policy/SKILL.md`.
 Open all three when the task creates, rewrites, or meaningfully reviews tests.
 
 ## Use When
@@ -98,8 +98,8 @@ When a test touches UI:
   semantic names over brittle DOM/class/test-id assertions unless the test id is
   the repo's explicit testing contract.
 - For responsive or visual risk, pair the scenario test with screenshot,
-  geometry, or manual browser evidence from `common/ui-visual-verification.md`
-  or `common/browser-runtime-testing.md`.
+  geometry, or manual browser evidence from `common/skills/ui-visual-verification/SKILL.md`
+  or `common/skills/browser-runtime-testing/SKILL.md`.
 
 ## API And State Tests
 

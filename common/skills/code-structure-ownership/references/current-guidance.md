@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_code_structure_ownership
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -17,7 +17,7 @@ protects a real caller-facing boundary, extension point, dependency edge, or
 ownership line.
 
 For SOLID, Interface Segregation, Dependency Inversion, and DDD/domain-modeling
-fit, also use `common/solid-design-principles.md`. In structure decisions,
+fit, also use `common/skills/solid-design-principles/SKILL.md`. In structure decisions,
 SOLID means narrow caller contracts and dependency direction; it does not mean
 creating layers or interfaces before a real boundary exists.
 

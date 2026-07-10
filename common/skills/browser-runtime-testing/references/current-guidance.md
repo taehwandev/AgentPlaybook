@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_browser_runtime_testing
-status: review
+status: stable
 type: human-reviewed-needed
 agentplaybook_card_contract: strict
 ---

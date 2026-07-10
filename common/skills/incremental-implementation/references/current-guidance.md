@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_incremental_implementation
-status: review
+status: stable
 type: human-reviewed-needed
 agentplaybook_card_contract: strict
 ---
@@ -93,7 +93,7 @@ For each slice, record:
 - what the check proved
 - next slice or stop condition
 
-Use `common/verification-policy.md` to broaden checks when the slice touches a
+Use `common/skills/verification-policy/SKILL.md` to broaden checks when the slice touches a
 shared contract or high-risk boundary.
 
 ## Report

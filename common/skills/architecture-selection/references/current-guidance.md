@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_8c200d3027b7
-status: review
+status: stable
 type: ai-generated
 ---
 

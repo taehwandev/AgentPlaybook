@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_local_tools
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

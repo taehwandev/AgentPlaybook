@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_accessibility_i18n
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

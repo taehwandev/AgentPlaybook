@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_llm_wiki_documentation
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

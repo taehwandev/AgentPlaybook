@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_release_deployment
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -41,10 +41,10 @@ environment, verification gate, and rollback or forward-fix path.
   cleanup plan.
 - CI/CD automation should separate build, test, package, publish, deploy, and
   smoke stages enough that failures are diagnosable and rollback remains
-  realistic. Use `common/ci-cd-automation.md` when automation changes.
+  realistic. Use `common/skills/ci-cd-automation/SKILL.md` when automation changes.
 - Deprecation, migration, or removal work needs compatibility mode, migrated
   callers, docs, and zero-usage or rollback evidence. Use
-  `common/deprecation-migration.md` when release behavior removes or replaces a
+  `common/skills/deprecation-migration/SKILL.md` when release behavior removes or replaces a
   path.
 - Release notes should mention user-visible changes, migrations, breaking
   changes, security impact, and required operator action.
@@ -52,13 +52,13 @@ environment, verification gate, and rollback or forward-fix path.
   production config.
 - Release tags should identify the exact source revision used to build and
   publish artifacts, not just the latest branch head.
-- Version schemes should follow `common/release-versioning.md` and the
+- Version schemes should follow `common/skills/release-versioning/SKILL.md` and the
   repo-local release contract.
 
 ## Versioning
 
 Before choosing or changing a release version, read
-`common/release-versioning.md`.
+`common/skills/release-versioning/SKILL.md`.
 
 Do not impose one calendar versioning scheme across unrelated projects. The
 shared rule is to choose a documented scheme per artifact and keep it stable:

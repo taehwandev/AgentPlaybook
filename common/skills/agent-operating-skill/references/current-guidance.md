@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_agent_operating_skill
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -205,87 +205,87 @@ Before finishing:
 
 ## Task Routing
 
-- Request clarity, Grill-Me, model/effort routing, or token reduction: `common/task-intake-effort-routing.md` and `workflows/request-triage.md`.
-- Scripted workflow route: `workflows/scripted-agent-workflow.md` and `scripts/workflow.py` are mandatory for multi-step tasks when the script is available. Pass `--request "<USER_REQUEST>"` so the script can block direct questions and unclear work before implementation. If the script cannot run, report the blocker before using `index.md` as a fallback.
-- Stack, package manager, framework, runtime, or command discovery: `common/stack-discovery.md`.
-- Failed commands, compiler errors, lint errors, or broken verification: `common/tool-failure-recovery.md`.
-- User questions, approval requests, and ambiguity communication: `common/agent-interaction.md`.
-- Any multi-step agent task: `workflows/agent-task-lifecycle.md`.
-- Interrupted or transferred work: `workflows/agent-handoff-continuation.md`.
-- Work-producing cycle contract and stop conditions: `workflows/cycle-contract.md`.
-- Ambiguous requests or blocker unknowns before PRD, ARD, task breakdown, or implementation: `workflows/ambiguity-gate.md`.
-- PRD or product requirements note: `workflows/prd-creation.md`.
-- App, product, or feature delivery that may continue into code: `workflows/product-architecture-delivery.md`. Use this before the lower-level feature workflow unless the request is already a trivial, scoped change.
-- Multi-step development: `workflows/development-cycle.md`.
-- Delegated or parallel agent work: `workflows/multi-agent-collaboration.md`.
-- Non-trivial review or release candidate review: `workflows/multi-perspective-review.md`.
-- Planning or research: `workflows/planning-research.md`.
-- Documentation update: `workflows/documentation-update.md`.
-- Feature work: `workflows/feature-implementation.md`.
-- Bug or regression: `workflows/bugfix-debugging.md`.
-- Refactor or cleanup: `workflows/refactor-cleanup.md`.
-- Release-sensitive work: `workflows/release-readiness.md`.
-- Final review or commit: `workflows/review-and-commit.md`.
-- Architecture: `common/architecture-selection.md`, `common/architecture-design.md`, or `common/app-architecture.md`.
+- Request clarity, Grill-Me, model/effort routing, or token reduction: `common/skills/task-intake-effort-routing/SKILL.md` and `workflows/skills/request-triage/SKILL.md`.
+- Scripted workflow route: `workflows/skills/scripted-agent-workflow/SKILL.md` and `scripts/workflow.py` are mandatory for multi-step tasks when the script is available. Pass `--request "<USER_REQUEST>"` so the script can block direct questions and unclear work before implementation. If the script cannot run, report the blocker before using `index.md` as a fallback.
+- Stack, package manager, framework, runtime, or command discovery: `common/skills/stack-discovery/SKILL.md`.
+- Failed commands, compiler errors, lint errors, or broken verification: `common/skills/tool-failure-recovery/SKILL.md`.
+- User questions, approval requests, and ambiguity communication: `common/skills/agent-interaction/SKILL.md`.
+- Any multi-step agent task: `workflows/skills/agent-task-lifecycle/SKILL.md`.
+- Interrupted or transferred work: `workflows/skills/agent-handoff-continuation/SKILL.md`.
+- Work-producing cycle contract and stop conditions: `workflows/skills/cycle-contract/SKILL.md`.
+- Ambiguous requests or blocker unknowns before PRD, ARD, task breakdown, or implementation: `workflows/skills/ambiguity-gate/SKILL.md`.
+- PRD or product requirements note: `workflows/skills/prd-creation/SKILL.md`.
+- App, product, or feature delivery that may continue into code: `workflows/skills/product-architecture-delivery/SKILL.md`. Use this before the lower-level feature workflow unless the request is already a trivial, scoped change.
+- Multi-step development: `workflows/skills/development-cycle/SKILL.md`.
+- Delegated or parallel agent work: `workflows/skills/multi-agent-collaboration/SKILL.md`.
+- Non-trivial review or release candidate review: `workflows/skills/multi-perspective-review/SKILL.md`.
+- Planning or research: `workflows/skills/planning-research/SKILL.md`.
+- Documentation update: `workflows/skills/documentation-update/SKILL.md`.
+- Feature work: `workflows/skills/feature-implementation/SKILL.md`.
+- Bug or regression: `workflows/skills/bugfix-debugging/SKILL.md`.
+- Refactor or cleanup: `workflows/skills/refactor-cleanup/SKILL.md`.
+- Release-sensitive work: `workflows/skills/release-readiness/SKILL.md`.
+- Final review or commit: `workflows/skills/review-and-commit/SKILL.md`.
+- Architecture: `common/skills/architecture-selection/SKILL.md`, `common/skills/architecture-design/SKILL.md`, or `common/skills/app-architecture/SKILL.md`.
 - LLM-readable wiki, knowledge-base, runbook, or durable documentation: `common/skills/llm-wiki-documentation/SKILL.md`.
-- Code conventions: `common/code-conventions.md`.
+- Code conventions: `common/skills/code-conventions/SKILL.md`.
 - File/module layout, ownership, public contracts, `api`/`impl` splits, or
-  `assertions`/test-support modules: `common/code-structure-ownership.md`,
-  `common/solid-design-principles.md`, and
-  `common/reusable-code-design.md`. These cards are a bundle for boundary
+  `assertions`/test-support modules: `common/skills/code-structure-ownership/SKILL.md`,
+  `common/skills/solid-design-principles/SKILL.md`, and
+  `common/skills/reusable-code-design/SKILL.md`. These cards are a bundle for boundary
   work; do not load only one when the task changes dependency direction,
   caller-facing contracts, reusable fakes, fixtures, recorders, or assertion
   DSLs.
 - Reusable code extraction or shared module/package contracts:
-  `common/reusable-code-design.md`, plus `common/solid-design-principles.md`
+  `common/skills/reusable-code-design/SKILL.md`, plus `common/skills/solid-design-principles/SKILL.md`
   when the shared API exposes callbacks, interfaces, adapters, fakes, or
   replaceable implementations. When the task creates packages, folders,
   source sets, modules, or shared/core/common boundaries, include a package
   boundary note that names owner, allowed imports, forbidden imports, callers,
   and focused verification before editing. If the task adds several roles, also
   include the file split and package/folder map before writing code.
-- Reusable component, hook, widget, control, or caller-facing API design: `common/component-api-design.md`.
-- UI, async, reducer, store, ViewModel, hook, cache, or state-machine state design: `common/state-modeling.md`.
-- Error handling, typed failures, retry classification, or failure UX: `common/error-modeling.md`.
-- Project, app, repo, package, module, CLI, or service naming: `common/project-naming.md`.
-- Change size or broad diffs: `common/change-size-policy.md`.
-- Existing checkout, user-owned changes, or commit preparation: `common/worktree-hygiene.md`.
-- Dependencies, SDKs, or build plugins: `common/dependency-policy.md`.
-- Generated files, lockfiles, or snapshots: `common/generated-files-policy.md`.
-- API, DTO, route, event, webhook, or shared fixture contracts: `common/api-contract-compatibility.md`.
-- Upload, download, media, attachment, signed URL, public/private asset movement, cleanup, or embedded asset references: `common/asset-lifecycle.md`.
-- External, persisted, generated, cached, platform, or user-provided values: `common/defensive-boundaries.md`.
+- Reusable component, hook, widget, control, or caller-facing API design: `common/skills/component-api-design/SKILL.md`.
+- UI, async, reducer, store, ViewModel, hook, cache, or state-machine state design: `common/skills/state-modeling/SKILL.md`.
+- Error handling, typed failures, retry classification, or failure UX: `common/skills/error-modeling/SKILL.md`.
+- Project, app, repo, package, module, CLI, or service naming: `common/skills/project-naming/SKILL.md`.
+- Change size or broad diffs: `common/skills/change-size-policy/SKILL.md`.
+- Existing checkout, user-owned changes, or commit preparation: `common/skills/worktree-hygiene/SKILL.md`.
+- Dependencies, SDKs, or build plugins: `common/skills/dependency-policy/SKILL.md`.
+- Generated files, lockfiles, or snapshots: `common/skills/generated-files-policy/SKILL.md`.
+- API, DTO, route, event, webhook, or shared fixture contracts: `common/skills/api-contract-compatibility/SKILL.md`.
+- Upload, download, media, attachment, signed URL, public/private asset movement, cleanup, or embedded asset references: `common/skills/asset-lifecycle/SKILL.md`.
+- External, persisted, generated, cached, platform, or user-provided values: `common/skills/defensive-boundaries/SKILL.md`.
 - Environment-specific runtime URLs, API origins, callback URLs, redirect URIs,
   webhook endpoints, CORS origins, or asset hosts:
-  `common/runtime-url-configuration.md`.
-- Release, deployment, packaging, signing, rollout, rollback, versioning, or tags: `common/release-deployment.md` and `common/release-versioning.md`.
+  `common/skills/runtime-url-configuration/SKILL.md`.
+- Release, deployment, packaging, signing, rollout, rollback, versioning, or tags: `common/skills/release-deployment/SKILL.md` and `common/skills/release-versioning/SKILL.md`.
 - User-facing text, forms, controls, dates, numbers, units, measurements,
-  display values, or localization: `common/accessibility-i18n.md`.
-- User-facing prose, documentation tone, release notes, marketing copy, emails, voice fidelity, or AI-writing signal cleanup: `common/human-authored-writing.md`.
+  display values, or localization: `common/skills/accessibility-i18n/SKILL.md`.
+- User-facing prose, documentation tone, release notes, marketing copy, emails, voice fidelity, or AI-writing signal cleanup: `common/skills/human-authored-writing/SKILL.md`.
 - Blog posts, articles, essays, publishable long-form prose, or user-author
-  writing consistency across agents: `common/writing-workspace.md` plus
-  `common/human-authored-writing.md`.
-- SEO, AI search visibility, AEO/GEO claims, sitemap, robots, metadata, Open Graph, short links, canonical URLs, or public discovery feeds: `common/public-discovery.md`.
-- UI layout, interaction, text overflow, responsive behavior, or accessibility-visible state: `common/ui-visual-verification.md`.
-- Refactoring: `common/refactoring.md`.
-- Tests and evidence: `common/testing.md` and `common/verification-policy.md`.
-- Code review: `common/code-review.md`.
-- Local programs, agent CLIs, or usage telemetry: `common/local-tools.md`.
-- Secrets, external state, or user-owned changes: `common/agent-editing-safety.md`, `common/secure-development-baseline.md`, and `common/security-privacy-review.md`.
+  writing consistency across agents: `common/skills/writing-workspace/SKILL.md` plus
+  `common/skills/human-authored-writing/SKILL.md`.
+- SEO, AI search visibility, AEO/GEO claims, sitemap, robots, metadata, Open Graph, short links, canonical URLs, or public discovery feeds: `common/skills/public-discovery/SKILL.md`.
+- UI layout, interaction, text overflow, responsive behavior, or accessibility-visible state: `common/skills/ui-visual-verification/SKILL.md`.
+- Refactoring: `common/skills/refactoring/SKILL.md`.
+- Tests and evidence: `common/skills/testing/SKILL.md` and `common/skills/verification-policy/SKILL.md`.
+- Code review: `common/skills/code-review/SKILL.md`.
+- Local programs, agent CLIs, or usage telemetry: `common/skills/local-tools/SKILL.md`.
+- Secrets, external state, or user-owned changes: `common/skills/agent-editing-safety/SKILL.md`, `common/skills/secure-development-baseline/SKILL.md`, and `common/skills/security-privacy-review/SKILL.md`.
 - React, iOS, Android, server, desktop, or application work: load the matching platform card from `index.md`.
 - Android Navigation 3, deep links, typed route/back-stack contracts,
   mixed Compose/Activity routing, or route callbacks/events:
-  `platforms/android/android-architecture.md` and
-  `platforms/android/android-module-structure.md`, plus the structure/SOLID
+  `platforms/android/skills/android-architecture/SKILL.md` and
+  `platforms/android/skills/android-module-structure/SKILL.md`, plus the structure/SOLID
   bundle above when route contracts, `api`/`impl`, `assertions`, fixtures,
   recording fakes, or assertion DSLs are added or moved. Add
-  `platforms/android/android-security.md` when exported components, app links,
+  `platforms/android/skills/android-security/SKILL.md` when exported components, app links,
   WebView, permissions, or credentials are touched.
 - Android Compose performance, stability, lazy lists, side effects, custom
   modifiers, baseline profiles, or measurement claims:
-  `platforms/android/android-compose-ui.md`,
-  `platforms/android/android-review.md`,
-  `platforms/android/android-external-skill-source-coverage.md`, and the
+  `platforms/android/skills/android-compose-ui/SKILL.md`,
+  `platforms/android/skills/android-review/SKILL.md`,
+  `platforms/android/skills/android-external-skill-source-coverage/SKILL.md`, and the
   testing/verification cards. Do not claim a performance fix without the
   repo's relevant measurement evidence or a clear statement that only a
   structural risk was reduced.
@@ -295,7 +295,7 @@ Before finishing:
   Play Billing, Play Engage, Wear Compose, XR/Glimmer, or AppFunctions:
   load the Android architecture/module/Compose/security card that matches the
   surface, then apply the no-omission source manifest in
-  `platforms/android/android-external-skill-source-coverage.md` before editing.
+  `platforms/android/skills/android-external-skill-source-coverage/SKILL.md` before editing.
 
 ## Output Contract
 

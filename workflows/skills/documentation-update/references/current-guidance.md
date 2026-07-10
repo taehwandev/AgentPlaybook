@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_documentation_update_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -151,9 +151,9 @@ agent behavior. A useful shared card should answer these questions directly:
 - Report contract: what the final response, PR, commit, or handoff must say
   when that card governed the work.
 
-Use `common/agent-skill-card-anatomy.md` as the stricter contract when a card is
-new, broad-use, recurring-mistake guidance, or expected to be loaded before
-code, review, release, or handoff. The preferred shape includes explicit
+Use `common/skills/agent-skill-card-anatomy/SKILL.md` as the stricter contract
+when a card is new, broad-use, recurring-mistake guidance, or expected to be
+loaded before code, review, release, or handoff. The preferred shape includes explicit
 anti-rationalization, red-flag, do-not, stop-if, verification, and report
 sections so the guidance is executable rather than inspirational.
 

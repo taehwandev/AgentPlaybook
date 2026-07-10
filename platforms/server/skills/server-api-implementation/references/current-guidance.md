@@ -29,7 +29,7 @@ Do not put validation, permission checks, database queries, external calls, and 
 
 ## File And Handler Split
 
-Apply `../../common/code-structure-ownership.md` before growing server runtime
+Apply `../../common/skills/code-structure-ownership/SKILL.md` before growing server runtime
 files. Default to one primary route/resolver handler, validator,
 request/response DTO family, use case, service, repository, client, mapper, job,
 fixture, or assertion owner per file.

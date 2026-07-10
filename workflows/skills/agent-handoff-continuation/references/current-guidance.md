@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_agent_handoff_continuation_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -10,9 +10,9 @@ Use when work may continue across turns, interruptions, context compaction, anot
 
 ## Read
 
-- `workflows/agent-task-lifecycle.md`
-- `common/verification-policy.md`
-- `common/agent-editing-safety.md`
+- `workflows/skills/agent-task-lifecycle/SKILL.md`
+- `common/skills/verification-policy/SKILL.md`
+- `common/skills/agent-editing-safety/SKILL.md`
 - active task-specific workflow from `index.md`
 
 ## Continuation State

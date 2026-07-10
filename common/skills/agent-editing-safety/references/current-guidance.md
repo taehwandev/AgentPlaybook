@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_agent_editing_safety
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

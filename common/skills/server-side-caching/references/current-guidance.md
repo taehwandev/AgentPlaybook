@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_server_side_caching
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

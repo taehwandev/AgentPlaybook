@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_app_architecture
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -41,7 +41,7 @@ forbidden; and which test or check proves the boundary.
   tenant behavior, sync, or mutations need focused tests.
 - Add repository/client boundaries when API, persistence, cache, filesystem, OS,
   browser, SDK, or external service calls need isolation.
-- Promote to shared modules only when `common/reusable-code-design.md` says the
+- Promote to shared modules only when `common/skills/reusable-code-design/SKILL.md` says the
   caller contract is stable enough.
 - Split into `api` and `impl` only when callers need a stable contract without
   implementation dependencies, navigation/registration crosses the boundary, an

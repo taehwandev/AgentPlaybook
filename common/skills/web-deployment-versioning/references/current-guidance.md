@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_web_deployment_versioning
-status: review
+status: stable
 type: human-reviewed-needed
 agentplaybook_card_contract: strict
 ---
@@ -22,7 +22,7 @@ server-rendered web surface, or static site.
 - A repo-local release guide mentions web deploy ids, release notes, tags,
   build metadata, or version display.
 
-Use `common/release-versioning.md` first for the general scheme. This card
+Use `common/skills/release-versioning/SKILL.md` first for the general scheme. This card
 adds the web-specific rule: every production deploy must be traceable, but not
 every deploy needs a user-facing release version.
 

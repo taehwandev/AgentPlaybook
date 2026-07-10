@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_secure_development_baseline
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

@@ -10,10 +10,10 @@ Use when server work touches auth, permissions, tenant isolation, API input,
 database queries, webhooks, jobs, uploads, external calls, rate limits, secrets,
 or public endpoints.
 
-Also use `common/secure-development-baseline.md` and
-`common/security-privacy-review.md` for shared secret handling, authorization,
+Also use `common/skills/secure-development-baseline/SKILL.md` and
+`common/skills/security-privacy-review/SKILL.md` for shared secret handling, authorization,
 logging, diagnostics, and open-source repository safety rules.
-Use `common/runtime-url-configuration.md` for environment-specific service
+Use `common/skills/runtime-url-configuration/SKILL.md` for environment-specific service
 origins, callback URLs, webhook endpoints, CORS origins, redirect hosts, and
 asset/CDN hosts.
 

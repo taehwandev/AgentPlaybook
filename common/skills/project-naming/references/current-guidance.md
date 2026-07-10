@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_project_naming
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 

@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_human_authored_writing
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -22,7 +22,7 @@ public introduction, release note, email, marketing page, documentation tone
 work, or "humanize" style cleanup.
 
 For blog posts, articles, essays, or other publishable long-form prose, also
-load `common/writing-workspace.md` before creating files so the draft source and
+load `common/skills/writing-workspace/SKILL.md` before creating files so the draft source and
 publishing target are not confused.
 
 Do not wait until after writing to load this card. For writing tasks, this card
@@ -256,7 +256,7 @@ Use these passes when the writing task is more than a one-line copy edit.
 - Did the second pass catch remaining formulaic structure, fake balance, vague
   authorities, chatbot artifacts, or unsupported confidence?
 - For UI text, forms, localized copy, or accessibility-sensitive text, also load
-  `common/accessibility-i18n.md`.
+  `common/skills/accessibility-i18n/SKILL.md`.
 
 ## Report
 

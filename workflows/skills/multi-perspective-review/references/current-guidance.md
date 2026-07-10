@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_multi_perspective_review_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -21,7 +21,7 @@ produce concrete findings, risks, and verification gaps.
 - release candidates need a broad readiness pass
 - a feature idea needs structured critique before implementation
 
-For tiny mechanical edits, use `common/code-review.md` directly.
+For tiny mechanical edits, use `common/skills/code-review/SKILL.md` directly.
 
 ## Context Packet
 
@@ -35,7 +35,7 @@ Collect:
 - known unresolved questions and residual risk
 
 Do not invent acceptance criteria when a blocking product decision is missing.
-Use `workflows/ambiguity-gate.md` first.
+Use `workflows/skills/ambiguity-gate/SKILL.md` first.
 
 ## Perspectives
 

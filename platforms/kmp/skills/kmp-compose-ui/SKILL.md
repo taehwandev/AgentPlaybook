@@ -6,11 +6,11 @@ type: ai-generated
 
 # KMP Compose UI
 
-Use when routed to `platforms/kmp/kmp-compose-ui.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/kmp/skills/kmp-compose-ui/SKILL.md` or when work needs this AgentPlaybook guidance area.
 
 ## Read
 
-- `references/current-guidance.md` for the full guidance previously held in `platforms/kmp/kmp-compose-ui.md`.
+- `references/current-guidance.md` for the detailed guidance for this skill.
 - Related `SKILL.md` entrypoints named by the reference before loading their detailed references.
 
 ## Process
@@ -21,7 +21,7 @@ Use when routed to `platforms/kmp/kmp-compose-ui.md` or when work needs this Age
 
 ## Do Not
 
-- Do not treat the compatibility path `platforms/kmp/kmp-compose-ui.md` as the canonical context-loading target.
+- Do not look for legacy flat compatibility paths; load this skill bundle as the canonical context-loading target.
 - Do not load broad references for unrelated work just because this skill was nearby in the route.
 
 ## Verification

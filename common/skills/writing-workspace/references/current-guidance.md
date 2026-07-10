@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_writing_workspace
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -12,7 +12,7 @@ that may later be copied into a website, docs repo, newsletter, social channel,
 or publishing system.
 
 This card defines where writing work should live. Use
-`common/human-authored-writing.md` for voice, fidelity, and AI-writing signal
+`common/skills/human-authored-writing/SKILL.md` for voice, fidelity, and AI-writing signal
 cleanup.
 
 ## Use When

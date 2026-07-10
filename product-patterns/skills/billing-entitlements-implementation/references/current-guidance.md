@@ -11,8 +11,8 @@ payment failure, invoices, provider webhooks, billing permissions, or feature
 gates.
 
 Also read `billing-entitlements.md`, `auth-rbac-implementation.md`,
-`../platforms/server/server-api-implementation.md`, and
-`../common/server-side-caching.md`.
+`../platforms/server/skills/server-api-implementation/SKILL.md`, and
+`../common/skills/server-side-caching/SKILL.md`.
 
 ## Model Separation
 

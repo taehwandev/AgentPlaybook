@@ -1,6 +1,6 @@
 ---
 keyflow_id: sys_prd_creation_workflow
-status: review
+status: stable
 type: human-reviewed-needed
 ---
 
@@ -15,14 +15,14 @@ For agent execution, run the scripted route before writing the PRD:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
-Use `workflows/product-architecture-delivery.md` only when the work continues
+Use `workflows/skills/product-architecture-delivery/SKILL.md` only when the work continues
 from PRD into ARD and code.
 
 ## Read
 
 - target repo-local agent instructions and product docs
-- `workflows/ambiguity-gate.md`
-- `common/product-spec-to-implementation.md`
+- `workflows/skills/ambiguity-gate/SKILL.md`
+- `common/skills/product-spec-to-implementation/SKILL.md`
 - matching platform, product-pattern, security, data, accessibility, or release
   cards when those surfaces shape the PRD
 
