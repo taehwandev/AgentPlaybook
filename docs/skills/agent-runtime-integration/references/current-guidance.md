@@ -370,22 +370,23 @@ profiles are explicit:
 | General analysis | Terra / medium |
 | Normal code implementation | Terra / medium |
 | Complex implementation with deep or specialist evidence | Sol / high |
-| Simple repetitive work | Luna / low |
+| Non-authoring repetitive checks (read-only; no code or patches) | Luna / low |
 | Final review | Sol / xhigh |
 
 Automatic stage selection is command-based: `prd` and `spec` select PRD/design,
 `plan` and `planning` select research, `task` selects general analysis,
 `feature`/`build`/`bugfix`/`refactor`/`workflow-setup` select implementation,
-quick `test` work selects simple repetition, and `review`/`docs-review` select
-final review. Deep or specialist evidence promotes implementation commands to
-complex implementation. This keeps a quick exact code change on Terra unless
-it is explicitly a simple repeat.
+and only quick, non-authoring `test` work selects the read-only Luna profile.
+Test creation, test fixes, code edits, and every implementation command stay on
+Terra / medium or higher. `review`/`docs-review` select final review. Deep or
+specialist evidence promotes implementation commands to complex implementation.
 
 Do not infer complex implementation from line count or a subjective impression.
-Normal implementation stays on Terra / medium. Promote only when the request
-classification or local inspection provides deep or specialist evidence, such
-as cross-module architecture, security, data, migration, release, or repeated
-failure risk. When the orchestrator explicitly selects
+Normal implementation stays on Terra / medium. Luna must not write or modify
+code: its dispatcher handoff is read-only and explicitly forbids code, patches,
+and test creation. Promote only when the request classification or local
+inspection provides deep or specialist evidence, such as cross-module
+architecture, security, data, migration, release, or repeated failure risk. When the orchestrator explicitly selects
 `complex_implementation` after local inspection, it must pass the concrete
 `--complexity-evidence`; the dispatcher rejects an unexplained promotion. The
 handoff carries the parent preflight evidence, docs-read receipt, gate ledger,

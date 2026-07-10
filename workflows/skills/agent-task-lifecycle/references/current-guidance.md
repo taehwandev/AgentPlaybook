@@ -94,6 +94,22 @@ memory.
     verification method, stop condition, and checkpoint or next cycle before
     editing. Keep code review as a separate review cycle unless the current
     route is explicitly review or review-response work.
+
+### Completion Evidence Fields
+
+When a finish gate requires evidence, record the actual decision rather than a
+receipt-only summary. At minimum:
+
+- `route docs read`: name the required docs read before implementation, the
+  applied takeaway, and the immediate next action.
+- `source docs`: state which source-of-truth documents were searched and read,
+  or that none existed, and how that result shaped the work.
+- `documentation impact` and `documentation`: state the artifact class, the
+  updated/created/unchanged/not-applicable decision, affected path or class,
+  and why the durable behavior or acceptance criteria require that result.
+- `alignment brief`, `cycle contract`, and `boundary plan`: state the user
+  checkpoint, resolved assumptions or blockers, owned and forbidden scope,
+  nearest verification, stop condition, and handoff point.
 12. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
 13. Decide: make a reasonable assumption when safe; ask only when ambiguity

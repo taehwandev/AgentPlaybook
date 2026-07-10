@@ -38,6 +38,8 @@ def build_dispatch_manifest(
         complexity_evidence,
     )
     profile = profile_for_work_kind(selected_kind)
+    non_authoring = selected_kind == "repetitive"
+    sandbox_mode = "read-only" if non_authoring else "workspace-write"
     project = project.expanduser().resolve()
     evidence_directory = project / ".agentplaybook"
     handoff_state = {
@@ -50,7 +52,13 @@ def build_dispatch_manifest(
         "gate_ledger": str(evidence_directory / "gate-evidence.json"),
         "verification_plan": "run the nearest verification required by the parent route",
     }
-    handoff_prompt = build_handoff_prompt(command, request, selected_kind, handoff_state)
+    handoff_prompt = build_handoff_prompt(
+        command,
+        request,
+        selected_kind,
+        handoff_state,
+        non_authoring=non_authoring,
+    )
     codex_argv = [
         "codex",
         "exec",
@@ -58,6 +66,8 @@ def build_dispatch_manifest(
         profile["codex_model"],
         "--config",
         f'model_reasoning_effort="{profile["reasoning_effort"]}"',
+        "--sandbox",
+        sandbox_mode,
         "--cd",
         str(project),
         handoff_prompt,
@@ -70,6 +80,8 @@ def build_dispatch_manifest(
         "request_classification": classification,
         "orchestrator_profile": ORCHESTRATOR_PROFILE,
         "work_profile": profile,
+        "authoring_policy": "read-only non-authoring" if non_authoring else "code authoring allowed",
+        "sandbox_mode": sandbox_mode,
         "selection_reason": selection_reason,
         "handoff_state": handoff_state,
         "codex_exec_argv": codex_argv,
@@ -86,14 +98,22 @@ def build_handoff_prompt(
     request: str,
     work_kind: str,
     handoff_state: Mapping[str, object],
+    *,
+    non_authoring: bool,
 ) -> str:
     required_docs = ", ".join(str(doc) for doc in handoff_state["required_docs"])
     gates = ", ".join(str(gate) for gate in handoff_state["gates"])
-    return "\n".join(
+    instructions = [
+        "You are a delegated Codex worker for one bounded task stage.",
+        "Do not delegate another Codex child from this worker.",
+        "Read the target repository instructions before changing files and preserve existing user changes.",
+    ]
+    if non_authoring:
+        instructions.append(
+            "This is a read-only non-authoring stage. Do not modify files, write code, generate patches, or create tests."
+        )
+    instructions.extend(
         [
-            "You are a delegated Codex worker for one bounded task stage.",
-            "Do not delegate another Codex child from this worker.",
-            "Read the target repository instructions before changing files and preserve existing user changes.",
             f"Workflow command: {command}",
             f"Work kind: {work_kind}",
             f"Required docs from the parent route: {required_docs or 'resolve from the route'}",
@@ -107,6 +127,7 @@ def build_handoff_prompt(
             request,
         ]
     )
+    return "\n".join(instructions)
 
 
 def execute_dispatch_manifest(
@@ -143,6 +164,7 @@ def print_dispatch_manifest(manifest: Mapping[str, object], output_format: str) 
     print(f"- Model tier: `{profile['model_tier']}`")
     print(f"- Codex model: `{profile['codex_model']}`")
     print(f"- Reasoning effort: `{profile['reasoning_effort']}`")
+    print(f"- Authoring policy: `{manifest['authoring_policy']}`")
     print(f"- Selection: {manifest['selection_reason']}")
     print()
     print("## Handoff Command")

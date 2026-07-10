@@ -425,6 +425,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertEqual("medium", profile["reasoning_effort"])
         self.assertIn("--model", manifest["codex_exec_argv"])
         self.assertIn('model_reasoning_effort="medium"', manifest["codex_exec_argv"])
+        self.assertEqual("workspace-write", manifest["sandbox_mode"])
 
     def test_dispatch_auto_selects_stage_profiles(self) -> None:
         cases = {
@@ -459,13 +460,52 @@ class WorkflowRoutingTests(unittest.TestCase):
         quick = {"effort": "quick"}
 
         self.assertEqual(
-            ("repetitive", "quick test route selects the low-cost repetitive profile"),
+            ("repetitive", "quick non-authoring test route selects the read-only Luna profile"),
             select_work_kind("test", quick, "auto"),
         )
         self.assertEqual(
             ("implementation", "normal implementation defaults to Terra medium"),
             select_work_kind("feature", quick, "auto"),
         )
+
+    def test_dispatch_keeps_code_authoring_tests_on_terra(self) -> None:
+        manifest = build_dispatch_manifest(
+            "test",
+            "Add a regression test for `scripts/workflow_dispatch.py:10`.",
+            ROOT,
+        )
+
+        self.assertEqual("implementation", manifest["work_profile"]["work_kind"])
+        self.assertEqual("gpt-5.6-terra", manifest["work_profile"]["codex_model"])
+        self.assertEqual("workspace-write", manifest["sandbox_mode"])
+
+    def test_classification_keeps_code_authoring_above_luna(self) -> None:
+        classification = classify_request("Add a regression test for `scripts/workflow_dispatch.py:10`.")
+
+        self.assertEqual("quick", classification["effort"])
+        self.assertEqual("balanced", classification["model_tier"])
+        self.assertEqual("gpt-5.6-terra", classification["model_selection"]["codex"])
+
+    def test_dispatch_makes_luna_repetition_read_only_and_non_authoring(self) -> None:
+        manifest = build_dispatch_manifest(
+            "test",
+            "Run the focused tests for `scripts/workflow_dispatch.py:10`.",
+            ROOT,
+        )
+
+        self.assertEqual("repetitive", manifest["work_profile"]["work_kind"])
+        self.assertEqual("gpt-5.6-luna", manifest["work_profile"]["codex_model"])
+        self.assertEqual("read-only", manifest["sandbox_mode"])
+        self.assertEqual("read-only non-authoring", manifest["authoring_policy"])
+        self.assertIn("Do not modify files, write code, generate patches, or create tests.", manifest["codex_exec_argv"][-1])
+
+    def test_dispatch_rejects_luna_for_explicit_code_authoring(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Luna cannot write or modify code"):
+            select_work_kind(
+                "feature",
+                {"effort": "quick", "request": "Implement the requested code change."},
+                "repetitive",
+            )
 
     def test_dispatch_promotes_deep_work_to_sol_high(self) -> None:
         manifest = build_dispatch_manifest(

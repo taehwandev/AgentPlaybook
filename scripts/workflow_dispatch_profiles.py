@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Mapping
 
-from workflow_request import CODEX_MODEL_BY_TIER
+from workflow_request import CODEX_MODEL_BY_TIER, requires_code_authoring
 
 
 WORK_KINDS = (
@@ -55,6 +55,8 @@ IMPLEMENTATION_COMMANDS = {
     "workflow-setup",
 }
 
+NON_AUTHORING_REPETITIVE_COMMANDS = {"test"}
+
 
 def select_work_kind(
     command: str,
@@ -72,6 +74,11 @@ def select_work_kind(
                 )
             reason = complexity_evidence.strip() or f"{effort} effort is explicit complexity evidence"
             return requested_kind, f"complex implementation evidence: {reason}"
+        if requested_kind == "repetitive":
+            if _requires_code_authoring(command, classification):
+                raise ValueError("Luna cannot write or modify code; select the Terra implementation profile instead.")
+            if command not in NON_AUTHORING_REPETITIVE_COMMANDS:
+                raise ValueError("Luna is limited to read-only non-authoring repetitive work.")
         return requested_kind, f"explicit work kind `{requested_kind}`"
 
     auto_work_kind = AUTO_WORK_KINDS.get(command)
@@ -79,11 +86,17 @@ def select_work_kind(
         return auto_work_kind, f"route `{command}` selects `{auto_work_kind}`"
 
     effort = str(classification["effort"])
-    if command == "test" and effort == "quick":
-        return "repetitive", "quick test route selects the low-cost repetitive profile"
+    if command == "test" and effort == "quick" and not _requires_code_authoring(command, classification):
+        return "repetitive", "quick non-authoring test route selects the read-only Luna profile"
     if command in IMPLEMENTATION_COMMANDS and effort in {"deep", "specialist"}:
         return "complex_implementation", f"{effort} effort is explicit complexity evidence"
     return "implementation", "normal implementation defaults to Terra medium"
+
+
+def _requires_code_authoring(command: str, classification: Mapping[str, object]) -> bool:
+    if command in IMPLEMENTATION_COMMANDS:
+        return True
+    return requires_code_authoring(str(classification.get("request") or ""))
 
 
 def profile_for_work_kind(work_kind: str) -> dict[str, str]:

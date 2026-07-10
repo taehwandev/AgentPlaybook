@@ -164,6 +164,10 @@ CODEX_MODEL_BY_TIER = {
     "frontier": "gpt-5.6-sol",
     "specialist": "gpt-5.6-sol",
 }
+CODE_AUTHORING_REQUEST_PATTERNS = (
+    r"\b(?:add|create|write|implement|fix|modify|edit|refactor)\b",
+    r"(?:추가|작성|구현|수정|고쳐|만들)",
+)
 
 
 def infer_concerns_from_request(text: str) -> list[str]:
@@ -183,13 +187,19 @@ def classify_request(text: str) -> dict[str, object]:
     flags = _request_flags(normalized, lowered)
     route, question_drill, response_mode, reason = _classification_decision(flags)
     model_tier = _model_tier_for_effort(str(flags["effort"]))
+    code_authoring = requires_code_authoring(normalized)
+    if code_authoring and model_tier == "fast":
+        model_tier = "balanced"
+    model_selection = _model_selection(model_tier, str(flags["effort"]))
+    if code_authoring and model_tier == "balanced" and flags["effort"] == "quick":
+        model_selection["reason"] = "code authoring requires at least the balanced tier"
 
     return {
         "request": normalized,
         "clarity": flags["clarity"],
         "effort": flags["effort"],
         "model_tier": model_tier,
-        "model_selection": _model_selection(model_tier, str(flags["effort"])),
+        "model_selection": model_selection,
         "recommended_route": route,
         "grill_me": question_drill,
         "question_drill": question_drill,
@@ -222,6 +232,11 @@ def _model_selection(model_tier: str, effort: str) -> dict[str, object]:
             "current model when switching is unavailable."
         ),
     }
+
+
+def requires_code_authoring(request: str) -> bool:
+    lowered = request.lower()
+    return any(re.search(pattern, lowered) for pattern in CODE_AUTHORING_REQUEST_PATTERNS)
 
 
 def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
