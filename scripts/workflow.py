@@ -10,9 +10,16 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from workflow_catalog import COMMANDS, CONCERNS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import ROOT, unique
+from workflow_dispatch import (
+    WORK_KINDS,
+    build_dispatch_manifest,
+    execute_dispatch_manifest,
+    print_dispatch_manifest,
+)
 from workflow_request import (
     classified_route_block_reason,
     classify_request,
@@ -58,6 +65,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="Required with --request-classified; describes the prior classification or answer-first handling.",
     )
     route.add_argument("--format", choices=("markdown", "json"), default="markdown")
+
+    dispatch = subparsers.add_parser(
+        "dispatch",
+        help="Build a Codex task handoff from a workflow profile.",
+    )
+    dispatch.add_argument("command", choices=sorted(COMMANDS), help="Task command profile.")
+    dispatch.add_argument("--request", required=True, help="Current user request text.")
+    dispatch.add_argument("--project", default=".", help="Target project root for the delegated Codex task.")
+    dispatch.add_argument("--work-kind", choices=WORK_KINDS, default="auto")
+    dispatch.add_argument(
+        "--complexity-evidence",
+        default="",
+        help="Local inspection evidence required when explicitly selecting complex_implementation.",
+    )
+    dispatch.add_argument("--platform", choices=sorted(PLATFORMS), help="Affected platform.")
+    dispatch.add_argument(
+        "--concern",
+        action="append",
+        default=[],
+        choices=sorted(set(CONCERNS) | {key[1] for key in PLATFORM_CONCERNS}),
+        help="Affected concern. Can be repeated.",
+    )
+    dispatch.add_argument("--format", choices=("markdown", "json"), default="markdown")
+    dispatch.add_argument(
+        "--execute",
+        action="store_true",
+        help="Run the selected Codex worker after building the handoff manifest.",
+    )
 
     classify = subparsers.add_parser("classify", help="Classify request clarity and effort.")
     classify.add_argument("request", help="User request text to classify.")
@@ -167,6 +202,48 @@ def print_route(args: argparse.Namespace) -> int:
     return 1 if route["missing"] else 0
 
 
+def print_dispatch(args: argparse.Namespace) -> int:
+    request_classification = classify_request(args.request)
+    block_reason = route_block_reason(args.command, request_classification)
+    if block_reason:
+        print(block_reason, file=sys.stderr)
+        return 2
+
+    inferred_concerns = infer_concerns_from_request(args.request)
+    route = resolve_docs(
+        args.command,
+        args.platform,
+        unique([*args.concern, *inferred_concerns]),
+        request_classification=request_classification,
+        request_text=args.request,
+    )
+    if route["missing"]:
+        print("Dispatch route has missing documents:", file=sys.stderr)
+        for doc in route["missing"]:
+            print(f"- {doc}", file=sys.stderr)
+        return 1
+    try:
+        manifest = build_dispatch_manifest(
+            args.command,
+            args.request,
+            Path(args.project),
+            work_kind=args.work_kind,
+            complexity_evidence=args.complexity_evidence,
+            route=route,
+        )
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 2
+    if args.execute:
+        try:
+            return execute_dispatch_manifest(manifest)
+        except RuntimeError as error:
+            print(error, file=sys.stderr)
+            return 1
+    print_dispatch_manifest(manifest, args.format)
+    return 0
+
+
 def main(argv: list[str]) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -182,6 +259,8 @@ def main(argv: list[str]) -> int:
         return print_query(args)
     if args.action == "classify":
         return print_request_classification(args)
+    if args.action == "dispatch":
+        return print_dispatch(args)
     return print_route(args)
 
 

@@ -7,6 +7,11 @@ from pathlib import Path
 
 RUNTIME_BRIDGE_BEGIN = "<!-- agentplaybook-runtime-bridge:start -->"
 RUNTIME_BRIDGE_END = "<!-- agentplaybook-runtime-bridge:end -->"
+CODEX_DISPATCH_BRIDGE_PHRASE = (
+    "For a bounded Codex task stage, automatically select and run the model-profile handoff with "
+    "workflow.py dispatch --execute; keep normal implementation on Terra medium, reserve Sol high "
+    "for explicit complex implementation or PRD/design, and reserve Sol xhigh for final review."
+)
 
 RUNTIME_BRIDGE_GRAPH_PHRASES = [
     "Before project work, run AgentPlaybook workflow routing with the user's current request; route/search owns natural-language document discovery.",
@@ -28,14 +33,18 @@ RUNTIME_BRIDGE_COMMON_REQUIRED_PHRASES = [
 
 
 def runtime_bridge_required_phrases(runtime_name: str, instruction_file: str) -> list[str]:
-    return [
+    phrases = [
         f"{runtime_name} reads {instruction_file}.",
         *RUNTIME_BRIDGE_COMMON_REQUIRED_PHRASES,
         f"If this bridge or the project-root {instruction_file} cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
     ]
+    if runtime_name == "Codex":
+        phrases.append(CODEX_DISPATCH_BRIDGE_PHRASE)
+    return phrases
 
 
 def runtime_bridge_block(root: Path, runtime_name: str, instruction_file: str) -> str:
+    dispatch_phrase = [f"- {CODEX_DISPATCH_BRIDGE_PHRASE}"] if runtime_name == "Codex" else []
     return "\n".join([
         RUNTIME_BRIDGE_BEGIN,
         "## AgentPlaybook Runtime Bridge",
@@ -50,6 +59,7 @@ def runtime_bridge_block(root: Path, runtime_name: str, instruction_file: str) -
         f"- {runtime_name} reads {instruction_file}.",
         "- Read project-root instructions before AgentPlaybook shared guidance.",
         "- Before project work, run AgentPlaybook workflow routing with the user's current request; route/search owns natural-language document discovery.",
+        *dispatch_phrase,
         "- Do not wait for the user to name document keywords; infer the work surface from the request, platform, concern, and touched files, then read the route required_docs before editing or reviewing.",
         "- Use workflow-doc-surfaces.json and the local document graph as routing/search inputs; treat graph neighbors as reference_docs unless the route marks them as required_docs.",
         "- If routing/search misses a clearly relevant platform, concern, or document surface, stop and report the gap instead of proceeding from memory.",

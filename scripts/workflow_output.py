@@ -20,6 +20,12 @@ def print_markdown(route: dict[str, object]) -> None:
         print("## Request Classification")
         print(f"- Clarity: `{classification['clarity']}`")
         print(f"- Effort: `{classification['effort']}`")
+        model_selection = classification.get("model_selection") or {}
+        if model_selection:
+            print(f"- Model tier: `{model_selection['tier']}`")
+            print(f"- Codex model: `{model_selection['codex']}`")
+            print(f"- Runtime mapping: `{model_selection['runtime_mapping']}`")
+            print(f"- Switching boundary: `{model_selection['switching_boundary']}`")
         print(f"- Recommended route: `{classification['recommended_route']}`")
         grill_me = classification.get("grill_me", classification["question_drill"])
         print(f"- Grill-Me protocol: `{str(grill_me).lower()}`")

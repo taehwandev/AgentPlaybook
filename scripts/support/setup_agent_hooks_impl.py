@@ -58,14 +58,22 @@ def main() -> None:
         action="store_true",
         help="Also install project-level permissions for all ~/GitHub/* projects.",
     )
+    parser.add_argument(
+        "--runtime",
+        action="append",
+        choices=("agy", "claude", "codex"),
+        default=[],
+        help="Limit user-level runtime bridge setup to one or more runtimes.",
+    )
     args = parser.parse_args()
 
     dry_run = args.dry_run or args.check
+    selected_runtimes = set(args.runtime)
     spill_available = _has_spill_setup_helper()
     results: list[dict] = []
     launcher_configured = False
 
-    if _has_claude():
+    if _runtime_selected("claude", selected_runtimes) and _has_claude():
         results += ensure_stable_launcher(ROOT, dry_run)
         launcher_configured = True
         results += configure_claude(
@@ -76,10 +84,10 @@ def main() -> None:
             spill_available=spill_available,
         )
 
-    if _has_codex():
+    if _runtime_selected("codex", selected_runtimes) and _has_codex():
         results += configure_codex(dry_run, root=ROOT)
 
-    if _has_agy():
+    if _runtime_selected("agy", selected_runtimes) and _has_agy():
         results += configure_agy(
             dry_run,
             root=ROOT,
@@ -116,6 +124,10 @@ def main() -> None:
 
 def _has_claude() -> bool:
     return (Path.home() / ".claude").is_dir() or bool(shutil.which("claude"))
+
+
+def _runtime_selected(runtime: str, selected_runtimes: set[str]) -> bool:
+    return not selected_runtimes or runtime in selected_runtimes
 
 
 def _has_codex() -> bool:

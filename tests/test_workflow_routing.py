@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,12 +55,13 @@ from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_
 from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
 from support.runtime_bridge import (
+    CODEX_DISPATCH_BRIDGE_PHRASE,
     RUNTIME_BRIDGE_GRAPH_PHRASES,
     runtime_bridge_block,
     runtime_bridge_required_phrases,
 )
 from support.stable_launcher import stable_launcher_path
-from workflow_catalog import COMMANDS, CONCERNS
+from workflow_catalog import COMMANDS, CONCERNS, SPILL_ACTION_LABELS
 from workflow_gate_policy import (
     AGENTIC_RUN_STATE_GATE,
     AMBIGUITY_GATE,
@@ -80,6 +82,8 @@ from workflow_request import infer_concerns_from_request
 from workflow_request import classify_request
 from workflow_request import classified_route_block_reason
 from workflow_request import route_block_reason
+from workflow_dispatch import build_dispatch_manifest, execute_dispatch_manifest
+from workflow_dispatch_profiles import profile_for_work_kind, select_work_kind
 from workflow_doc_surfaces import (
     extract_request_surface_paths,
     git_status_surface_paths,
@@ -96,7 +100,8 @@ from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import resolve_docs
 from workflow_search import search_docs
 from workflow_skill_paths import canonical_doc_path
-from workflow_spill import spill_tool_label
+from workflow_spill import spill_tool_label, validate_spill_label_contracts
+from workflow import build_parser, print_dispatch
 from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS, markdown_files_to_validate
 
 
@@ -363,6 +368,221 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertEqual("clear-scoped", classification["clarity"])
         self.assertEqual("workflow-setup", classification["recommended_route"])
         self.assertFalse(classification["grill_me"])
+
+    def test_classification_includes_runtime_neutral_model_selection(self) -> None:
+        quick = classify_request("`scripts/workflow_request.py:10` 확인해줘")
+        standard = classify_request("기획변경 때 문서 정리가 누락되는 걸 막아줘")
+        deep = classify_request("프로필 설정 기능을 구현해줘")
+
+        self.assertEqual("quick", quick["effort"])
+        self.assertEqual("fast", quick["model_tier"])
+        self.assertEqual("gpt-5.6-luna", quick["model_selection"]["codex"])
+
+        self.assertEqual("standard", standard["effort"])
+        self.assertEqual("balanced", standard["model_tier"])
+        self.assertEqual("gpt-5.6-terra", standard["model_selection"]["codex"])
+
+        self.assertEqual("deep", deep["effort"])
+        self.assertEqual("frontier", deep["model_tier"])
+        self.assertEqual("gpt-5.6-sol", deep["model_selection"]["codex"])
+        self.assertEqual(
+            "codex-only-or-runtime-equivalent",
+            deep["model_selection"]["runtime_mapping"],
+        )
+        self.assertEqual("task-or-agent-boundary", deep["model_selection"]["switching_boundary"])
+        self.assertIn(
+            "Use Codex model ids only on Codex",
+            deep["model_selection"]["runtime_policy"],
+        )
+
+    def test_dispatch_profiles_match_stage_policy(self) -> None:
+        expected = {
+            "prd_design": ("gpt-5.6-sol", "high"),
+            "research": ("gpt-5.6-terra", "low"),
+            "analysis": ("gpt-5.6-terra", "medium"),
+            "implementation": ("gpt-5.6-terra", "medium"),
+            "complex_implementation": ("gpt-5.6-sol", "high"),
+            "repetitive": ("gpt-5.6-luna", "low"),
+            "final_review": ("gpt-5.6-sol", "xhigh"),
+        }
+
+        for work_kind, (model, effort) in expected.items():
+            with self.subTest(work_kind=work_kind):
+                profile = profile_for_work_kind(work_kind)
+                self.assertEqual(model, profile["codex_model"])
+                self.assertEqual(effort, profile["reasoning_effort"])
+
+    def test_dispatch_keeps_normal_implementation_on_terra_medium(self) -> None:
+        manifest = build_dispatch_manifest(
+            "feature",
+            "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ROOT,
+        )
+
+        profile = manifest["work_profile"]
+        self.assertEqual("implementation", profile["work_kind"])
+        self.assertEqual("gpt-5.6-terra", profile["codex_model"])
+        self.assertEqual("medium", profile["reasoning_effort"])
+        self.assertIn("--model", manifest["codex_exec_argv"])
+        self.assertIn('model_reasoning_effort="medium"', manifest["codex_exec_argv"])
+
+    def test_dispatch_auto_selects_stage_profiles(self) -> None:
+        cases = {
+            "prd": ("prd_design", "high"),
+            "plan": ("research", "low"),
+            "task": ("analysis", "medium"),
+            "feature": ("implementation", "medium"),
+            "review": ("final_review", "xhigh"),
+        }
+
+        for command, (work_kind, effort) in cases.items():
+            with self.subTest(command=command):
+                manifest = build_dispatch_manifest(
+                    command,
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    ROOT,
+                )
+                profile = manifest["work_profile"]
+                self.assertEqual(work_kind, profile["work_kind"])
+                self.assertEqual(effort, profile["reasoning_effort"])
+
+    def test_dispatch_auto_promotes_deep_implementation_to_sol_high(self) -> None:
+        work_kind, reason = select_work_kind("feature", {"effort": "deep"}, "auto")
+        profile = profile_for_work_kind(work_kind)
+
+        self.assertEqual("complex_implementation", profile["work_kind"])
+        self.assertEqual("gpt-5.6-sol", profile["codex_model"])
+        self.assertEqual("high", profile["reasoning_effort"])
+        self.assertEqual("deep effort is explicit complexity evidence", reason)
+
+    def test_dispatch_reserves_luna_for_quick_repetition(self) -> None:
+        quick = {"effort": "quick"}
+
+        self.assertEqual(
+            ("repetitive", "quick test route selects the low-cost repetitive profile"),
+            select_work_kind("test", quick, "auto"),
+        )
+        self.assertEqual(
+            ("implementation", "normal implementation defaults to Terra medium"),
+            select_work_kind("feature", quick, "auto"),
+        )
+
+    def test_dispatch_promotes_deep_work_to_sol_high(self) -> None:
+        manifest = build_dispatch_manifest(
+            "task",
+            "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ROOT,
+            work_kind="complex_implementation",
+            complexity_evidence="local inspection confirmed cross-module migration and repeated verification failures",
+        )
+
+        profile = manifest["work_profile"]
+        self.assertEqual("complex_implementation", profile["work_kind"])
+        self.assertEqual("gpt-5.6-sol", profile["codex_model"])
+        self.assertEqual("high", profile["reasoning_effort"])
+
+    def test_dispatch_rejects_unexplained_complex_implementation(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Complex implementation requires"):
+            build_dispatch_manifest(
+                "task",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                ROOT,
+                work_kind="complex_implementation",
+            )
+
+    def test_dispatch_cli_outputs_a_nonexecuting_terra_handoff(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "dispatch",
+                "task",
+                "--request",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                "--project",
+                str(ROOT),
+                "--format",
+                "json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        manifest = json.loads(completed.stdout)
+        self.assertEqual("gpt-5.6-terra", manifest["work_profile"]["codex_model"])
+        self.assertEqual("medium", manifest["work_profile"]["reasoning_effort"])
+        self.assertIn("inspectable by default", manifest["execution_policy"])
+
+    def test_dispatch_executor_runs_selected_argv(self) -> None:
+        manifest = build_dispatch_manifest(
+            "feature",
+            "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ROOT,
+        )
+        received: list[list[str]] = []
+
+        def runner(argv: list[str]) -> int:
+            received.append(argv)
+            return 17
+
+        self.assertEqual(17, execute_dispatch_manifest(manifest, runner=runner))
+        self.assertEqual([manifest["codex_exec_argv"]], received)
+
+    def test_dispatch_execute_cli_uses_executor(self) -> None:
+        args = build_parser().parse_args(
+            [
+                "dispatch",
+                "feature",
+                "--request",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                "--project",
+                str(ROOT),
+                "--execute",
+            ]
+        )
+
+        with patch("workflow.execute_dispatch_manifest", return_value=23) as execute:
+            self.assertEqual(23, print_dispatch(args))
+
+        execute.assert_called_once()
+
+    def test_dispatch_handoff_state_preserves_parent_evidence_paths(self) -> None:
+        manifest = build_dispatch_manifest(
+            "feature",
+            "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ROOT,
+        )
+        handoff_state = manifest["handoff_state"]
+        prompt = manifest["codex_exec_argv"][-1]
+
+        self.assertTrue(str(handoff_state["preflight_evidence"]).endswith("preflight.json"))
+        self.assertTrue(str(handoff_state["docs_read_receipt"]).endswith("route-docs-read.json"))
+        self.assertTrue(str(handoff_state["gate_ledger"]).endswith("gate-evidence.json"))
+        self.assertIn("Parent docs-read receipt", prompt)
+        self.assertIn("Do not overwrite parent receipts", prompt)
+
+    def test_dispatch_spill_label_contract_is_preserved(self) -> None:
+        self.assertEqual(("workflow_setup", "plan"), SPILL_ACTION_LABELS["dispatch"])
+        self.assertEqual([], validate_spill_label_contracts(set(COMMANDS)))
+
+    def test_runtime_dispatch_paths_promote_runtime_guidance(self) -> None:
+        route = resolve_docs(
+            "workflow-setup",
+            None,
+            [],
+            request_classified=True,
+            surface_paths=["scripts/workflow_spill.py"],
+        )
+
+        for doc in (
+            "docs/skills/agent-runtime-integration/SKILL.md",
+            "workflows/skills/agent-handoff-continuation/SKILL.md",
+            "common/skills/local-tools/SKILL.md",
+        ):
+            self.assertIn(route_doc(doc), route["required_docs"])
 
     def test_claude_user_prompt_hook_requires_classification_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -778,6 +998,22 @@ class WorkflowRoutingTests(unittest.TestCase):
             self.assertIn(phrase, claude_required)
             self.assertIn(phrase, agy_block)
             self.assertIn(phrase, codex_block)
+
+    def test_codex_runtime_bridge_requires_stage_profile_dispatch(self) -> None:
+        codex_required = runtime_bridge_required_phrases("Codex", "AGENTS.md")
+        codex_block = runtime_bridge_block(ROOT, "Codex", "AGENTS.md")
+        claude_block = runtime_bridge_block(ROOT, "Claude", "CLAUDE.md")
+
+        self.assertIn(CODEX_DISPATCH_BRIDGE_PHRASE, codex_required)
+        self.assertIn(CODEX_DISPATCH_BRIDGE_PHRASE, codex_block)
+        self.assertNotIn(CODEX_DISPATCH_BRIDGE_PHRASE, claude_block)
+
+    def test_setup_hook_runtime_selection_is_scoped(self) -> None:
+        from support.setup_agent_hooks_impl import _runtime_selected
+
+        self.assertTrue(_runtime_selected("codex", set()))
+        self.assertTrue(_runtime_selected("codex", {"codex"}))
+        self.assertFalse(_runtime_selected("claude", {"codex"}))
 
     def test_spill_tool_label_prefers_codex_runtime_over_stale_spill_env(self) -> None:
         label = spill_tool_label({"CODEX_SANDBOX": "seatbelt", "SPILL_AI_TOOL": "claude"})
@@ -2726,6 +2962,52 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("Grill-Me protocol: `true`", result.stdout)
         self.assertIn("Start the user-visible clarification with `Grill-Me protocol /grilling session`", result.stdout)
         self.assertIn("grill-me if needed=</grilling session/output evidence>", result.stdout)
+
+    def test_classification_output_includes_model_tier(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "classify",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("Effort: `standard`", result.stdout)
+        self.assertIn("Model tier: `balanced`", result.stdout)
+        self.assertIn("Codex model: `gpt-5.6-terra`", result.stdout)
+        self.assertIn("Runtime mapping: `codex-only-or-runtime-equivalent`", result.stdout)
+        self.assertIn("Switching boundary: `task-or-agent-boundary`", result.stdout)
+
+    def test_route_output_includes_model_tier(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "route",
+                "workflow-setup",
+                "--request",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("- Effort: `standard`", result.stdout)
+        self.assertIn("- Model tier: `balanced`", result.stdout)
+        self.assertIn("- Codex model: `gpt-5.6-terra`", result.stdout)
+        self.assertIn("- Runtime mapping: `codex-only-or-runtime-equivalent`", result.stdout)
+        self.assertIn("- Switching boundary: `task-or-agent-boundary`", result.stdout)
 
     def test_route_output_tells_agents_to_start_grilling_session(self) -> None:
         result = subprocess.run(

@@ -152,6 +152,19 @@ RELEASE_SCOPE_SIGNAL_PATTERNS = (
     ),
 )
 
+MODEL_TIER_BY_EFFORT = {
+    "quick": "fast",
+    "standard": "balanced",
+    "deep": "frontier",
+    "specialist": "specialist",
+}
+CODEX_MODEL_BY_TIER = {
+    "fast": "gpt-5.6-luna",
+    "balanced": "gpt-5.6-terra",
+    "frontier": "gpt-5.6-sol",
+    "specialist": "gpt-5.6-sol",
+}
+
 
 def infer_concerns_from_request(text: str) -> list[str]:
     normalized = " ".join(text.strip().split())
@@ -169,11 +182,14 @@ def classify_request(text: str) -> dict[str, object]:
     lowered = normalized.lower()
     flags = _request_flags(normalized, lowered)
     route, question_drill, response_mode, reason = _classification_decision(flags)
+    model_tier = _model_tier_for_effort(str(flags["effort"]))
 
     return {
         "request": normalized,
         "clarity": flags["clarity"],
         "effort": flags["effort"],
+        "model_tier": model_tier,
+        "model_selection": _model_selection(model_tier, str(flags["effort"])),
         "recommended_route": route,
         "grill_me": question_drill,
         "question_drill": question_drill,
@@ -183,8 +199,28 @@ def classify_request(text: str) -> dict[str, object]:
             "Answer direct user questions before routing, editing, or running project work.",
             "Use repo-local instructions before editing.",
             "Escalate effort if local inspection finds broader risk.",
-            "Use the lowest capable model or reasoning depth when the runtime supports it.",
+            "Select the lowest capable model tier before runtime-specific model ids.",
         ],
+    }
+
+
+def _model_tier_for_effort(effort: str) -> str:
+    return MODEL_TIER_BY_EFFORT.get(effort, "balanced")
+
+
+def _model_selection(model_tier: str, effort: str) -> dict[str, object]:
+    return {
+        "tier": model_tier,
+        "codex": CODEX_MODEL_BY_TIER.get(model_tier, CODEX_MODEL_BY_TIER["balanced"]),
+        "switching_boundary": "task-or-agent-boundary",
+        "runtime_mapping": "codex-only-or-runtime-equivalent",
+        "fallback": "keep-current-model-and-apply-effort-profile",
+        "reason": f"effort={effort} maps to model_tier={model_tier}",
+        "runtime_policy": (
+            "Map the abstract tier to the active runtime. Use Codex model ids only on Codex; "
+            "Claude and other runtimes should use equivalent configured tiers or keep the "
+            "current model when switching is unavailable."
+        ),
     }
 
 
@@ -394,6 +430,12 @@ def print_classification(result: dict[str, object]) -> None:
     print()
     print(f"Clarity: `{result['clarity']}`")
     print(f"Effort: `{result['effort']}`")
+    model_selection = result.get("model_selection") or {}
+    if model_selection:
+        print(f"Model tier: `{model_selection['tier']}`")
+        print(f"Codex model: `{model_selection['codex']}`")
+        print(f"Runtime mapping: `{model_selection['runtime_mapping']}`")
+        print(f"Switching boundary: `{model_selection['switching_boundary']}`")
     print(f"Recommended route: `{result['recommended_route']}`")
     print(f"Grill-Me protocol: `{str(result['grill_me']).lower()}`")
     print(f"Response mode: `{result['response_mode']}`")
