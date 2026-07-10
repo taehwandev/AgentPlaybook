@@ -1,16 +1,22 @@
-# Graph Report - AgentPlaybook  (2026-07-08)
+---
+keyflow_id: sys_7902979f68fb
+status: draft
+type: ai-generated
+---
+
+# Graph Report - AgentPlaybook  (2026-07-10)
 
 ## Corpus Check
-- 559 files · ~294,368 words
+- 424 files · ~292,255 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4186 nodes · 5082 edges · 503 communities (483 shown, 20 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 434 edges (avg confidence: 0.8)
+- 3705 nodes · 4933 edges · 381 communities (366 shown, 15 thin omitted)
+- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 611 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2e1f901c`
+- Built from commit: `6e71228e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -40,10 +46,12 @@
 - [[_COMMUNITY_migrate_skill_bundles.py|migrate_skill_bundles.py]]
 - [[_COMMUNITY_workflow_request.py|workflow_request.py]]
 - [[_COMMUNITY_Human-Authored Writing|Human-Authored Writing]]
+- [[_COMMUNITY_agent_global_lessons.py|agent_global_lessons.py]]
 - [[_COMMUNITY_setup_config_files.py|setup_config_files.py]]
 - [[_COMMUNITY_agent_global_lessons.py|agent_global_lessons.py]]
 - [[_COMMUNITY_infer_surface_docs|infer_surface_docs]]
 - [[_COMMUNITY_Testing Principles|Testing Principles]]
+- [[_COMMUNITY_agent_hook_runtime.py|agent_hook_runtime.py]]
 - [[_COMMUNITY_Android ViewModel And State|Android ViewModel And State]]
 - [[_COMMUNITY_KMP Module Structure|KMP Module Structure]]
 - [[_COMMUNITY_Web React UI|Web React UI]]
@@ -52,10 +60,14 @@
 - [[_COMMUNITY_ensure_stable_launcher|ensure_stable_launcher]]
 - [[_COMMUNITY_Scenario-Driven Testing|Scenario-Driven Testing]]
 - [[_COMMUNITY_Writing Workspace|Writing Workspace]]
+- [[_COMMUNITY_agent_delegation_plan.py|agent_delegation_plan.py]]
+- [[_COMMUNITY_agent_hook_gate_records.py|agent_hook_gate_records.py]]
 - [[_COMMUNITY_print_route|print_route]]
 - [[_COMMUNITY_workflow_doc_surface_rules.py|workflow_doc_surface_rules.py]]
 - [[_COMMUNITY_Product Architecture Delivery Workflow|Product Architecture Delivery Workflow]]
 - [[_COMMUNITY_CICD And Automation|CI/CD And Automation]]
+- [[_COMMUNITY_stable_launcher.py|stable_launcher.py]]
+- [[_COMMUNITY_setup_config_files.py|setup_config_files.py]]
 - [[_COMMUNITY_LLM Wiki Documentation|LLM Wiki Documentation]]
 - [[_COMMUNITY_Performance Verification|Performance Verification]]
 - [[_COMMUNITY_Source-Driven Development|Source-Driven Development]]
@@ -66,6 +78,7 @@
 - [[_COMMUNITY_Agent Skill Card Anatomy|Agent Skill Card Anatomy]]
 - [[_COMMUNITY_Architecture Design|Architecture Design]]
 - [[_COMMUNITY_Browser Runtime Testing|Browser Runtime Testing]]
+- [[_COMMUNITY_agent-hook.py|agent-hook.py]]
 - [[_COMMUNITY_Doubt-Driven Development|Doubt-Driven Development]]
 - [[_COMMUNITY_Incremental Implementation|Incremental Implementation]]
 - [[_COMMUNITY_Local Tools Policy|Local Tools Policy]]
@@ -92,6 +105,7 @@
 - [[_COMMUNITY_Multi-Agent Collaboration|Multi-Agent Collaboration]]
 - [[_COMMUNITY_Error Modeling|Error Modeling]]
 - [[_COMMUNITY_Public Discovery|Public Discovery]]
+- [[_COMMUNITY_agy_setup.py|agy_setup.py]]
 - [[_COMMUNITY_State Modeling|State Modeling]]
 - [[_COMMUNITY_Chris Banes Source Map|Chris Banes Source Map]]
 - [[_COMMUNITY_Application Command And UI|Application Command And UI]]
@@ -105,6 +119,7 @@
 - [[_COMMUNITY_Documentation Update Workflow|Documentation Update Workflow]]
 - [[_COMMUNITY_Multi-Perspective Review|Multi-Perspective Review]]
 - [[_COMMUNITY_graphify reference extra exports and benchmark|graphify reference: extra exports and benchmark]]
+- [[_COMMUNITY_agent_review_boundary.py|agent_review_boundary.py]]
 - [[_COMMUNITY_graphify reference extra exports and benchmark|graphify reference: extra exports and benchmark]]
 - [[_COMMUNITY_Agent Editing Safety|Agent Editing Safety]]
 - [[_COMMUNITY_Agent Interaction|Agent Interaction]]
@@ -133,7 +148,9 @@
 - [[_COMMUNITY_VIBEGUARD.md(httpVIBEGUARD.md)|[VIBEGUARD.md](http://VIBEGUARD.md)]]
 - [[_COMMUNITY_Development Cycle Workflow|Development Cycle Workflow]]
 - [[_COMMUNITY_Retrospective Learning Workflow|Retrospective Learning Workflow]]
+- [[_COMMUNITY_workflow.py|workflow.py]]
 - [[_COMMUNITY_Architecture Selection|Architecture Selection]]
+- [[_COMMUNITY_main|main]]
 - [[_COMMUNITY_Data Persistence Sync|Data Persistence Sync]]
 - [[_COMMUNITY_Dependency Policy|Dependency Policy]]
 - [[_COMMUNITY_LLM Coding Discipline|LLM Coding Discipline]]
@@ -154,6 +171,7 @@
 - [[_COMMUNITY_Asset Lifecycle|Asset Lifecycle]]
 - [[_COMMUNITY_Commit Review|Commit Review]]
 - [[_COMMUNITY_Product Spec To Implementation|Product Spec To Implementation]]
+- [[_COMMUNITY_agent_inprocess.py|agent_inprocess.py]]
 - [[_COMMUNITY_README|README.md]]
 - [[_COMMUNITY_AgentPlaybook 최신화 안내|AgentPlaybook 최신화 안내]]
 - [[_COMMUNITY_Agent Index|Agent Index]]
@@ -171,7 +189,10 @@
 - [[_COMMUNITY_validate|validate]]
 - [[_COMMUNITY_Agent Handoff Continuation Workflow|Agent Handoff Continuation Workflow]]
 - [[_COMMUNITY_Agent Task Lifecycle Workflow|Agent Task Lifecycle Workflow]]
+- [[_COMMUNITY_workflow_spill.py|workflow_spill.py]]
+- [[_COMMUNITY_Source-Of-Truth Ownership|Source-Of-Truth Ownership]]
 - [[_COMMUNITY_Review And Commit Workflow|Review And Commit Workflow]]
+- [[_COMMUNITY_infer_surface_docs|infer_surface_docs]]
 - [[_COMMUNITY_graphify reference query, path, explain|graphify reference: query, path, explain]]
 - [[_COMMUNITY_graphify reference query, path, explain|graphify reference: query, path, explain]]
 - [[_COMMUNITY_Accessibility I18n|Accessibility I18n]]
@@ -317,7 +338,7 @@
 - [[_COMMUNITY_Agent Task Lifecycle Workflow|Agent Task Lifecycle Workflow]]
 - [[_COMMUNITY_Ambiguity Gate|Ambiguity Gate]]
 - [[_COMMUNITY_Bugfix Debugging Workflow|Bugfix Debugging Workflow]]
-- [[_COMMUNITY_Bugfix Debugging Workflow|Bugfix Debugging Workflow]]
+- [[_COMMUNITY_agent_finish_gate_validators.py|agent_finish_gate_validators.py]]
 - [[_COMMUNITY_Cycle Contract Workflow|Cycle Contract Workflow]]
 - [[_COMMUNITY_Development Cycle Workflow|Development Cycle Workflow]]
 - [[_COMMUNITY_Documentation Update Workflow|Documentation Update Workflow]]
@@ -358,149 +379,11 @@
 - [[_COMMUNITY_Agent Interaction|Agent Interaction]]
 - [[_COMMUNITY_Agent Operating Skill|Agent Operating Skill]]
 - [[_COMMUNITY_Agent Skill Card Anatomy|Agent Skill Card Anatomy]]
-- [[_COMMUNITY_API Contract Compatibility|API Contract Compatibility]]
+- [[_COMMUNITY_workflow_doc_graph_refs.py|workflow_doc_graph_refs.py]]
 - [[_COMMUNITY_Application Boundary Principles|Application Boundary Principles]]
-- [[_COMMUNITY_Architecture Design|Architecture Design]]
-- [[_COMMUNITY_Architecture Selection|Architecture Selection]]
-- [[_COMMUNITY_Asset Lifecycle|Asset Lifecycle]]
-- [[_COMMUNITY_Browser Runtime Testing|Browser Runtime Testing]]
-- [[_COMMUNITY_Change Size Policy|Change Size Policy]]
-- [[_COMMUNITY_CICD And Automation|CI/CD And Automation]]
-- [[_COMMUNITY_Code Conventions|Code Conventions]]
-- [[_COMMUNITY_Code Review|Code Review]]
-- [[_COMMUNITY_Code Structure And Ownership|Code Structure And Ownership]]
-- [[_COMMUNITY_Commit Review|Commit Review]]
-- [[_COMMUNITY_Commit Workflow|Commit Workflow]]
-- [[_COMMUNITY_Component API Design|Component API Design]]
-- [[_COMMUNITY_Data Persistence Sync|Data Persistence Sync]]
-- [[_COMMUNITY_Defensive Boundaries|Defensive Boundaries]]
-- [[_COMMUNITY_Definition Of Done|Definition Of Done]]
-- [[_COMMUNITY_Dependency Policy|Dependency Policy]]
-- [[_COMMUNITY_Deprecation And Migration|Deprecation And Migration]]
-- [[_COMMUNITY_Design System|Design System]]
-- [[_COMMUNITY_Doubt-Driven Development|Doubt-Driven Development]]
-- [[_COMMUNITY_Error Modeling|Error Modeling]]
-- [[_COMMUNITY_Generated Files Policy|Generated Files Policy]]
-- [[_COMMUNITY_Human-Authored Writing|Human-Authored Writing]]
-- [[_COMMUNITY_Incremental Implementation|Incremental Implementation]]
-- [[_COMMUNITY_LLM Coding Discipline|LLM Coding Discipline]]
-- [[_COMMUNITY_LLM Wiki Documentation|LLM Wiki Documentation]]
-- [[_COMMUNITY_Local Tools Policy|Local Tools Policy]]
-- [[_COMMUNITY_Observability Error Handling|Observability Error Handling]]
-- [[_COMMUNITY_Performance Verification|Performance Verification]]
-- [[_COMMUNITY_Product Spec To Implementation|Product Spec To Implementation]]
-- [[_COMMUNITY_Project Naming|Project Naming]]
-- [[_COMMUNITY_Public Discovery|Public Discovery]]
-- [[_COMMUNITY_Refactoring Playbook|Refactoring Playbook]]
-- [[_COMMUNITY_Release Deployment|Release Deployment]]
-- [[_COMMUNITY_Release Versioning|Release Versioning]]
-- [[_COMMUNITY_Reusable Code Design|Reusable Code Design]]
-- [[_COMMUNITY_Runtime URL Configuration|Runtime URL Configuration]]
-- [[_COMMUNITY_Scenario-Driven Testing|Scenario-Driven Testing]]
-- [[_COMMUNITY_Secure Development Baseline|Secure Development Baseline]]
-- [[_COMMUNITY_Security Privacy Review|Security Privacy Review]]
-- [[_COMMUNITY_Server Side Caching|Server Side Caching]]
-- [[_COMMUNITY_SOLID Design Principles|SOLID Design Principles]]
-- [[_COMMUNITY_Source-Driven Development|Source-Driven Development]]
-- [[_COMMUNITY_Stack Discovery|Stack Discovery]]
-- [[_COMMUNITY_State Modeling|State Modeling]]
-- [[_COMMUNITY_Task Intake And Effort Routing|Task Intake And Effort Routing]]
-- [[_COMMUNITY_Testing Principles|Testing Principles]]
-- [[_COMMUNITY_Tool Failure Recovery|Tool Failure Recovery]]
-- [[_COMMUNITY_UI Visual Verification|UI Visual Verification]]
-- [[_COMMUNITY_Verification Policy|Verification Policy]]
-- [[_COMMUNITY_Web Deployment Versioning|Web Deployment Versioning]]
-- [[_COMMUNITY_Web Performance Verification|Web Performance Verification]]
-- [[_COMMUNITY_Worktree Hygiene|Worktree Hygiene]]
-- [[_COMMUNITY_Writing Workspace|Writing Workspace]]
-- [[_COMMUNITY_AgentPlaybook Agent Bootstrap|AgentPlaybook Agent Bootstrap]]
-- [[_COMMUNITY_Agent Runtime Integration|Agent Runtime Integration]]
-- [[_COMMUNITY_AgentPlaybook Skill Bundle Migration|AgentPlaybook Skill Bundle Migration]]
-- [[_COMMUNITY_Android Architecture|Android Architecture]]
-- [[_COMMUNITY_Android Background Work|Android Background Work]]
-- [[_COMMUNITY_Android Compose UI|Android Compose UI]]
-- [[_COMMUNITY_Android External Skill Source Coverage|Android External Skill Source Coverage]]
-- [[_COMMUNITY_Android Module Structure|Android Module Structure]]
-- [[_COMMUNITY_Android Review|Android Review]]
-- [[_COMMUNITY_Android Security|Android Security]]
-- [[_COMMUNITY_Android State And Data|Android State And Data]]
-- [[_COMMUNITY_Android ViewModel And State|Android ViewModel And State]]
-- [[_COMMUNITY_Application Architecture|Application Architecture]]
-- [[_COMMUNITY_Application Command And UI|Application Command And UI]]
-- [[_COMMUNITY_Application React Desktop|Application React Desktop]]
-- [[_COMMUNITY_Application Review|Application Review]]
-- [[_COMMUNITY_Application Security|Application Security]]
-- [[_COMMUNITY_Application System Integration|Application System Integration]]
-- [[_COMMUNITY_Flutter Architecture|Flutter Architecture]]
-- [[_COMMUNITY_Flutter Platform Integration|Flutter Platform Integration]]
-- [[_COMMUNITY_Flutter Project Structure|Flutter Project Structure]]
-- [[_COMMUNITY_Flutter Review|Flutter Review]]
-- [[_COMMUNITY_Flutter Security|Flutter Security]]
-- [[_COMMUNITY_Flutter State And Data|Flutter State And Data]]
-- [[_COMMUNITY_Flutter Widget UI|Flutter Widget UI]]
-- [[_COMMUNITY_iOS Architecture|iOS Architecture]]
-- [[_COMMUNITY_iOS Module Structure|iOS Module Structure]]
-- [[_COMMUNITY_iOS Review|iOS Review]]
-- [[_COMMUNITY_iOS Security|iOS Security]]
-- [[_COMMUNITY_iOS State And Concurrency|iOS State And Concurrency]]
-- [[_COMMUNITY_iOS SwiftUI UI|iOS SwiftUI UI]]
-- [[_COMMUNITY_iOS UIKit UI|iOS UIKit UI]]
-- [[_COMMUNITY_KMP Architecture|KMP Architecture]]
-- [[_COMMUNITY_KMP Compose UI|KMP Compose UI]]
-- [[_COMMUNITY_KMP Module Structure|KMP Module Structure]]
-- [[_COMMUNITY_KMP Platform Integration|KMP Platform Integration]]
-- [[_COMMUNITY_KMP Review|KMP Review]]
-- [[_COMMUNITY_KMP Security|KMP Security]]
-- [[_COMMUNITY_KMP State And Data|KMP State And Data]]
-- [[_COMMUNITY_Server API Implementation|Server API Implementation]]
-- [[_COMMUNITY_Server Architecture|Server Architecture]]
-- [[_COMMUNITY_Server Data And Jobs|Server Data And Jobs]]
-- [[_COMMUNITY_Server Review|Server Review]]
-- [[_COMMUNITY_Server Security|Server Security]]
-- [[_COMMUNITY_Swift Architecture|Swift Architecture]]
-- [[_COMMUNITY_Swift Code Structure|Swift Code Structure]]
-- [[_COMMUNITY_Swift Design System|Swift Design System]]
-- [[_COMMUNITY_Swift Review|Swift Review]]
-- [[_COMMUNITY_Web Accessibility I18n|Web Accessibility I18n]]
-- [[_COMMUNITY_Web Architecture|Web Architecture]]
-- [[_COMMUNITY_Web Code Structure|Web Code Structure]]
-- [[_COMMUNITY_Web Design System|Web Design System]]
-- [[_COMMUNITY_Web React UI|Web React UI]]
-- [[_COMMUNITY_Web Review|Web Review]]
-- [[_COMMUNITY_Web Security|Web Security]]
-- [[_COMMUNITY_Web State And Data|Web State And Data]]
-- [[_COMMUNITY_Agent Credential Broker Ideation|Agent Credential Broker Ideation]]
-- [[_COMMUNITY_Auth RBAC Implementation|Auth RBAC Implementation]]
-- [[_COMMUNITY_Auth, RBAC, Permissions|Auth, RBAC, Permissions]]
-- [[_COMMUNITY_Billing Entitlements|Billing Entitlements]]
-- [[_COMMUNITY_Billing Entitlements Implementation|Billing Entitlements Implementation]]
-- [[_COMMUNITY_Invitation Implementation|Invitation Implementation]]
-- [[_COMMUNITY_Invitation Workflows|Invitation Workflows]]
-- [[_COMMUNITY_Apply AgentPlaybook Request|Apply AgentPlaybook Request]]
-- [[_COMMUNITY_Agent Handoff Continuation Workflow|Agent Handoff Continuation Workflow]]
-- [[_COMMUNITY_Agent Task Lifecycle Workflow|Agent Task Lifecycle Workflow]]
-- [[_COMMUNITY_Ambiguity Gate|Ambiguity Gate]]
-- [[_COMMUNITY_Bugfix Debugging Workflow|Bugfix Debugging Workflow]]
+- [[_COMMUNITY_Any|Any]]
+- [[_COMMUNITY_workflow_parallel.py|workflow_parallel.py]]
 - [[_COMMUNITY_Cycle Contract Workflow|Cycle Contract Workflow]]
-- [[_COMMUNITY_Development Cycle Workflow|Development Cycle Workflow]]
-- [[_COMMUNITY_Documentation Update Workflow|Documentation Update Workflow]]
-- [[_COMMUNITY_Feature Implementation Workflow|Feature Implementation Workflow]]
-- [[_COMMUNITY_Multi-Agent Collaboration|Multi-Agent Collaboration]]
-- [[_COMMUNITY_Multi-Perspective Review|Multi-Perspective Review]]
-- [[_COMMUNITY_Planning Research Workflow|Planning Research Workflow]]
-- [[_COMMUNITY_PRD Creation Workflow|PRD Creation Workflow]]
-- [[_COMMUNITY_Product Architecture Delivery Workflow|Product Architecture Delivery Workflow]]
-- [[_COMMUNITY_Refactor Cleanup Workflow|Refactor Cleanup Workflow]]
-- [[_COMMUNITY_Release Readiness Workflow|Release Readiness Workflow]]
-- [[_COMMUNITY_Request Triage Workflow|Request Triage Workflow]]
-- [[_COMMUNITY_Retrospective Learning Workflow|Retrospective Learning Workflow]]
-- [[_COMMUNITY_Review And Commit Workflow|Review And Commit Workflow]]
-- [[_COMMUNITY_Scripted Agent Workflow|Scripted Agent Workflow]]
-- [[_COMMUNITY_graphify reference GitHub clone and cross-repo merge|graphify reference: GitHub clone and cross-repo merge]]
-- [[_COMMUNITY_graphify reference transcribe video and audio|graphify reference: transcribe video and audio]]
-- [[_COMMUNITY_Claude Entry|Claude Entry]]
-- [[_COMMUNITY_graphify reference GitHub clone and cross-repo merge|graphify reference: GitHub clone and cross-repo merge]]
-- [[_COMMUNITY_graphify reference transcribe video and audio|graphify reference: transcribe video and audio]]
 - [[_COMMUNITY_graphify reference GitHub clone and cross-repo merge|graphify reference: GitHub clone and cross-repo merge]]
 - [[_COMMUNITY_graphify reference transcribe video and audio|graphify reference: transcribe video and audio]]
 - [[_COMMUNITY_graphify|graphify.md]]
@@ -514,79 +397,88 @@
 - [[_COMMUNITY_workflow_platform_concerns.py|workflow_platform_concerns.py]]
 - [[_COMMUNITY_setup-agent-hooks.py|setup-agent-hooks.py]]
 - [[_COMMUNITY_Any|Any]]
-- [[_COMMUNITY_workflow_platform_concerns.py|workflow_platform_concerns.py]]
-- [[_COMMUNITY_workflow_request_patterns.py|workflow_request_patterns.py]]
+- [[_COMMUNITY_AgentReviewStructureTests|AgentReviewStructureTests]]
 - [[_COMMUNITY_Namespace|Namespace]]
+- [[_COMMUNITY_AgentReviewPurposeTests|AgentReviewPurposeTests]]
+- [[_COMMUNITY_agent_structure_rule_config.py|agent_structure_rule_config.py]]
 - [[_COMMUNITY_Quick Start|Quick Start]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `WorkflowRoutingTests` - 168 edges
-2. `route_doc()` - 32 edges
-3. `discover_projects()` - 29 edges
-4. `unique()` - 24 edges
-5. `validate_gate_evidence()` - 23 edges
-6. `review_hook()` - 23 edges
-7. `classify_request()` - 22 edges
-8. `run_preflight()` - 21 edges
-9. `Android Compose UI` - 21 edges
-10. `Agent Playbook` - 20 edges
+1. `WorkflowRoutingTests` - 189 edges
+2. `resolve_docs()` - 62 edges
+3. `validate_gate_evidence()` - 61 edges
+4. `route_doc()` - 36 edges
+5. `discover_projects()` - 29 edges
+6. `classify_request()` - 27 edges
+7. `unique()` - 26 edges
+8. `review_hook()` - 24 edges
+9. `run_preflight()` - 21 edges
+10. `check_request_intake()` - 21 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `build_parser()` --indirect_call--> `parse_gate()`  [INFERRED]
-  scripts/agent-finish-check.py → scripts/agent_finish_common.py
-- `main()` --calls--> `requires_retrospective()`  [INFERRED]
-  scripts/agent-finish-check.py → scripts/agent_finish_common.py
 - `declarations()` --calls--> `top_level_type_declarations()`  [INFERRED]
   tests/test_agent_review_purpose.py → scripts/agent_review_purpose.py
-- `main()` --calls--> `check_request_intake()`  [INFERRED]
-  scripts/agent-finish-check.py → scripts/agent_finish_check_steps.py
-- `check_request_intake()` --calls--> `classification_evidence_allows_command_work()`  [INFERRED]
-  scripts/agent_finish_check_steps.py → scripts/workflow_request.py
+- `route_doc()` --calls--> `canonical_doc_path()`  [INFERRED]
+  tests/test_workflow_routing.py → scripts/workflow_skill_paths.py
+- `build_parser()` --indirect_call--> `parse_gate()`  [INFERRED]
+  scripts/agent-finish-check.py → scripts/agent_finish_common.py
+- `validate_gate_evidence()` --calls--> `validate_boundary_plan()`  [INFERRED]
+  scripts/agent_finish_gate_policy.py → scripts/agent_finish_gate_boundary_validators.py
+- `validate_gate_evidence()` --calls--> `validate_side_effect_audit()`  [INFERRED]
+  scripts/agent_finish_gate_policy.py → scripts/agent_finish_gate_boundary_validators.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (503 total, 20 thin omitted)
+## Communities (381 total, 15 thin omitted)
+
+### Community 0 - "discover_projects"
+Cohesion: 0.05
+Nodes (9): Collaboration and workspace finish gate validators., validate_multi_agent(), validate_multi_agent_briefs(), validate_multi_agent_integration_review(), validate_multi_agent_roles(), validate_multi_agent_write_scopes(), validate_workspace_scope_checkpoint(), validate_gate_evidence() (+1 more)
 
 ### Community 1 - "agent_review_purpose.py"
 Cohesion: 0.05
 Nodes (70): build_parser(), main(), ArgumentParser, build_entry_manifest(), discover_projects(), Path, Project discovery orchestration for user-level AgentPlaybook bridges., Find the target project for a runtime bridge without editing anything. (+62 more)
 
 ### Community 2 - "agent_gate_evidence.py"
-Cohesion: 0.08
-Nodes (55): parse_field(), _add_common_arguments(), _add_docs_read_arguments(), _add_finish_arguments(), _add_gate_arguments(), _add_review_arguments(), _add_start_arguments(), build_parser() (+47 more)
+Cohesion: 0.22
+Nodes (19): _add_permission_command_entries(), _agentplaybook_python_scripts(), agy_legacy_permission_entries(), agy_permission_entries(), claude_legacy_permission_entries(), claude_permission_entries(), claude_project_permission_entries(), _codex_prefix_rule() (+11 more)
 
 ### Community 3 - "WorkflowRoutingTests"
-Cohesion: 0.22
-Nodes (17): _add_compat_edges(), _add_edge(), _add_markdown_edges(), _add_surface_rule_edges(), build_doc_graph(), clear_doc_graph_cache(), _connect_group(), _doc_sets() (+9 more)
+Cohesion: 0.28
+Nodes (12): validate_route_docs_manifest_evidence(), build_route_doc_receipt(), preflight_evidence_sha256(), Any, Path, Route document read receipts for AgentPlaybook workflows., read_route_doc_receipt(), receipt_candidate_paths_for_evidence() (+4 more)
 
 ### Community 4 - "workflow_doc_graph_build.py"
-Cohesion: 0.22
-Nodes (13): is_migrated_source(), Build workflow route manifests., resolve_docs(), _review_hook_command(), _review_hook_timing(), route_gates(), route_hooks(), route_required_docs() (+5 more)
+Cohesion: 0.05
+Nodes (69): OverallParser, add_gate_signal(), Any, Path, Final validation, diff, and VibeGuard checks for finish-check., _record_final_check_signals(), _record_vibeguard_signal(), run_final_checks() (+61 more)
 
 ### Community 5 - "agent-hook.py"
-Cohesion: 0.23
-Nodes (12): unique(), _edge_sort_key(), expand_doc_matches(), expand_doc_paths(), graph_required_docs(), Path, Public document graph expansion API for workflow routing and search., Return seed docs followed by graph-related docs. (+4 more)
+Cohesion: 0.11
+Nodes (19): _classification_decision(), classification_evidence_allows_command_work(), classification_evidence_allows_work(), classification_evidence_blocks_work(), classification_evidence_requires_clarification(), classify_request(), _commit_evidence_allows_work(), _commit_risk_blocks() (+11 more)
 
 ### Community 6 - "review_hook"
-Cohesion: 0.42
-Nodes (9): _collapse_path(), _doc_refs_from_value(), _frontmatter_block(), frontmatter_doc_refs(), markdown_doc_refs(), normalize_doc_seed(), Path, Parse document references for the local AgentPlaybook graph. (+1 more)
+Cohesion: 0.13
+Nodes (5): check_request_intake(), grill_me_requested(), validate_grill_me_skill_evidence(), classified_route_block_reason(), Block work routes unless --request-classified proves the request is actionable.
 
 ### Community 7 - "validate_gate_evidence"
 Cohesion: 0.06
 Nodes (30): All-Platform File And Type Baseline, API / Impl / Assertions Trio, API / Impl Pair, Architecture-To-Structure Drill, Assertions And Test-Support ISP, Boundary Pressure Signals, Boundary Rules, Capability Naming And Boundary Inference (+22 more)
 
+### Community 8 - "resolve_docs"
+Cohesion: 0.07
+Nodes (3): infer_concerns_from_request(), resolve_docs(), route_doc()
+
 ### Community 9 - "run_preflight"
-Cohesion: 0.15
-Nodes (28): _doc_sets(), extract_request_surface_paths(), git_status_surface_paths(), normalize_path(), path_matches(), _pattern_groups(), Any, Helpers for workflow document surface rule matching. (+20 more)
+Cohesion: 0.11
+Nodes (22): add_automatic_gates(), automatic_docs(), automatic_gates(), _insert_after_any(), _insert_before_any(), Automatic workflow gates for work-producing routes., Validation for workflow route parallel execution hints., validate_parallel_execution_plan() (+14 more)
 
 ### Community 10 - "Code Structure And Ownership"
 Cohesion: 0.07
 Nodes (28): `build/agp/agp-9-upgrade/SKILL.md`, Build And Toolchain, `camera/camera1-to-camerax/SKILL.md`, Camera, Device AI, And Identity, Compose Migration, Adaptive UI, And Navigation, Compose preview tooling and parameters, `device-ai/appfunctions/SKILL.md`, `devtools/android-cli/SKILL.md` (+20 more)
 
 ### Community 11 - "Official Android Source Map"
-Cohesion: 0.15
-Nodes (28): Match, component_or_hook_name(), declaration_keys(), declaration_limit_failed(), exported_by_default(), format_declarations(), match_kind(), match_name() (+20 more)
+Cohesion: 0.19
+Nodes (26): Match, component_or_hook_name(), declaration_keys(), declaration_limit_failed(), exported_by_default(), format_declarations(), match_kind(), match_name() (+18 more)
 
 ### Community 12 - "Android Compose UI"
 Cohesion: 0.08
@@ -609,8 +501,8 @@ Cohesion: 0.10
 Nodes (20): DDD And Domain Modeling, Default, Dependency Inversion, Do Not, Inspect First, Interface Segregation, Liskov Substitution, Module Dependency Inversion (+12 more)
 
 ### Community 17 - "Android Module Structure"
-Cohesion: 0.09
-Nodes (54): _atomic_write_json(), _count_json_files(), _failure_type(), lesson_summary(), _policy_failure_count(), Any, Path, Local cross-agent lesson storage for missed workflow gates. (+46 more)
+Cohesion: 0.20
+Nodes (16): configure_codex(), configure_external_project(), ensure_local_claude_excluded(), _find_github_projects(), _git_path_matches(), _has_agy(), _has_claude(), _has_codex() (+8 more)
 
 ### Community 18 - "Agent Playbook"
 Cohesion: 0.10
@@ -621,28 +513,36 @@ Cohesion: 0.10
 Nodes (20): Actual Application Flow, Agent Playbook, Apply With Any AI Agent, Concrete Implementation Guides, Contributing Guidance, Core Rules, Distribution Modes, Executable Evidence Gate (+12 more)
 
 ### Community 20 - "Scripted Agent Workflow"
-Cohesion: 0.07
-Nodes (51): CommandRunner, block_failure(), block_record(), brace_block_span(), brace_blocks(), changed_source_paths(), check_file_size(), collect_head_diff() (+43 more)
+Cohesion: 0.22
+Nodes (24): block_failure(), block_record(), brace_block_span(), brace_blocks(), changed_source_paths(), collect_head_diff(), config_or_generated_path(), count_line_indent() (+16 more)
 
 ### Community 21 - "AgentPlaybook Shared Agent Instructions"
-Cohesion: 0.05
-Nodes (83): _agy_runtime_bridge_block(), configure_agy(), _merge_agy_runtime_bridge(), Path, Antigravity/AGY runtime bridge and permission setup., configure_claude(), _is_managed_claude_spill_bridge_command(), _merge_claude_user_prompt_submit() (+75 more)
+Cohesion: 0.22
+Nodes (16): _codex_prefix_script_names(), _is_codex_agentplaybook_prefix_rule(), _is_legacy_codex_agentplaybook_shell_rule(), merge_codex_prefix_rules(), merge_permissions_allow(), _parse_codex_prefix_rule(), _permission_entry_script_names(), _permission_entry_targets_agentplaybook_script() (+8 more)
 
 ### Community 22 - "migrate_skill_bundles.py"
 Cohesion: 0.10
 Nodes (19): Agent Consumption Rule, Agentic Control Plane, Automatic Gates, Command Profiles, Default Script, Executable Evidence Wrappers, Gate Execution Ledger, Gate Signals (+11 more)
 
+### Community 23 - "workflow_request.py"
+Cohesion: 0.24
+Nodes (16): import_candidates(), imports_for_path(), matches_any(), matches_one(), Path, Import extraction and pattern matching for structure rule checks., should_check_allowed_import(), apply_config() (+8 more)
+
 ### Community 24 - "Human-Authored Writing"
 Cohesion: 0.11
-Nodes (17): AgentPlaybook Shared Agent Instructions, Always Read For Agent Work, graphify, Language Policy, Metadata Policy, Operating Rule, Priority, Project Discovery Entry (+9 more)
+Nodes (18): AgentPlaybook Shared Agent Instructions, Always Read For Agent Work, Document Output Conventions, graphify, Language Policy, Metadata Policy, Operating Rule, Priority (+10 more)
+
+### Community 25 - "agent_global_lessons.py"
+Cohesion: 0.29
+Nodes (15): _atomic_write_json(), _count_json_files(), _failure_type(), lesson_summary(), _policy_failure_count(), Any, Path, Local cross-agent lesson storage for missed workflow gates. (+7 more)
 
 ### Community 26 - "setup_config_files.py"
-Cohesion: 0.06
-Nodes (66): Namespace, delegation_plan_path(), evidence_requires_delegation_plan(), Any, Path, Structured evidence for delegated or parallel agent work., read_delegation_plan(), _require_any_text() (+58 more)
+Cohesion: 0.22
+Nodes (17): gate_evidence_path_for_preflight(), _ledger_matches_preflight(), _ledger_matches_route(), merge_gate_evidence_from_ledger(), _missing_fields(), _new_ledger(), Any, Path (+9 more)
 
 ### Community 27 - "agent_global_lessons.py"
-Cohesion: 0.29
-Nodes (16): _classification_decision(), classification_evidence_allows_command_work(), classification_evidence_allows_work(), classification_evidence_blocks_work(), classification_evidence_requires_clarification(), _commit_evidence_allows_work(), _commit_risk_blocks(), _direct_question_reason() (+8 more)
+Cohesion: 0.23
+Nodes (10): _agy_runtime_bridge_block(), configure_agy(), _merge_agy_runtime_bridge(), Path, Antigravity/AGY runtime bridge and permission setup., merge_runtime_bridge(), Path, User-level runtime bridge helpers for AgentPlaybook setup. (+2 more)
 
 ### Community 28 - "infer_surface_docs"
 Cohesion: 0.12
@@ -652,17 +552,21 @@ Nodes (16): Audit Passes, Check, Common Rationalizations, Common Signals, Core P
 Cohesion: 0.29
 Nodes (16): _cmd_entries(), _dedupe(), detect_project_permissions(), _entries_for_package_json(), _find_package_jsons(), _go_permissions(), _gradle_permissions(), _node_permissions() (+8 more)
 
-### Community 31 - "Android ViewModel And State"
+### Community 30 - "agent_hook_runtime.py"
 Cohesion: 0.05
-Nodes (48): Path, build_parser(), Profile, Static route and platform catalogs for workflow.py., Concern-to-document routes for workflow routing., Keyword-to-concern inference rules for workflow routing., main(), print_markdown() (+40 more)
+Nodes (81): _has_actionable_next_action(), _is_generic_route_docs_evidence(), _is_generic_route_docs_takeaway(), Core finish gate evidence validators., validate_alignment_brief(), validate_ambiguity(), validate_route_docs_application_fields(), validate_route_docs_read() (+73 more)
+
+### Community 31 - "Android ViewModel And State"
+Cohesion: 0.15
+Nodes (15): _append_graph_expansions(), dedupe(), facet_docs(), query_terms(), Natural-language query facets for AgentPlaybook document search., tokenize(), _parse_index_descriptions(), print_query_results() (+7 more)
 
 ### Community 32 - "KMP Module Structure"
 Cohesion: 0.13
 Nodes (14): Common Rationalizations, Cover, Decision Rule, Do Not, Isolation, Match Test To Boundary, Prefer, Prioritize (+6 more)
 
 ### Community 33 - "Web React UI"
-Cohesion: 0.13
-Nodes (14): Agent Runtime Integration, Controlled Auto Mode, Cross-Repo Scope Checkpoint, Lifecycle Aliases, Long-Lived Repo Setup, Model, One-Shot Prompt Setup, Project Discovery Entry (+6 more)
+Cohesion: 0.12
+Nodes (15): Agent Runtime Integration, Controlled Auto Mode, Cross-Repo Scope Checkpoint, Lifecycle Aliases, Long-Lived Repo Setup, Model, One-Shot Prompt Setup, Project Discovery Entry (+7 more)
 
 ### Community 34 - "agent_preflight_runtime.py"
 Cohesion: 0.13
@@ -676,9 +580,21 @@ Nodes (14): Build Logic And Version Catalog, Default Rule, Dependency Direction,
 Cohesion: 0.13
 Nodes (14): Architecture Tracks, Component Reuse, Container And Screen Split, Feature Folder Shape, Hooks, Mandatory Component Split, React Layers, React Runtime Boundaries (+6 more)
 
+### Community 37 - "Scenario-Driven Testing"
+Cohesion: 0.32
+Nodes (11): ensure_stable_launcher(), _is_executable(), _launcher_script_text(), Path, Install a stable AgentPlaybook launcher for user-level runtime hooks., Install or verify the home-stable launcher and root pointer., Return a preflight warning when the stable launcher is absent or stale., _read_text() (+3 more)
+
 ### Community 38 - "Writing Workspace"
-Cohesion: 0.48
-Nodes (6): add_automatic_gates(), automatic_docs(), automatic_gates(), _insert_after_any(), _insert_before_any(), Automatic workflow gates for work-producing routes.
+Cohesion: 0.08
+Nodes (24): build_parser(), build_dispatch_manifest(), build_handoff_prompt(), execute_dispatch_manifest(), print_dispatch_manifest(), profile_for_work_kind(), Resolve runtime-neutral task stages into Codex worker profiles., select_work_kind() (+16 more)
+
+### Community 39 - "agent_delegation_plan.py"
+Cohesion: 0.23
+Nodes (11): delegation_plan_path(), evidence_requires_delegation_plan(), Any, Path, Structured evidence for delegated or parallel agent work., read_delegation_plan(), _require_any_text(), _require_contract() (+3 more)
+
+### Community 40 - "agent_hook_gate_records.py"
+Cohesion: 0.15
+Nodes (11): Boundary, side-effect, and run-state finish gate validators., validate_agentic_run_state(), validate_boundary_plan(), validate_side_effect_audit(), Cycle, boundary, and run-state finish gate validators., validate_cycle_contract(), Evidence validation rules for finish-check route gates., _evidence_names_unresolved_issue() (+3 more)
 
 ### Community 41 - "print_route"
 Cohesion: 0.14
@@ -695,6 +611,10 @@ Nodes (13): Architecture Tracks, File Layout, iOS SwiftUI UI, Mandatory View Spl
 ### Community 44 - "CI/CD And Automation"
 Cohesion: 0.14
 Nodes (13): Agent Credential Broker Ideation, Brokered Proxy, Decision Rule, Design Questions, Do Not, Egress-Allowlisted Sandbox, External Secret Store Backend, Pattern Families (+5 more)
+
+### Community 46 - "setup_config_files.py"
+Cohesion: 0.24
+Nodes (13): Documentation and test finish gate validators., validate_documentation(), validate_tests(), has_any(), _has_durable_doc_change_signal(), _has_existing_doc_coverage(), Focused validators for route gates with larger evidence contracts., validate_documentation_impact_evidence() (+5 more)
 
 ### Community 47 - "LLM Wiki Documentation"
 Cohesion: 0.14
@@ -733,8 +653,12 @@ Cohesion: 0.15
 Nodes (12): API And Mutation State, Browser Storage, Cache And Invalidation, Check, Defaults, Mock To Real Boundary, Next.js Data Pattern, Server-To-Client Data Boundary (+4 more)
 
 ### Community 56 - "Browser Runtime Testing"
-Cohesion: 0.06
-Nodes (68): OverallParser, add_gate_signal(), clean_output(), parse_gate(), parse_overall(), Any, Path, Shared helpers for AgentPlaybook finish checks. (+60 more)
+Cohesion: 0.22
+Nodes (10): clean_output(), parse_gate(), parse_overall(), Any, Path, Shared helpers for AgentPlaybook finish checks., requires_retrospective(), run_command() (+2 more)
+
+### Community 57 - "agent-hook.py"
+Cohesion: 0.42
+Nodes (8): build_parser(), build_result(), main(), print_result(), Any, ArgumentParser, Namespace, Path
 
 ### Community 58 - "Doubt-Driven Development"
 Cohesion: 0.17
@@ -801,8 +725,8 @@ Cohesion: 0.18
 Nodes (10): Anti-Patterns, Contract Shape, Cross-Platform Reuse, Extraction Criteria, Naming, Ownership Boundaries, Reusable Code Design, Reuse Ladder (+2 more)
 
 ### Community 74 - "Android DataStore Persistence"
-Cohesion: 0.18
-Nodes (10): Decision Rule, Effort Profiles, Escalation Triggers, Grill-Me Protocol, Intake Decision, PRD Creation Boundary, Report, Task Intake And Effort Routing (+2 more)
+Cohesion: 0.17
+Nodes (11): Decision Rule, Effort Profiles, Escalation Triggers, Grill-Me Protocol, Intake Decision, Model Tier Selection, PRD Creation Boundary, Report (+3 more)
 
 ### Community 75 - "Flutter Project Structure"
 Cohesion: 0.18
@@ -837,8 +761,12 @@ Cohesion: 0.18
 Nodes (10): Design-System Checks, Next.js App Router Checks, React Checks, Review, SEO And AI Search Checks, Service Checks, Structure Checks, Tools (+2 more)
 
 ### Community 83 - "Public Discovery"
-Cohesion: 0.36
-Nodes (9): extract_title(), keyflow_id(), main(), migrate_doc(), Path, rewrite_links(), skill_text(), source_docs() (+1 more)
+Cohesion: 0.17
+Nodes (18): extract_title(), is_migrated_source(), keyflow_id(), main(), migrate_doc(), parse_args(), Namespace, Path (+10 more)
+
+### Community 84 - "agy_setup.py"
+Cohesion: 0.21
+Nodes (12): clear_doc_graph_cache(), Clear graph cache for tests or long-lived processes after docs change., _edge_sort_key(), expand_doc_matches(), expand_doc_paths(), graph_required_docs(), Path, Public document graph expansion API for workflow routing and search. (+4 more)
 
 ### Community 85 - "State Modeling"
 Cohesion: 0.18
@@ -891,6 +819,14 @@ Nodes (9): Design-System Checks, Do Not Approve When, Findings Priority, Output,
 ### Community 97 - "graphify reference: extra exports and benchmark"
 Cohesion: 0.20
 Nodes (9): Adoption And Migration, Component API Shape, Layer Model, Primitive Contracts, Product-Prefixed Wrappers, Styling Ownership, Token Rules, Verification (+1 more)
+
+### Community 98 - "agent_review_boundary.py"
+Cohesion: 0.29
+Nodes (12): added_runtime_source(), boundary_note_requirements(), boundary_reasons(), format_boundary_note_requirements(), missing_boundary_note_fields(), package_missing_in_head(), Any, CommandRunner (+4 more)
+
+### Community 99 - "graphify reference: extra exports and benchmark"
+Cohesion: 0.14
+Nodes (13): Branch Creation Process, Branch Strategy, Common Rationalizations, Decision Rule, Default Naming, Do Not, Inspect First, Red Flags (+5 more)
 
 ### Community 100 - "Agent Editing Safety"
 Cohesion: 0.20
@@ -949,8 +885,8 @@ Cohesion: 0.22
 Nodes (8): Choose Checks By Change Type, Do Not Overclaim, Evidence To Preserve, Risk Levels, Verification Order, Verification Policy, When Commands Fail, When Tests Are Missing
 
 ### Community 114 - "KMP Compose UI"
-Cohesion: 0.22
-Nodes (8): AgentPlaybook Skill Bundle Migration, Bundle Contract, Goal, Maintenance Order, Routing Policy, Stop If, Target Layout, Verification
+Cohesion: 0.20
+Nodes (9): AgentPlaybook Skill Bundle Migration, Bundle Contract, Goal, Maintenance Order, Routing Policy, Source-Of-Truth Cleanup, Stop If, Target Layout (+1 more)
 
 ### Community 115 - "KMP Platform Integration"
 Cohesion: 0.22
@@ -1000,9 +936,17 @@ Nodes (8): Acceptance Rules, Creation Rules, Invitation Implementation, Invite R
 Cohesion: 0.42
 Nodes (8): _dedupe(), _double_quote(), Path, _quote(), Build narrow Spill helper permission command variants., _shell_path_spellings(), spill_helper_path_variants(), spill_helper_permission_commands()
 
+### Community 127 - "workflow.py"
+Cohesion: 0.25
+Nodes (7): Branch Strategy, Do Not, Process, Read, Report, Stop If, Verification
+
 ### Community 128 - "Architecture Selection"
-Cohesion: 0.47
-Nodes (8): _after(), _append_phase(), _append_worker_phase(), _existing(), parallel_execution_plan(), Any, Parallel execution hints for workflow route manifests., Return safe, content-free parallelization guidance for a route.
+Cohesion: 0.35
+Nodes (13): _doc_sets(), _pattern_groups(), Any, Helpers for workflow document surface rule matching., Return all document references and invalid doc-set references., _request_pattern_matches(), rule_docs(), rule_list() (+5 more)
+
+### Community 129 - "main"
+Cohesion: 0.41
+Nodes (10): configure_claude(), _is_managed_claude_spill_bridge_command(), _merge_claude_user_prompt_submit(), Path, Claude Code hook and permission setup., _remove_claude_env(), _remove_claude_user_prompt_submit(), _set_claude_env() (+2 more)
 
 ### Community 130 - "Data Persistence Sync"
 Cohesion: 0.22
@@ -1084,6 +1028,10 @@ Nodes (7): Auth RBAC Implementation, Enforcement Layers, Model Separation, Permi
 Cohesion: 0.25
 Nodes (7): Audit, Do Not, Flow, Invitation Workflows, Rules, Tests, UI States
 
+### Community 150 - "agent_inprocess.py"
+Cohesion: 0.11
+Nodes (12): Profile, Static route and platform catalogs for workflow.py., Concern-to-document routes for workflow routing., Keyword-to-concern inference rules for workflow routing., Platform-specific concern-to-document routes for workflow routing., _normal_tool_label(), Any, Local workflow label helpers used by the workflow CLI. (+4 more)
+
 ### Community 151 - "README.md"
 Cohesion: 0.25
 Nodes (7): Completion Evidence, Current Workflows, Decision Rule, Essential Hooks, Lifecycle Aliases, Rule, Workflows
@@ -1152,9 +1100,21 @@ Nodes (6): Auth, RBAC, Permissions, Check, Do Not, Rules, Separate, Tests
 Cohesion: 0.29
 Nodes (6): Billing Entitlements, Check, Do Not, Rules, Separate, Tests
 
+### Community 168 - "workflow_spill.py"
+Cohesion: 0.22
+Nodes (8): Core Rule: Feature Folder, Document Conventions, Handoff Rule, Module-level Docs, Naming Rules, Override Order, Scope Placement Matrix, When Each Document Is Required
+
+### Community 169 - "Source-Of-Truth Ownership"
+Cohesion: 0.22
+Nodes (8): Compatibility Stubs, Duplicate Audit, Ownership Rule, Placement Decision, Router And Index Summaries, Source-Of-Truth Ownership, Stop If, Verification
+
 ### Community 170 - "Review And Commit Workflow"
 Cohesion: 0.62
 Nodes (6): actual_files(), git_head(), is_manifest_relevant(), listed_files(), main(), Path
+
+### Community 171 - "infer_surface_docs"
+Cohesion: 0.26
+Nodes (9): _append_path_match(), _append_request_match(), infer_surface_docs(), load_doc_surface_rules(), Any, Path, Route required docs from request intent and touched path surfaces., Load the root document surface routing map. (+1 more)
 
 ### Community 172 - "graphify reference: query, path, explain"
 Cohesion: 0.29
@@ -1736,9 +1696,9 @@ Nodes (5): Do Not, Invitation Implementation, Process, Read, Verification
 Cohesion: 0.33
 Nodes (5): Do Not, Invitation Workflows, Process, Read, Verification
 
-### Community 317 - "Bugfix Debugging Workflow"
-Cohesion: 0.08
-Nodes (40): Boundary, side-effect, and run-state finish gate validators., validate_agentic_run_state(), validate_boundary_plan(), validate_side_effect_audit(), Collaboration and workspace finish gate validators., validate_multi_agent(), validate_multi_agent_briefs(), validate_multi_agent_integration_review() (+32 more)
+### Community 317 - "agent_finish_gate_validators.py"
+Cohesion: 0.24
+Nodes (8): unique(), extract_request_surface_paths(), git_status_surface_paths(), normalize_path(), path_matches(), Extract path-like references from a user request., Parse path names from `git status --short --untracked-files=all`., T
 
 ### Community 318 - "Cycle Contract Workflow"
 Cohesion: 0.33
@@ -1900,605 +1860,61 @@ Nodes (3): For git commit hook, For native CLAUDE.md integration, graphify refer
 Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
-### Community 358 - "API Contract Compatibility"
-Cohesion: 0.50
-Nodes (3): Accessibility I18n, Read, Verification
+### Community 358 - "workflow_doc_graph_refs.py"
+Cohesion: 0.42
+Nodes (9): _collapse_path(), _doc_refs_from_value(), _frontmatter_block(), frontmatter_doc_refs(), markdown_doc_refs(), normalize_doc_seed(), Path, Parse document references for the local AgentPlaybook graph. (+1 more)
 
 ### Community 359 - "Application Boundary Principles"
-Cohesion: 0.50
-Nodes (3): Agent Editing Safety, Read, Verification
-
-### Community 360 - "Architecture Design"
-Cohesion: 0.50
-Nodes (3): Agent Interaction, Read, Verification
-
-### Community 361 - "Architecture Selection"
-Cohesion: 0.50
-Nodes (3): Agent Operating Skill, Read, Verification
-
-### Community 362 - "Asset Lifecycle"
-Cohesion: 0.50
-Nodes (3): Agent Skill Card Anatomy, Read, Verification
-
-### Community 363 - "Browser Runtime Testing"
-Cohesion: 0.50
-Nodes (3): API Contract Compatibility, Read, Verification
-
-### Community 364 - "Change Size Policy"
-Cohesion: 0.50
-Nodes (3): Application Boundary Principles, Read, Verification
-
-### Community 365 - "CI/CD And Automation"
-Cohesion: 0.50
-Nodes (3): Architecture Design, Read, Verification
-
-### Community 366 - "Code Conventions"
-Cohesion: 0.50
-Nodes (3): Architecture Selection, Read, Verification
-
-### Community 367 - "Code Review"
-Cohesion: 0.50
-Nodes (3): Asset Lifecycle, Read, Verification
-
-### Community 368 - "Code Structure And Ownership"
-Cohesion: 0.50
-Nodes (3): Browser Runtime Testing, Read, Verification
-
-### Community 369 - "Commit Review"
-Cohesion: 0.50
-Nodes (3): Change Size Policy, Read, Verification
-
-### Community 370 - "Commit Workflow"
-Cohesion: 0.50
-Nodes (3): CI/CD And Automation, Read, Verification
-
-### Community 371 - "Component API Design"
-Cohesion: 0.50
-Nodes (3): Code Conventions, Read, Verification
-
-### Community 372 - "Data Persistence Sync"
-Cohesion: 0.50
-Nodes (3): Code Review, Read, Verification
-
-### Community 373 - "Defensive Boundaries"
-Cohesion: 0.50
-Nodes (3): Code Structure And Ownership, Read, Verification
-
-### Community 374 - "Definition Of Done"
-Cohesion: 0.50
-Nodes (3): Commit Review, Read, Verification
-
-### Community 375 - "Dependency Policy"
-Cohesion: 0.50
-Nodes (3): Commit Workflow, Read, Verification
-
-### Community 376 - "Deprecation And Migration"
-Cohesion: 0.50
-Nodes (3): Component API Design, Read, Verification
-
-### Community 377 - "Design System"
-Cohesion: 0.50
-Nodes (3): Data Persistence Sync, Read, Verification
-
-### Community 378 - "Doubt-Driven Development"
-Cohesion: 0.50
-Nodes (3): Defensive Boundaries, Read, Verification
-
-### Community 379 - "Error Modeling"
-Cohesion: 0.50
-Nodes (3): Definition Of Done, Read, Verification
-
-### Community 380 - "Generated Files Policy"
-Cohesion: 0.50
-Nodes (3): Dependency Policy, Read, Verification
-
-### Community 381 - "Human-Authored Writing"
-Cohesion: 0.50
-Nodes (3): Deprecation And Migration, Read, Verification
-
-### Community 382 - "Incremental Implementation"
-Cohesion: 0.50
-Nodes (3): Design System, Read, Verification
-
-### Community 383 - "LLM Coding Discipline"
-Cohesion: 0.50
-Nodes (3): Doubt-Driven Development, Read, Verification
-
-### Community 384 - "LLM Wiki Documentation"
-Cohesion: 0.50
-Nodes (3): Error Modeling, Read, Verification
-
-### Community 385 - "Local Tools Policy"
-Cohesion: 0.50
-Nodes (3): Generated Files Policy, Read, Verification
-
-### Community 386 - "Observability Error Handling"
-Cohesion: 0.50
-Nodes (3): Human-Authored Writing, Read, Verification
-
-### Community 387 - "Performance Verification"
-Cohesion: 0.50
-Nodes (3): Incremental Implementation, Read, Verification
-
-### Community 388 - "Product Spec To Implementation"
-Cohesion: 0.50
-Nodes (3): LLM Coding Discipline, Read, Verification
-
-### Community 389 - "Project Naming"
-Cohesion: 0.50
-Nodes (3): LLM Wiki Documentation, Read, Verification
-
-### Community 390 - "Public Discovery"
-Cohesion: 0.50
-Nodes (3): Local Tools Policy, Read, Verification
-
-### Community 391 - "Refactoring Playbook"
-Cohesion: 0.50
-Nodes (3): Observability Error Handling, Read, Verification
-
-### Community 392 - "Release Deployment"
-Cohesion: 0.50
-Nodes (3): Performance Verification, Read, Verification
-
-### Community 393 - "Release Versioning"
-Cohesion: 0.50
-Nodes (3): Product Spec To Implementation, Read, Verification
-
-### Community 394 - "Reusable Code Design"
-Cohesion: 0.50
-Nodes (3): Project Naming, Read, Verification
-
-### Community 395 - "Runtime URL Configuration"
-Cohesion: 0.50
-Nodes (3): Public Discovery, Read, Verification
-
-### Community 396 - "Scenario-Driven Testing"
-Cohesion: 0.50
-Nodes (3): Read, Refactoring Playbook, Verification
-
-### Community 397 - "Secure Development Baseline"
-Cohesion: 0.50
-Nodes (3): Read, Release Deployment, Verification
-
-### Community 398 - "Security Privacy Review"
-Cohesion: 0.50
-Nodes (3): Read, Release Versioning, Verification
-
-### Community 399 - "Server Side Caching"
-Cohesion: 0.50
-Nodes (3): Read, Reusable Code Design, Verification
-
-### Community 400 - "SOLID Design Principles"
-Cohesion: 0.50
-Nodes (3): Read, Runtime URL Configuration, Verification
-
-### Community 401 - "Source-Driven Development"
-Cohesion: 0.50
-Nodes (3): Read, Scenario-Driven Testing, Verification
-
-### Community 402 - "Stack Discovery"
-Cohesion: 0.50
-Nodes (3): Read, Secure Development Baseline, Verification
-
-### Community 403 - "State Modeling"
-Cohesion: 0.50
-Nodes (3): Read, Security Privacy Review, Verification
-
-### Community 404 - "Task Intake And Effort Routing"
-Cohesion: 0.50
-Nodes (3): Read, Server Side Caching, Verification
-
-### Community 405 - "Testing Principles"
-Cohesion: 0.50
-Nodes (3): Read, SOLID Design Principles, Verification
-
-### Community 406 - "Tool Failure Recovery"
-Cohesion: 0.50
-Nodes (3): Read, Source-Driven Development, Verification
-
-### Community 407 - "UI Visual Verification"
-Cohesion: 0.50
-Nodes (3): Read, Stack Discovery, Verification
-
-### Community 408 - "Verification Policy"
-Cohesion: 0.50
-Nodes (3): Read, State Modeling, Verification
-
-### Community 409 - "Web Deployment Versioning"
-Cohesion: 0.50
-Nodes (3): Read, Task Intake And Effort Routing, Verification
-
-### Community 410 - "Web Performance Verification"
-Cohesion: 0.50
-Nodes (3): Read, Testing Principles, Verification
-
-### Community 411 - "Worktree Hygiene"
-Cohesion: 0.50
-Nodes (3): Read, Tool Failure Recovery, Verification
-
-### Community 412 - "Writing Workspace"
-Cohesion: 0.50
-Nodes (3): Read, UI Visual Verification, Verification
-
-### Community 413 - "AgentPlaybook Agent Bootstrap"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Verification Policy
-
-### Community 414 - "Agent Runtime Integration"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web Deployment Versioning
-
-### Community 415 - "AgentPlaybook Skill Bundle Migration"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web Performance Verification
-
-### Community 416 - "Android Architecture"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Worktree Hygiene
-
-### Community 417 - "Android Background Work"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Writing Workspace
-
-### Community 418 - "Android Compose UI"
-Cohesion: 0.50
-Nodes (3): AgentPlaybook Agent Bootstrap, Read, Verification
-
-### Community 419 - "Android External Skill Source Coverage"
-Cohesion: 0.50
-Nodes (3): Agent Runtime Integration, Read, Verification
-
-### Community 420 - "Android Module Structure"
-Cohesion: 0.50
-Nodes (3): AgentPlaybook Skill Bundle Migration, Read, Verification
-
-### Community 421 - "Android Review"
-Cohesion: 0.50
-Nodes (3): Android Architecture, Read, Verification
-
-### Community 422 - "Android Security"
-Cohesion: 0.50
-Nodes (3): Android Background Work, Read, Verification
-
-### Community 423 - "Android State And Data"
-Cohesion: 0.50
-Nodes (3): Android Compose UI, Read, Verification
-
-### Community 424 - "Android ViewModel And State"
-Cohesion: 0.50
-Nodes (3): Android External Skill Source Coverage, Read, Verification
-
-### Community 425 - "Application Architecture"
-Cohesion: 0.50
-Nodes (3): Android Module Structure, Read, Verification
-
-### Community 426 - "Application Command And UI"
-Cohesion: 0.50
-Nodes (3): Android Review, Read, Verification
-
-### Community 427 - "Application React Desktop"
-Cohesion: 0.50
-Nodes (3): Android Security, Read, Verification
-
-### Community 428 - "Application Review"
-Cohesion: 0.50
-Nodes (3): Android State And Data, Read, Verification
-
-### Community 429 - "Application Security"
-Cohesion: 0.50
-Nodes (3): Android ViewModel And State, Read, Verification
-
-### Community 430 - "Application System Integration"
-Cohesion: 0.50
-Nodes (3): Application Architecture, Read, Verification
-
-### Community 431 - "Flutter Architecture"
-Cohesion: 0.50
-Nodes (3): Application Command And UI, Read, Verification
-
-### Community 432 - "Flutter Platform Integration"
-Cohesion: 0.50
-Nodes (3): Application React Desktop, Read, Verification
-
-### Community 433 - "Flutter Project Structure"
-Cohesion: 0.50
-Nodes (3): Application Review, Read, Verification
-
-### Community 434 - "Flutter Review"
-Cohesion: 0.50
-Nodes (3): Application Security, Read, Verification
-
-### Community 435 - "Flutter Security"
-Cohesion: 0.50
-Nodes (3): Application System Integration, Read, Verification
-
-### Community 436 - "Flutter State And Data"
-Cohesion: 0.50
-Nodes (3): Flutter Architecture, Read, Verification
-
-### Community 437 - "Flutter Widget UI"
-Cohesion: 0.50
-Nodes (3): Flutter Platform Integration, Read, Verification
-
-### Community 438 - "iOS Architecture"
-Cohesion: 0.50
-Nodes (3): Flutter Project Structure, Read, Verification
-
-### Community 439 - "iOS Module Structure"
-Cohesion: 0.50
-Nodes (3): Flutter Review, Read, Verification
-
-### Community 440 - "iOS Review"
-Cohesion: 0.50
-Nodes (3): Flutter Security, Read, Verification
-
-### Community 441 - "iOS Security"
-Cohesion: 0.50
-Nodes (3): Flutter State And Data, Read, Verification
-
-### Community 442 - "iOS State And Concurrency"
-Cohesion: 0.50
-Nodes (3): Flutter Widget UI, Read, Verification
-
-### Community 443 - "iOS SwiftUI UI"
-Cohesion: 0.50
-Nodes (3): iOS Architecture, Read, Verification
-
-### Community 444 - "iOS UIKit UI"
-Cohesion: 0.50
-Nodes (3): iOS Module Structure, Read, Verification
-
-### Community 445 - "KMP Architecture"
-Cohesion: 0.50
-Nodes (3): iOS Review, Read, Verification
-
-### Community 446 - "KMP Compose UI"
-Cohesion: 0.50
-Nodes (3): iOS Security, Read, Verification
-
-### Community 447 - "KMP Module Structure"
-Cohesion: 0.50
-Nodes (3): iOS State And Concurrency, Read, Verification
-
-### Community 448 - "KMP Platform Integration"
-Cohesion: 0.50
-Nodes (3): iOS SwiftUI UI, Read, Verification
-
-### Community 449 - "KMP Review"
-Cohesion: 0.50
-Nodes (3): iOS UIKit UI, Read, Verification
-
-### Community 450 - "KMP Security"
-Cohesion: 0.50
-Nodes (3): KMP Architecture, Read, Verification
-
-### Community 451 - "KMP State And Data"
-Cohesion: 0.50
-Nodes (3): KMP Compose UI, Read, Verification
-
-### Community 452 - "Server API Implementation"
-Cohesion: 0.50
-Nodes (3): KMP Module Structure, Read, Verification
-
-### Community 453 - "Server Architecture"
-Cohesion: 0.50
-Nodes (3): KMP Platform Integration, Read, Verification
-
-### Community 454 - "Server Data And Jobs"
-Cohesion: 0.50
-Nodes (3): KMP Review, Read, Verification
-
-### Community 455 - "Server Review"
-Cohesion: 0.50
-Nodes (3): KMP Security, Read, Verification
-
-### Community 456 - "Server Security"
-Cohesion: 0.50
-Nodes (3): KMP State And Data, Read, Verification
-
-### Community 457 - "Swift Architecture"
-Cohesion: 0.50
-Nodes (3): Read, Server API Implementation, Verification
-
-### Community 458 - "Swift Code Structure"
-Cohesion: 0.50
-Nodes (3): Read, Server Architecture, Verification
-
-### Community 459 - "Swift Design System"
-Cohesion: 0.50
-Nodes (3): Read, Server Data And Jobs, Verification
-
-### Community 460 - "Swift Review"
-Cohesion: 0.50
-Nodes (3): Read, Server Review, Verification
-
-### Community 461 - "Web Accessibility I18n"
-Cohesion: 0.50
-Nodes (3): Read, Server Security, Verification
-
-### Community 462 - "Web Architecture"
-Cohesion: 0.50
-Nodes (3): Read, Swift Architecture, Verification
-
-### Community 463 - "Web Code Structure"
-Cohesion: 0.50
-Nodes (3): Read, Swift Code Structure, Verification
-
-### Community 464 - "Web Design System"
-Cohesion: 0.50
-Nodes (3): Read, Swift Design System, Verification
-
-### Community 465 - "Web React UI"
-Cohesion: 0.50
-Nodes (3): Read, Swift Review, Verification
-
-### Community 466 - "Web Review"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web Accessibility I18n
-
-### Community 467 - "Web Security"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web Architecture
-
-### Community 468 - "Web State And Data"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web Code Structure
-
-### Community 469 - "Agent Credential Broker Ideation"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web Design System
-
-### Community 470 - "Auth RBAC Implementation"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web React UI
-
-### Community 471 - "Auth, RBAC, Permissions"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web Review
-
-### Community 472 - "Billing Entitlements"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web Security
-
-### Community 473 - "Billing Entitlements Implementation"
-Cohesion: 0.50
-Nodes (3): Read, Verification, Web State And Data
-
-### Community 474 - "Invitation Implementation"
-Cohesion: 0.50
-Nodes (3): Agent Credential Broker Ideation, Read, Verification
-
-### Community 475 - "Invitation Workflows"
-Cohesion: 0.50
-Nodes (3): Auth RBAC Implementation, Read, Verification
-
-### Community 476 - "Apply AgentPlaybook Request"
-Cohesion: 0.50
-Nodes (3): Auth, RBAC, Permissions, Read, Verification
-
-### Community 477 - "Agent Handoff Continuation Workflow"
-Cohesion: 0.50
-Nodes (3): Billing Entitlements, Read, Verification
-
-### Community 478 - "Agent Task Lifecycle Workflow"
-Cohesion: 0.50
-Nodes (3): Billing Entitlements Implementation, Read, Verification
-
-### Community 479 - "Ambiguity Gate"
-Cohesion: 0.50
-Nodes (3): Invitation Implementation, Read, Verification
-
-### Community 480 - "Bugfix Debugging Workflow"
-Cohesion: 0.50
-Nodes (3): Invitation Workflows, Read, Verification
+Cohesion: 0.33
+Nodes (5): Do Not, Document Conventions, Process, Read, Verification
+
+### Community 360 - "Any"
+Cohesion: 0.26
+Nodes (15): _add_edge(), _add_legacy_alias_edges(), _add_markdown_edges(), _add_surface_rule_edges(), build_doc_graph(), _connect_group(), _doc_sets(), graph_summary() (+7 more)
+
+### Community 361 - "workflow_parallel.py"
+Cohesion: 0.47
+Nodes (8): _after(), _append_phase(), _append_worker_phase(), _existing(), parallel_execution_plan(), Any, Parallel execution hints for workflow route manifests., Return safe, content-free parallelization guidance for a route.
 
 ### Community 481 - "Cycle Contract Workflow"
 Cohesion: 0.50
 Nodes (3): Apply AgentPlaybook Request, Step 1: Required Application Prompt, Step 2: Optional User-Level Bridge Prompt
 
-### Community 482 - "Development Cycle Workflow"
-Cohesion: 0.50
-Nodes (3): Agent Handoff Continuation Workflow, Read, Verification
-
-### Community 483 - "Documentation Update Workflow"
-Cohesion: 0.50
-Nodes (3): Agent Task Lifecycle Workflow, Read, Verification
-
-### Community 484 - "Feature Implementation Workflow"
-Cohesion: 0.50
-Nodes (3): Ambiguity Gate, Read, Verification
-
-### Community 485 - "Multi-Agent Collaboration"
-Cohesion: 0.50
-Nodes (3): Bugfix Debugging Workflow, Read, Verification
-
-### Community 486 - "Multi-Perspective Review"
-Cohesion: 0.50
-Nodes (3): Cycle Contract Workflow, Read, Verification
-
-### Community 487 - "Planning Research Workflow"
-Cohesion: 0.50
-Nodes (3): Development Cycle Workflow, Read, Verification
-
-### Community 488 - "PRD Creation Workflow"
-Cohesion: 0.50
-Nodes (3): Documentation Update Workflow, Read, Verification
-
-### Community 489 - "Product Architecture Delivery Workflow"
-Cohesion: 0.50
-Nodes (3): Feature Implementation Workflow, Read, Verification
-
-### Community 490 - "Refactor Cleanup Workflow"
-Cohesion: 0.50
-Nodes (3): Multi-Agent Collaboration, Read, Verification
-
-### Community 491 - "Release Readiness Workflow"
-Cohesion: 0.50
-Nodes (3): Multi-Perspective Review, Read, Verification
-
-### Community 492 - "Request Triage Workflow"
-Cohesion: 0.50
-Nodes (3): Planning Research Workflow, Read, Verification
-
-### Community 493 - "Retrospective Learning Workflow"
-Cohesion: 0.50
-Nodes (3): PRD Creation Workflow, Read, Verification
-
-### Community 494 - "Review And Commit Workflow"
-Cohesion: 0.50
-Nodes (3): Product Architecture Delivery Workflow, Read, Verification
-
-### Community 495 - "Scripted Agent Workflow"
-Cohesion: 0.50
-Nodes (3): Read, Refactor Cleanup Workflow, Verification
-
-### Community 496 - "graphify reference: GitHub clone and cross-repo merge"
-Cohesion: 0.50
-Nodes (3): Read, Release Readiness Workflow, Verification
-
-### Community 497 - "graphify reference: transcribe video and audio"
-Cohesion: 0.50
-Nodes (3): Read, Request Triage Workflow, Verification
-
-### Community 498 - "Claude Entry"
-Cohesion: 0.50
-Nodes (3): Read, Retrospective Learning Workflow, Verification
-
-### Community 499 - "graphify reference: GitHub clone and cross-repo merge"
-Cohesion: 0.50
-Nodes (3): Read, Review And Commit Workflow, Verification
-
-### Community 500 - "graphify reference: transcribe video and audio"
-Cohesion: 0.50
-Nodes (3): Read, Scripted Agent Workflow, Verification
-
 ### Community 519 - "Namespace"
-Cohesion: 0.14
-Nodes (4): check_request_intake(), validate_grill_me_skill_evidence(), classified_route_block_reason(), Block work routes unless --request-classified proves the request is actionable.
+Cohesion: 0.15
+Nodes (18): build_parser(), main(), ArgumentParser, Path, check_preflight_vibeguard(), check_required_gates(), _classification_requires_grill_me(), Any (+10 more)
+
+### Community 521 - "AgentReviewPurposeTests"
+Cohesion: 0.46
+Nodes (3): AgentReviewPurposeTests, declarations(), Path
+
+### Community 522 - "agent_structure_rule_config.py"
+Cohesion: 0.43
+Nodes (6): display_path(), load_structure_rule_configs(), Any, Path, Structure rule config loading helpers., string_list()
 
 ### Community 523 - "Quick Start"
 Cohesion: 0.29
 Nodes (7): Connect The Target Repo, Path A: Existing Local Install, Path B: First-Time Local Shared Install, Path C: Team-Pinned Install, Quick Start, Safety Gate, Updating An Existing Install
 
 ## Knowledge Gaps
-- **2206 isolated node(s):** `Purpose`, `Project Discovery Entry`, `Shared Guidance Boundary`, `Project LLM Wiki Boundary`, `Language Policy` (+2201 more)
+- **1962 isolated node(s):** `Profile`, `graphify`, `Usage`, `What graphify is for`, `Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)` (+1957 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **20 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `WorkflowRoutingTests` connect `discover_projects` to `workflow_platform_concerns.py`, `Scenario-Driven Testing`, `Namespace`, `resolve_docs`, `Scripted Agent Workflow`, `setup_config_files.py`?**
-  _High betweenness centrality (0.017) - this node is a cross-community bridge._
-- **Why does `unique()` connect `agent-hook.py` to `agent_review_purpose.py`, `WorkflowRoutingTests`, `workflow_doc_graph_build.py`, `review_hook`, `run_preflight`, `Android Module Structure`, `Android ViewModel And State`?**
-  _High betweenness centrality (0.003) - this node is a cross-community bridge._
-- **Why does `detect_project_permissions()` connect `Testing Principles` to `AgentPlaybook Shared Agent Instructions`?**
-  _High betweenness centrality (0.003) - this node is a cross-community bridge._
+- **Why does `WorkflowRoutingTests` connect `discover_projects` to `main`, `agent_gate_evidence.py`, `WorkflowRoutingTests`, `workflow_doc_graph_build.py`, `agent-hook.py`, `review_hook`, `Namespace`, `resolve_docs`, `run_preflight`, `Android Module Structure`, `Scripted Agent Workflow`, `agent_inprocess.py`, `agent_global_lessons.py`, `setup_config_files.py`, `agent_global_lessons.py`, `agent_hook_runtime.py`, `Android ViewModel And State`, `Writing Workspace`, `agent_delegation_plan.py`, `infer_surface_docs`, `Browser Runtime Testing`, `agent_finish_gate_validators.py`, `agy_setup.py`?**
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+- **Why does `validate_gate_evidence()` connect `discover_projects` to `Namespace`, `agent_hook_gate_records.py`, `setup_config_files.py`, `setup_config_files.py`, `agent_hook_runtime.py`?**
+  _High betweenness centrality (0.007) - this node is a cross-community bridge._
+- **Why does `unique()` connect `agent_finish_gate_validators.py` to `Architecture Selection`, `agent_review_purpose.py`, `workflow_doc_graph_build.py`, `workflow_doc_graph_refs.py`, `Writing Workspace`, `Any`, `resolve_docs`, `infer_surface_docs`, `Public Discovery`, `agy_setup.py`?**
+  _High betweenness centrality (0.005) - this node is a cross-community bridge._
+- **Are the 58 inferred relationships involving `resolve_docs()` (e.g. with `route_payload()` and `print_dispatch()`) actually correct?**
+  _`resolve_docs()` has 58 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 60 inferred relationships involving `validate_gate_evidence()` (e.g. with `check_required_gates()` and `validate_agentic_run_state()`) actually correct?**
+  _`validate_gate_evidence()` has 60 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 22 inferred relationships involving `discover_projects()` (e.g. with `add_candidate()` and `build_candidate()`) actually correct?**
   _`discover_projects()` has 22 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 22 inferred relationships involving `unique()` (e.g. with `route_payload()` and `_rescore_for_request()`) actually correct?**
-  _`unique()` has 22 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 22 inferred relationships involving `validate_gate_evidence()` (e.g. with `validate_agentic_run_state()` and `validate_boundary_plan()`) actually correct?**
-  _`validate_gate_evidence()` has 22 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Purpose`, `Project Discovery Entry`, `Shared Guidance Boundary` to the rest of the system?**
-  _2303 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `Structured evidence for delegated or parallel agent work.`, `Step functions for AgentPlaybook finish checks.`, `Shared helpers for AgentPlaybook finish checks.` to the rest of the system?**
+  _2063 weakly-connected nodes found - possible documentation gaps or missing edges._
