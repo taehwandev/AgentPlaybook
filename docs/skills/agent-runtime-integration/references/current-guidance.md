@@ -22,6 +22,14 @@ AgentPlaybook should be consumed through a small bridge, not copied wholesale:
 Repo-local instructions remain the source of truth for commands, paths,
 services, product policy, and domain language.
 
+Separate shared semantics from runtime mechanics. The provider-neutral
+canonical owner defines what the agent must know and do; runtime bridges define
+only how Codex, Claude, Antigravity/AGY, or another runtime discovers, invokes,
+or enforces it. When several runtimes need the same repo-local skill, keep one
+canonical bundle under `.agentplaybook/skills/<skill>` and use repo-relative
+runtime links or thin adapters. Do not maintain full runtime-specific copies of
+the same operational knowledge.
+
 ## Setup Modes
 
 Select one mode before wiring a runtime:
@@ -321,6 +329,12 @@ kept with the target repo. Do not commit personal absolute paths such as
 prompts, or uncommitted user-level runtime bridges only.
 
 Do not paste the full playbook into runtime-specific files.
+
+For Graphify specifically, follow
+`docs/skills/graphify-project-integration/SKILL.md`: the canonical project
+bundle lives at `.agentplaybook/skills/graphify`, while `.codex`, `.claude`,
+and `.agents` expose only repo-relative discovery links plus their genuinely
+runtime-specific hooks, rules, workflows, and registration.
 
 ## One-Shot Prompt Setup
 

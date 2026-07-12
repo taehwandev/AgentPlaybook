@@ -11,6 +11,12 @@ from pathlib import Path
 
 from support.agy_setup import configure_agy
 from support.claude_setup import configure_claude
+from support.graphify_setup import (
+    CANONICAL_SKILL_PATH,
+    configure_global_graphify,
+    configure_target_graphify,
+    graphify_platforms_for_runtimes,
+)
 from support.permission_entries import (
     claude_legacy_permission_entries,
     claude_project_permission_entries,
@@ -58,6 +64,17 @@ def main() -> None:
         action="store_true",
         help="Also install project-level permissions for all ~/GitHub/* projects.",
     )
+    graphify_group = parser.add_mutually_exclusive_group()
+    graphify_group.add_argument(
+        "--graphify",
+        action="store_true",
+        help="Also install Graphify for --github-projects; --target enables it by default.",
+    )
+    graphify_group.add_argument(
+        "--skip-graphify",
+        action="store_true",
+        help="Skip the default target-project Graphify integration (explicit opt-out).",
+    )
     parser.add_argument(
         "--runtime",
         action="append",
@@ -66,6 +83,9 @@ def main() -> None:
         help="Limit user-level runtime bridge setup to one or more runtimes.",
     )
     args = parser.parse_args()
+
+    if (args.graphify or args.skip_graphify) and not (args.target or args.github_projects):
+        parser.error("--graphify/--skip-graphify requires --target or --github-projects")
 
     dry_run = args.dry_run or args.check
     selected_runtimes = set(args.runtime)
@@ -95,31 +115,78 @@ def main() -> None:
             spill_available=spill_available,
         )
 
-    # External project installs
-    target_paths: list[Path] = []
-    if args.target:
-        target_paths.append(Path(args.target).expanduser().resolve())
+    global_graphify_platforms = graphify_platforms_for_runtimes(
+        selected_runtimes or {"agy", "claude", "codex"}
+    )
+    if shutil.which("graphify") or (Path.home() / CANONICAL_SKILL_PATH).is_file():
+        results += configure_global_graphify(
+            Path.home(), global_graphify_platforms, dry_run
+        )
+
+    results += configure_target_projects(
+        args,
+        selected_runtimes=selected_runtimes,
+        dry_run=dry_run,
+        launcher_configured=launcher_configured,
+        spill_available=spill_available,
+    )
+
+    print_results(results, dry_run)
+    fail_if_setup_incomplete(args, results)
+
+
+def configure_target_projects(
+    args: argparse.Namespace,
+    *,
+    selected_runtimes: set[str],
+    dry_run: bool,
+    launcher_configured: bool,
+    spill_available: bool,
+) -> list[dict]:
+    """Configure explicit or bulk target repos without widening Graphify scope."""
+    explicit_target = Path(args.target).expanduser().resolve() if args.target else None
+    target_paths = [explicit_target] if explicit_target else []
     if args.github_projects:
         target_paths += _find_github_projects()
 
+    results: list[dict] = []
     if target_paths and not launcher_configured:
         results += ensure_stable_launcher(ROOT, dry_run)
 
+    # Project Graphify is agent-agnostic by default. Runtime availability on
+    # the current machine must not decide which repo-local entrypoints exist,
+    # because the same checkout may be opened later by Codex, Claude, or AGY.
+    graphify_platforms = graphify_platforms_for_runtimes(
+        selected_runtimes or {"agy", "claude", "codex"}
+    )
     for project_path in target_paths:
         results += configure_external_project(
             project_path, SCRIPTS_DIR, dry_run, spill_available=spill_available
         )
+        graphify_enabled = not args.skip_graphify and bool(
+            args.graphify or (explicit_target and project_path == explicit_target)
+        )
+        if graphify_enabled:
+            results += configure_target_graphify(project_path, graphify_platforms, dry_run)
+    return results
 
-    print_results(results, dry_run)
 
-    if args.check:
-        missing = [r for r in results if r["status"] == "missing"]
-        if missing:
-            print(
-                "\nRun `python3 scripts/setup-agent-hooks.py` to install missing bridges, hooks, or permissions.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
+def fail_if_setup_incomplete(args: argparse.Namespace, results: list[dict]) -> None:
+    missing = [result for result in results if result["status"] == "missing"]
+    if any(result["tool"] == "graphify" for result in missing):
+        print(
+            "\nTarget setup is incomplete. Install/repair the canonical Graphify skill and "
+            "runtime links, then read .agentplaybook/skills/graphify/SKILL.md, build the graph "
+            "from the target root, and rerun --check.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+    if args.check and missing:
+        print(
+            "\nRun `python3 scripts/setup-agent-hooks.py` to install missing bridges, hooks, or permissions.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
 
 
 def _has_claude() -> bool:

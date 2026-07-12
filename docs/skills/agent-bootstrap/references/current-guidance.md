@@ -207,6 +207,22 @@ After installing or selecting a root, run:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 ```
 
+For an explicit target repo, install project permissions and Graphify runtime
+integration together. Graphify is included by default for `--target`:
+
+```bash
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --target <TARGET_REPO>
+```
+
+This installs one canonical project-local Graphify skill under
+`.agentplaybook/skills/graphify`, repo-relative runtime links for Codex,
+Claude, and AGY, and their runtime integration. It must not silently run
+initial extraction. Read `docs/skills/graphify-project-integration/SKILL.md`,
+then read the target's canonical Graphify `SKILL.md`, build the initial graph
+from the target root, and rerun the check. Use `--skip-graphify` only as an
+explicit project opt-out. Bulk `--github-projects` needs explicit `--graphify`
+because it writes across multiple repositories.
+
 Then check runtime bridges, hooks, and permission allowlists:
 
 ```bash
@@ -272,16 +288,25 @@ that subsystem.
    `.agents/AgentPlaybook`. Do not commit personal absolute paths such as
    `/Users/.../AgentPlaybook`; use those only in shell env setup, one-shot
    prompts, or uncommitted user-level runtime bridges.
-9. Link only `AGENTS.md`, `index.md`, and any direct route cards the repo wants.
+9. Decide whether the target repo uses Graphify. A shared AgentPlaybook graph
+   never substitutes for the target repo's own graph. When Graphify is enabled,
+   build or refresh it from the target repo root using the project-local
+   procedure below and keep its input scope and generated-output policy in the
+   repo-local instructions.
+10. Link only `AGENTS.md`, `index.md`, and any direct route cards the repo wants.
    Prefer shared route cards over per-repo skill copies unless the repo has a
    genuine local skill surface.
-10. Do not paste the full AgentPlaybook library into repo-local files.
-11. For multi-step setup or migration work, run
+    When several runtimes need that local skill, keep its shared operational
+    content once under `.agentplaybook/skills/<skill>` and use repo-relative
+    runtime links or thin adapters. Do not maintain parallel Codex, Claude, and
+    Antigravity/AGY copies of the same knowledge.
+11. Do not paste the full AgentPlaybook library into repo-local files.
+12. For multi-step setup or migration work, run
    `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route ... --request
    "<USER_REQUEST>"` before editing, keep the workflow route gate ledger,
    and verify every required gate is `🐱🟢 SUCCESS` with evidence before
    reporting success.
-12. When wrapper scripts are available, run
+13. When wrapper scripts are available, run
    `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py ...` before edits
    and `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py ...` before
    final report, commit, release, or handoff. Missing wrapper evidence or gate
@@ -289,6 +314,14 @@ that subsystem.
    `🐱🟢 SUCCESS` and `🐱🔴 FAIL` badges. Do not report any third gate state.
 
 Use `templates/repo-agents-routing.md` as the routing block source.
+
+## Project-Local Graphify Procedure
+
+Use `docs/skills/graphify-project-integration/SKILL.md` as the canonical owner
+for installation, runtime skill paths, initial graph creation, query smoke, and
+the five-field readiness gate. The target repo owns its graph; another repo's
+Graphify output never substitutes for it. Keep this bootstrap card focused on
+AgentPlaybook application instead of duplicating the Graphify procedure here.
 
 ## Verify
 
@@ -306,10 +339,22 @@ Before reporting success:
   scripts are available.
 - The target repo's local instruction file still contains its original
   repo-specific rules.
+- When Graphify is enabled, the `graphify readiness` gate proves CLI, the
+  installed and read canonical `.agentplaybook` `SKILL.md`, runtime links that
+  resolve to it, project integration, target-root graph, and a successful
+  scoped query smoke check.
 - The routing block points to the selected root.
+- The stamped routing block carries the non-negotiable baseline enforcement
+  clause: the `documentation` gate always runs with non-empty, inspection-proven
+  evidence, and a `triage`/`plan` route that proposes an implementation roadmap
+  re-enters the `product` route with PRD-coverage evidence. These baseline gates
+  must not be self-excepted per project or per runtime.
 - Existing Claude, Codex, Antigravity, or other runtime instruction files are
   either updated with the same pointer or intentionally left unchanged with a
   reason.
+- Existing runtime-specific files contain only pointers, adapters, or
+  documented runtime-only behavior; no shared operational rule is independently
+  restated.
 - No duplicate runtime-specific instruction file was created when `AGENTS.md`
   is the runtime-read file.
 - No secrets, local credentials, private prompts, or unrelated files were added.

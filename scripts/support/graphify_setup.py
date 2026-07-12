@@ -1,0 +1,47 @@
+"""Public Graphify setup facade used by AgentPlaybook entrypoints."""
+
+from __future__ import annotations
+
+from typing import Iterable
+
+from support.graphify_configuration import (
+    configure_global_graphify,
+    configure_target_graphify,
+)
+from support.graphify_contract import (
+    CANONICAL_SKILL_PATH,
+    GLOBAL_PLATFORM_SKILL_DIRS,
+    PLATFORM_SKILL_DIRS,
+    RUNTIME_TO_PLATFORM,
+    TRACKING_POLICY_PATHS,
+)
+from support.graphify_inspection import (
+    discover_project_graphify_platforms,
+    inspect_global_graphify,
+    inspect_target_graphify,
+)
+from support.graphify_runtime_integration import (
+    normalize_runtime_integrations as _normalize_runtime_integrations,
+)
+
+__all__ = [
+    "CANONICAL_SKILL_PATH",
+    "GLOBAL_PLATFORM_SKILL_DIRS",
+    "PLATFORM_SKILL_DIRS",
+    "TRACKING_POLICY_PATHS",
+    "configure_global_graphify",
+    "configure_target_graphify",
+    "discover_project_graphify_platforms",
+    "graphify_platforms_for_runtimes",
+    "inspect_global_graphify",
+    "inspect_target_graphify",
+]
+
+
+def graphify_platforms_for_runtimes(runtimes: Iterable[str]) -> list[str]:
+    platforms = {
+        RUNTIME_TO_PLATFORM[runtime]
+        for runtime in runtimes
+        if runtime in RUNTIME_TO_PLATFORM
+    }
+    return sorted(platforms) or ["agents"]

@@ -26,6 +26,43 @@ The canonical owner is the most specific document that can own the rule after
 removing repo names, service names, product policy, local paths, commands,
 accounts, vendors, and one-off examples.
 
+### Agent-Agnostic Single Ownership
+
+When Codex, Claude, Antigravity/AGY, or another runtime needs the same
+operational knowledge, maintain that knowledge once in the most specific
+provider-neutral canonical owner. Real runtime-specific adapter or
+configuration files may contain only:
+
+- discovery or registration needed for that runtime to find the owner
+- invocation syntax, hooks, or permission wiring
+- behavior that is genuinely unique to the runtime and cannot be expressed in
+  the provider-neutral owner
+
+Runtime files must link to or resolve to the canonical owner. They must not
+carry independent copies of the shared rule, checklist, examples, or
+references. A generated runtime entrypoint is an adapter, not a second source
+of truth; it must identify its upstream owner and be refreshed by the owning
+installer instead of edited independently.
+
+A runtime skill directory symlink contains no runtime-owned files. Editors and
+file browsers may show the canonical `SKILL.md` and `references/` below the
+runtime path after following the link; those entries are views of the same
+canonical files. For a committed link, verify one mode `120000` Git index entry
+at the runtime path and zero tracked descendants below it. Only genuine adapter
+or configuration files outside that link may own unavoidable runtime wiring.
+
+For repo-local skills, prefer this shape:
+
+```text
+.agentplaybook/skills/<skill>/   # one canonical, commit-worthy source
+.<runtime>/skills/<skill>        # repo-relative link or thin runtime adapter
+```
+
+The `.agentplaybook` directory may also contain local workflow evidence, but
+that evidence is not part of the canonical skill and must remain ignored. Use
+an allowlist tracking policy so `skills/<skill>/**` is portable while
+preflight, gate, review, cache, and receipt files stay local.
+
 Preferred ownership order:
 
 1. Repo-local instructions own repo paths, commands, product policy, domain
@@ -79,6 +116,9 @@ Run this drill before creating a new card or splitting an existing one:
    - a short `Read` bullet that names the canonical owner,
    - an index or routing summary that describes discovery only,
    - deletion after routes and links target the canonical owner.
+   Runtime-specific copies of an otherwise identical skill must be replaced by
+   repo-relative links or thin adapters whose only content is the unavoidable
+   runtime mechanic.
 6. Update route surfaces, concern mappings, and tests so agents load the owner,
    not a stale compatibility path.
 7. Run route smoke and validation before reporting completion.
@@ -124,6 +164,8 @@ load `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md` before edits.
   source constraint.
 - A third-party skill or vendor workflow is copied instead of distilled into a
   reusable AgentPlaybook rule.
+- Codex, Claude, and Antigravity/AGY each retain a full copy of the same skill
+  or operational knowledge instead of resolving to one canonical owner.
 - The cleanup would delete a compatibility path still referenced by runtime
   bridges, downstream repos, or tests before those references are updated or
   explicitly accepted as broken external compatibility.

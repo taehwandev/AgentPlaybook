@@ -465,6 +465,13 @@ Do not copy this whole library into a repo. Link only the documents relevant to
 that repo. Keep repo-specific paths, commands, role matrices, API names, and
 domain language in the repo-local instructions.
 
+Keep reusable agent knowledge single-owned and provider-neutral. Runtime files
+are thin adapters or pointers unless behavior is genuinely runtime-specific;
+do not maintain parallel Codex, Claude, or Antigravity/AGY copies of the same
+operational rule or skill. Follow
+`docs/skills/agentplaybook-skill-bundle-migration/references/source-of-truth-ownership.md`
+for the canonical ownership and duplicate-audit rule.
+
 When applying AgentPlaybook to another repo, reuse an existing usable local or
 repo-pinned AgentPlaybook root by default. Do not download, clone, vendor, copy,
 overwrite, or add a second root while one exists unless the user explicitly
@@ -529,25 +536,3 @@ deployment, or credentials:
 
 Refresh this managed block only when `vibeguard audit .` reports stale guardrails, or manually with `vibeguard update .` / `npx --yes @taehwandev/vibeguard@latest update .`.
 <!-- vibeguard:end -->
-
-## graphify
-
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
-
-When the user types `/graphify` or `$graphify`, use the installed graphify skill or instructions before doing anything else. Codex commonly uses `$graphify`; Claude and AGY may use `/graphify`.
-
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- Treat tracked graphify outputs such as `graphify-out/graph.json`,
-  `graphify-out/GRAPH_REPORT.md`, `graphify-out/graph.html`, and
-  `graphify-out/manifest.json` as generated, reviewable navigation artifacts,
-  not as local cache. They may be committed or deployed only when intentionally
-  selected for publication, reproducible from committed/public-safe inputs, and
-  reviewed for secrets, local paths, private source material, internal endpoints,
-  and stale references. Keep graphify cache, `.graphify_*` sidecars, token/cost
-  trackers, automatic dated backups, and temporary extraction files ignored
-  unless a repo-local policy explicitly promotes one as a source of truth.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
