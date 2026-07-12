@@ -51,6 +51,27 @@ UNCHANGED_COVERAGE_PHRASES = (
     "이미", "커버", "반영되어", "반영됨", "현재 문서",
 )
 
+# An `unchanged` documentation decision must prove the doc was actually opened
+# and read, not merely asserted to already cover the change. These phrases are
+# the inspection proof; a bare coverage claim without one of them is a
+# self-granted exception and must fail the gate.
+DOC_INSPECTION_PROOF_PHRASES = (
+    "inspected", "opened", "re-read", "reread", "read the",
+    "reviewed", "checked ", "verified", "looked at", "examined",
+    "confirmed by reading", "opened and", "re-opened",
+    "열어", "열람", "확인", "검토", "재검토", "읽어", "읽고",
+)
+
+# The coverage-state claim that pairs with the inspection proof: why the opened
+# doc already reflects the change.
+DOC_COVERAGE_STATE_PHRASES = (
+    "already covered", "already covers", "already documented",
+    "existing doc", "existing docs", "current doc", "current docs",
+    "up to date", "still current", "no edit needed", "covered by",
+    "coverage:", "covered_by=", "covers the",
+    "이미", "커버", "반영되어", "반영됨", "현재 문서",
+)
+
 DURABLE_DOC_CHANGE_PATTERNS = (
     r"\b(planning|plan|requirements?|spec|scope|acceptance criteria)\b.*\b(changed?|updated?|new|added|removed|revised?)\b",
     r"\b(changed?|updated?|new|added|removed|revised?)\b.*\b(planning|plan|requirements?|spec|scope|acceptance criteria)\b",
@@ -153,11 +174,12 @@ def validate_documentation_impact_evidence(evidence: str) -> list[str]:
             "workflow policy, public contract, operator, architecture, API, "
             "release, or test-plan change"
         ]
-    if unchanged_decision and not _has_existing_doc_coverage(text):
+    if unchanged_decision and not _unchanged_evidence_is_grounded(text):
         return [
             "documentation impact evidence can use unchanged only when it names "
-            "the existing doc path/class inspected and why that doc already "
-            "covers the planning, behavior, contract, or acceptance change"
+            "the existing doc path it opened/inspected and states why that "
+            "already-read doc covers the planning, behavior, contract, or "
+            "acceptance change; a bare coverage claim is not enough"
         ]
     if no_doc_decision and not has_any(text, NO_DURABLE_DOC_REASONS):
         return [
@@ -208,6 +230,23 @@ def _has_existing_doc_coverage(text: str) -> bool:
     return has_any(text, UNCHANGED_COVERAGE_PHRASES)
 
 
+def _names_doc_path(text: str) -> bool:
+    """True when the evidence points at a concrete doc file, not just a class."""
+    return ".md" in text or "docs/" in text or "/" in text
+
+
+def _unchanged_evidence_is_grounded(text: str) -> bool:
+    """An `unchanged` doc decision is grounded only when it names the doc path,
+    proves the doc was opened/inspected, and states why it already covers the
+    change. All three are required so the agent cannot self-except by asserting
+    coverage without checking."""
+    return (
+        _names_doc_path(text)
+        and has_any(text, DOC_INSPECTION_PROOF_PHRASES)
+        and has_any(text, DOC_COVERAGE_STATE_PHRASES)
+    )
+
+
 def _has_durable_doc_change_signal(text: str) -> bool:
     searchable = text
     for phrase in NO_DURABLE_DOC_REASONS:
@@ -242,6 +281,65 @@ def validate_prd_draft_evidence(evidence: str) -> list[str]:
         "PRD draft evidence must confirm the PRD was created or drafted (name the file "
         "path or artifact) and include content evidence such as acceptance criteria, "
         "scope, actor/outcome, states, or open decisions"
+    ]
+
+
+IMPLEMENTATION_PROPOSAL_PHRASES = (
+    "implementation", "implement", "build the", "roadmap", "backlog",
+    "milestone", "phase 1", "phase 2", "next feature", "new feature",
+    "task list", "epic", "user story", "deliver the", "build out",
+    "구현", "로드맵", "백로그", "기능 추가", "마일스톤", "다음 기능",
+)
+
+NO_PROPOSAL_PHRASES = (
+    "no implementation", "no new product", "no roadmap", "no backlog",
+    "status only", "classification only", "recommendation only",
+    "no product work", "triage only", "no feature proposed",
+    "no implementation proposed", "no new work proposed",
+    "구현 없음", "구현 제안 없음", "제안 없음", "현황만", "분류만", "추천만",
+)
+
+PRD_COVERAGE_PHRASES = (
+    "accepted prd", "prd coverage", "prd link", "linked prd", "prd:",
+    "product route", "product re-entry", "product reentry",
+    "re-enter product", "reenter product", "coverage matrix",
+    "product 재진입", "prd 커버리지", "prd 링크", "수락된 prd",
+)
+
+
+def validate_product_reentry_evidence(evidence: str) -> list[str]:
+    """Force a triage/plan to declare product-route coverage before it can hand
+    off implementation work. Either it states no new product/implementation work
+    was proposed, or, when it proposes a roadmap/backlog/implementation ordering,
+    it must name PRD coverage (an Accepted PRD link or an explicit product-route
+    re-entry to create/accept the PRD, plus ARD when structure changes). The
+    silent path — proposing implementation without PRD coverage — fails."""
+    text = evidence.lower()
+    if not text:
+        return [
+            "product route re-entry evidence is required and cannot be empty: "
+            "state whether the triage/plan proposed any new product or "
+            "implementation work, and if so name the PRD coverage or product-"
+            "route re-entry that must precede implementation"
+        ]
+    disclaims = has_any(text, NO_PROPOSAL_PHRASES)
+    # Strip the disclaimer phrases before scanning for proposal keywords so a
+    # negated mention ("no implementation proposed") is not read as a proposal.
+    searchable = text
+    for phrase in NO_PROPOSAL_PHRASES:
+        searchable = searchable.replace(phrase, " ")
+    proposes = has_any(searchable, IMPLEMENTATION_PROPOSAL_PHRASES)
+    if disclaims and not proposes:
+        return []
+    if proposes and has_any(text, PRD_COVERAGE_PHRASES):
+        return []
+    return [
+        "product route re-entry evidence must either state that the triage/plan "
+        "proposed no new product or implementation work, or, when it proposes "
+        "implementation ordering/roadmap/backlog, name the PRD coverage (Accepted "
+        "PRD link, or explicit product-route re-entry to create and accept the "
+        "PRD, plus an ARD link when structure/module boundaries change) that must "
+        "precede any implementation task or PR"
     ]
 
 

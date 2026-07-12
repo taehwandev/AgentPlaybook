@@ -83,6 +83,17 @@ MULTI_AGENT_GATE = "multi-agent split decision"
 SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 AGENTIC_RUN_STATE_GATE = "agentic run state"
 SOURCE_DOCS_GATE = "source docs"
+PRODUCT_REENTRY_GATE = "product route re-entry"
+
+# Triage/plan routes classify and recommend but do not run the product PRD/ARD
+# gates. When their output expands into an implementation roadmap, nothing used
+# to force product-route re-entry, so PRD coverage was silently skipped. This
+# gate closes that gap: every triage/plan finish must declare product coverage.
+PRODUCT_REENTRY_COMMANDS = {
+    "triage",
+    "plan",
+    "planning",
+}
 
 SOURCE_DOCS_COMMANDS = {
     "build",
@@ -115,6 +126,8 @@ def automatic_gates(command: str) -> list[str]:
         gates.append(AGENTIC_RUN_STATE_GATE)
     if command in WORK_PRODUCING_COMMANDS:
         gates.extend([CYCLE_CONTRACT_GATE, DOCUMENTATION_GATE])
+    if command in PRODUCT_REENTRY_COMMANDS:
+        gates.append(PRODUCT_REENTRY_GATE)
     if command in CODE_WORK_COMMANDS:
         gates.extend(
             [TEST_GATE, BOUNDARY_PLAN_GATE, MULTI_AGENT_GATE, SIDE_EFFECT_AUDIT_GATE]
@@ -142,6 +155,8 @@ def automatic_docs(command: str) -> list[str]:
         docs.append("workflows/skills/documentation-update/SKILL.md")
     if CYCLE_CONTRACT_GATE in gates:
         docs.append("workflows/skills/cycle-contract/SKILL.md")
+    if PRODUCT_REENTRY_GATE in gates:
+        docs.append("common/skills/product-spec-to-implementation/SKILL.md")
     if SOURCE_DOCS_GATE in gates:
         docs.extend(
             [
@@ -259,6 +274,18 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
             _insert_before_any(result, gate, anchors=before_implementation)
         elif gate == MULTI_AGENT_GATE:
             _insert_before_any(result, gate, anchors=before_implementation)
+        elif gate == PRODUCT_REENTRY_GATE:
+            _insert_before_any(
+                result,
+                gate,
+                anchors=(
+                    "route recommendation",
+                    "recommendation",
+                    "grill-me if needed",
+                    "handoff",
+                    "report",
+                ),
+            )
         elif gate == SIDE_EFFECT_AUDIT_GATE:
             _insert_before_any(result, gate, anchors=("verify", "verification", "handoff", "commit readiness"))
         elif gate in {DOCUMENTATION_GATE, TEST_GATE}:

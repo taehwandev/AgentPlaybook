@@ -83,6 +83,16 @@ If the direct question asks how to start app, product, or feature work, answer
 with the PRD -> ARD -> implementation path before lower-level coding steps. If
 the work then proceeds into code, use the `product` route unless an existing
 PRD/ARD or repo-local instruction makes the slice clearly trivial.
+Baseline documentation enforcement (the `documentation` gate always runs and is
+non-empty, `unchanged` needs inspection proof, skipping docs needs recorded user
+approval, and a `triage`/`plan` roadmap needs `product route re-entry` with PRD
+coverage) is enforced centrally by the shared AgentPlaybook finish-check and is
+identical across Codex, Claude, and Antigravity. Do not duplicate or restate
+these rules in repo-local files; keep only this pointer. The source of truth and
+the exception process are
+`<AGENTPLAYBOOK_ROOT>/workflows/skills/documentation-update/SKILL.md`; add
+exceptions there rather than self-judging, and load that card in Grill-Me or
+self-review before completion.
 If the workflow router or start hook cannot run, stop and report the blocker
 before continuing. Keep its gate execution ledger current; each required gate
 must have evidence before completion. Show a short gate signal after each

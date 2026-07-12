@@ -113,11 +113,69 @@ For every work-producing task, record one of these decisions before completion:
 | `updated` | Existing source-of-truth docs changed because behavior, workflow policy, public contract, operator action, or acceptance criteria changed. | Doc path, changed source, and reason. |
 | `created` | No suitable source existed and the work introduced durable product, architecture, workflow, or operational meaning. | New doc path, owner/audience, and reason. |
 | `unchanged` | Existing docs were inspected and already covered the change. | Doc path/class inspected and why no edit was needed. |
-| `not applicable` | The task was answer-only or purely local/mechanical with no durable behavior, policy, contract, or operator meaning. | Checked doc class and why docs are out of scope. |
+| `not applicable` | The task was answer-only or purely local/mechanical with no durable behavior, policy, contract, or operator meaning, and the user approved skipping. | Checked doc class, why docs are out of scope, and the recorded user approval for the skip. |
 
 "Updated docs", "checked docs", or "no docs needed" is not enough finish
 evidence. The evidence must say which document or document class was considered
 and why that decision is correct.
+
+## Documentation Gate Contract (enforced)
+
+This section is the source of truth for the `documentation` gate. The
+finish-check validators enforce it mechanically, so keep this card and the
+validators in sync when either changes. The gate is deliberately not
+self-exceptable: an agent cannot grant itself a pass on judgment alone.
+
+Hard rules the finish-check enforces:
+
+- The `documentation` gate always runs on work-producing routes and must carry
+  non-empty evidence. A blank or missing decision is 🐱🔴 FAIL.
+- `unchanged` is valid only when the evidence names the concrete existing doc
+  path (for example `app/README.md`, not just a doc class), proves that doc was
+  actually opened/inspected/read this task, and states why the already-read doc
+  covers the change. A bare coverage claim, or one without a named path, fails.
+- Skipping documentation (`not applicable`, `no docs`, or `skipped`) is never
+  self-approved and a no-durable-doc reason alone is not sufficient. When you
+  believe docs should genuinely not be written, ask the user
+  "문서를 스킵할까요? / Should I skip the doc?", get explicit approval, and record
+  that approval in the evidence — otherwise write the smallest useful doc.
+- When a `triage` or `plan` route proposes new product work or an
+  implementation roadmap/backlog, the `product route re-entry` gate requires PRD
+  coverage (an Accepted PRD link, or explicit product-route re-entry to create
+  and accept the PRD, plus an ARD link when structure or module boundaries
+  change) before any implementation task or PR.
+
+### Where the rules live (do not duplicate per repo)
+
+This card is the single source of truth for the gate rules. The enforcement is
+central: the shared finish-check applies it to every project and runtime, so a
+repo does not need its own copy of the rules to be governed by them. Repo-local
+instruction files — a target repo's `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, or
+`.agents/` docs — must carry only a short pointer to this card, never a restated
+or copied rule block. Keep root adapter/instruction files thin. When a rule or
+exception changes, update it here in AgentPlaybook so every repo and runtime
+inherits it in one place; a duplicated enforcement block found in a repo-local
+file is itself a documentation miss and should be replaced with a pointer. This
+mirrors the standing rule to link to shared cards instead of copying full
+guidance (see the commonization test and "Promote Local Lessons" below).
+
+### Making an exception
+
+Exceptions are added here, not invented mid-task. There are two supported paths,
+and both leave an auditable trail:
+
+1. Per-task exception (skip this doc now): ask the user with the skip question
+   above and record their approval in the gate evidence. This is the only way a
+   single task passes the gate without writing or confirming a doc.
+2. Durable exception (a recurring pattern that should not need a doc): propose it
+   as an edit to this card so the pattern is written down, reviewed, and shared
+   across Codex, Claude, and Antigravity. Until it is documented here, treat it
+   as a per-task exception and ask the user.
+
+Grill-Me and self-review should load this card and check the current work
+against these rules before reporting completion: if a documentation skip has no
+recorded user approval, or an `unchanged` decision has no inspection proof, raise
+it as a blocker instead of passing.
 
 ## Review Readiness
 

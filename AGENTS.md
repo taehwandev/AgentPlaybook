@@ -352,10 +352,23 @@ note, release note, test plan, skill/platform/workflow card, repo
 PRD as the only documentation shape. `Not applicable` or `no docs` is valid
 only when the evidence states a no-durable-doc reason such as answer-only,
 purely local, mechanical, no public contract, no operator action, or no
-acceptance criteria. `Unchanged` is valid only when the evidence names the
-existing doc path or doc class inspected and why it already covers the change.
-The later `documentation` gate must then prove the actual update or
-unchanged/not-applicable decision.
+acceptance criteria. `Unchanged` is never a self-granted default: it is valid
+only when the evidence names the concrete existing doc path (for example
+`app/README.md`, not just a doc class), proves that doc was actually
+opened/inspected/read this task, and states why the already-read doc already
+covers the change. A bare coverage assertion without the inspection proof, or
+without a named doc path, fails the gate. The `documentation` gate must always
+run and carry non-empty evidence — it cannot be skipped or left blank — and it
+must prove the actual update, or the grounded unchanged decision. Skipping
+documentation (a not-applicable/no-docs/skipped decision on the `documentation`
+gate) is never self-approved by the agent, and a no-durable-doc reason alone is
+not sufficient: when you believe docs should genuinely not be written, ask the
+user "문서를 스킵할까요? / Should I skip the doc?", get explicit approval, and
+record that approval in the evidence — otherwise write the doc. The full,
+updatable gate contract and the exception process are the source of truth in
+`workflows/skills/documentation-update/SKILL.md`; add new exceptions there rather
+than self-judging, and load that card in Grill-Me or self-review to check the
+current work before completion.
 
 Before final report, commit, release, or handoff, run the finish check and pass
 evidence for every required route gate:

@@ -72,6 +72,8 @@ from workflow_gate_policy import (
     DOCUMENTATION_IMPACT_GATE,
     DOCUMENTATION_GATE,
     MULTI_AGENT_GATE,
+    PRODUCT_REENTRY_GATE,
+    PRODUCT_REENTRY_COMMANDS,
     ROUTE_DOCS_READ_GATE,
     SIDE_EFFECT_AUDIT_GATE,
     SOURCE_DOCS_GATE,
@@ -3989,14 +3991,28 @@ class WorkflowRoutingTests(unittest.TestCase):
             {
                 DOCUMENTATION_IMPACT_GATE: (
                     "before code documentation impact decision: artifact: feature spec; "
-                    "unchanged docs/product/spec.md because existing doc already covers "
-                    "the revised acceptance criteria"
+                    "unchanged docs/product/spec.md; inspected the existing doc and it "
+                    "already covers the revised acceptance criteria"
                 )
             },
             [DOCUMENTATION_IMPACT_GATE],
         )
 
         self.assertEqual([], failures)
+
+    def test_documentation_impact_rejects_unchanged_without_inspection_proof(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "unchanged docs/product/spec.md because it already covers the "
+                    "revised acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("can use unchanged only" in failure for failure in failures))
 
     def test_documentation_impact_rejects_vague_unchanged_decision(self) -> None:
         failures = validate_gate_evidence(
@@ -4027,14 +4043,181 @@ class WorkflowRoutingTests(unittest.TestCase):
         failures = validate_gate_evidence(
             {
                 DOCUMENTATION_GATE: (
-                    "unchanged docs/product/spec.md because existing doc already covers "
-                    "the revised acceptance criteria"
+                    "unchanged docs/product/spec.md; inspected it and the existing doc "
+                    "already covers the revised acceptance criteria"
                 )
             },
             [DOCUMENTATION_GATE],
         )
 
         self.assertEqual([], failures)
+
+    def test_documentation_gate_rejects_unchanged_without_inspection_proof(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "unchanged docs/product/spec.md because it already covers the "
+                    "revised acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("can use unchanged only" in failure for failure in failures))
+
+    def test_documentation_gate_rejects_unchanged_without_named_doc_path(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "unchanged; inspected the module readme and it already covers "
+                    "the acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("can use unchanged only" in failure for failure in failures))
+
+    def test_required_documentation_gate_rejects_empty_evidence(self) -> None:
+        failures = validate_gate_evidence(
+            {DOCUMENTATION_GATE: ""},
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(
+            any("required and cannot be empty" in failure for failure in failures)
+        )
+
+    def test_documentation_skip_requires_user_approval_not_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "documentation decision: not applicable; target: module README; "
+                    "reason: answer-only with no durable behavior"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("cannot be skipped" in failure for failure in failures))
+
+    def test_documentation_skipped_phrase_requires_user_approval(self) -> None:
+        failures = validate_gate_evidence(
+            {DOCUMENTATION_GATE: "documentation skipped because the change was trivial"},
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("cannot be skipped" in failure for failure in failures))
+
+    def test_documentation_skip_passes_with_recorded_user_approval(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "documentation decision: not applicable; target: module README; "
+                    "reason: answer-only; asked the user 문서를 스킵할까요 and the user "
+                    "approved skipping the doc"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_skip_does_not_pass_when_user_was_only_asked(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "documentation decision: not applicable; target: module README; "
+                    "reason: answer-only; asked the user whether to skip the doc but "
+                    "no approval was received"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("cannot be skipped" in failure for failure in failures))
+
+    def test_triage_and_plan_routes_get_product_reentry_gate(self) -> None:
+        for command in sorted(PRODUCT_REENTRY_COMMANDS):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+                self.assertIn(PRODUCT_REENTRY_GATE, route["gates"])
+
+    def test_product_reentry_gate_requires_non_empty_evidence(self) -> None:
+        failures = validate_gate_evidence(
+            {PRODUCT_REENTRY_GATE: ""},
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertTrue(
+            any("required and cannot be empty" in failure for failure in failures)
+        )
+
+    def test_product_reentry_gate_allows_no_implementation_proposed(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "recommendation only; no implementation proposed, this triage "
+                    "stayed at status and classification"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_product_reentry_gate_rejects_roadmap_without_prd_coverage(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "proposed an implementation roadmap with three milestones and a "
+                    "task list for the next feature"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertTrue(any("PRD coverage" in failure for failure in failures))
+
+    def test_product_reentry_gate_allows_roadmap_with_prd_coverage(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "proposed implementation roadmap; re-enter product route and map "
+                    "each item to an Accepted PRD link, with an ARD link for module "
+                    "boundary changes, before any implementation task or PR"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_product_reentry_gate_rejects_acceptance_criteria_without_prd(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "proposed an implementation roadmap with acceptance criteria for "
+                    "each milestone"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertTrue(any("PRD coverage" in failure for failure in failures))
+
+    def test_product_reentry_gate_rejects_ard_link_without_prd(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "proposed an implementation roadmap with an ARD link for module "
+                    "boundaries"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertTrue(any("PRD coverage" in failure for failure in failures))
 
     def test_missing_source_docs_requires_artifact_creation_or_no_durable_reason(self) -> None:
         failures = validate_gate_evidence(
@@ -4340,6 +4523,29 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
         self.assertTrue(any("checkpoint or stop condition" in failure for failure in failures))
+
+
+class BaselineEnforcementStaysCentralTest(unittest.TestCase):
+    """The gate rules live once in the canonical skill; the per-repo stamp is a
+    pointer, never a duplicated rule block."""
+
+    def _read(self, *parts: str) -> str:
+        return (ROOT.joinpath(*parts)).read_text(encoding="utf-8")
+
+    def test_stamp_template_is_pointer_not_duplicated_rules(self) -> None:
+        template = self._read("templates", "repo-agents-routing.md")
+        self.assertIn("workflows/skills/documentation-update/SKILL.md", template)
+        self.assertIn("Do not duplicate or restate", template)
+        # The full rule prose (the skip question) belongs only in the canonical
+        # skill, not re-inlined into every stamped repo.
+        self.assertNotIn("문서를 스킵할까요", template)
+
+    def test_canonical_skill_holds_the_full_rules_and_centralization(self) -> None:
+        skill = self._read(
+            "workflows", "skills", "documentation-update", "references", "current-guidance.md"
+        )
+        self.assertIn("문서를 스킵할까요", skill)
+        self.assertIn("Where the rules live", skill)
 
 
 if __name__ == "__main__":

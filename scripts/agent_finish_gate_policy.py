@@ -30,6 +30,7 @@ from agent_finish_gate_validators import (
     validate_documentation_source_to_artifact_evidence,
     validate_platform_selection_evidence,
     validate_prd_draft_evidence,
+    validate_product_reentry_evidence,
     validate_review_readiness_evidence,
     validate_source_docs_evidence,
 )
@@ -47,6 +48,7 @@ MULTI_AGENT_GATE = "multi-agent split decision"
 SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 AGENTIC_RUN_STATE_GATE = "agentic run state"
 SOURCE_DOCS_GATE = "source docs"
+PRODUCT_REENTRY_GATE = "product route re-entry"
 GRAPHIFY_READINESS_GATE = "graphify readiness"
 PLATFORM_SELECTION_GATE = "platform selection"
 REVIEW_READINESS_GATE = "review readiness"
@@ -80,6 +82,7 @@ VALIDATED_GATES = {
     SIDE_EFFECT_AUDIT_GATE,
     AGENTIC_RUN_STATE_GATE,
     SOURCE_DOCS_GATE,
+    PRODUCT_REENTRY_GATE,
     GRAPHIFY_READINESS_GATE,
     PLATFORM_SELECTION_GATE,
     REVIEW_READINESS_GATE,
@@ -119,6 +122,8 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
         failures.extend(validate_documentation(gate_evidence.get(DOCUMENTATION_GATE, "")))
     if SOURCE_DOCS_GATE in required:
         failures.extend(validate_source_docs_evidence(gate_evidence.get(SOURCE_DOCS_GATE, "")))
+    if PRODUCT_REENTRY_GATE in required:
+        failures.extend(validate_product_reentry_evidence(gate_evidence.get(PRODUCT_REENTRY_GATE, "")))
     if GRAPHIFY_READINESS_GATE in required:
         failures.extend(_validate_graphify_readiness(gate_evidence.get(GRAPHIFY_READINESS_GATE, "")))
     if SOURCE_DOCS_GATE in required and DOCUMENTATION_IMPACT_GATE in required:
