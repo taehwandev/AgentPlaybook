@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "scripts/agent_finish_gate_policy.py": {
-    "mtime": 1783840517.0756764,
-    "ast_hash": "bfefd88c15f1b8616ef4a666c70e6cec",
+    "mtime": 1783843878.327241,
+    "ast_hash": "01cb37011c4d417ca4fe0f8397de8c67",
     "semantic_hash": ""
   },
   "scripts/agent_finish_gate_skip_policy.py": {
@@ -220,8 +220,8 @@
     "semantic_hash": ""
   },
   "scripts/setup-project-graphify.py": {
-    "mtime": 1783837094.3851774,
-    "ast_hash": "b792d3222b7d1c6d4970acb211471b1c",
+    "mtime": 1783845502.1657705,
+    "ast_hash": "9e310a7ed634b9e2e6327d42a7d700f0",
     "semantic_hash": ""
   },
   "scripts/support/agy_setup.py": {
@@ -235,13 +235,13 @@
     "semantic_hash": ""
   },
   "scripts/support/graphify_configuration.py": {
-    "mtime": 1783837094.286184,
-    "ast_hash": "8b46351b2a94951f655abdc57110e8bc",
+    "mtime": 1783843804.422993,
+    "ast_hash": "53fea4e580f523fa84c81bfef1027c8c",
     "semantic_hash": ""
   },
   "scripts/support/graphify_contract.py": {
-    "mtime": 1783835639.9675329,
-    "ast_hash": "31f8e62599b9e46f619ae1a4f26c4735",
+    "mtime": 1783845990.6911063,
+    "ast_hash": "e65532b35e36b0096f6ec1afbd72e1a7",
     "semantic_hash": ""
   },
   "scripts/support/graphify_git_tracking.py": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "scripts/support/graphify_inspection.py": {
-    "mtime": 1783836940.5336287,
-    "ast_hash": "d50c3e8acf105f5a10d0382708ec0b3c",
+    "mtime": 1783846498.0927095,
+    "ast_hash": "a6ecb3019b6f530cecf9bc849f98c562",
     "semantic_hash": ""
   },
   "scripts/support/graphify_paths.py": {
@@ -265,13 +265,13 @@
     "semantic_hash": ""
   },
   "scripts/support/graphify_setup.py": {
-    "mtime": 1783835821.339689,
-    "ast_hash": "ffa80de9ef005f7906ca8eacc23a914a",
+    "mtime": 1783845502.0726469,
+    "ast_hash": "3e8d080d9f5f11f0330f1a45b3567796",
     "semantic_hash": ""
   },
   "scripts/support/graphify_tracking.py": {
-    "mtime": 1783835760.805457,
-    "ast_hash": "d7645058ef7b3da60f55e86971703704",
+    "mtime": 1783844208.897964,
+    "ast_hash": "f5ac27871005f92d50d3fa082e8184c0",
     "semantic_hash": ""
   },
   "scripts/support/permission_entries.py": {
@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "scripts/workflow_output.py": {
-    "mtime": 1783840415.5556822,
-    "ast_hash": "19ebb123e7ead011d9284230ad522aca",
+    "mtime": 1783843804.610778,
+    "ast_hash": "96f144744f11ce0db35026704b83e534",
     "semantic_hash": ""
   },
   "scripts/workflow_parallel.py": {
@@ -405,8 +405,8 @@
     "semantic_hash": ""
   },
   "scripts/workflow_route.py": {
-    "mtime": 1783840415.454666,
-    "ast_hash": "a26b3b4c971a8115d2607934f06926f9",
+    "mtime": 1783842943.8131723,
+    "ast_hash": "38354427a75535e6b0a742d1daab11c6",
     "semantic_hash": ""
   },
   "scripts/workflow_search.py": {
@@ -455,13 +455,13 @@
     "semantic_hash": ""
   },
   "tests/test_setup_agent_hooks.py": {
-    "mtime": 1783837130.0153298,
-    "ast_hash": "f3a854fa9c7dcd961e51675761e37aca",
+    "mtime": 1783845990.962859,
+    "ast_hash": "0f79a8784cc7d00d652c9338c7ad7355",
     "semantic_hash": ""
   },
   "tests/test_workflow_routing.py": {
-    "mtime": 1783840945.052135,
-    "ast_hash": "9794082b65053d378e31308d4477790f",
+    "mtime": 1783843826.6810277,
+    "ast_hash": "51b145781bdf1d52944b3d5be1a0b097",
     "semantic_hash": ""
   },
   "workflow-doc-surfaces.json": {
@@ -1130,8 +1130,8 @@
     "semantic_hash": ""
   },
   "docs/skills/agent-bootstrap/references/current-guidance.md": {
-    "mtime": 1783828694.7778802,
-    "ast_hash": "327c92ee7e5f52dc32ae055d91c33b2f",
+    "mtime": 1783842943.7160301,
+    "ast_hash": "9a4047bb520c289a152251404eefbf25",
     "semantic_hash": ""
   },
   "docs/skills/agent-runtime-integration/SKILL.md": {
@@ -1140,8 +1140,8 @@
     "semantic_hash": ""
   },
   "docs/skills/agent-runtime-integration/references/current-guidance.md": {
-    "mtime": 1783828704.446095,
-    "ast_hash": "8c33714288bee0b3f4565024c4ce8aab",
+    "mtime": 1783843308.2372456,
+    "ast_hash": "eb08a4eae0ace67e1b3fd071444a4f44",
     "semantic_hash": ""
   },
   "docs/skills/agentplaybook-skill-bundle-migration/SKILL.md": {
@@ -1160,13 +1160,13 @@
     "semantic_hash": ""
   },
   "docs/skills/graphify-project-integration/SKILL.md": {
-    "mtime": 1783836845.2680538,
-    "ast_hash": "c8c80727e63fcd17d002a57f85e1abe0",
+    "mtime": 1783845522.1624432,
+    "ast_hash": "50e4cc3a38f7d93feff678849c7671d9",
     "semantic_hash": ""
   },
   "docs/skills/graphify-project-integration/references/current-guidance.md": {
-    "mtime": 1783837145.7274725,
-    "ast_hash": "e43c0f72c333b316917bcd8a562fde8a",
+    "mtime": 1783845990.8739777,
+    "ast_hash": "525d4b6f55378948a827faddd7a0ef7e",
     "semantic_hash": ""
   },
   "index.md": {
@@ -2027,6 +2027,31 @@
   "docs/og-image.svg": {
     "mtime": 1779554150.6061995,
     "ast_hash": "518ae99a6b8018b77003b078341615b3",
+    "semantic_hash": ""
+  },
+  "scripts/support/graphify_document_links.py": {
+    "mtime": 1783845573.8655195,
+    "ast_hash": "f5a944ce76662bbfcac80d7e62bbc94c",
+    "semantic_hash": ""
+  },
+  "scripts/support/graphify_graph_freshness.py": {
+    "mtime": 1783846498.517066,
+    "ast_hash": "5667c78f285a0d0d3927315d7114f2c3",
+    "semantic_hash": ""
+  },
+  "scripts/support/graphify_graph_integrity.py": {
+    "mtime": 1783847300.4636724,
+    "ast_hash": "f8155e87ddb35050f5ba719e555c4461",
+    "semantic_hash": ""
+  },
+  "scripts/support/graphify_graph_state.py": {
+    "mtime": 1783846498.6518717,
+    "ast_hash": "73713966d09949b6c94a6c739320cac1",
+    "semantic_hash": ""
+  },
+  "scripts/support/graphify_input_inspection.py": {
+    "mtime": 1783846498.234913,
+    "ast_hash": "67e5909f4b7b09a4a5e6794489a2a69c",
     "semantic_hash": ""
   }
 }
