@@ -168,6 +168,13 @@ Use this schema:
 }
 ```
 
+Copy the schema keys exactly when creating the plan manually. In particular,
+`mode` must be the literal `"parallel"`; `workers` must use `id`, `role`,
+`owned_scope`, `forbidden_scope`, `contract`, `acceptance`, and `verification`;
+and the lead record must be named `integration_review`. Alternate descriptive
+keys such as `current_state`, `scope`, or `serial_integration` do not satisfy
+the executable finish contract even when their prose sounds equivalent.
+
 Finish-check treats parallel/subagent evidence or the `multi-agent` route's
 role/write-scope/brief/integration gates as incomplete without this plan. The
 plan is local runtime evidence; do not commit it unless the repo explicitly

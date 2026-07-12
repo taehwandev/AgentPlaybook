@@ -607,6 +607,28 @@ sentence. Use `agent-hook.py gate` only for a single immediate gate. Manual
 `--gate` arguments are acceptable for one-off fallback or override, but they
 should not become the normal finish path.
 
+When a one-off manual override is unavoidable, keep the evidence machine-clear
+instead of relying on equivalent prose or alternate key spellings. Say
+`required docs` and `before implementation`, name the applied rule and
+`immediate next action`, and use the Graphify readiness anchors exactly as
+`cli=`, `skill doc=`, `runtime links=`, `git ownership=`,
+`project integration=`, `target graph=`, and `query smoke=`. For `source docs`, say which
+source-of-truth class was searched and opened before implementation and how it
+affected the decision. For `documentation`, include the literal decision
+(`updated`, `created`, `unchanged`, or `not applicable`), the doc path or class,
+and the durable-contract reason. Add or improve structured ledger fields when
+the same semantic evidence repeatedly fails manual parsing; do not keep
+retrying paraphrases.
+
+For structured `gate-batch` records, use the field names consumed by the
+ledger synthesizer. Parallel `multi-agent split decision` records require
+`mode`, `reason`, `owned_scope`, `forbidden_scope`, `contract`, `acceptance`,
+`integration_owner`, and `verification`; do not rename `contract` to
+`contract_brief` or `acceptance` to `acceptance_checks`. `side-effect audit`
+requires `scope` and `result`. A successful record-write message proves only
+that the ledger entry was stored; finish-check remains the authority on whether
+its fields satisfy the gate contract.
+
 `agent-hook.py finish` runs the finish-check logic in-process. Calling
 `agent-finish-check.py` directly is acceptable only as a lower-level wrapper path
 when the finish hook is unavailable.
