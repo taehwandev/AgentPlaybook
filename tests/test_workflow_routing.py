@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from agent_finish_common import requires_retrospective
+from agent_finish_gate_core_validators import validate_route_docs_application_fields
 from agent_finish_gate_policy import (
     PLATFORM_SELECTION_GATE,
     PRD_DRAFT_GATE,
@@ -2899,6 +2900,33 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertTrue(diagnostics["used"])
         self.assertIn("immediate next action", gate_evidence[ROUTE_DOCS_READ_GATE])
+
+    def test_docs_read_next_action_accepts_concrete_english_and_korean_actions(self) -> None:
+        takeaway = "workflow policy requires task-specific action evidence"
+
+        for next_action in (
+            "inspect validator callers",
+            "run focused tests",
+            "현재 저장 경로를 추적해 충돌 지점을 확인한다",
+        ):
+            with self.subTest(next_action=next_action):
+                self.assertEqual(
+                    [],
+                    validate_route_docs_application_fields(takeaway, next_action),
+                )
+
+    def test_docs_read_next_action_rejects_embedded_marker_and_repetition(self) -> None:
+        takeaway = "workflow policy requires task-specific action evidence"
+
+        for next_action in (
+            "runtime metadata is available",
+            "run run run run run",
+            "do not run the focused tests",
+        ):
+            with self.subTest(next_action=next_action):
+                self.assertTrue(
+                    validate_route_docs_application_fields(takeaway, next_action)
+                )
 
     def test_custom_preflight_gets_isolated_route_docs_receipt_path(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 
 GENERIC_ROUTE_DOCS_TAKEAWAY_PHRASES = (
     "docs-read receipt",
@@ -42,28 +44,64 @@ SPECIFIC_ROUTE_DOCS_TAKEAWAY_MARKERS = (
     "증거",
 )
 
-NEXT_ACTION_MARKERS = (
+NEXT_ACTION_WORD_MARKERS = (
+    "analyze",
+    "apply",
     "ask",
     "block",
+    "check",
     "choose",
-    "continue by",
+    "compare",
+    "diagnose",
     "enforce",
     "fix",
+    "implement",
+    "inspect",
+    "read",
     "record",
+    "review",
     "rerun",
     "run",
-    "scope",
     "search",
     "stop",
+    "test",
+    "trace",
     "update",
     "verify",
-    "다음",
-    "바로",
-    "중단",
-    "적용",
-    "반영",
+    "write",
+)
+
+NEXT_ACTION_PHRASE_MARKERS = (
+    "continue by",
+)
+
+NEXT_ACTION_KOREAN_STEMS = (
+    "검색",
+    "검토",
     "검증",
     "기록",
+    "비교",
+    "분석",
+    "선택",
+    "실행",
+    "작성",
+    "적용",
+    "점검",
+    "조사",
+    "질문",
+    "중단",
+    "추적",
+    "확인",
+    "반영",
+    "수정",
+    "구현",
+)
+
+NEXT_ACTION_NEGATIONS = (
+    "do not",
+    "don't",
+    "never",
+    "not yet",
 )
 
 
@@ -197,9 +235,18 @@ def _is_generic_route_docs_takeaway(value: str) -> bool:
 
 def _has_actionable_next_action(value: str) -> bool:
     text = value.strip().lower()
-    if len(text) < 16:
+    tokens = re.findall(r"[a-z0-9]+|[가-힣]+", text)
+    if len(tokens) < 2 or len(set(tokens)) < 2:
         return False
-    return any(marker in text for marker in NEXT_ACTION_MARKERS)
+    if any(negation in text for negation in NEXT_ACTION_NEGATIONS):
+        return False
+    english_action = any(
+        re.search(rf"(?<![a-z0-9_]){re.escape(marker)}(?![a-z0-9_])", text)
+        for marker in NEXT_ACTION_WORD_MARKERS
+    )
+    phrase_action = any(marker in text for marker in NEXT_ACTION_PHRASE_MARKERS)
+    korean_action = any(marker in text for marker in NEXT_ACTION_KOREAN_STEMS)
+    return english_action or phrase_action or korean_action
 
 
 def _is_generic_route_docs_evidence(text: str) -> bool:
