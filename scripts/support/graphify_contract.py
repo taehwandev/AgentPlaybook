@@ -77,9 +77,14 @@ AGENTPLAYBOOK_GITIGNORE_BLOCK = """# agentplaybook-project-assets:start
 
 GRAPHIFY_INPUT_BLOCK = """# agentplaybook-graphify-inputs:start
 .agentplaybook/
-.agents/
-.claude/
-.codex/
+.agents/skills/graphify
+.agents/rules/graphify.md
+.agents/workflows/graphify.md
+.claude/skills/graphify
+.claude/settings.json
+.claude/settings.local.json
+.codex/skills/graphify
+.codex/hooks.json
 graphify-out/
 # agentplaybook-graphify-inputs:end"""
 

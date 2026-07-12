@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import subprocess
 import sys
@@ -26,6 +28,12 @@ from support.graphify_setup import (
     inspect_target_graphify,
 )
 from support.graphify_git_tracking import inspect_graphify_git_tracking
+from support.graphify_inspection import (
+    inspect_project_graph_inputs,
+    inspect_project_graph_state,
+)
+from support.graphify_document_links import repair_project_document_links
+from support.graphify_tracking import install_tracking_policies
 from support.setup_agent_hooks_impl import ensure_local_claude_excluded
 from support.stable_launcher import ensure_stable_launcher, stable_launcher_path, stable_root_pointer_path
 
@@ -48,7 +56,21 @@ class SetupAgentHooksTests(unittest.TestCase):
             )
             graph = project / "graphify-out" / "graph.json"
             graph.parent.mkdir(parents=True)
-            graph.write_text("{}", encoding="utf-8")
+            graph.write_text(
+                json.dumps(
+                    {
+                        "nodes": [
+                            {
+                                "id": "src_main",
+                                "file_type": "code",
+                                "source_file": "src/main.py",
+                            }
+                        ],
+                        "links": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
             for relative in TRACKING_POLICY_PATHS:
                 policy = project / relative
                 policy.parent.mkdir(parents=True, exist_ok=True)
@@ -129,7 +151,8 @@ class SetupAgentHooksTests(unittest.TestCase):
             restaged = inspect_graphify_git_tracking(project, ["codex"])
 
         self.assertTrue(after["commit_ready"])
-        self.assertTrue(target_after["ready"])
+        self.assertFalse(target_after["ready"])
+        self.assertFalse(target_after["graph_fresh"])
         self.assertTrue(
             any(
                 result["hook"] == "tracking.commit_boundary"
@@ -182,10 +205,32 @@ class SetupAgentHooksTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("installs all three", result.stdout)
         self.assertIn("--jobs", result.stdout)
+        self.assertIn("--repair-input-policy", result.stdout)
+        self.assertIn("--repair-document-links", result.stdout)
 
     def test_target_graphify_readiness_requires_canonical_skill_links_integration_and_graph(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
+            subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+            source = project / "src" / "main.py"
+            source.parent.mkdir()
+            source.write_text("VALUE = 1\n", encoding="utf-8")
+            subprocess.run(["git", "add", "src/main.py"], cwd=project, check=True)
+            subprocess.run(
+                [
+                    "git", "-c", "user.name=AgentPlaybook", "-c",
+                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "source",
+                ],
+                cwd=project,
+                check=True,
+            )
+            head = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=project,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
+            ).stdout.strip()
             canonical = project / CANONICAL_SKILL_PATH
             canonical.parent.mkdir(parents=True)
             canonical.write_text("# graphify\n", encoding="utf-8")
@@ -198,18 +243,396 @@ class SetupAgentHooksTests(unittest.TestCase):
             agents.write_text("## graphify\n", encoding="utf-8")
             graph = project / "graphify-out" / "graph.json"
             graph.parent.mkdir()
-            graph.write_text("{}", encoding="utf-8")
+            graph.write_text(
+                json.dumps(
+                    {
+                        "built_at_commit": head,
+                        "nodes": [
+                            {
+                                "id": "src_main",
+                                "file_type": "code",
+                                "source_file": "src/main.py",
+                            }
+                        ],
+                        "links": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (project / "graphify-out" / "manifest.json").write_text(
+                json.dumps(
+                    {"src/main.py": {"mtime": source.stat().st_mtime}}
+                ),
+                encoding="utf-8",
+            )
             for relative in TRACKING_POLICY_PATHS:
                 policy = project / relative
                 policy.parent.mkdir(parents=True, exist_ok=True)
                 policy.write_text("# policy\n", encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=project, check=True)
+            subprocess.run(
+                [
+                    "git", "-c", "user.name=AgentPlaybook", "-c",
+                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "integration",
+                ],
+                cwd=project,
+                check=True,
+            )
+            head = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=project,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
+            ).stdout.strip()
+            graph_payload = json.loads(graph.read_text(encoding="utf-8"))
+            graph_payload["built_at_commit"] = head
+            graph.write_text(json.dumps(graph_payload), encoding="utf-8")
+            (project / "graphify-out" / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "src/main.py": {"mtime": source.stat().st_mtime},
+                        "AGENTS.md": {"mtime": agents.stat().st_mtime},
+                    }
+                ),
+                encoding="utf-8",
+            )
 
             with patch("support.graphify_inspection.shutil.which", return_value="/tmp/graphify"):
                 result = inspect_target_graphify(project, ["codex"])
 
-        self.assertTrue(result["ready"])
+        self.assertTrue(result["ready"], result)
         self.assertEqual(str(graph), result["graph_path"])
         self.assertEqual(str(canonical), result["canonical_skill_doc"])
+        self.assertTrue(result["graph_integrity_ready"])
+        self.assertTrue(result["graph_relationship_ready"])
+
+    def test_graphify_input_policy_preserves_project_agent_knowledge(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            guides = [
+                project / ".agents" / "llm-wiki" / "guide.md",
+                project / ".claude" / "skills" / "review" / "SKILL.md",
+                project / ".codex" / "skills" / "testing" / "SKILL.md",
+            ]
+            for guide in guides:
+                guide.parent.mkdir(parents=True)
+                guide.write_text("# Project guide\n", encoding="utf-8")
+            managed = (
+                "# agentplaybook-graphify-inputs:start\n"
+                ".agentplaybook/\n.agents/\n.claude/\n.codex/\ngraphify-out/\n"
+                "# agentplaybook-graphify-inputs:end\n"
+            )
+            (project / ".graphifyignore").write_text(managed, encoding="utf-8")
+            manifest = project / "graphify-out" / "manifest.json"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        guide.relative_to(project).as_posix(): {
+                            "mtime": guide.stat().st_mtime
+                        }
+                        for guide in guides
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            before = inspect_project_graph_inputs(project)
+            guides[0].write_text("# Changed project guide\n", encoding="utf-8")
+            stale = inspect_project_graph_inputs(project)
+            manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
+            manifest_payload[guides[0].relative_to(project).as_posix()]["mtime"] = (
+                guides[0].stat().st_mtime
+            )
+            manifest.write_text(json.dumps(manifest_payload), encoding="utf-8")
+            install_tracking_policies(project)
+            after = inspect_project_graph_inputs(project)
+            policy = (project / ".graphifyignore").read_text(encoding="utf-8")
+
+        self.assertFalse(before["graph_input_policy_ready"])
+        self.assertTrue(before["knowledge_manifest_ready"])
+        self.assertEqual(3, before["project_knowledge_file_count"])
+        self.assertFalse(stale["knowledge_manifest_ready"])
+        self.assertEqual(1, stale["knowledge_manifest_stale_count"])
+        self.assertTrue(after["graph_input_policy_ready"])
+        self.assertTrue(after["knowledge_manifest_ready"])
+        self.assertNotIn("\n.agents/\n", policy)
+        self.assertIn(".agents/skills/graphify", policy)
+        self.assertIn(".agents/rules/graphify.md", policy)
+        self.assertIn(".agents/workflows/graphify.md", policy)
+        self.assertIn(".claude/settings.local.json", policy)
+
+    def test_graphify_input_policy_rejects_blanket_runtime_exclusion_before_knowledge_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            (project / ".graphifyignore").write_text(
+                ".claude/\n",
+                encoding="utf-8",
+            )
+
+            state = inspect_project_graph_inputs(project)
+
+        self.assertFalse(state["graph_input_policy_ready"])
+        self.assertEqual(
+            [".graphifyignore:.claude/"],
+            state["blanket_knowledge_input_exclusions"],
+        )
+
+    def test_graphify_manifest_uses_content_hash_before_mtime(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            guide = project / ".agents" / "wiki" / "guide.md"
+            guide.parent.mkdir(parents=True)
+            guide.write_text("# Guide\n", encoding="utf-8")
+            manifest = project / "graphify-out" / "manifest.json"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        ".agents/wiki/guide.md": {
+                            "mtime": 1,
+                            "semantic_hash": hashlib.md5(guide.read_bytes()).hexdigest(),
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            state = inspect_project_graph_inputs(project)
+
+        self.assertTrue(state["knowledge_manifest_ready"])
+        self.assertEqual(0, state["knowledge_manifest_stale_count"])
+
+    def test_graphify_input_policy_detects_root_gitignore_wildcard_blanket(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            (project / ".gitignore").write_text(
+                "**/.agents/**/*\n",
+                encoding="utf-8",
+            )
+
+            state = inspect_project_graph_inputs(project)
+
+        self.assertFalse(state["graph_input_policy_ready"])
+        self.assertEqual(
+            [".gitignore:**/.agents/**/*"],
+            state["blanket_knowledge_input_exclusions"],
+        )
+
+    def test_graphify_managed_input_policy_collapses_duplicate_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            policy = project / ".graphifyignore"
+            policy.write_text(
+                "# keep\n.claude/\n.codex/**\n"
+                "# agentplaybook-graphify-inputs:start\n.agents/\n"
+                "# agentplaybook-graphify-inputs:end\n"
+                "# agentplaybook-graphify-inputs:start\n.codex/\n"
+                "# agentplaybook-graphify-inputs:end\n",
+                encoding="utf-8",
+            )
+            root_ignore = project / ".gitignore"
+            root_ignore.write_text(
+                ".agents/\n.claude/\n.codex/**\n",
+                encoding="utf-8",
+            )
+
+            install_tracking_policies(project)
+            content = policy.read_text(encoding="utf-8")
+            root_content = root_ignore.read_text(encoding="utf-8")
+
+        self.assertEqual(1, content.count("# agentplaybook-graphify-inputs:start"))
+        self.assertEqual(1, content.count("# agentplaybook-graphify-inputs:end"))
+        self.assertIn("# keep", content)
+        self.assertNotIn("\n.agents/\n", content)
+        self.assertNotIn("\n.codex/\n", content)
+        self.assertNotIn("\n.claude/\n", content)
+        self.assertNotIn("\n.codex/**\n", content)
+        self.assertNotIn(".agents/", root_content)
+        self.assertNotIn(".claude/\n", root_content)
+        self.assertNotIn(".codex/**", root_content)
+        self.assertIn(".claude/settings.json", root_content)
+        self.assertIn(".codex/hooks.json", root_content)
+
+    def test_project_graph_state_requires_current_head_and_document_code_relationship(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+            source = project / "src" / "main.py"
+            source.parent.mkdir()
+            source.write_text("VALUE = 1\n", encoding="utf-8")
+            guide = project / ".agents" / "wiki" / "guide.md"
+            guide.parent.mkdir(parents=True)
+            guide.write_text("# Guide\n", encoding="utf-8")
+            subprocess.run(
+                ["git", "add", "src/main.py", ".agents/wiki/guide.md"],
+                cwd=project,
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "git", "-c", "user.name=AgentPlaybook", "-c",
+                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "initial",
+                ],
+                cwd=project,
+                check=True,
+            )
+            head = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=project,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
+            ).stdout.strip()
+            graph = project / "graphify-out" / "graph.json"
+            graph.parent.mkdir()
+            graph.write_text(
+                json.dumps(
+                    {
+                        "built_at_commit": head,
+                        "nodes": [
+                            {"id": "guide", "file_type": "document", "source_file": ".agents/wiki/guide.md"},
+                            {"id": "concept", "file_type": "rationale", "source_file": ".agents/wiki/guide.md"},
+                            {"id": "script_mention", "file_type": "code", "source_file": ".agents/wiki/guide.md"},
+                            {"id": "main", "file_type": "code", "source_file": "src/main.py"},
+                        ],
+                        "links": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (project / "graphify-out" / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "src/main.py": {"mtime": source.stat().st_mtime},
+                        ".agents/wiki/guide.md": {"mtime": guide.stat().st_mtime},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            disconnected = inspect_project_graph_state(project, graph)
+            payload = json.loads(graph.read_text(encoding="utf-8"))
+            payload["links"] = [
+                {"source": "guide", "target": "concept"},
+                {"source": "concept", "target": "main"},
+            ]
+            graph.write_text(json.dumps(payload), encoding="utf-8")
+            connected = inspect_project_graph_state(project, graph)
+            source.write_text("VALUE = 2\n", encoding="utf-8")
+            subprocess.run(["git", "add", "src/main.py"], cwd=project, check=True)
+            subprocess.run(
+                [
+                    "git", "-c", "user.name=AgentPlaybook", "-c",
+                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "change",
+                ],
+                cwd=project,
+                check=True,
+            )
+            stale = inspect_project_graph_state(project, graph)
+
+        self.assertTrue(disconnected["graph_fresh"])
+        self.assertFalse(disconnected["graph_relationship_ready"])
+        self.assertEqual(1, disconnected["graph_code_node_count"])
+        self.assertEqual(0, disconnected["graph_document_code_edge_count"])
+        self.assertTrue(connected["graph_relationship_ready"])
+        self.assertEqual(0, connected["graph_document_code_edge_count"])
+        self.assertEqual(1, connected["graph_document_code_path_node_count"])
+        self.assertEqual(2, connected["graph_knowledge_code_path_node_count"])
+        self.assertFalse(stale["graph_fresh"])
+
+    def test_project_graph_integrity_rejects_malformed_and_duplicate_nodes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            graph = project / "graphify-out" / "graph.json"
+            graph.parent.mkdir(parents=True)
+            graph.write_text(
+                json.dumps(
+                    {
+                        "nodes": [
+                            {"id": "main", "file_type": "code"},
+                            {"id": "main", "file_type": "code"},
+                            {"label": "missing id", "file_type": "document"},
+                        ],
+                        "links": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            state = inspect_project_graph_state(project, graph)
+
+        self.assertFalse(state["graph_integrity_ready"])
+        self.assertEqual(1, state["graph_duplicate_node_id_count"])
+        self.assertEqual(1, state["graph_malformed_node_count"])
+
+    def test_graphify_document_link_repair_connects_explicit_source_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            guide = project / ".agents" / "README.md"
+            guide.parent.mkdir(parents=True)
+            guide.write_text("Use `../src/main.py` for startup.\n", encoding="utf-8")
+            source = project / "src" / "main.py"
+            source.parent.mkdir()
+            source.write_text("VALUE = 1\n", encoding="utf-8")
+            graph = project / "graphify-out" / "graph.json"
+            graph.parent.mkdir()
+            graph.write_text(
+                json.dumps(
+                    {
+                        "nodes": [
+                            {
+                                "id": "agents_readme_guide",
+                                "label": "Guide",
+                                "file_type": "document",
+                                "source_file": ".agents/README.md",
+                                "source_location": "L1",
+                            },
+                            {
+                                "id": "src_main",
+                                "label": "main.py",
+                                "file_type": "code",
+                                "source_file": "src/main.py",
+                                "source_location": "L1",
+                            },
+                        ],
+                        "links": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            first = repair_project_document_links(project)
+            second = repair_project_document_links(project)
+            payload = json.loads(graph.read_text(encoding="utf-8"))
+
+        self.assertTrue(first["ready"])
+        self.assertEqual(1, first["document_source_edges"])
+        self.assertFalse(second["changed"])
+        self.assertEqual(1, len(payload["links"]))
+        self.assertEqual("src_main", payload["links"][0]["target"])
+
+    def test_target_graphify_readiness_fails_closed_without_git_revision(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            graph = project / "graphify-out" / "graph.json"
+            graph.parent.mkdir(parents=True)
+            graph.write_text(
+                json.dumps(
+                    {
+                        "nodes": [
+                            {"id": "main", "file_type": "code", "source_file": "main.py"}
+                        ],
+                        "links": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            state = inspect_project_graph_state(project, graph)
+
+        self.assertFalse(state["graph_fresh"])
 
     def test_target_graphify_readiness_rejects_duplicated_runtime_skill_copy(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

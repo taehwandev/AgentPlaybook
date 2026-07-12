@@ -193,7 +193,7 @@ def resolve_docs(
             )
         if project_root and not graphify_readiness["ready"]:
             notes.append(
-                "Target-project Graphify is incomplete. The graphify readiness gate must prove CLI, the read canonical SKILL.md, runtime links resolving to it, portable Git ownership, project integration, graph, and query smoke before handoff."
+                "Target-project Graphify is incomplete. The graphify readiness gate must prove CLI, the read canonical SKILL.md, runtime links resolving to it, portable Git ownership, project integration, a fresh/input-complete graph with valid relationships, and query smoke before handoff."
             )
 
     route = {

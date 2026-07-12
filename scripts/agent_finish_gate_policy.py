@@ -194,11 +194,58 @@ def _validate_graphify_readiness(evidence: str) -> list[str]:
         "=not read",
         "=not run",
         "=unavailable",
+        "=stale",
+        "=outdated",
+        "=incomplete",
+        "=disconnected",
+        "=dirty",
+        "=invalid",
+        "=error",
+        "=skipped",
+        "=unknown",
+        "=false",
     )
     if any(value in lower for value in negative_values):
         return [
             "graphify readiness evidence contains an incomplete condition; CLI, read skill "
             "doc, canonical runtime links, portable Git ownership, project integration, "
-            "target graph, and query smoke must all succeed"
+            "fresh input-complete target graph with valid relationships, and query smoke "
+            "must all succeed"
+        ]
+    positive_requirements = {
+        "cli=": ("resolved", "available"),
+        "skill doc=": ("read",),
+        "runtime links=": ("resolve", "canonical", "symlink"),
+        "git ownership=": ("tracked", "portable", "120000"),
+        "project integration=": ("installed", "present", "configured"),
+        "target graph=": ("fresh", "input", "manifest", "valid", "integrity", "relationship", "connected", "path"),
+        "query smoke=": ("succeeded", "passed"),
+    }
+    weak: list[str] = []
+    anchors = list(positive_requirements)
+    for index, (anchor, signals) in enumerate(positive_requirements.items()):
+        start = lower.find(anchor) + len(anchor)
+        later_positions = [
+            lower.find(later, start)
+            for later in anchors[index + 1:]
+            if lower.find(later, start) >= 0
+        ]
+        finish = min(later_positions) if later_positions else len(lower)
+        value = lower[start:finish]
+        if anchor == "target graph=":
+            groups = (
+                ("fresh",),
+                ("input", "manifest"),
+                ("valid", "integrity"),
+                ("relationship", "connected", "path"),
+            )
+            if any(not any(signal in value for signal in group) for group in groups):
+                weak.append(anchor.rstrip("="))
+        elif not any(signal in value for signal in signals):
+            weak.append(anchor.rstrip("="))
+    if weak:
+        return [
+            "graphify readiness evidence lacks positive completion proof for "
+            + ", ".join(weak)
         ]
     return []

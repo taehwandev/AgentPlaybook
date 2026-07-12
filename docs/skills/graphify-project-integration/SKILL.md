@@ -35,8 +35,11 @@ project's graph, canonical skill, and runtime links are ready.
 Treat Graphify readiness as seven separate conditions: CLI available, one
 canonical project-local `SKILL.md` installed and read, every enabled runtime
 path resolving to that canonical directory, portable Git ownership verified,
-project integration installed, `graphify-out/graph.json` present, and a scoped
-query smoke check successful. Missing any condition is a failed readiness gate,
+project integration installed, a fresh and input-complete
+`graphify-out/graph.json` present, and a scoped query smoke check successful.
+When project docs and code both exist, the graph must contain at least one
+representative project-doc-to-source path, direct or multi-hop, and the smoke
+check must traverse it. Missing any condition is a failed readiness gate,
 not permission to skip Graphify silently. A copied runtime bundle fails the
 canonical-source condition even when its content currently matches.
 
@@ -45,6 +48,9 @@ the canonical target, not additional physical copies. Git ownership is ready
 only when canonical files and mandatory policies are tracked, every previously
 tracked runtime skill path is one repo-relative mode `120000` entry, and no
 tracked `SKILL.md` or `references/` descendants remain below runtime paths.
+Preserving legacy project knowledge as graph input is only a migration safety
+measure; equivalent shared content across runtime directories must still be
+collapsed into one `.agentplaybook` owner.
 
 ## Process
 
@@ -59,8 +65,11 @@ tracked `SKILL.md` or `references/` descendants remain below runtime paths.
    duplicate Graphify explanation sections from `AGENTS.md` and `CLAUDE.md`;
    rules or hook files do not substitute for the canonical skill document.
 4. Build the initial graph from the target root using the installed skill flow.
-5. Run a small `graphify query` smoke check against the target graph.
-6. Record all seven readiness fields in the workflow gate evidence.
+5. If project docs explicitly cite source paths but the graph omitted those
+   edges, run the AgentPlaybook deterministic document-link repair; it must not
+   invent semantic relationships or replace extraction.
+6. Run a small `graphify query` smoke check against the target graph.
+7. Record all seven readiness fields in the workflow gate evidence.
 
 ## Common Rationalizations
 
@@ -110,12 +119,20 @@ tracked `SKILL.md` or `references/` descendants remain below runtime paths.
 - Git ownership: `git ls-files -s` shows no runtime skill descendants and mode
   `120000` for every runtime skill path the repository intentionally tracks.
 - Integration: the runtime's rule/workflow/hook or instruction registration exists.
-- Graph: `graphify-out/graph.json` exists under the target root.
-- Query smoke: `graphify query "<scoped target-project question>"` succeeds.
+- Graph: `graphify-out/graph.json` is valid, non-empty, anchored to the current
+  source revision with a manifest matching current graph inputs, includes the
+  repo-local knowledge inventory, and has
+  no missing/dangling/self-loop endpoints.
+- Query smoke: `graphify query "<scoped target-project question>"` succeeds;
+  when project docs and code coexist, a representative `graphify path` or
+  equivalent query crosses from a project doc/workflow to source code.
 
 ## Report
 
-Name the target project, canonical skill path, runtime link paths, Git ownership
-evidence, graph path, query smoke result, and any missing readiness condition.
-State separately whether integration was installed and whether the initial
-graph was actually built.
+Report all seven fields explicitly: CLI state; canonical skill path and read
+evidence; runtime link paths and resolved targets; portable Git ownership;
+project integration; graph path plus freshness, integrity, local-knowledge
+input coverage, and document-to-code path coverage; and the scoped
+query/path smoke result. Name every missing readiness condition. State
+separately whether integration was installed and whether the initial graph was
+actually built.

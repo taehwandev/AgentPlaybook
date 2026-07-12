@@ -16,6 +16,8 @@ from support.graphify_contract import (
     TRACKING_POLICY_PATHS,
 )
 from support.graphify_git_tracking import inspect_graphify_git_tracking
+from support.graphify_graph_state import inspect_project_graph_state
+from support.graphify_input_inspection import inspect_project_graph_inputs
 from support.graphify_paths import file_link_ready, runtime_link_ready
 
 
@@ -71,6 +73,17 @@ def inspect_target_graphify(
     ]
     graph_path = project_path / "graphify-out" / "graph.json"
     cli_path = shutil.which("graphify")
+    input_state = inspect_project_graph_inputs(project_path)
+    graph_state = inspect_project_graph_state(project_path, graph_path)
+    runtime_ready = bool(
+        cli_path
+        and selected
+        and canonical_skill.is_file()
+        and not invalid_links
+        and not missing_integrations
+        and not missing_policies
+        and graph_path.is_file()
+    )
     result = {
         "cli": cli_path,
         "platforms": selected,
@@ -88,22 +101,24 @@ def inspect_target_graphify(
         "missing_tracking_policies": [str(path) for path in missing_policies],
         "graph_path": str(graph_path),
         "graph_exists": graph_path.is_file(),
-        "ready": bool(
-            cli_path
-            and selected
-            and canonical_skill.is_file()
-            and not invalid_links
-            and not missing_integrations
-            and not missing_policies
-            and graph_path.is_file()
-        ),
+        "runtime_ready": runtime_ready,
+        **graph_state,
+        **input_state,
     }
-    result["runtime_ready"] = result["ready"]
     tracking = inspect_graphify_git_tracking(project_path, selected)
     result.update(tracking)
-    result["ready"] = bool(
-        result["runtime_ready"] and tracking["commit_ready"] is not False
+    static_ready = bool(
+        runtime_ready
+        and graph_state["graph_integrity_ready"]
+        and graph_state["graph_fresh"] is True
+        and graph_state["graph_relationship_ready"]
+        and input_state["graph_input_policy_ready"]
+        and input_state["knowledge_manifest_ready"]
+        and tracking["git_repository"]
+        and tracking["commit_ready"] is True
     )
+    result["static_ready"] = static_ready
+    result["ready"] = static_ready
     return result
 
 

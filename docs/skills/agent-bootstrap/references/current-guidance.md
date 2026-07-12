@@ -319,7 +319,7 @@ Use `templates/repo-agents-routing.md` as the routing block source.
 
 Use `docs/skills/graphify-project-integration/SKILL.md` as the canonical owner
 for installation, runtime skill paths, initial graph creation, query smoke, and
-the five-field readiness gate. The target repo owns its graph; another repo's
+the seven-field readiness gate. The target repo owns its graph; another repo's
 Graphify output never substitutes for it. Keep this bootstrap card focused on
 AgentPlaybook application instead of duplicating the Graphify procedure here.
 
@@ -341,8 +341,10 @@ Before reporting success:
   repo-specific rules.
 - When Graphify is enabled, the `graphify readiness` gate proves CLI, the
   installed and read canonical `.agentplaybook` `SKILL.md`, runtime links that
-  resolve to it, project integration, target-root graph, and a successful
-  scoped query smoke check.
+  resolve to it, portable Git ownership, project integration, a fresh and
+  input-complete target-root graph, and a successful scoped query smoke check.
+  When project docs and code coexist, the check also proves a representative
+  project-doc-to-source relationship rather than mere co-presence of nodes.
 - The routing block points to the selected root.
 - The stamped routing block carries the non-negotiable baseline enforcement
   clause: the `documentation` gate always runs with non-empty, inspection-proven

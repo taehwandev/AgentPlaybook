@@ -140,15 +140,39 @@ def _print_graphify_readiness(readiness: dict[str, object]) -> None:
     print("## Target Project Graphify")
     print(f"- Project: `{readiness.get('project') or 'missing'}`")
     print(f"- Static readiness: `{str(bool(readiness.get('ready'))).lower()}`")
+    print(f"- CLI: `{readiness.get('cli') or 'missing'}`")
     if readiness.get("canonical_skill_doc"):
-        print(f"- Canonical skill: `{readiness['canonical_skill_doc']}`")
+        installed = str(bool(readiness.get("canonical_skill_exists"))).lower()
+        print(
+            f"- Canonical skill installed: `{installed}` at "
+            f"`{readiness['canonical_skill_doc']}`; read evidence is still required"
+        )
     for runtime, link in (readiness.get("runtime_skill_links") or {}).items():
         print(f"- {runtime} link: `{link}`")
+    print(
+        "- Runtime links ready: "
+        f"`{str(not bool(readiness.get('invalid_runtime_links'))).lower()}`"
+    )
+    print(
+        "- Portable Git ownership: "
+        f"`{str(readiness.get('commit_ready') is True).lower()}`"
+    )
+    print(
+        "- Project integration ready: "
+        f"`{str(not bool(readiness.get('missing_integrations'))).lower()}`"
+    )
     if readiness.get("graph_path"):
         print(f"- Graph: `{readiness['graph_path']}`")
     print(
-        "- Completion still requires evidence that the canonical SKILL.md was read, "
-        "runtime links resolve to it, portable Git ownership is correct, and a query "
-        "smoke check passed."
+        "- Graph checks: "
+        f"fresh=`{str(readiness.get('graph_fresh') is True).lower()}`, "
+        f"integrity=`{str(bool(readiness.get('graph_integrity_ready'))).lower()}`, "
+        f"inputs=`{str(bool(readiness.get('graph_input_policy_ready') and readiness.get('knowledge_manifest_ready'))).lower()}`, "
+        f"relationships=`{str(bool(readiness.get('graph_relationship_ready'))).lower()}`"
+    )
+    print("- Query/path smoke: `manual evidence required`")
+    print(
+        "- Static inspection does not substitute for canonical skill read evidence or "
+        "the scoped query/path smoke result."
     )
     print()

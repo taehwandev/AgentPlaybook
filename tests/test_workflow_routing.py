@@ -1207,8 +1207,11 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "runtime_links": "Codex Claude and AGY links resolve to canonical skill",
                 "git_ownership": "canonical files and runtime symlinks tracked portably",
                 "project_integration": "AGENTS section and Codex hook present",
-                "graph": "target graphify-out/graph.json present",
-                "query_smoke": "graphify query succeeded",
+                "graph": (
+                    "target graphify-out/graph.json fresh; manifest input coverage complete; "
+                    "integrity valid; representative relationship path connected"
+                ),
+                "query_smoke": "graphify query passed",
             },
             {},
         )
@@ -1227,6 +1230,48 @@ class WorkflowRoutingTests(unittest.TestCase):
             ["graphify readiness"],
         )
         self.assertTrue(any("incomplete condition" in failure for failure in failures))
+
+        for graph_state in ("stale", "incomplete", "disconnected"):
+            with self.subTest(graph_state=graph_state):
+                failures = validate_gate_evidence(
+                    {
+                        "graphify readiness": (
+                            "cli=resolved; skill doc=read; runtime links=canonical; "
+                            "git ownership=portable; project integration=installed; "
+                            f"target graph={graph_state}; query smoke=succeeded"
+                        )
+                    },
+                    ["graphify readiness"],
+                )
+                self.assertTrue(
+                    any("incomplete condition" in failure for failure in failures)
+                )
+
+        for field, value in (
+            ("target graph", "dirty"),
+            ("target graph", "invalid"),
+            ("query smoke", "skipped"),
+            ("git ownership", "unknown"),
+        ):
+            with self.subTest(field=field, value=value):
+                values = {
+                    "cli": "resolved",
+                    "skill doc": "read",
+                    "runtime links": "resolve to canonical",
+                    "git ownership": "tracked portably",
+                    "project integration": "installed",
+                    "target graph": (
+                        "fresh; manifest input coverage complete; integrity valid; "
+                        "relationship path connected"
+                    ),
+                    "query smoke": "passed",
+                }
+                values[field] = value
+                evidence = "; ".join(f"{key}={item}" for key, item in values.items())
+                failures = validate_gate_evidence(
+                    {"graphify readiness": evidence}, ["graphify readiness"]
+                )
+                self.assertTrue(failures)
 
         _, missing = synthesize_gate_evidence(
             "graphify readiness",

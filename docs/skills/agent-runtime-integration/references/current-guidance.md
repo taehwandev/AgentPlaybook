@@ -332,9 +332,11 @@ Do not paste the full playbook into runtime-specific files.
 
 For Graphify specifically, follow
 `docs/skills/graphify-project-integration/SKILL.md`: the canonical project
-bundle lives at `.agentplaybook/skills/graphify`, while `.codex`, `.claude`,
-and `.agents` expose only repo-relative discovery links plus their genuinely
-runtime-specific hooks, rules, workflows, and registration.
+bundle lives at `.agentplaybook/skills/graphify`, while only the Graphify
+discovery paths below `.codex`, `.claude`, and `.agents` are repo-relative
+links or genuinely runtime-specific hooks, rules, workflows, and registration.
+Other project-local knowledge under those directories remains independently
+owned project input and must not be hidden by a blanket runtime-directory rule.
 
 ## One-Shot Prompt Setup
 

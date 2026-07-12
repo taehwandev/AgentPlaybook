@@ -20,9 +20,11 @@ from support.graphify_inspection import (
     inspect_global_graphify,
     inspect_target_graphify,
 )
+from support.graphify_document_links import repair_project_document_links
 from support.graphify_runtime_integration import (
     normalize_runtime_integrations as _normalize_runtime_integrations,
 )
+from support.graphify_tracking import install_graphify_input_policy
 
 __all__ = [
     "CANONICAL_SKILL_PATH",
@@ -35,6 +37,8 @@ __all__ = [
     "graphify_platforms_for_runtimes",
     "inspect_global_graphify",
     "inspect_target_graphify",
+    "install_graphify_input_policy",
+    "repair_project_document_links",
 ]
 
 

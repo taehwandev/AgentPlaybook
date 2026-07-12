@@ -169,6 +169,59 @@ def configure_target_graphify(
             readiness["graph_path"],
         )
     )
+    results.append(
+        _result(
+            "graph.freshness",
+            "ok" if readiness["graph_fresh"] is True else "missing",
+            (
+                f"built={readiness.get('graph_built_at_commit') or 'missing'}; "
+                f"head={readiness.get('project_head') or 'unknown'}; "
+                f"dirty_sources={readiness.get('graph_source_dirty_count', 0)}; "
+                f"stale_manifest={readiness.get('graph_manifest_stale_count', 0)}"
+            ),
+        )
+    )
+    results.append(
+        _result(
+            "graph.integrity",
+            "ok" if readiness["graph_integrity_ready"] else "missing",
+            (
+                f"nodes={readiness.get('graph_node_count', 0)}; "
+                f"edges={readiness.get('graph_edge_count', 0)}; "
+                f"invalid_edges={readiness.get('graph_invalid_edge_count', 0)}; "
+                f"malformed_nodes={readiness.get('graph_malformed_node_count', 0)}; "
+                f"duplicate_nodes={readiness.get('graph_duplicate_node_id_count', 0)}"
+            ),
+        )
+    )
+    results.append(
+        _result(
+            "graph.input_coverage",
+            "ok"
+            if readiness["graph_input_policy_ready"] and readiness["knowledge_manifest_ready"]
+            else "missing",
+            (
+                f"project_knowledge={readiness.get('project_knowledge_file_count', 0)}; "
+                f"manifest={readiness.get('knowledge_manifest_file_count', 0)}; "
+                f"missing={readiness.get('knowledge_manifest_missing_count', 0)}; "
+                f"stale={readiness.get('knowledge_manifest_stale_count', 0)}; "
+                f"blanket_exclusions={len(readiness.get('blanket_knowledge_input_exclusions', []))}"
+            ),
+        )
+    )
+    results.append(
+        _result(
+            "graph.relationships",
+            "ok" if readiness["graph_relationship_ready"] else "missing",
+            (
+                f"document_nodes={readiness.get('graph_document_node_count', 0)}; "
+                f"code_nodes={readiness.get('graph_code_node_count', 0)}; "
+                f"direct_edges={readiness.get('graph_document_code_edge_count', 0)}; "
+                f"document_path_nodes={readiness.get('graph_document_code_path_node_count', 0)}; "
+                f"knowledge_path_nodes={readiness.get('graph_knowledge_code_path_node_count', 0)}"
+            ),
+        )
+    )
     return results
 
 

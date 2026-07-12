@@ -11,6 +11,18 @@ Every participating repository needs one canonical project skill, thin runtime
 integration, and its own `graphify-out/graph.json`. The same operational skill
 must not be maintained as separate Codex, Claude, and AGY copies.
 
+Project-local knowledge remains graph input. Do not exclude `.agents/` as a
+whole: repositories may keep their canonical wiki, skills, workflows, review
+policy, and domain contracts there. Exclude only the Graphify runtime discovery
+views and adapters that resolve back to the canonical bundle.
+
+This preservation rule is migration safety, not permission to keep shared
+knowledge in three runtime-owned copies. If equivalent content exists below
+`.agents`, `.claude`, and `.codex`, move the shared content to one
+`.agentplaybook` owner and retain only symlinks or genuinely runtime-specific
+adapters. Until that migration is reviewed, Graphify must continue to see the
+existing project knowledge instead of silently deleting it from the graph.
+
 ## Single Canonical Skill
 
 The canonical project skill is:
@@ -105,6 +117,28 @@ AGENTS/CLAUDE section, rule, workflow, hook, or the Graphify report as a
 substitute. Do not accept copied runtime bundles even when their hashes match;
 matching copies can drift on the next update.
 
+The managed `.graphifyignore` block must use narrow runtime exclusions:
+
+```text
+.agentplaybook/
+.agents/skills/graphify
+.agents/rules/graphify.md
+.agents/workflows/graphify.md
+.claude/skills/graphify
+.claude/settings.json
+.claude/settings.local.json
+.codex/skills/graphify
+.codex/hooks.json
+graphify-out/
+```
+
+Do not replace those paths with blanket `.agents/`, `.claude/`, or `.codex/`
+exclusions. A runtime directory may also be the repository's canonical local
+knowledge surface; hiding it makes a graph appear populated while silently
+dropping the documents agents are expected to consult. Input preservation does
+not make duplicate runtime copies valid ownership: the canonicalization check
+and migration still collapse equivalent shared content to one owner.
+
 Opening a runtime directory link in an editor or file browser displays the
 canonical directory's files under that runtime path. That view is not evidence
 of a second physical copy. Verify the entry itself with `ls -ld` or `readlink`,
@@ -184,6 +218,29 @@ graphify query "What are the main project modules and their relationships?"
 For a project that already has a graph, follow the installed skill's update
 rules. The AST-only `graphify update .` fast path is suitable after code-only
 changes; semantic inputs require the skill-directed update/extraction path.
+When project documents already cite concrete project-relative source paths but
+the semantic backend did not materialize those references as graph edges, run
+the deterministic repair after extraction:
+
+```bash
+python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-project-graphify.py \
+  --project <TARGET_REPO> \
+  --repair-document-links
+```
+
+This repair reads explicit path citations only, adds reproducible `references`
+edges to existing real source-file nodes, and does not invoke an LLM. It must
+not invent conceptual relationships or substitute for semantic extraction.
+Readiness also compares `built_at_commit` with the current `HEAD`, verifies the
+manifest still matches the current graph-input worktree, parses the graph,
+checks endpoints, and confirms repo-local runtime-surface knowledge files are
+represented and current in the manifest, and reports representative
+document-to-code path coverage through direct or multi-hop relationships. File
+presence alone is not readiness. This permits a freshly rebuilt graph to cover
+staged work without pretending an older manifest is current. The setup
+command's static result covers
+inspectable repository state only; workflow completion additionally requires
+the canonical-skill read receipt and a real query/path smoke result.
 
 ## Workflow Gate Evidence
 
@@ -193,9 +250,15 @@ Graphify routes include a `graphify readiness` gate. Record these fields:
 - `skill_doc`: canonical `.agentplaybook/skills/graphify/SKILL.md` path and
   confirmation it was read.
 - `runtime_links`: every enabled runtime link and its resolved canonical target.
+- `git_ownership`: canonical files and required policies tracked, every runtime
+  discovery path stored as one repo-relative mode `120000` link, and no tracked
+  runtime descendants.
 - `project_integration`: runtime-specific instruction/hook/rule/workflow evidence.
-- `graph`: target-root `graphify-out/graph.json` evidence.
-- `query_smoke`: the scoped query command and successful result.
+- `graph`: target-root `graphify-out/graph.json` evidence including current
+  source revision, valid endpoints, input inventory coverage, and relationship
+  coverage when docs and code coexist.
+- `query_smoke`: the scoped query command and successful result; for a repo with
+  local knowledge docs, include one representative doc/workflow-to-code path.
 
 Presence of a graph alone is insufficient. Likewise, installation output alone
 does not prove that the graph was built or queryable.
