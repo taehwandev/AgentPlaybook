@@ -5,6 +5,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from support.graphify_contract import GRAPHIFY_RUNTIME_ADAPTER_INPUTS
+
 
 KNOWLEDGE_ROOTS = (".agents", ".claude", ".codex")
 KNOWLEDGE_SUFFIXES = {
@@ -42,14 +44,6 @@ def inspect_project_graph_inputs(project_path: Path) -> dict[str, object]:
 
 def project_knowledge_files(project_path: Path) -> list[Path]:
     roots = [project_path / name for name in KNOWLEDGE_ROOTS]
-    excluded = {
-        project_path / ".agents" / "rules" / "graphify.md",
-        project_path / ".agents" / "workflows" / "graphify.md",
-        project_path / ".claude" / "settings.json",
-        project_path / ".claude" / "settings.local.json",
-        project_path / ".codex" / "hooks.json",
-    }
-    graphify_skills = {root / "skills" / "graphify" for root in roots}
     return sorted(
         (
             path
@@ -57,11 +51,18 @@ def project_knowledge_files(project_path: Path) -> list[Path]:
             if root.is_dir()
             for path in root.rglob("*")
             if path.is_file()
-            and path not in excluded
-            and not any(graphify_skill in path.parents for graphify_skill in graphify_skills)
+            and not is_graphify_runtime_adapter_input(path.relative_to(project_path))
             and path.suffix.lower() in KNOWLEDGE_SUFFIXES
         ),
         key=str,
+    )
+
+
+def is_graphify_runtime_adapter_input(relative: str | Path) -> bool:
+    path = Path(normalize_relative_path(str(relative)))
+    return any(
+        path == adapter or adapter in path.parents
+        for adapter in GRAPHIFY_RUNTIME_ADAPTER_INPUTS
     )
 
 

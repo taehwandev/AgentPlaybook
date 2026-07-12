@@ -92,7 +92,10 @@ def narrow_root_runtime_blankets(path: Path) -> bool:
     existing = {line.strip() for line in lines}
     replacements = {
         ".agents": (),
-        ".claude": (".claude/settings.json",),
+        ".claude": (
+            ".claude/settings.json",
+            ".claude/settings.local.json",
+        ),
         ".codex": (".codex/hooks.json",),
     }
     changed = False

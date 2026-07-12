@@ -453,7 +453,67 @@ class SetupAgentHooksTests(unittest.TestCase):
         self.assertNotIn(".claude/\n", root_content)
         self.assertNotIn(".codex/**", root_content)
         self.assertIn(".claude/settings.json", root_content)
+        self.assertIn(".claude/settings.local.json", root_content)
         self.assertIn(".codex/hooks.json", root_content)
+
+    def test_graph_freshness_ignores_managed_runtime_adapter_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+            source = project / "src" / "main.py"
+            source.parent.mkdir()
+            source.write_text("VALUE = 1\n", encoding="utf-8")
+            subprocess.run(["git", "add", "src/main.py"], cwd=project, check=True)
+            subprocess.run(
+                [
+                    "git", "-c", "user.name=AgentPlaybook", "-c",
+                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "initial",
+                ],
+                cwd=project,
+                check=True,
+            )
+            head = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=project,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
+            ).stdout.strip()
+            graph = project / "graphify-out" / "graph.json"
+            graph.parent.mkdir()
+            graph.write_text(
+                json.dumps(
+                    {
+                        "built_at_commit": head,
+                        "nodes": [
+                            {
+                                "id": "main",
+                                "file_type": "code",
+                                "source_file": "src/main.py",
+                            }
+                        ],
+                        "links": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (project / "graphify-out" / "manifest.json").write_text(
+                json.dumps({"src/main.py": {"mtime": source.stat().st_mtime}}),
+                encoding="utf-8",
+            )
+            adapter = project / ".codex" / "hooks.json"
+            adapter.parent.mkdir()
+            adapter.write_text('{"graphify": true}', encoding="utf-8")
+
+            adapter_only = inspect_project_graph_state(project, graph)
+            extra_source = project / "src" / "extra.py"
+            extra_source.write_text("VALUE = 2\n", encoding="utf-8")
+            uncovered_source = inspect_project_graph_state(project, graph)
+
+        self.assertTrue(adapter_only["graph_fresh"])
+        self.assertEqual(0, adapter_only["graph_source_dirty_count"])
+        self.assertFalse(uncovered_source["graph_fresh"])
+        self.assertEqual(1, uncovered_source["graph_source_dirty_count"])
 
     def test_project_graph_state_requires_current_head_and_document_code_relationship(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

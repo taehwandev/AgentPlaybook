@@ -55,6 +55,17 @@ TRACKING_POLICY_PATHS = (
     Path("graphify-out/.gitignore"),
 )
 
+GRAPHIFY_RUNTIME_ADAPTER_INPUTS = (
+    Path(".agents/skills/graphify"),
+    Path(".agents/rules/graphify.md"),
+    Path(".agents/workflows/graphify.md"),
+    Path(".claude/skills/graphify"),
+    Path(".claude/settings.json"),
+    Path(".claude/settings.local.json"),
+    Path(".codex/skills/graphify"),
+    Path(".codex/hooks.json"),
+)
+
 ROOT_GITIGNORE_BLOCK = """# agentplaybook-project-assets:start
 # Runtime evidence is local, but canonical project skills are repository assets.
 !.agentplaybook/
@@ -75,18 +86,15 @@ AGENTPLAYBOOK_GITIGNORE_BLOCK = """# agentplaybook-project-assets:start
 !/skills/graphify/**
 # agentplaybook-project-assets:end"""
 
-GRAPHIFY_INPUT_BLOCK = """# agentplaybook-graphify-inputs:start
-.agentplaybook/
-.agents/skills/graphify
-.agents/rules/graphify.md
-.agents/workflows/graphify.md
-.claude/skills/graphify
-.claude/settings.json
-.claude/settings.local.json
-.codex/skills/graphify
-.codex/hooks.json
-graphify-out/
-# agentplaybook-graphify-inputs:end"""
+GRAPHIFY_INPUT_BLOCK = "\n".join(
+    (
+        "# agentplaybook-graphify-inputs:start",
+        ".agentplaybook/",
+        *(path.as_posix() for path in GRAPHIFY_RUNTIME_ADAPTER_INPUTS),
+        "graphify-out/",
+        "# agentplaybook-graphify-inputs:end",
+    )
+)
 
 GRAPHIFY_OUTPUT_GITIGNORE = """# Generated Graphify output is local by default.
 # A repository may explicitly allowlist reviewed, reproducible, public-safe

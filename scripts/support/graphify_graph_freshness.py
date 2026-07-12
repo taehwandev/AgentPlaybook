@@ -5,7 +5,10 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from support.graphify_input_inspection import read_manifest_state
+from support.graphify_input_inspection import (
+    is_graphify_runtime_adapter_input,
+    read_manifest_state,
+)
 
 
 GRAPH_INPUT_SUFFIXES = {
@@ -28,6 +31,7 @@ def inspect_graph_freshness(
         for path in dirty_sources
         if path not in manifest
         and _is_potential_graph_input(path)
+        and not is_graphify_runtime_adapter_input(path)
         and not _policy_change_covered(project_path, path, graph_mtime)
     }
     return {
