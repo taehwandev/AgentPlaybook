@@ -40,6 +40,10 @@ is part of the source-of-truth discovery step, not a post-processing filter.
   rewriting.
 - Two or three nearby voice samples when available, such as existing docs,
   posts, release notes, emails, or the user's own draft fragments.
+- When a draft continues a series, inspect the actually published predecessor
+  or use the author's confirmed publication history before stating what the
+  earlier piece introduced. A local draft may contain later additions that were
+  never published.
 - For Korean author voice work, inspect phrase-level habits as well as endings:
   connective frames, concrete maintenance wording, preferred technical nouns,
   translation-like metaphors, and phrases the user explicitly rejected.
@@ -88,8 +92,28 @@ or disclosure obligations, keep the original meaning and report the constraint.
 - Keep edits conservative. If a rewrite would change more than roughly one
   third of the text, report the risk and offer a focused pass instead of silently
   replacing the piece.
+- Do not trade comprehension for brevity. Remove repetition and filler, but keep
+  the first-use definition and whichever actor, action, location, reason, or
+  example the intended reader needs to understand the claim without hidden
+  project context.
+- Treat confusion from the author or an intended reader as evidence of semantic
+  over-compression, even when the sentence is grammatical and technically
+  accurate. Repair the missing explanation instead of defending the shorthand.
 - Make uncertainty visible. If the draft lacks substance, sources, or a real
   point of view, say that style cleanup cannot fix the underlying gap.
+
+## Reader-Comprehension Boundary
+
+Concision removes words the reader does not need. Over-compression removes the
+context the writer already knows but the reader does not. Judge the edit by what
+the intended reader can reconstruct, not by sentence length.
+
+For example, "Keep shared rules at the root and module rules close to the code"
+is compact but assumes the reader already knows which root, which rules, and why
+location matters. A usable explanation would say: "Put rules that apply to every
+task in the repository's root instruction file. Put rules used only by one
+module in that module's own documentation so someone changing that module can
+find and update its guidance with the code."
 
 ## Workflow
 
@@ -107,21 +131,31 @@ or disclosure obligations, keep the original meaning and report the constraint.
 4. Mark protected content: facts, names, numbers, quotes, citations, URLs,
    product terms, keywords, legal/policy text, and any sentence whose meaning
    must not drift.
-5. Audit the draft for specific signals. Note the span, category, severity, and
+5. Establish the reader's path through the draft. Define an unfamiliar or
+   project-specific term at first use. For each material claim, keep whichever
+   subject, actor, action, location, reason, example, and result the intended
+   reader needs instead of making them reconstruct omitted links.
+6. Audit the draft for specific signals. Note the span, category, severity, and
    intended edit before rewriting broad sections.
-6. For Korean prose, run a phrase-level voice pass. Check not only honorific
+7. For Korean prose, run a phrase-level voice pass. Check not only honorific
    endings, but also plausible phrases that the author would not naturally use,
    such as abstract metaphors, stock AI transitions, or wording the user already
    flagged as unnatural.
-7. Rewrite only the flagged spans or the smallest paragraph needed for flow.
-8. Run a fidelity check against the original: facts, claims, numbers, names,
+8. When the author or a reader flags one unclear phrase, scan the whole artifact
+   for analogous shorthand, unexplained terms, omitted actors, and missing
+   causal links before rewriting. Do not repair only the quoted sentence.
+9. Rewrite only the flagged spans or the smallest paragraph needed for flow.
+   Prefer complete meaning over compression: keep the actors, referents,
+   conditions, and causal links that the reader needs, even when the shorter
+   phrasing sounds smoother.
+10. Run a fidelity check against the original: facts, claims, numbers, names,
    quotes, citations, ordering, tone, and required format.
-9. Read the result aloud or scan for rhythm: sentence lengths should vary, but
+11. Read the result aloud or scan for rhythm: sentence lengths should vary, but
    the prose should not become choppy, cute, or performatively casual.
-10. Run an "obviously generated" second pass for residual tells: formulaic
+12. Run an "obviously generated" second pass for residual tells: formulaic
    framing, repetitive transitions, fake balance, unsupported grand claims,
    chatbot closers, and tidy-but-empty summaries.
-11. Report the categories changed and any places intentionally left unchanged.
+13. Report the categories changed and any places intentionally left unchanged.
 
 ## Audit Passes
 
@@ -145,6 +179,14 @@ Use these passes when the writing task is more than a one-line copy edit.
    concise/expansive, technical/plain, warm/neutral, and confident/careful.
 7. **Fidelity pass**: Confirm the revised text did not invent experience,
    sources, anecdotes, numbers, product claims, citations, or author opinions.
+8. **Reader-comprehension pass**: Read from the intended reader's position.
+   Define unfamiliar terms at first use. Make subjects, actors, locations,
+   referents, conditions, sequence, examples, and cause-and-effect explicit when
+   the reader would otherwise have to infer them from private or project context.
+9. **Semantic-over-compression pass**: Keep the original relationship between
+   ideas when tightening prose. Do not remove a qualifier, actor, transition, or
+   explanation merely to make a sentence shorter or more elegant. If one phrase
+   failed this pass, search the rest of the artifact for the same pattern.
 
 ## Common Signals
 
@@ -182,6 +224,9 @@ Use these passes when the writing task is more than a one-line copy edit.
 | "Adding a personal line makes it more human." | Add personal texture only when the source material supports it. |
 | "The user gave first-person or plain-ending examples, so the piece should become a retrospective." | Treat those examples as style evidence only. Ask the user to choose the writing mode before changing genre, point of view, or article structure. |
 | "The Korean sentence is grammatical, so it matches the author." | Check whether the phrase belongs to the author's observed wording. Replace plausible but non-authorial phrases with concrete wording from the draft, samples, or user feedback. |
+| "The shorter version is automatically clearer." | Keep the shorter version only when it preserves the reader's ability to identify the actor, condition, and relationship between ideas. Restore needed semantic links before optimizing rhythm. |
+| "The term is accurate, so readers will understand it." | Define unfamiliar or project-specific terms at first use and add the smallest concrete explanation the intended audience needs. Accuracy does not replace context. |
+| "The user flagged only this sentence, so only this sentence needs review." | Repair the sentence, then scan the whole artifact for analogous shorthand and omitted context. Treat the report as evidence of a pattern until the scan shows otherwise. |
 | "Detector score is the goal." | Refuse detector-bypass promises; improve clarity, fidelity, voice, and responsible use. |
 | "Every AI tell must be banned everywhere." | Apply genre and channel judgment. Technical docs, legal text, and formal reports can be restrained without sounding robotic. |
 
@@ -201,6 +246,12 @@ Use these passes when the writing task is more than a one-line copy edit.
   level, or broad "my style" cues.
 - The edit changes authorial stance, adds lived experience, or hides uncertainty.
 - A "humanized" version is longer but no more specific.
+- A rewrite becomes terser but leaves an unclear subject, referent, condition, or
+  causal relationship for the intended reader to reconstruct.
+- A sentence is understandable only to someone who already knows the project's
+  terminology, file layout, actors, or prior decisions.
+- One unclear compressed phrase is repaired without checking the rest of the
+  artifact for the same pattern.
 - The output claims or implies it will bypass AI detectors.
 
 ## Do Not
@@ -253,6 +304,15 @@ Use these passes when the writing task is more than a one-line copy edit.
   respected?
 - Are protected tokens, SEO keywords, citations, names, numbers, URLs, and
   product terms still intact where required?
+- Do sequel or series references match the published predecessor or the
+  author's confirmed publication history rather than a later local draft?
+- Can the intended reader identify the subject, conditions, and relationship
+  between each material claim without relying on unstated context?
+- Are unfamiliar and project-specific terms defined at first use?
+- Did any compression remove a qualifier, actor, referent, sequence, or causal
+  link needed to preserve the original meaning?
+- If the author or a reader flagged one unclear phrase, did the review cover
+  analogous shorthand across the whole artifact?
 - Did the second pass catch remaining formulaic structure, fake balance, vague
   authorities, chatbot artifacts, or unsupported confidence?
 - For UI text, forms, localized copy, or accessibility-sensitive text, also load
