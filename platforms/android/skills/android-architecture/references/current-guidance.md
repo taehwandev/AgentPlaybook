@@ -331,15 +331,34 @@ class MainActivity : BaseActivity() {
 
 Use qualifiers when multiple clients, dispatchers, URLs, or string config values
 share the same Kotlin type. Prefer `SingletonComponent` for process-wide
-clients, repositories, and config; `ActivityComponent` for Activity context,
-window, launcher, and result-bound adapters; and `ViewModelComponent` for
-ViewModel-scoped collaborators.
+clients, repositories, and config; `ActivityComponent` for Activity-dependent
+adapters and collaborators; and `ViewModelComponent` for ViewModel-scoped
+collaborators. A Hilt component scopes injected objects; it does not replace an
+Android or Compose lifecycle owner.
 
 Manual construction can remain local for UI state that is inherently Compose or
 Activity-owned, such as `SnackbarHostState`, `ToastHostState`, camera/webview
 controllers created with `remember`, and activity-result launchers. Those
 objects are not graph services. Do not use this exception for repositories,
 network clients, auth providers, route graphs, or ViewModel creation.
+
+## DI-Assembled Compose And Activity Entries
+
+Use an injected feature-entry registry only when feature renderers must be
+independently registered, selected, or replaced. This is an architectural seam
+between the product shell and leaf features, not a reason to move the product
+route graph into DI.
+
+The product shell owns cross-feature topology, auth gates, synthetic stacks,
+and fallback policy. A selected feature entry owns its route holder, ViewModel
+acquisition, feature state/effects, and stateless screen. Compose runtime still
+owns composition, while Android remains responsible for creating
+manifest-declared Activities.
+
+The canonical rules for choosing a pure, Compose-capable, or Android API
+boundary; completing implementation and DI registration; validating registry
+keys; and preserving Activity/Compose lifecycle ownership live in
+`../../android-module-structure/references/current-guidance.md`.
 
 ## Reusable WebView Surface
 
