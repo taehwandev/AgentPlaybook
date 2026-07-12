@@ -26,6 +26,11 @@ affects navigation, commands, permissions, persistence, or cross-surface state.
   pairs in compact labels, badges, tables, charts, summary cards, tooltips,
   notifications, and accessibility labels.
 - Small and large viewports or containers relevant to the product.
+- Touch and coarse-pointer input: any menu, dropdown, tooltip, popover, or
+  control that is revealed or triggered only on `:hover`/`group-hover`/
+  `focus-within` must also open and be fully operable by tap/click. Touch
+  devices have no hover, so verify at a touch/mobile viewport, not only desktop
+  hover.
 - Light mode, dark mode, increased system font size, reduced motion, and high
   contrast when the platform supports them and the change can be affected.
 - Keyboard focus, screen reader labels, hit targets, and visible focus state.
@@ -71,6 +76,10 @@ button does not prove that the trusted boundary behind it was reached.
   entry point, overflow area, modal/sheet boundary, or next section.
 - Do not ignore keyboard, focus, screen-reader labels, hit target, reduced
   motion, or high-contrast behavior when the change touches interaction.
+- Do not accept hover-only reveal (`:hover`/`group-hover`/`focus-within`) as the
+  sole way to open an actionable menu, dropdown, or control. Touch users cannot
+  hover, so require an explicit tap/click toggle (with an outside-tap/escape
+  close) and verify it on a touch/mobile viewport.
 - Do not claim visual verification when the assets, icons, fonts, or remote
   data failed to load in the checked environment.
 
