@@ -1,9 +1,3 @@
----
-keyflow_id: sys_graphify_agents_skills_graphify_references_add_watch_md
-status: review
-type: ai-generated
----
-
 # graphify reference: add a URL and watch a folder
 
 Load this when the user ran `/graphify add <url>` or passed `--watch`. Neither is part of the default build.

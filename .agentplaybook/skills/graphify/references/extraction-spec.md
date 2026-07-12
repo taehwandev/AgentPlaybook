@@ -1,9 +1,3 @@
----
-keyflow_id: sys_graphify_claude_skills_graphify_references_extraction_spec_md
-status: review
-type: ai-generated
----
-
 # graphify reference: extraction subagent prompt
 
 Load this in Step 3 Part B when the corpus has at least one doc, paper, or image chunk. A pure-code corpus skips Part B and never reads this file. Each semantic subagent receives the prompt below verbatim (substitute FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, DEEP_MODE, and CHUNK_PATH).

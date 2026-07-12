@@ -1,9 +1,3 @@
----
-keyflow_id: sys_graphify_codex_skills_graphify_references_github_and_merge_md
-status: review
-type: ai-generated
----
-
 # graphify reference: GitHub clone and cross-repo merge
 
 Load this when the user passed one or more `https://github.com/...` URLs, or named several local subfolders to merge into one graph.

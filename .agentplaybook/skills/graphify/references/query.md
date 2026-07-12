@@ -1,9 +1,3 @@
----
-keyflow_id: sys_graphify_codex_skills_graphify_references_query_md
-status: review
-type: ai-generated
----
-
 # graphify reference: query, path, explain
 
 Load this when the user asks a question against an existing graph, or runs `/graphify path` or `/graphify explain`. The core's query stub points here for the full traversal flow. These flows use the `graphify query` CLI when it is available and fall back to an inline NetworkX traversal otherwise.

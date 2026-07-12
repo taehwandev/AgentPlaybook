@@ -1,9 +1,3 @@
----
-keyflow_id: sys_graphify_codex_skills_graphify_references_transcribe_md
-status: review
-type: ai-generated
----
-
 # graphify reference: transcribe video and audio
 
 Load this only when `detect` reported one or more `video` files. A corpus with no video never reads this.
