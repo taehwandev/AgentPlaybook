@@ -43,7 +43,7 @@ from agent_preflight_runtime import (
     AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
     _claude_spill_warnings,
 )
-from agent_review_hook import review_hook, review_vibeguard_command
+from agent_review_hook import review_hook, review_vibeguard_command, workflow_validate_failure_detail
 from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from agent_route_docs import (
@@ -2508,6 +2508,18 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertFalse(outputs[0]["success"])
         self.assertTrue(
             any("outside the review pathspec" in detail for detail in outputs[0]["details"])
+        )
+
+    def test_review_hook_preserves_workflow_validate_diagnostic(self) -> None:
+        detail = workflow_validate_failure_detail({
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "Invalid markdown frontmatter:\n- path.md: missing status\n",
+        })
+
+        self.assertEqual(
+            "workflow validate failed: Invalid markdown frontmatter:; - path.md: missing status",
+            detail,
         )
 
     def test_review_vibeguard_command_uses_pathspec_when_supported(self) -> None:

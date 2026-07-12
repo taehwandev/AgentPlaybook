@@ -116,7 +116,7 @@ def review_hook(
         validate = run_workflow_validate(args.rules)
         checks["workflow_validate"] = validate
         if validate["returncode"] != 0:
-            failures.append("workflow validate failed")
+            failures.append(workflow_validate_failure_detail(validate))
     else:
         failures.append(f"workflow validate script missing at {validate_script}")
 
@@ -181,6 +181,14 @@ def review_hook(
         else review_success_details(structure, review_scope)
     )
     return finish_with_result("review", not failures, details, args.output, checks, args.retry_attempt)
+
+
+def workflow_validate_failure_detail(validate: dict[str, Any]) -> str:
+    output = str(validate.get("stderr") or validate.get("stdout") or "").strip()
+    if not output:
+        return "workflow validate failed without diagnostic output"
+    compact = "; ".join(line.strip() for line in output.splitlines() if line.strip())
+    return f"workflow validate failed: {compact[:800]}"
 
 
 def record_review_gate(args: Any, checks: dict[str, Any]) -> None:

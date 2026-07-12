@@ -65,6 +65,10 @@ Before handoff or commit, confirm:
   reason and residual risk are explicit
 - `git diff --check` or repo formatter/lint covered whitespace or formatting
   when documentation/code formatting changed
+- If the Review Hook reports workflow validation failure, preserve the
+  validator diagnostic in the failure output and reproduce that exact validator
+  before spending the one retry. A generic failure without the invalid path or
+  contract hides the correction scope and must not consume the recovery pass.
 - staged diff matches the intended commit scope when a commit is being created
 - Commit Readiness Gate evidence is satisfied
 - external-state targets are discovered from repo-local policy before branch
