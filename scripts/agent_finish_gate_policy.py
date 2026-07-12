@@ -47,6 +47,7 @@ MULTI_AGENT_GATE = "multi-agent split decision"
 SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 AGENTIC_RUN_STATE_GATE = "agentic run state"
 SOURCE_DOCS_GATE = "source docs"
+GRAPHIFY_READINESS_GATE = "graphify readiness"
 PLATFORM_SELECTION_GATE = "platform selection"
 REVIEW_READINESS_GATE = "review readiness"
 PRD_DRAFT_GATE = "PRD draft"
@@ -79,6 +80,7 @@ VALIDATED_GATES = {
     SIDE_EFFECT_AUDIT_GATE,
     AGENTIC_RUN_STATE_GATE,
     SOURCE_DOCS_GATE,
+    GRAPHIFY_READINESS_GATE,
     PLATFORM_SELECTION_GATE,
     REVIEW_READINESS_GATE,
     PRD_DRAFT_GATE,
@@ -117,6 +119,8 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
         failures.extend(validate_documentation(gate_evidence.get(DOCUMENTATION_GATE, "")))
     if SOURCE_DOCS_GATE in required:
         failures.extend(validate_source_docs_evidence(gate_evidence.get(SOURCE_DOCS_GATE, "")))
+    if GRAPHIFY_READINESS_GATE in required:
+        failures.extend(_validate_graphify_readiness(gate_evidence.get(GRAPHIFY_READINESS_GATE, "")))
     if SOURCE_DOCS_GATE in required and DOCUMENTATION_IMPACT_GATE in required:
         failures.extend(
             validate_documentation_source_to_artifact_evidence(
@@ -158,3 +162,38 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
         if gate in gate_evidence:
             failures.extend(validate_workspace_scope_checkpoint(gate_evidence[gate]))
     return failures
+
+
+def _validate_graphify_readiness(evidence: str) -> list[str]:
+    lower = evidence.lower()
+    required_anchors = (
+        "cli=",
+        "skill doc=",
+        "runtime links=",
+        "git ownership=",
+        "project integration=",
+        "target graph=",
+        "query smoke=",
+    )
+    missing = [anchor.rstrip("=") for anchor in required_anchors if anchor not in lower]
+    if missing:
+        return [
+            "graphify readiness evidence must name successful " + ", ".join(missing)
+        ]
+    negative_values = (
+        "=missing",
+        "=absent",
+        "=failed",
+        "=not found",
+        "=not installed",
+        "=not read",
+        "=not run",
+        "=unavailable",
+    )
+    if any(value in lower for value in negative_values):
+        return [
+            "graphify readiness evidence contains an incomplete condition; CLI, read skill "
+            "doc, canonical runtime links, portable Git ownership, project integration, "
+            "target graph, and query smoke must all succeed"
+        ]
+    return []

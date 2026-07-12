@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Optional
 
 from workflow_catalog import (
@@ -12,6 +13,7 @@ from workflow_catalog import (
     PLATFORM_CONCERNS,
     PLATFORMS,
 )
+from support.graphify_setup import inspect_target_graphify
 from workflow_common import (
     ATTEMPT_LIMIT,
     RETRY_LIMIT,
@@ -98,6 +100,7 @@ def resolve_docs(
     classification_evidence: str = "",
     request_text: str = "",
     surface_paths: Optional[list[str]] = None,
+    project_root: Path | None = None,
 ) -> dict[str, object]:
     profile = COMMANDS[command]
     docs: list[str] = [*CORE_DOCS, *profile.docs]
@@ -139,7 +142,11 @@ def resolve_docs(
         if concern in BASELINE_CONCERNS:
             notes.append(f"Concern `{concern}` is {BASELINE_CONCERNS[concern]}")
 
-    gates = route_gates(command)
+    graphify_requested = "graphify" in concerns or any(
+        match["name"] in {"target_project_graphify", "graphify_integration"}
+        for match in surface_matches
+    )
+    gates = route_gates(command, graphify_required=graphify_requested)
     if command not in QUESTION_ROUTE_COMMANDS:
         gates = ["request intake", *gates]
 
@@ -165,6 +172,29 @@ def resolve_docs(
         notes.append(
             "Expanded related candidate docs from the local document graph; explicit `requires_docs` edges become required docs."
         )
+
+    graphify_readiness = None
+    blocking: list[str] = []
+    if graphify_requested:
+        if project_root:
+            graphify_readiness = {
+                "requested": True,
+                "project": str(project_root),
+                **inspect_target_graphify(project_root),
+            }
+        else:
+            graphify_readiness = {
+                "requested": True,
+                "project": None,
+                "ready": False,
+            }
+            blocking.append(
+                "Graphify readiness cannot be assessed without --project <TARGET_REPO>."
+            )
+        if project_root and not graphify_readiness["ready"]:
+            notes.append(
+                "Target-project Graphify is incomplete. The graphify readiness gate must prove CLI, the read canonical SKILL.md, runtime links resolving to it, portable Git ownership, project integration, graph, and query smoke before handoff."
+            )
 
     route = {
         "root": str(ROOT),
@@ -194,6 +224,7 @@ def resolve_docs(
         ],
         "notes": notes,
         "missing": missing,
+        "blocking": blocking,
     }
     if surface_paths:
         route["surface_paths"] = surface_paths
@@ -201,6 +232,8 @@ def resolve_docs(
         route["doc_surface_matches"] = surface_matches
     if doc_graph_matches:
         route["doc_graph_matches"] = doc_graph_matches
+    if graphify_readiness:
+        route["target_project_graphify"] = graphify_readiness
     return route
 
 
@@ -228,8 +261,15 @@ def route_required_docs(
     return unique(canonical_doc_path(doc) for doc in docs)
 
 
-def route_gates(command: str) -> list[str]:
+def route_gates(command: str, *, graphify_required: bool = False) -> list[str]:
     gates = add_automatic_gates(command, list(COMMANDS[command].gates))
+    if graphify_required and "graphify readiness" not in gates:
+        for anchor in ("verify", "verification", "handoff", "report"):
+            if anchor in gates:
+                gates.insert(gates.index(anchor), "graphify readiness")
+                break
+        else:
+            gates.append("graphify readiness")
     if command not in REVIEW_HOOK_REQUIRED_COMMANDS or "review hook" in gates:
         return gates
 

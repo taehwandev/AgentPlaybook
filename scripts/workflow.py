@@ -40,6 +40,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     route = subparsers.add_parser("route", help="Print a workflow route manifest.")
     route.add_argument("command", choices=sorted(COMMANDS), help="Task command profile.")
+    route.add_argument(
+        "--project",
+        help="Target project root used for target-project readiness checks.",
+    )
     route.add_argument("--platform", choices=sorted(PLATFORMS), help="Affected platform.")
     route.add_argument(
         "--concern",
@@ -175,7 +179,8 @@ def print_route(args: argparse.Namespace) -> int:
             )
         return 2
 
-    inferred_concerns = infer_concerns_from_request(args.request or "")
+    intent_text = args.request or args.classification_evidence or ""
+    inferred_concerns = infer_concerns_from_request(intent_text)
     concerns = unique([*args.concern, *inferred_concerns])
     newly_inferred = [concern for concern in inferred_concerns if concern not in args.concern]
 
@@ -186,8 +191,9 @@ def print_route(args: argparse.Namespace) -> int:
         request_classification=request_classification,
         request_classified=args.request_classified,
         classification_evidence=args.classification_evidence or "",
-        request_text=args.request or "",
+        request_text=intent_text,
         surface_paths=args.surface_path,
+        project_root=Path(args.project).resolve() if args.project else None,
     )
     if newly_inferred:
         route["inferred_concerns"] = newly_inferred
@@ -199,7 +205,7 @@ def print_route(args: argparse.Namespace) -> int:
         print(json.dumps(route, indent=2, sort_keys=True))
     else:
         print_markdown(route)
-    return 1 if route["missing"] else 0
+    return 1 if route["missing"] or route.get("blocking") else 0
 
 
 def print_dispatch(args: argparse.Namespace) -> int:
@@ -216,11 +222,12 @@ def print_dispatch(args: argparse.Namespace) -> int:
         unique([*args.concern, *inferred_concerns]),
         request_classification=request_classification,
         request_text=args.request,
+        project_root=Path(args.project).resolve(),
     )
-    if route["missing"]:
-        print("Dispatch route has missing documents:", file=sys.stderr)
-        for doc in route["missing"]:
-            print(f"- {doc}", file=sys.stderr)
+    if route["missing"] or route.get("blocking"):
+        print("Dispatch route is blocked:", file=sys.stderr)
+        for item in [*route["missing"], *(route.get("blocking") or [])]:
+            print(f"- {item}", file=sys.stderr)
         return 1
     try:
         manifest = build_dispatch_manifest(

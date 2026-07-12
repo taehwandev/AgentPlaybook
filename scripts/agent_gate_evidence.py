@@ -30,6 +30,15 @@ FIELD_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     ),
     "documentation": ("decision", "target", "reason"),
     "documentation impact": ("artifact", "decision", "reason"),
+    "graphify readiness": (
+        "cli",
+        "skill_doc",
+        "runtime_links",
+        "git_ownership",
+        "project_integration",
+        "graph",
+        "query_smoke",
+    ),
     "multi-agent split decision": ("mode", "reason", "verification"),
     "route docs read": ("takeaway", "next_action"),
     "side-effect audit": ("scope", "result"),
@@ -293,6 +302,15 @@ def synthesize_gate_evidence(
         )
     if gate == "tests":
         return f"test/check run: {fields['check']}; result: {fields['result']}", []
+    if gate == "graphify readiness":
+        return (
+            f"graphify readiness: cli={fields['cli']}; installed and read skill doc="
+            f"{fields['skill_doc']}; runtime links={fields['runtime_links']}; "
+            f"git ownership={fields['git_ownership']}; "
+            f"project integration={fields['project_integration']}; "
+            f"target graph={fields['graph']}; query smoke={fields['query_smoke']}",
+            [],
+        )
     return evidence, []
 
 

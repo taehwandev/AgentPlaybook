@@ -100,6 +100,8 @@ def route_command(args: argparse.Namespace, playbook_root: Path) -> list[str]:
         args.command,
         "--format",
         "json",
+        "--project",
+        str(args.project.resolve()),
     ]
     if args.request_classified:
         command.extend(["--request-classified", "--classification-evidence", args.classification_evidence])
@@ -174,7 +176,8 @@ def route_payload(
             )
         return None, stderr, 2
 
-    inferred_concerns = infer_concerns_from_request(args.request or "")
+    intent_text = args.request or args.classification_evidence or ""
+    inferred_concerns = infer_concerns_from_request(intent_text)
     concerns = unique([*args.concern, *inferred_concerns])
     newly_inferred = [concern for concern in inferred_concerns if concern not in args.concern]
     surface_paths = unique(
@@ -190,8 +193,9 @@ def route_payload(
         request_classification=request_classification,
         request_classified=args.request_classified,
         classification_evidence=args.classification_evidence or "",
-        request_text=args.request or "",
+        request_text=intent_text,
         surface_paths=surface_paths,
+        project_root=args.project.resolve(),
     )
     if newly_inferred:
         route["inferred_concerns"] = newly_inferred
@@ -199,7 +203,7 @@ def route_payload(
         if isinstance(notes, list):
             joined = ", ".join(f"`{concern}`" for concern in newly_inferred)
             notes.append(f"Inferred concern(s) from request keywords: {joined}.")
-    return route, "", 1 if route["missing"] else 0
+    return route, "", 1 if route["missing"] or route.get("blocking") else 0
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:

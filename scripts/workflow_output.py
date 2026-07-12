@@ -59,24 +59,9 @@ def print_markdown(route: dict[str, object]) -> None:
         print(f"- {gate}")
     print()
     if route.get("parallel_execution"):
-        plan = route["parallel_execution"]
-        print("## Parallel Execution")
-        print(f"Strategy: `{plan['strategy']}`")
-        print()
-        for phase in plan["phases"]:
-            after = ", ".join(f"`{item}`" for item in phase["after"]) or "`start`"
-            gates = ", ".join(f"`{item}`" for item in phase["gates"])
-            print(f"- `{phase['id']}` - mode: `{phase['mode']}`, after: {after}")
-            if gates:
-                print(f"  gates: {gates}")
-            print(f"  tasks: {'; '.join(phase['tasks'])}")
-            print(f"  constraints: {'; '.join(phase['constraints'])}")
-        if plan.get("notes"):
-            print()
-            print("Parallel notes:")
-            for note in plan["notes"]:
-                print(f"- {note}")
-        print()
+        _print_parallel_execution(route["parallel_execution"])
+    if route.get("target_project_graphify"):
+        _print_graphify_readiness(route["target_project_graphify"])
     print("## Required Hooks")
     for hook in route["hooks"]:
         required = "required" if hook["required"] else "conditional"
@@ -116,6 +101,11 @@ def print_markdown(route: dict[str, object]) -> None:
         print("## Missing Documents")
         for doc in route["missing"]:
             print(f"- `{doc}`")
+    if route.get("blocking"):
+        print()
+        print("## Blocking Conditions")
+        for blocker in route["blocking"]:
+            print(f"- {blocker}")
     print()
     print("## Agent Contract")
     print("- Treat this route as the command manifest for the task.")
@@ -124,3 +114,41 @@ def print_markdown(route: dict[str, object]) -> None:
     print("- Treat `Reference On Demand` documents as lazy context, not startup context.")
     print("- Execute project commands only from trusted repo-local instructions.")
     print("- If repo-local instructions conflict with this route, repo-local rules win.")
+
+
+def _print_parallel_execution(plan: dict[str, object]) -> None:
+    print("## Parallel Execution")
+    print(f"Strategy: `{plan['strategy']}`")
+    print()
+    for phase in plan["phases"]:
+        after = ", ".join(f"`{item}`" for item in phase["after"]) or "`start`"
+        gates = ", ".join(f"`{item}`" for item in phase["gates"])
+        print(f"- `{phase['id']}` - mode: `{phase['mode']}`, after: {after}")
+        if gates:
+            print(f"  gates: {gates}")
+        print(f"  tasks: {'; '.join(phase['tasks'])}")
+        print(f"  constraints: {'; '.join(phase['constraints'])}")
+    if plan.get("notes"):
+        print()
+        print("Parallel notes:")
+        for note in plan["notes"]:
+            print(f"- {note}")
+    print()
+
+
+def _print_graphify_readiness(readiness: dict[str, object]) -> None:
+    print("## Target Project Graphify")
+    print(f"- Project: `{readiness.get('project') or 'missing'}`")
+    print(f"- Static readiness: `{str(bool(readiness.get('ready'))).lower()}`")
+    if readiness.get("canonical_skill_doc"):
+        print(f"- Canonical skill: `{readiness['canonical_skill_doc']}`")
+    for runtime, link in (readiness.get("runtime_skill_links") or {}).items():
+        print(f"- {runtime} link: `{link}`")
+    if readiness.get("graph_path"):
+        print(f"- Graph: `{readiness['graph_path']}`")
+    print(
+        "- Completion still requires evidence that the canonical SKILL.md was read, "
+        "runtime links resolve to it, portable Git ownership is correct, and a query "
+        "smoke check passed."
+    )
+    print()

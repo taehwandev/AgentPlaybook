@@ -34,6 +34,7 @@ from agent_gate_evidence import (
     record_gate_evidence,
     record_many_gate_evidence,
     reset_gate_evidence_ledger,
+    synthesize_gate_evidence,
 )
 from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_global_lessons import lesson_summary, write_retrospective_candidate
@@ -1129,6 +1130,131 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(route_doc("common/skills/ci-cd-automation/SKILL.md"), route["required_docs"])
         self.assertIn("doc_surface_matches", route)
         self.assertTrue(any(match["name"] == "workflow_router" for match in route["doc_surface_matches"]))
+
+    def test_graphify_request_records_selected_project_readiness(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            route = resolve_docs(
+                "task",
+                None,
+                [],
+                request_classified=True,
+                request_text="Set up Graphify for the target project.",
+                project_root=project,
+            )
+
+        self.assertIn(route_doc("docs/skills/agent-bootstrap/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("docs/skills/graphify-project-integration/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("common/skills/llm-wiki-documentation/SKILL.md"), route["required_docs"])
+        self.assertEqual(False, route["target_project_graphify"]["ready"])
+        self.assertIn("graphify readiness", route["gates"])
+        self.assertTrue(any(match["name"] == "target_project_graphify" for match in route["doc_surface_matches"]))
+
+    def test_graphify_path_surface_promotes_readiness_docs(self) -> None:
+        route = resolve_docs(
+            "task",
+            None,
+            [],
+            request_classified=True,
+            surface_paths=["scripts/support/setup_agent_hooks_impl.py"],
+        )
+
+        self.assertIn(route_doc("docs/skills/agent-bootstrap/SKILL.md"), route["required_docs"])
+        self.assertIn(route_doc("docs/skills/graphify-project-integration/SKILL.md"), route["required_docs"])
+        self.assertIn("graphify readiness", route["gates"])
+        self.assertTrue(any(match["name"] == "graphify_integration" for match in route["doc_surface_matches"]))
+
+    def test_classified_graphify_evidence_still_infers_route_concern(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "route",
+                "workflow-setup",
+                "--project",
+                str(ROOT),
+                "--request-classified",
+                "--classification-evidence",
+                "answered direct question; separate actionable clear-scoped Graphify project install and readiness workflow",
+                "--format",
+                "json",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        route = json.loads(result.stdout)
+        self.assertIn("graphify", route["inferred_concerns"])
+        self.assertIn("graphify readiness", route["gates"])
+        self.assertIn(
+            route_doc("docs/skills/graphify-project-integration/SKILL.md"),
+            route["required_docs"],
+        )
+
+    def test_graphify_readiness_gate_requires_all_structured_fields(self) -> None:
+        evidence, missing = synthesize_gate_evidence(
+            "graphify readiness",
+            "",
+            {
+                "cli": "graphify resolved",
+                "skill_doc": ".agentplaybook/skills/graphify/SKILL.md read",
+                "runtime_links": "Codex Claude and AGY links resolve to canonical skill",
+                "git_ownership": "canonical files and runtime symlinks tracked portably",
+                "project_integration": "AGENTS section and Codex hook present",
+                "graph": "target graphify-out/graph.json present",
+                "query_smoke": "graphify query succeeded",
+            },
+            {},
+        )
+
+        self.assertEqual([], missing)
+        self.assertEqual([], validate_gate_evidence({"graphify readiness": evidence}, ["graphify readiness"]))
+
+        failures = validate_gate_evidence(
+            {
+                "graphify readiness": (
+                    "cli=resolved; skill doc=read; runtime links=canonical; "
+                    "git ownership=portable; project integration=installed; "
+                    "target graph=present; query smoke=failed"
+                )
+            },
+            ["graphify readiness"],
+        )
+        self.assertTrue(any("incomplete condition" in failure for failure in failures))
+
+        _, missing = synthesize_gate_evidence(
+            "graphify readiness",
+            "",
+            {
+                "cli": "graphify resolved",
+                "skill_doc": "skill read",
+                "runtime_links": "links resolve to canonical",
+                "git_ownership": "canonical files and symlinks tracked",
+                "project_integration": "hook present",
+                "graph": "graph present",
+            },
+            {},
+        )
+        self.assertEqual(["query_smoke"], missing)
+
+        _, missing = synthesize_gate_evidence(
+            "graphify readiness",
+            "",
+            {
+                "cli": "graphify resolved",
+                "skill_doc": "skill read",
+                "runtime_links": "links resolve to canonical",
+                "project_integration": "hook present",
+                "graph": "graph present",
+                "query_smoke": "query passed",
+            },
+            {},
+        )
+        self.assertEqual(["git_ownership"], missing)
 
     def test_request_path_surface_promotes_docs_without_explicit_keyword(self) -> None:
         route = resolve_docs(
