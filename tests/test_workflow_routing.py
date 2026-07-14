@@ -102,7 +102,7 @@ from workflow_doc_graph import (
 )
 from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import resolve_docs
-from workflow_search import search_docs
+from workflow_search import search_docs, search_docs_outcome
 from workflow_skill_paths import canonical_doc_path
 from workflow_spill import spill_tool_label, validate_spill_label_contracts
 from workflow import build_parser, print_dispatch
@@ -1506,6 +1506,21 @@ class WorkflowRoutingTests(unittest.TestCase):
             results,
         )
 
+    def test_query_uses_wikimap_section_results_behind_existing_api(self) -> None:
+        outcome = search_docs_outcome(
+            ROOT,
+            "When may documentation be skipped with user approval?",
+            max_results=8,
+        )
+
+        self.assertEqual("wikimap", outcome.backend)
+        self.assertEqual("1.0.0", outcome.backend_version)
+        self.assertTrue(outcome.results)
+        self.assertTrue(
+            any(item.get("line") and item.get("heading") for item in outcome.results),
+            outcome.results,
+        )
+
     def test_query_expands_android_ui_natural_language_to_compose_docs(self) -> None:
         results = search_docs(
             ROOT,
@@ -1535,6 +1550,13 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(route_doc("common/skills/task-intake-effort-routing/SKILL.md"), route["required_docs"])
         self.assertIn(route_doc("common/skills/source-driven-development/SKILL.md"), route["required_docs"])
         self.assertTrue(any(match["name"] == "natural_language_doc_routing" for match in route["doc_surface_matches"]))
+        self.assertEqual("wikimap", route["document_search"]["backend"])
+        self.assertTrue(route["document_search"]["candidates"])
+        self.assertTrue(
+            set(route["document_search"]["candidates"]).issubset(
+                set(route["required_docs"]) | set(route["reference_docs"])
+            )
+        )
 
     def test_planning_change_request_promotes_documentation_impact_docs(self) -> None:
         route = resolve_docs(

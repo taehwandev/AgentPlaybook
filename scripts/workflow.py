@@ -29,7 +29,7 @@ from workflow_request import (
 )
 from workflow_output import print_markdown
 from workflow_route import resolve_docs
-from workflow_search import print_query_results, search_docs
+from workflow_search import print_query_results, search_docs_outcome
 from workflow_spill import spill_label_for_args, write_spill_label
 from workflow_validate import validate
 
@@ -132,11 +132,25 @@ def print_supported_values() -> None:
 
 def print_query(args: argparse.Namespace) -> int:
     query_str = " ".join(args.terms)
-    results = search_docs(ROOT, query_str, max_results=args.max_results)
+    outcome = search_docs_outcome(ROOT, query_str, max_results=args.max_results)
     if args.format == "json":
-        print(json.dumps({"query": query_str, "results": results}, indent=2))
+        print(
+            json.dumps(
+                {
+                    "query": query_str,
+                    "backend": outcome.backend,
+                    "backend_version": outcome.backend_version,
+                    "fallback_reason": outcome.fallback_reason,
+                    "weak": outcome.weak,
+                    "partial": outcome.partial,
+                    "fused": outcome.fused,
+                    "results": outcome.results,
+                },
+                indent=2,
+            )
+        )
     else:
-        print_query_results(query_str, results)
+        print_query_results(query_str, outcome.results)
     return 0
 
 

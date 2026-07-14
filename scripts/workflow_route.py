@@ -26,7 +26,9 @@ from workflow_doc_graph import expand_doc_matches, graph_required_docs
 from workflow_gate_policy import add_automatic_gates, automatic_docs
 from workflow_doc_surfaces import infer_surface_docs
 from workflow_parallel import parallel_execution_plan
+from workflow_search import SearchOutcome, search_docs_outcome
 from workflow_skill_paths import canonical_doc_path
+from workflow_wikimap import WIKIMAP_VERSION
 
 
 CORE_REQUIRED_DOCS = (
@@ -111,9 +113,15 @@ def resolve_docs(
         request_text=request_text,
         surface_paths=surface_paths or [],
     )
+    search_outcome = (
+        search_docs_outcome(ROOT, request_text, max_results=12)
+        if request_text.strip()
+        else SearchOutcome(results=[], backend="wikimap", backend_version=WIKIMAP_VERSION)
+    )
+    search_seed_docs = [str(item["path"]) for item in search_outcome.results]
     doc_graph_matches = expand_doc_matches(
         ROOT,
-        surface_docs,
+        unique([*surface_docs, *search_seed_docs]),
         max_depth=1,
         max_docs=24,
         relation_prefixes=("frontmatter:", "markdown:", "compat:"),
@@ -121,6 +129,7 @@ def resolve_docs(
     graph_docs = [str(match["path"]) for match in doc_graph_matches]
     graph_required = graph_required_docs(doc_graph_matches)
     docs.extend(surface_docs)
+    docs.extend(search_seed_docs)
     docs.extend(graph_docs)
 
     if platform:
@@ -167,6 +176,14 @@ def resolve_docs(
     if surface_matches:
         notes.append(
             "Promoted required docs from request intent or touched path surfaces using `workflow-doc-surfaces.json`."
+        )
+    if search_seed_docs:
+        notes.append(
+            "Wikimap supplied natural-language seed documents to the router; seeds remain reference candidates unless an explicit route rule or required relation promotes them."
+        )
+    if search_outcome.fallback_reason:
+        notes.append(
+            "Wikimap was unavailable for this route, so the local legacy scorer supplied recovery candidates."
         )
     if doc_graph_matches:
         notes.append(
@@ -232,6 +249,15 @@ def resolve_docs(
         route["doc_surface_matches"] = surface_matches
     if doc_graph_matches:
         route["doc_graph_matches"] = doc_graph_matches
+    route["document_search"] = {
+        "backend": search_outcome.backend,
+        "backend_version": search_outcome.backend_version,
+        "fallback_reason": search_outcome.fallback_reason,
+        "weak": search_outcome.weak,
+        "partial": search_outcome.partial,
+        "fused": search_outcome.fused,
+        "candidates": search_seed_docs,
+    }
     if graphify_readiness:
         route["target_project_graphify"] = graphify_readiness
     return route

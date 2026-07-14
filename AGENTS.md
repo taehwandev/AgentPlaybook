@@ -231,10 +231,14 @@ graph relations become `reference_docs`; only explicit required relations such
 as frontmatter `requires_docs` may promote an additional doc to `required_docs`.
 
 Natural-language document discovery is a router responsibility, not a hook
-responsibility. Hooks must enforce preflight, docs-read receipts, and finish
-evidence, but the router/search layer must expand vague task language such as
-cleanup, review, screen work, or document routing into reusable task facets and
-candidate required docs before the hook gate runs.
+responsibility. The router/search layer uses the repository-pinned Wikimap
+backend to incrementally index AgentPlaybook guidance without a model or network
+call, then overlays explicit workflow facets and the local document graph.
+Wikimap matches are candidate/reference seeds; only route policy or an explicit
+required-doc relation promotes a required document. Hooks enforce preflight,
+docs-read receipts, and finish evidence, but they do not run search logic or
+mutate the route. Target-project code, architecture, and relationship analysis
+remain Graphify responsibilities.
 
 Discover valid commands, platforms, and concerns with:
 
@@ -248,14 +252,17 @@ When the right document is not obvious from `index.md`, search by keyword:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py query <keyword> [<keyword> ...]
 ```
 
-The query command ranks all playbook documents by relevance and returns the top
-matches with one-line descriptions. It works tool-agnostically and requires no
-external dependencies. It may also expand natural-language task descriptions
-into reusable facets such as code cleanup, change review, verification, UI
-feature work, skill docs, or document routing, then use the local document
-graph to surface connected skill entrypoints and references. Use it instead of
-reading all of `index.md` when the concern is narrow or the document name is
-unknown. Then load only the matched documents relevant to the task.
+The query command uses the pinned Wikimap source to return exact sections and
+lines, while preserving the existing `workflow.py query` interface. It requires
+no separate install, model call, or network access at query time; its disposable
+SQLite cache stays under ignored `.wikimap/`. Explicit AgentPlaybook facets
+remain a policy overlay for phrases such as code cleanup, change review,
+verification, UI feature work, skill docs, or document routing, and the local
+document graph surfaces connected skill entrypoints and references. If Wikimap
+cannot run or its checksum is invalid, the command falls back to the prior local
+scorer and reports that backend in structured output. Use it instead of reading
+all of `index.md` when the concern is narrow or the document name is unknown.
+Then load only the matched documents relevant to the task.
 
 The route output contains `request_classification`, `docs`, `required_docs`,
 `reference_docs`, `gates`, `gate_ledger`, `attempt_limit`, `retry_limit`,

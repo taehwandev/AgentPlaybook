@@ -525,24 +525,34 @@ replace request classification, command/profile selection, repo-local
 instructions, or the requirement to record a task-specific docs-read takeaway
 before edits.
 
-The route/search layer also maintains a local document graph derived from
-Markdown links, canonical skill-bundle entrypoints, and
-`workflow-doc-surfaces.json` document sets. Natural-language matching should
-identify seed documents; graph expansion should then surface directly connected
-skill entrypoints, detailed references, and explicit document dependencies.
-Treat ordinary graph links as
-`reference_docs` so broad surfaces do not overload required reading. Promote a
-graph neighbor to `required_docs` only when the source declares an explicit
-required relation such as frontmatter `requires_docs`.
+The route/search layer uses the repository-pinned Wikimap source for
+deterministic, incremental section retrieval over AgentPlaybook guidance. It
+runs only `update --no-map` and `search --json`; do not wire Wikimap install,
+hook, migration, semantic-note, source-editing, or Graphify-import commands into
+the workflow. The ignored `.wikimap/` SQLite index is disposable. The pinned
+source checksum is verified by the local adapter; provenance and license are
+covered by the vendor manifest and integration tests. The previous in-process
+scorer remains a reported recovery path when Wikimap cannot run.
+
+Wikimap candidates are natural-language seed documents, not automatic policy.
+Explicit task facets and `workflow-doc-surfaces.json` continue to select
+deterministic required guidance. The local document graph, derived from
+Markdown links, canonical skill-bundle entrypoints, and surface document sets,
+expands the combined seeds into connected skill entrypoints, detailed
+references, and explicit dependencies. Treat Wikimap seeds and ordinary graph
+links as `reference_docs` so broad surfaces do not overload required reading.
+Promote a result to `required_docs` only through deterministic route policy or
+an explicit required relation such as frontmatter `requires_docs`.
 
 Natural-language document discovery belongs in the routing/search layer, not in
 the hook body. Hooks are enforcement points: they stop work until preflight,
 docs-read receipts, and finish evidence exist. The router and `workflow.py
-query` must carry the retrieval burden by expanding vague task language into
-reusable facets such as cleanup, review, verification, UI feature work, skill
-docs, or document routing, using the local document graph to add connected
-candidates, then returning candidate `required_docs` and `reference_docs`
-before the hook gate checks whether they were actually read.
+query` carry retrieval through Wikimap, then apply reusable policy facets such
+as cleanup, review, verification, UI feature work, skill docs, or document
+routing and use the local document graph to add connected candidates. Target
+projects continue to use Graphify for code symbols, architecture, and
+relationships; Wikimap does not replace the project graph or its readiness
+gate.
 
 The command includes task-specific arguments, but persistent runtime permission
 prefixes must not. For Codex escalation, request only

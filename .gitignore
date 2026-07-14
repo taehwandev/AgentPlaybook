@@ -25,6 +25,10 @@ build/
 # VibeGuard local state
 .vibeguard/
 
+# Wikimap document-search index. Source docs and the pinned adapter stay tracked;
+# the deterministic SQLite cache is rebuilt locally by workflow.py.
+.wikimap/
+
 # Graphify local cache/runtime state. Keep current curated graph outputs visible.
 graphify-out/cache/
 graphify-out/.graphify_*
