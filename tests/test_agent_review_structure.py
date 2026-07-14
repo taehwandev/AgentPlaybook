@@ -11,11 +11,34 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_review_structure import changed_source_paths, check_file_size
+from agent_review_structure import changed_source_paths, check_file_size, review_source_path
 from agent_structure_rules import structure_rule_review
 
 
 class AgentReviewStructureTests(unittest.TestCase):
+    def test_pinned_third_party_source_is_outside_human_authored_size_gates(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            source = project / "scripts" / "third_party" / "engine" / "engine.py"
+            source.parent.mkdir(parents=True)
+            source.write_text("value = 1\n", encoding="utf-8")
+            (source.parent / "LICENSE").write_text("license\n", encoding="utf-8")
+            (source.parent / "README.md").write_text(
+                "Upstream: example\nCommit: abc\nSHA-256: 123\nLicense: MIT\n",
+                encoding="utf-8",
+            )
+
+            self.assertFalse(review_source_path(project, source.relative_to(project)))
+
+    def test_unprovenanced_third_party_source_stays_in_structure_review(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            source = project / "scripts" / "third_party" / "engine" / "engine.py"
+            source.parent.mkdir(parents=True)
+            source.write_text("value = 1\n", encoding="utf-8")
+
+            self.assertTrue(review_source_path(project, source.relative_to(project)))
+
     def test_changed_source_paths_can_be_limited_to_review_pathspec(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)

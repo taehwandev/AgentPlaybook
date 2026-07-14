@@ -83,6 +83,15 @@ tests, specs, mocks, fixtures, generated files, config/build files, and docs are
 reviewable but exempt from the hard size gates unless a repo-local rule opts
 them in:
 
+Pinned third-party source is also exempt from human-authored file and function
+size gates only when it is isolated under a purpose-named `third_party`
+boundary, copied byte-for-byte from one reviewed version, accompanied by its
+license and provenance/checksum, and consumed through a narrow local adapter.
+Local wrappers, patches, forks, and handwritten integration code remain subject
+to the normal gates. Supply-chain, license, source-integrity, and behavior tests
+replace size enforcement for the untouched upstream file; the exemption is not
+permission to hide first-party code under `third_party`.
+
 - Functions, methods, components, hooks, reducers, handlers, jobs, and scripts
   should be small enough to scan in one pass. About 40 to 80 lines is a normal
   review budget for orchestration code; over about 120 lines in runtime code is

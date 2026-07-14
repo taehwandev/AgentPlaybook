@@ -53,7 +53,7 @@ REVIEW_SOURCE_EXTENSIONS = {
 REVIEW_STYLE_EXTENSIONS = {".css", ".scss", ".sass"}
 STRUCTURE_REVIEW_SCOPE_NOTE = (
     "checks only changed files in the development-file extension allowlist; tests, "
-    "fixtures, mocks, specs, generated files, config/build files, Markdown, MDX, "
+    "fixtures, mocks, specs, generated or pinned third-party files, config/build files, Markdown, MDX, "
     "and prose docs are excluded from runtime hard gates"
 )
 REVIEW_SKIP_PARTS = {
@@ -304,6 +304,7 @@ def review_source_path(project: Path, path: Path) -> bool:
         path.suffix.lower() in REVIEW_SOURCE_EXTENSIONS
         and not any(part in REVIEW_SKIP_PARTS for part in path.parts)
         and not config_or_generated_path(path)
+        and not pinned_third_party_source(project, path)
         and absolute.exists()
         and absolute.is_file()
     )
@@ -316,6 +317,28 @@ def config_or_generated_path(path: Path) -> bool:
 
     name = path.name.lower()
     return name in REVIEW_CONFIG_FILE_NAMES or name.endswith(REVIEW_CONFIG_SUFFIXES)
+
+
+def pinned_third_party_source(project: Path, path: Path) -> bool:
+    """Recognize an isolated vendor package only when provenance is present."""
+    lower_parts = [part.lower() for part in path.parts]
+    try:
+        boundary = lower_parts.index("third_party")
+    except ValueError:
+        return False
+    if boundary + 1 >= len(path.parts):
+        return False
+
+    package = project.joinpath(*path.parts[: boundary + 2])
+    readme = package / "README.md"
+    license_file = package / "LICENSE"
+    if not readme.is_file() or not license_file.is_file():
+        return False
+    try:
+        provenance = readme.read_text(encoding="utf-8", errors="ignore").lower()
+    except OSError:
+        return False
+    return all(marker in provenance for marker in ("upstream", "commit", "sha-256", "license"))
 
 
 def test_exempt_path(path: Path) -> bool:
