@@ -504,6 +504,9 @@ class SetupAgentHooksTests(unittest.TestCase):
             adapter = project / ".codex" / "hooks.json"
             adapter.parent.mkdir()
             adapter.write_text('{"graphify": true}', encoding="utf-8")
+            nested_evidence = project / "scripts" / ".agentplaybook" / "preflight.json"
+            nested_evidence.parent.mkdir(parents=True)
+            nested_evidence.write_text('{"runtime": true}', encoding="utf-8")
 
             adapter_only = inspect_project_graph_state(project, graph)
             extra_source = project / "src" / "extra.py"
@@ -799,6 +802,19 @@ class SetupAgentHooksTests(unittest.TestCase):
             ["antigravity", "claude", "codex"],
             graphify_platforms_for_runtimes({"agy", "claude", "codex"}),
         )
+
+    def test_gemini_binary_selects_existing_agy_adapter(self) -> None:
+        from support.setup_agent_hooks_impl import _has_agy
+
+        with tempfile.TemporaryDirectory() as temp_home:
+            def which(command: str) -> str | None:
+                return "/tmp/gemini" if command == "gemini" else None
+
+            with (
+                patch("support.setup_agent_hooks_impl.Path.home", return_value=Path(temp_home)),
+                patch("support.setup_agent_hooks_impl.shutil.which", side_effect=which),
+            ):
+                self.assertTrue(_has_agy())
 
     def test_stable_launcher_records_current_root_under_user_home(self) -> None:
         with tempfile.TemporaryDirectory() as temp_home:

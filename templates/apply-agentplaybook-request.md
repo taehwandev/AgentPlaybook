@@ -221,12 +221,12 @@ managed hooks, prefer the stable `~/.agentplaybook/bin/agentplaybook-hook`
 launcher plus the refreshed root pointer over a moving checkout's absolute
 `scripts/workflow.py` path.
 The setup command should install or repair the managed bridge block for Codex,
-Claude, and Antigravity when those runtimes are present.
+Claude, and Gemini/Antigravity/AGY when those runtimes are present.
 
 Update the active user-level file for the runtime I choose:
 Codex -> ~/.codex/AGENTS.md
 Claude -> ~/.claude/CLAUDE.md
-Antigravity -> ~/.antigravity/AGENTS.md
+Gemini/Antigravity/AGY -> ~/.antigravity/AGENTS.md
 Antigravity SDK/IDE variants -> check ~/.antigravity-ide for the instruction
 file the active runtime loads.
 

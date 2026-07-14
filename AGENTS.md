@@ -285,6 +285,17 @@ workflow validation, or hooks, or hand off the blocker before continuing. See
 `workflows/skills/scripted-agent-workflow/SKILL.md` for the full consumption
 rules.
 
+Consume the route's `parallel_execution.delegation_policy` as an execution
+contract, not a suggestion. When the runtime exposes subagents or parallel
+workers and at least two meaningful slices have disjoint owned/forbidden scopes,
+a stable contract, an integration owner, and focused verification, delegate
+automatically without waiting for the user to request multi-agent work. Load
+`workflows/skills/multi-agent-collaboration/SKILL.md` before making that decision.
+If the work stays serial, record the concrete safety or capability reason;
+missing explicit user wording is not a serial reason. A model-profile
+`dispatch --execute` call is one bounded leaf worker and never substitutes for
+the parent agent's split decision or eligible fanout.
+
 For local commit creation or commit preparation, use the lightweight `commit`
 route, or `git_commit` when the runtime labels the task that way. Do not route
 a clear commit request through `review`, `task`, or `triage` unless the request
@@ -487,8 +498,8 @@ domain language in the repo-local instructions.
 
 Keep reusable agent knowledge single-owned and provider-neutral. Runtime files
 are thin adapters or pointers unless behavior is genuinely runtime-specific;
-do not maintain parallel Codex, Claude, or Antigravity/AGY copies of the same
-operational rule or skill. Follow
+do not maintain parallel Codex, Claude, or Gemini/Antigravity/AGY copies of the
+same operational rule or skill. Follow
 `docs/skills/agentplaybook-skill-bundle-migration/references/source-of-truth-ownership.md`
 for the canonical ownership and duplicate-audit rule.
 

@@ -1836,7 +1836,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertEqual([], validate_parallel_execution_plan(route["parallel_execution"], route["gates"]))
         self.assertEqual("serial", phases["scoping"]["mode"])
         self.assertIn(AGENTIC_RUN_STATE_GATE, phases["scoping"]["gates"])
-        self.assertEqual("conditional_parallel", phases["worker_execution"]["mode"])
+        self.assertEqual("parallel", phases["worker_execution"]["mode"])
         self.assertIn("roles", phases["worker_execution"]["gates"])
         self.assertIn("write scopes", phases["worker_execution"]["gates"])
         self.assertEqual("serial", phases["integration_review"]["mode"])

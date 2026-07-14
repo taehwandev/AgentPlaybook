@@ -19,6 +19,16 @@ Use when routed to `workflows/skills/multi-agent-collaboration/SKILL.md` or when
 2. Open `references/current-guidance.md` only when the task actually touches this area.
 3. Follow the reference's decision rules, stop conditions, and verification requirements before editing, reviewing, or reporting completion.
 
+## Delegation Rule
+
+When a route requires this skill, consume its `parallel_execution` policy. If
+the runtime exposes workers and two or more meaningful slices meet the detailed
+scope, contract, integration, and verification rules, delegate automatically;
+explicit user multi-agent wording is not required. Otherwise record the
+concrete serial reason. Map the execution primitive to the active runtime:
+Codex native workers, Claude Agent/Task workers, or the available
+Gemini/Antigravity/AGY agent runner.
+
 ## Do Not
 
 - Do not look for legacy flat compatibility paths; load this skill bundle as the canonical context-loading target.

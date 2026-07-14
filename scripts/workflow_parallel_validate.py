@@ -14,6 +14,7 @@ def validate_parallel_execution_plan(plan: object, gates: list[str]) -> list[str
         failures.append("parallel_execution.schema_version must be 1")
     if not isinstance(plan.get("strategy"), str) or not plan["strategy"].strip():
         failures.append("parallel_execution.strategy must be a non-empty string")
+    _validate_delegation_policy(plan.get("delegation_policy"), failures)
 
     phases = plan.get("phases")
     if not isinstance(phases, list) or not phases:
@@ -31,6 +32,33 @@ def validate_parallel_execution_plan(plan: object, gates: list[str]) -> list[str
             _validate_string_list(phase, key, phase_id, failures)
         _validate_phase_gates(phase, phase_id, route_gates, failures)
     return failures
+
+
+def _validate_delegation_policy(policy: object, failures: list[str]) -> None:
+    if not isinstance(policy, dict):
+        failures.append("parallel_execution.delegation_policy must be an object")
+        return
+    if policy.get("mode") != "automatic_when_eligible":
+        failures.append(
+            "parallel_execution.delegation_policy.mode must be automatic_when_eligible"
+        )
+    if policy.get("explicit_user_request_required") is not False:
+        failures.append(
+            "parallel_execution.delegation_policy.explicit_user_request_required must be false"
+        )
+    minimum = policy.get("minimum_independent_slices")
+    if not isinstance(minimum, int) or isinstance(minimum, bool) or minimum < 2:
+        failures.append(
+            "parallel_execution.delegation_policy.minimum_independent_slices must be at least 2"
+        )
+    for key in ("required_preconditions", "serial_fallbacks"):
+        value = policy.get(key)
+        if not isinstance(value, list) or not value or not all(
+            isinstance(item, str) and item.strip() for item in value
+        ):
+            failures.append(
+                f"parallel_execution.delegation_policy.{key} must be a non-empty string list"
+            )
 
 
 def _validate_phase_header(

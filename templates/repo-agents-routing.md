@@ -6,12 +6,12 @@ type: ai-generated
 
 # Repo Agent Routing Template
 
-Add this to repo-local agent instructions for Codex, Claude, Antigravity, or
-another coding agent runtime. Prefer `AGENTS.md` as the canonical file when the
-runtime reads it. If `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, or
-Antigravity CLI docs already exist, update their pointer in the same pass or
-point them back to `AGENTS.md`; do not create duplicate runtime-specific files
-only for this block.
+Add this to repo-local agent instructions for Codex, Claude,
+Gemini/Antigravity/AGY, or another coding agent runtime. Prefer `AGENTS.md` as
+the canonical file when the runtime reads it. If `CLAUDE.md`, `CODEX.md`,
+`.agents/README.md`, or Antigravity CLI docs already exist, update their pointer
+in the same pass or point them back to `AGENTS.md`; do not create duplicate
+runtime-specific files only for this block.
 
 ```text
 Shared AgentPlaybook library:
@@ -37,9 +37,9 @@ behavior; runtime launch options define filesystem scope. Explicitly read the
 current target project's
 instruction file for this runtime before using AgentPlaybook: Codex-style
 agents read `AGENTS.md`, Claude reads `CLAUDE.md` when
-present, Codex-specific setups read `CODEX.md` when present, Antigravity reads
-`AGENTS.md`, and generic agents read their configured project instruction
-document or `.agents/README.md` when used.
+present, Codex-specific setups read `CODEX.md` when present,
+Gemini/Antigravity/AGY reads `AGENTS.md`, and generic agents read their
+configured project instruction document or `.agents/README.md` when used.
 If the request names a product/workspace alias that may map to multiple repos,
 use the local `~/.agentplaybook/projects.json` workspace group when available.
 Do not guess a single repo from the alias alone. If work starts in one primary
@@ -79,6 +79,16 @@ route `required_docs` before editing or reviewing; and treat graph neighbors as
 `reference_docs` unless the route promotes them to `required_docs`. If
 routing/search misses a clearly relevant platform, concern, or document
 surface, stop and report the gap instead of proceeding from memory.
+After routing, preflight, and required-doc reading, consume
+`parallel_execution.delegation_policy`. When the runtime exposes workers and
+the multi-agent collaboration skill identifies at least two meaningful slices
+with disjoint scopes, a stable contract, an integration owner, and focused
+verification, delegate automatically without waiting for explicit user
+multi-agent wording. Use Codex native workers, Claude Agent/Task workers, or
+the Gemini/AGY Antigravity agent runner according to the active runtime.
+Otherwise record the concrete serial reason. A Codex `dispatch --execute` call
+is one bounded leaf worker, not fanout; the parent must make the split decision
+first.
 If the direct question asks how to start app, product, or feature work, answer
 with the PRD -> ARD -> implementation path before lower-level coding steps. If
 the work then proceeds into code, use the `product` route unless an existing
@@ -87,9 +97,9 @@ Baseline documentation enforcement (the `documentation` gate always runs and is
 non-empty, `unchanged` needs inspection proof, skipping docs needs recorded user
 approval, and a `triage`/`plan` roadmap needs `product route re-entry` with PRD
 coverage) is enforced centrally by the shared AgentPlaybook finish-check and is
-identical across Codex, Claude, and Antigravity. Do not duplicate or restate
-these rules in repo-local files; keep only this pointer. The source of truth and
-the exception process are
+identical across Codex, Claude, and Gemini/Antigravity/AGY.
+Do not duplicate or restate these rules in repo-local files; keep only this
+pointer. The source of truth and the exception process are
 `<AGENTPLAYBOOK_ROOT>/workflows/skills/documentation-update/SKILL.md`; add
 exceptions there rather than self-judging, and load that card in Grill-Me or
 self-review before completion.

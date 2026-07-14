@@ -7,12 +7,20 @@ import json
 from pathlib import Path
 from typing import Any
 
+from agent_delegation_plan import (
+    MULTI_AGENT_ROUTE_GATES,
+    read_delegation_plan,
+    validate_delegation_plan_evidence,
+)
 from agent_gate_evidence import (
+    missing_structured_gate_fields,
     parse_field,
     record_gate_evidence,
     record_many_gate_evidence,
     reset_gate_evidence_ledger,
+    synthesize_gate_evidence,
 )
+from agent_finish_gate_policy import MULTI_AGENT_GATE
 from agent_hook_runtime import finish_with_result, print_status
 
 
@@ -38,7 +46,7 @@ def gate_hook(args: argparse.Namespace) -> int:
             args.source,
             args.status,
         )
-    except (OSError, json.JSONDecodeError) as error:
+    except (OSError, json.JSONDecodeError, ValueError) as error:
         print_status("gate", False, [f"gate evidence ledger update failed: {error}"])
         return 1
     return finish_with_result(
@@ -82,6 +90,14 @@ def record_hook_gate(
 ) -> dict[str, Any]:
     evidence_path = preflight_evidence_path(args)
     preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
+    record = {
+        "gate": gate,
+        "evidence": evidence,
+        "fields": fields,
+        "status": status,
+        "source": source,
+    }
+    _validate_records_before_write(args, preflight, [record])
     return record_gate_evidence(
         evidence_path=evidence_path,
         preflight=preflight,
@@ -99,6 +115,7 @@ def record_hook_gate_batch(
 ) -> list[dict[str, Any]]:
     evidence_path = preflight_evidence_path(args)
     preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
+    _validate_records_before_write(args, preflight, records)
     return record_many_gate_evidence(
         evidence_path=evidence_path,
         preflight=preflight,
@@ -165,3 +182,56 @@ def _normalize_gate_record(payload: Any) -> dict[str, Any]:
         "evidence": str(payload.get("evidence") or payload.get("gate_evidence") or ""),
         "fields": {str(key): str(value) for key, value in fields.items()},
     }
+
+
+def _validate_records_before_write(
+    args: argparse.Namespace,
+    preflight: dict[str, Any],
+    records: list[dict[str, Any]],
+) -> None:
+    route = preflight.get("route") or {}
+    required_gates = [str(gate) for gate in (route.get("gates") or [])]
+    gate_evidence: dict[str, str] = {}
+    validates_delegation_plan = False
+
+    for record in records:
+        if str(record.get("status") or "SUCCESS") != "SUCCESS":
+            continue
+        gate = str(record.get("gate") or "").strip()
+        evidence = str(record.get("evidence") or "")
+        fields = {str(key): str(value) for key, value in (record.get("fields") or {}).items()}
+        missing = missing_structured_gate_fields(gate, evidence, fields)
+        if missing:
+            raise ValueError(
+                f"structured gate record for {gate} missing required fields: "
+                + ", ".join(missing)
+            )
+
+        if gate == MULTI_AGENT_GATE:
+            synthesized, synthesis_failures = synthesize_gate_evidence(
+                gate,
+                evidence,
+                fields,
+                {},
+                route,
+            )
+            if synthesis_failures:
+                raise ValueError(
+                    f"structured gate record for {gate} is incomplete: "
+                    + ", ".join(synthesis_failures)
+                )
+            gate_evidence[gate] = synthesized or evidence
+        else:
+            gate_evidence[gate] = evidence
+        if gate == MULTI_AGENT_GATE or gate in MULTI_AGENT_ROUTE_GATES:
+            validates_delegation_plan = True
+
+    if not validates_delegation_plan:
+        return
+    plan_failures = validate_delegation_plan_evidence(
+        required_gates,
+        gate_evidence,
+        read_delegation_plan(args.project),
+    )
+    if plan_failures:
+        raise ValueError("; ".join(plan_failures))

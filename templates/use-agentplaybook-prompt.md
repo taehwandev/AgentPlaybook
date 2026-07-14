@@ -6,9 +6,9 @@ type: human-reviewed-needed
 
 # Use AgentPlaybook Prompt
 
-Paste this into Claude, Antigravity, Codex, or another AI coding agent when the
-target repo is not yet wired to AgentPlaybook or when you want a one-shot task
-to follow AgentPlaybook explicitly.
+Paste this into Claude, Gemini/Antigravity/AGY, Codex, or another AI coding
+agent when the target repo is not yet wired to AgentPlaybook or when you want a
+one-shot task to follow AgentPlaybook explicitly.
 
 Replace the placeholders before sending.
 
@@ -39,9 +39,9 @@ Rules:
    `ambiguous` or `not_found`.
    Do not rely on implicit runtime discovery. If you are Codex-style, explicitly
    read the current project's AGENTS.md; if you are Claude, explicitly read
-   CLAUDE.md when present; if you are Antigravity, explicitly read the current
-   project's AGENTS.md; if you are another runtime, explicitly read the project
-   instruction document that runtime is configured to load.
+   CLAUDE.md when present; if you are Gemini/Antigravity/AGY, explicitly read
+   the current project's AGENTS.md; if you are another runtime, explicitly read
+   the project instruction document that runtime is configured to load.
    If you are Antigravity and cannot confirm the project-root AGENTS.md, stop
    before routing, editing, testing, committing, or reporting completion and ask
    for bridge repair.
@@ -81,6 +81,15 @@ Rules:
    as `reference_docs` unless the route promotes them to `required_docs`.
    If routing/search misses a clearly relevant platform, concern, or document
    surface, stop and report the gap instead of proceeding from memory.
+   After routing, preflight, and required-doc reading, consume
+   `parallel_execution.delegation_policy`. If this runtime exposes workers and
+   at least two meaningful slices have disjoint scopes, a stable contract, an
+   integration owner, and focused verification, delegate automatically without
+   waiting for me to request multi-agent work. Otherwise record the concrete
+   serial reason. Use Codex native workers, Claude Agent/Task workers, or the
+   Gemini/AGY Antigravity agent runner according to the active runtime. Treat
+   one model-profile dispatch as a leaf worker, not multi-agent fanout; the
+   parent makes the split decision first.
    If the request is a direct question, answer it before routing or editing.
    If the direct question asks how to start app, product, or feature work,
    answer with PRD -> ARD -> implementation gates before lower-level coding

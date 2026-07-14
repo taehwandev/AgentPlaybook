@@ -119,6 +119,13 @@ def print_markdown(route: dict[str, object]) -> None:
 def _print_parallel_execution(plan: dict[str, object]) -> None:
     print("## Parallel Execution")
     print(f"Strategy: `{plan['strategy']}`")
+    policy = plan.get("delegation_policy") or {}
+    if isinstance(policy, dict):
+        explicit = "yes" if policy.get("explicit_user_request_required") else "no"
+        print(
+            f"Delegation: `{policy.get('mode')}`; explicit user request required: `{explicit}`; "
+            f"minimum independent slices: `{policy.get('minimum_independent_slices')}`"
+        )
     print()
     for phase in plan["phases"]:
         after = ", ".join(f"`{item}`" for item in phase["after"]) or "`start`"

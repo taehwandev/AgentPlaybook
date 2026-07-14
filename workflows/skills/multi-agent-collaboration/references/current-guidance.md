@@ -61,6 +61,13 @@ Rules:
 - The lead agent should actively look for safe subagent/parallel slices when a
   task has independent surfaces. Do not wait for the user to request parallel
   agents when the split is obvious and low risk.
+- Treat two or more meaningful independent slices as the automatic-delegation
+  threshold when the runtime exposes workers and the contract, scopes,
+  integration owner, and focused checks are already stable. Explicit user
+  multi-agent wording is not required and its absence is not a serial reason.
+- A `multi-agent` route's worker phase is parallel by contract after roles,
+  scopes, briefs, and the delegation plan are valid. Other code routes remain
+  conditional until the lead records the eligibility decision.
 - Assign each writer explicit owned files or modules.
 - Assign explicit forbidden files or modules when overlap is likely.
 - Do not assign two writers to the same file.
@@ -136,6 +143,17 @@ final verification. If a worker changes the contract, route, schema, state
 model, or config outside its brief, stop integration and restart from the split
 decision.
 
+The two-slice eligibility threshold counts a meaningful slice retained by the
+lead as well as worker slices. Therefore one worker plus a distinct lead-owned
+integration or implementation slice can be a valid parallel plan. Multiple
+workers must use unique ids and non-overlapping `owned_scope` entries; exact or
+unambiguous parent/child path overlap is rejected before work starts.
+
+Choose the `multi-agent` route only when the parallel decision is already
+positive. When automatic eligibility fails, stay on the original work route,
+record its structured serial split decision with the concrete policy reason,
+and do not create a parallel delegation plan.
+
 When work is actually delegated or run in parallel, write a structured local
 plan before workers start:
 
@@ -179,6 +197,16 @@ Finish-check treats parallel/subagent evidence or the `multi-agent` route's
 role/write-scope/brief/integration gates as incomplete without this plan. The
 plan is local runtime evidence; do not commit it unless the repo explicitly
 tracks agent execution artifacts.
+
+Record the structured multi-agent gate fields before workers start. Gate and
+gate-batch hooks reject incomplete `SUCCESS` records before writing them and
+report the complete missing-field set in one pass. For a parallel split, the
+required field names are `mode`, `reason`, `owned_scope`, `forbidden_scope`,
+`contract`, `acceptance`, `integration_owner`, and `verification`. Alias keys
+such as `contract_brief` or `acceptance_checks` do not satisfy the executable
+contract. The same pre-worker record validates the delegation-plan structure so
+schema mistakes are corrected before finish and do not consume the finish
+recovery retry.
 
 ## Agent Briefs
 

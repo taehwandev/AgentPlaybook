@@ -76,7 +76,11 @@ def _dirty_source_paths(project_path: Path) -> list[str]:
     paths: list[str] = []
     for line in (completed.stdout or "").splitlines():
         value = line[3:].split(" -> ")[-1] if len(line) > 3 else ""
-        if not value or value.startswith((".agentplaybook/", "graphify-out/")):
+        if (
+            not value
+            or ".agentplaybook" in Path(value).parts
+            or value.startswith("graphify-out/")
+        ):
             continue
         paths.append(value)
     return paths

@@ -103,11 +103,31 @@ def parallel_execution_plan(command: str, gates: list[str]) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "strategy": "parallelize_read_only_then_disjoint_workers_then_serial_integration",
+        "delegation_policy": {
+            "mode": "automatic_when_eligible",
+            "explicit_user_request_required": False,
+            "minimum_independent_slices": 2,
+            "required_preconditions": [
+                "runtime exposes subagents or parallel workers",
+                "owned and forbidden scopes are disjoint",
+                "shared contract is stable",
+                "integration owner and focused verification are named",
+            ],
+            "serial_fallbacks": [
+                "fewer than two meaningful independent slices",
+                "same-file or overlapping ownership",
+                "unstable shared contract or serialized risk surface",
+                "runtime has no worker capability",
+            ],
+        },
         "phases": phases,
         "notes": [
             "Use these phases to find safe parallel work; do not treat route gates as one fully serial chain.",
             "Batch independent read-only commands and selected document reads instead of running them one at a time.",
             "Parallelize read-only orientation and independent verification when the runtime supports it.",
+            "When at least two meaningful slices satisfy the delegation policy, use runtime workers automatically; do not wait for an explicit user request for multi-agent work.",
+            "When delegation is not eligible, record the concrete serial reason from the policy instead of treating missing user wording as the reason.",
+            "A model-profile dispatch is one leaf worker, not fanout; the parent owns the split decision before dispatching any leaf.",
             "Use Review Hook --review-path for task-owned files when unrelated working-tree changes are present.",
             "Run writers in parallel only after owned scopes, forbidden scopes, contracts, and checks are explicit.",
             "Keep shared contracts, generated files, migrations, dependency changes, release config, and same-file edits serial.",
@@ -120,7 +140,7 @@ def _append_worker_phase(phases: list[dict[str, Any]], command: str, gates: list
         _append_phase(
             phases,
             phase_id="worker_execution",
-            mode="conditional_parallel",
+            mode="parallel",
             gates=_existing(gates, ("roles", "write scopes", "agent briefs")),
             tasks=("run workers on disjoint owned scopes", "collect worker acceptance and verification"),
             constraints=("only parallelize after briefs are complete", "lead owns integration"),

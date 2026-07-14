@@ -6,8 +6,8 @@ type: human-reviewed-needed
 
 # Agent Runtime Integration
 
-Use this when connecting AgentPlaybook to Codex, Claude, Antigravity, or another
-AI coding agent runtime.
+Use this when connecting AgentPlaybook to Codex, Claude,
+Gemini/Antigravity/AGY, or another AI coding agent runtime.
 
 ## Model
 
@@ -24,8 +24,8 @@ services, product policy, and domain language.
 
 Separate shared semantics from runtime mechanics. The provider-neutral
 canonical owner defines what the agent must know and do; runtime bridges define
-only how Codex, Claude, Antigravity/AGY, or another runtime discovers, invokes,
-or enforces it. When several runtimes need the same repo-local skill, keep one
+only how Codex, Claude, Gemini/Antigravity/AGY, or another runtime discovers,
+invokes, or enforces it. When several runtimes need the same repo-local skill, keep one
 canonical bundle under `.agentplaybook/skills/<skill>` and use repo-relative
 runtime links or thin adapters. Do not maintain full runtime-specific copies of
 the same operational knowledge.
@@ -91,8 +91,8 @@ and runtime env for that bridge. If the helper is absent, the setup removes
 only those AgentPlaybook-managed Spill label hooks/env and keeps the Python
 wrapper permissions installed.
 
-For Codex, Claude, and Antigravity/AGY, `setup-agent-hooks.py` manages a short
-user-level bridge block in the runtime's instruction file; `--check` reports it
+For Codex, Claude, and Gemini/Antigravity/AGY, `setup-agent-hooks.py` manages a
+short user-level bridge block in the runtime's instruction file; `--check` reports it
 as missing when the block is absent or stale. The block must tell the runtime
 to identify the target project, open the project-root instruction file, route
 the current request, use `workflow-doc-surfaces.json` and the local document
@@ -283,7 +283,7 @@ instruction file each agent runtime reads:
 - Codex-style runtimes: `AGENTS.md`.
 - Claude-style runtimes: `CLAUDE.md`.
 - Codex-specific local docs: `CODEX.md` when the repo already uses it.
-- Antigravity: `AGENTS.md`.
+- Gemini/Antigravity/AGY: `AGENTS.md`.
 - Generic agents: the project instruction file the runtime actually reads, or
   `.agents/README.md` when the repo uses a shared agent folder.
 - Personal or global runtime docs: treat these as optional Step 2 bridge work.
@@ -303,9 +303,20 @@ project's own instructions first. Do not rely on implicit discovery. State the
 runtime-specific entrypoint directly: Codex-style agents should read the current
 project's `AGENTS.md`, Claude should read the current project's `CLAUDE.md`
 when present, Codex-specific setups should read `CODEX.md` when present, and
-Antigravity should read the current project's `AGENTS.md`.
+Gemini/Antigravity/AGY should read the current project's `AGENTS.md`.
 Then tell the agent to follow AgentPlaybook as shared guidance only after those
 local instructions.
+
+After routing, preflight, and required-doc reading, runtime bridges must also
+tell the parent agent to consume `parallel_execution.delegation_policy`. When
+the active runtime exposes workers and the multi-agent collaboration skill finds
+at least two meaningful disjoint slices with a stable contract, integration
+owner, and focused verification, the parent delegates automatically without
+waiting for explicit user multi-agent wording. Otherwise it records the
+concrete serial reason. Keep eligibility detail in the multi-agent skill; the
+bridge is only the invocation pointer. Map eligible execution to the runtime's
+native primitive: Codex subagents/parallel workers, Claude Agent/Task workers,
+or the Gemini/AGY Antigravity parallel runner.
 
 Use `templates/repo-agents-routing.md` as the source block. Keep the block
 short and point to:
@@ -345,8 +356,8 @@ Use one-shot prompting when:
 - the target repo is not wired yet
 - the agent runtime does not automatically load repo instruction files
 - you are using a web chat or temporary session
-- you want Claude, Antigravity, or another agent to follow AgentPlaybook for one
-  task without changing repo files
+- you want Claude, Gemini/Antigravity/AGY, or another agent to follow
+  AgentPlaybook for one task without changing repo files
 
 Paste `templates/use-agentplaybook-prompt.md` into the agent, replacing the
 target repo, task, AgentPlaybook root, and VibeGuard docs placeholders.
@@ -373,11 +384,12 @@ provides a safe mid-task handoff. A handoff must preserve the selected project,
 route, required docs, docs-read receipt, gate ledger, unresolved blockers, and
 verification plan.
 
-For Codex, use `workflow.py dispatch <command> --request "<USER_REQUEST>"
---execute` at one bounded task boundary. The main session remains responsible
-for orchestration and automatically runs the selected worker only at that
-boundary. Omit `--execute` to inspect a non-executing handoff manifest. The
-profiles are explicit:
+For Codex, make the parent split decision first, then use `workflow.py dispatch
+<command> --request "<USER_REQUEST>" --execute` at one bounded leaf/task
+boundary. One dispatch is not multi-agent fanout. The main session remains
+responsible for orchestration, integration, and final verification. Omit
+`--execute` to inspect a non-executing handoff manifest. The profiles are
+explicit:
 
 | Stage | Tier and reasoning effort |
 | --- | --- |
@@ -479,7 +491,7 @@ Claude:
   that omit the evidence flag. The hook should fail soft when the root pointer
   is stale so Claude startup is not blocked before the user can repair setup.
 
-Antigravity:
+Gemini/Antigravity/AGY:
 
 - Use `AGENTS.md` as the project instruction surface that Antigravity reads.
 - The managed user-level bridge installed by `setup-agent-hooks.py` must tell

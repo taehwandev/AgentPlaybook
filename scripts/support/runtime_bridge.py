@@ -8,9 +8,31 @@ from pathlib import Path
 RUNTIME_BRIDGE_BEGIN = "<!-- agentplaybook-runtime-bridge:start -->"
 RUNTIME_BRIDGE_END = "<!-- agentplaybook-runtime-bridge:end -->"
 CODEX_DISPATCH_BRIDGE_PHRASE = (
-    "For a bounded Codex task stage, automatically select and run the model-profile handoff with "
-    "workflow.py dispatch --execute; keep normal implementation on Terra medium, reserve Sol high "
-    "for explicit complex implementation or PRD/design, and reserve Sol xhigh for final review."
+    "After the parent records the split decision, use workflow.py dispatch --execute only for one "
+    "bounded Codex leaf/task boundary; one dispatch is not multi-agent fanout. Keep normal "
+    "implementation on Terra medium, reserve Sol high for explicit complex implementation or "
+    "PRD/design, and reserve Sol xhigh for final review."
+)
+RUNTIME_NATIVE_DELEGATION_PHRASES = {
+    "Codex": (
+        "For an eligible split, use Codex native subagents or parallel workers; the parent owns "
+        "the shared contract, write scopes, integration, and final verification."
+    ),
+    "Claude": (
+        "For an eligible split, dispatch all independent Claude Agent/Task workers before waiting; "
+        "the parent owns the shared contract, integration, and final verification."
+    ),
+    "Antigravity": (
+        "For an eligible split, use the available Gemini/AGY Antigravity parallel agent runner; "
+        "the parent owns the shared contract, integration, and final verification."
+    ),
+}
+AUTO_DELEGATION_BRIDGE_PHRASE = (
+    "After routing, preflight, and required-doc reading, inspect parallel_execution and the "
+    "multi-agent collaboration skill. When the runtime exposes workers and at least two meaningful "
+    "slices have disjoint scopes, a stable contract, an integration owner, and focused verification, "
+    "delegate automatically without waiting for explicit user multi-agent wording; otherwise record "
+    "the concrete serial reason."
 )
 
 RUNTIME_BRIDGE_GRAPH_PHRASES = [
@@ -27,6 +49,7 @@ RUNTIME_BRIDGE_COMMON_REQUIRED_PHRASES = [
     "Before project work, open the project-root instruction file for the active runtime.",
     *RUNTIME_BRIDGE_GRAPH_PHRASES,
     "For multi-step work, run AgentPlaybook preflight before edits and finish-check before final report, commit, release, or handoff.",
+    AUTO_DELEGATION_BRIDGE_PHRASE,
     "Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
     "Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
 ]
@@ -38,12 +61,17 @@ def runtime_bridge_required_phrases(runtime_name: str, instruction_file: str) ->
         *RUNTIME_BRIDGE_COMMON_REQUIRED_PHRASES,
         f"If this bridge or the project-root {instruction_file} cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
     ]
+    native_delegation = RUNTIME_NATIVE_DELEGATION_PHRASES.get(runtime_name)
+    if native_delegation:
+        phrases.append(native_delegation)
     if runtime_name == "Codex":
         phrases.append(CODEX_DISPATCH_BRIDGE_PHRASE)
     return phrases
 
 
 def runtime_bridge_block(root: Path, runtime_name: str, instruction_file: str) -> str:
+    native_delegation = RUNTIME_NATIVE_DELEGATION_PHRASES.get(runtime_name)
+    native_delegation_phrase = [f"- {native_delegation}"] if native_delegation else []
     dispatch_phrase = [f"- {CODEX_DISPATCH_BRIDGE_PHRASE}"] if runtime_name == "Codex" else []
     return "\n".join([
         RUNTIME_BRIDGE_BEGIN,
@@ -59,11 +87,13 @@ def runtime_bridge_block(root: Path, runtime_name: str, instruction_file: str) -
         f"- {runtime_name} reads {instruction_file}.",
         "- Read project-root instructions before AgentPlaybook shared guidance.",
         "- Before project work, run AgentPlaybook workflow routing with the user's current request; route/search owns natural-language document discovery.",
-        *dispatch_phrase,
         "- Do not wait for the user to name document keywords; infer the work surface from the request, platform, concern, and touched files, then read the route required_docs before editing or reviewing.",
         "- Use workflow-doc-surfaces.json and the local document graph as routing/search inputs; treat graph neighbors as reference_docs unless the route marks them as required_docs.",
         "- If routing/search misses a clearly relevant platform, concern, or document surface, stop and report the gap instead of proceeding from memory.",
         "- For multi-step work, run AgentPlaybook preflight before edits and finish-check before final report, commit, release, or handoff.",
+        f"- {AUTO_DELEGATION_BRIDGE_PHRASE}",
+        *native_delegation_phrase,
+        *dispatch_phrase,
         f"- If this bridge or the project-root {instruction_file} cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
         "- Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
         "- Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",

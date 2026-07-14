@@ -397,6 +397,13 @@ shows which parts can overlap safely.
   split-decision, role, owned-scope, forbidden-scope, contract, and verification
   gates are recorded. If those cannot be named, execute that phase serially and
   record the concrete reason.
+- Consume `parallel_execution.delegation_policy` before deciding. When its
+  preconditions are met and the runtime exposes workers, delegation is
+  automatic and does not require explicit user multi-agent wording. A missing
+  user request is never a valid serial fallback; use one of the concrete safety
+  or runtime-capability reasons from the policy.
+- Treat one model-profile dispatch as a leaf worker, not fanout. The parent
+  records the split decision first and remains the integration owner.
 - Treat `mode: serial` phases as ordering barriers. Do not cross them with
   writes, generated artifacts, dependency changes, release config, migrations,
   shared contracts, same-file edits, or final reporting.
@@ -638,6 +645,18 @@ ledger synthesizer. Parallel `multi-agent split decision` records require
 requires `scope` and `result`. A successful record-write message proves only
 that the ledger entry was stored; finish-check remains the authority on whether
 its fields satisfy the gate contract.
+
+Gate and gate-batch hooks validate structured `SUCCESS` fields before writing
+the ledger. Parallel multi-agent validation returns the base and parallel-only
+missing fields together, rejects alias keys, and validates the structured
+delegation plan before worker execution. Existing incomplete ledgers remain a
+finish failure, but finish reports their full missing-field set at once so the
+single recovery attempt does not uncover a second hidden layer.
+
+A later complete record for the same gate is a valid correction for a legacy
+incomplete ledger entry. Once merge selects that complete replacement, it must
+clear the older missing-field diagnostic; obsolete omissions must not consume
+the recovery retry after the gate has actually been corrected.
 
 `agent-hook.py finish` runs the finish-check logic in-process. Calling
 `agent-finish-check.py` directly is acceptable only as a lower-level wrapper path

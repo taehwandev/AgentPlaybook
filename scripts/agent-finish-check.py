@@ -21,7 +21,7 @@ from agent_finish_check_steps import (
 )
 from agent_finish_common import display_signal, parse_gate, requires_retrospective, write_json
 from agent_finish_final_checks import run_final_checks
-from agent_gate_evidence import merge_gate_evidence_from_ledger
+from agent_gate_evidence import incomplete_gate_evidence_failures, merge_gate_evidence_from_ledger
 
 
 def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
@@ -124,6 +124,7 @@ def main() -> int:
         route_docs_receipt=route_docs_receipt,
         cli_gate_evidence=dict(args.gate),
     )
+    failures.extend(incomplete_gate_evidence_failures(gate_evidence_ledger))
     gate_signals: list[dict[str, str]] = []
     required_gates, missed_gates, gate_policy_failures = check_required_gates(
         route,

@@ -40,6 +40,7 @@ CODE_WORK_REQUIRED_DOCS = (
     "common/skills/llm-coding-discipline/SKILL.md",
     "common/skills/code-conventions/SKILL.md",
     "common/skills/agent-editing-safety/SKILL.md",
+    "workflows/skills/multi-agent-collaboration/SKILL.md",
 )
 
 COMMAND_REQUIRED_DOCS = {

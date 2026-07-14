@@ -46,6 +46,15 @@ FIELD_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "tests": ("check", "result"),
 }
 
+MULTI_AGENT_PARALLEL_FIELDS = (
+    "owned_scope",
+    "forbidden_scope",
+    "contract",
+    "acceptance",
+    "integration_owner",
+)
+MULTI_AGENT_SERIAL_MODES = {"serial", "single-agent", "single agent"}
+
 
 def gate_evidence_path_for_preflight(evidence_path: Path) -> Path:
     if evidence_path.name != "preflight.json":
@@ -184,13 +193,17 @@ def merge_gate_evidence_from_ledger(
             route,
         )
         if missing:
-            diagnostics["missing_fields"][gate] = missing
+            if gate not in merged:
+                diagnostics["missing_fields"][gate] = missing
             continue
         if evidence:
             merged[gate] = evidence
             diagnostics["sources"][gate] = str(entry.get("source") or "ledger")
+            diagnostics["missing_fields"].pop(gate, None)
 
     merged.update(cli_gate_evidence)
+    for gate in merged:
+        diagnostics["missing_fields"].pop(gate, None)
     diagnostics["used"] = bool(merged)
     return merged, diagnostics
 
@@ -206,7 +219,7 @@ def synthesize_gate_evidence(
         receipt_failures = validate_route_doc_receipt(route or {}, route_docs_receipt)
         if receipt_failures:
             return "", ["matching route docs receipt"]
-        missing = _missing_fields(gate, fields)
+        missing = missing_structured_gate_fields(gate, evidence, fields)
         if missing:
             return "", missing
         application_failures = validate_route_docs_application_fields(
@@ -221,7 +234,7 @@ def synthesize_gate_evidence(
             f"immediate next action: {fields['next_action']}",
             [],
         )
-    missing = _missing_fields(gate, fields)
+    missing = missing_structured_gate_fields(gate, evidence, fields)
     if missing:
         return "", missing
     if gate == "cycle contract":
@@ -255,19 +268,6 @@ def synthesize_gate_evidence(
                 f"{fields['reason']}; verification: {fields['verification']}",
                 [],
             )
-        extra_missing = [
-            field
-            for field in (
-                "owned_scope",
-                "forbidden_scope",
-                "contract",
-                "acceptance",
-                "integration_owner",
-            )
-            if not fields.get(field)
-        ]
-        if extra_missing:
-            return "", extra_missing
         return (
             "multi-agent/subagent split; owned scope: "
             f"{fields['owned_scope']}; forbidden scope: {fields['forbidden_scope']}; "
@@ -314,8 +314,46 @@ def synthesize_gate_evidence(
     return evidence, []
 
 
-def _missing_fields(gate: str, fields: dict[str, str]) -> list[str]:
-    return [field for field in FIELD_REQUIREMENTS.get(gate, ()) if not fields.get(field)]
+def missing_structured_gate_fields(
+    gate: str,
+    evidence: str,
+    fields: dict[str, str],
+) -> list[str]:
+    """Return the complete structured-field requirement for one gate record."""
+
+    missing = [
+        field
+        for field in FIELD_REQUIREMENTS.get(gate, ())
+        if not fields.get(field, "").strip()
+    ]
+    if gate != "multi-agent split decision":
+        return missing
+
+    mode = fields.get("mode", "").strip().lower()
+    parallel = mode not in MULTI_AGENT_SERIAL_MODES
+    if parallel:
+        missing.extend(
+            field
+            for field in MULTI_AGENT_PARALLEL_FIELDS
+            if not fields.get(field, "").strip()
+        )
+    return list(dict.fromkeys(missing))
+
+
+def incomplete_gate_evidence_failures(diagnostics: dict[str, Any]) -> list[str]:
+    """Expose legacy ledger omissions as complete, actionable finish failures."""
+
+    failures: list[str] = []
+    missing_fields = diagnostics.get("missing_fields") or {}
+    if not isinstance(missing_fields, dict):
+        return failures
+    for gate, missing in missing_fields.items():
+        if not isinstance(missing, list) or not missing:
+            continue
+        failures.append(
+            f"structured gate evidence for {gate} is incomplete: " + ", ".join(str(item) for item in missing)
+        )
+    return failures
 
 
 def _new_ledger(evidence_path: Path, preflight: dict[str, Any]) -> dict[str, Any]:
