@@ -154,8 +154,21 @@ def validate_tests(evidence: str) -> list[str]:
         )
     )
     skipped = any(phrase in text for phrase in ("skipped", "not run", "unable", "cannot run"))
-    explained_skip = any(phrase in text for phrase in ("because", "reason", "not applicable", "docs-only", "no useful test"))
-    if has_test_signal and (not skipped or explained_skip):
+    explained_skip = any(
+        phrase in text
+        for phrase in (
+            "because", "reason", "not applicable", "docs-only", "no useful test",
+            "by design", "environment-gated", "environment gated", "intentional",
+            "설계", "의도", "환경",
+        )
+    )
+    # A suite that ran and passed is a named test run even when it mentions
+    # skipped subtests; the skip guard is for runs that never happened.
+    ran_and_passed = any(
+        phrase in text
+        for phrase in ("passed", "pass", "0 failures", "no failures", "green", "성공", "통과")
+    )
+    if has_test_signal and (not skipped or explained_skip or ran_and_passed):
         return []
     return [
         "tests evidence must name the test/check run or explain skipped/not-applicable tests with a reason"

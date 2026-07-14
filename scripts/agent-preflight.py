@@ -306,7 +306,12 @@ def collect_failures(
 ) -> list[str]:
     failures: list[str] = []
     if route_result["returncode"] != 0:
-        failures.append("workflow route failed")
+        route_reason = " ".join(
+            (route_result.get("stdout", "") + " " + route_result.get("stderr", "")).split()
+        )
+        failures.append(
+            "workflow route failed" + (f": {route_reason[:400]}" if route_reason else "")
+        )
     elif route_parse_error:
         failures.append("workflow route output was not valid JSON")
     elif route_payload and route_payload.get("missing"):

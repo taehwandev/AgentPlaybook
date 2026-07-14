@@ -177,16 +177,20 @@ def docs_read_hook(args: argparse.Namespace) -> int:
 
 
 def _summary_lines(result: dict[str, Any]) -> list[str]:
-    lines: list[str] = []
+    # FAIL lines must never be dropped: hiding some failures makes fixed
+    # reruns surface "new" complaints that were failing all along.
+    info_lines: list[str] = []
+    fail_lines: list[str] = []
     for stream in ("stdout", "stderr"):
         for line in result.get(stream, "").splitlines():
             stripped = line.strip()
-            if stripped.startswith((
+            if stripped.startswith("FAIL:"):
+                fail_lines.append(stripped)
+            elif stripped.startswith((
                 "Route:",
                 "Required hooks:",
                 "Conditional hooks:",
                 "VibeGuard overall:",
-                "FAIL:",
                 "Required gates:",
                 "Retrospective required:",
                 "Retrospective lesson candidate:",
@@ -197,8 +201,8 @@ def _summary_lines(result: dict[str, Any]) -> list[str]:
                 "- routed doc candidates:",
                 "- on-demand reference docs:",
             )):
-                lines.append(stripped)
-    return lines[:8]
+                info_lines.append(stripped)
+    return info_lines[:8] + fail_lines
 
 
 def _add_common_arguments(parser: argparse.ArgumentParser) -> None:

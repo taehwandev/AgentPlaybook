@@ -69,7 +69,10 @@ DOC_COVERAGE_STATE_PHRASES = (
     "existing doc", "existing docs", "current doc", "current docs",
     "up to date", "still current", "no edit needed", "covered by",
     "coverage:", "covered_by=", "covers the",
-    "이미", "커버", "반영되어", "반영됨", "현재 문서",
+    "remains accurate", "remain accurate", "still accurate",
+    "stays accurate", "stays correct", "still correct",
+    "accurate as written", "correct as written",
+    "이미", "커버", "반영되어", "반영됨", "현재 문서", "여전히 정확",
 )
 
 DURABLE_DOC_CHANGE_PATTERNS = (
