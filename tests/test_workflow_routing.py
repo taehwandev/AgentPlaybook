@@ -158,13 +158,16 @@ class WorkflowRoutingTests(unittest.TestCase):
             self.assertEqual([valid_doc], markdown_files_to_validate(root))
 
     def test_lifecycle_alias_commands_are_registered(self) -> None:
-        for command in ("spec", "plan", "build", "test", "webperf", "code-simplify", "ship"):
+        for command in ("analysis", "spec", "plan", "build", "test", "webperf", "code-simplify", "ship"):
             with self.subTest(command=command):
                 self.assertIn(command, COMMANDS)
                 route = resolve_docs(command, None, [], request_classified=True)
 
                 self.assertIn("request intake", route["gates"])
-                self.assertTrue(route["required_docs"])
+                if command == "analysis":
+                    self.assertEqual(["AGENTS.md"], route["required_docs"])
+                else:
+                    self.assertTrue(route["required_docs"])
 
         self.assertIn(route_doc("common/skills/incremental-implementation/SKILL.md"), resolve_docs("build", None, [], request_classified=True)["docs"])
         self.assertIn(route_doc("common/skills/performance-verification/SKILL.md"), resolve_docs("webperf", None, [], request_classified=True)["docs"])
@@ -179,6 +182,31 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         spec_route = resolve_docs("spec", None, [], request_classified=True)
         self.assertTrue(spec_route["required_docs"])
+
+    def test_analysis_route_stays_lightweight(self) -> None:
+        route = resolve_docs("analysis", None, [], request_classified=True)
+
+        self.assertEqual(["request intake", "investigate", "report"], route["gates"])
+        self.assertEqual(["AGENTS.md"], route["required_docs"])
+        parallel = route["parallel_execution"]
+        self.assertEqual("serial_lightweight_analysis", parallel["strategy"])
+        self.assertEqual(0, parallel["delegation_policy"]["maximum_workers"])
+        self.assertTrue(all(phase["mode"] == "serial" for phase in parallel["phases"]))
+        self.assertEqual([], validate_parallel_execution_plan(parallel, route["gates"]))
+        self.assertFalse(next(hook for hook in route["hooks"] if hook["hook"] == "review")["required"])
+        for excluded_gate in (
+            SOURCE_DOCS_GATE,
+            DOCUMENTATION_IMPACT_GATE,
+            DOCUMENTATION_GATE,
+            TEST_GATE,
+            CYCLE_CONTRACT_GATE,
+            BOUNDARY_PLAN_GATE,
+            MULTI_AGENT_GATE,
+            SIDE_EFFECT_AUDIT_GATE,
+            "review hook",
+        ):
+            with self.subTest(excluded_gate=excluded_gate):
+                self.assertNotIn(excluded_gate, route["gates"])
 
     def test_agent_skills_gap_concerns_are_registered(self) -> None:
         expected = {
@@ -438,6 +466,7 @@ class WorkflowRoutingTests(unittest.TestCase):
 
     def test_dispatch_auto_selects_stage_profiles(self) -> None:
         cases = {
+            "analysis": ("analysis", "medium"),
             "prd": ("prd_design", "high"),
             "plan": ("research", "low"),
             "task": ("analysis", "medium"),
@@ -539,7 +568,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 work_kind="complex_implementation",
             )
 
-    def test_dispatch_cli_outputs_a_nonexecuting_terra_handoff(self) -> None:
+    def test_dispatch_cli_without_explicit_isolation_stays_inline(self) -> None:
         completed = subprocess.run(
             [
                 sys.executable,
@@ -563,7 +592,8 @@ class WorkflowRoutingTests(unittest.TestCase):
         manifest = json.loads(completed.stdout)
         self.assertEqual("gpt-5.6-terra", manifest["work_profile"]["codex_model"])
         self.assertEqual("medium", manifest["work_profile"]["reasoning_effort"])
-        self.assertIn("Inspect-only manifest", manifest["execution_policy"])
+        self.assertIn("Continue inline in the parent", manifest["execution_policy"])
+        self.assertEqual("inline", manifest["execution_mode"])
         self.assertEqual([], manifest["codex_exec_argv"])
 
     def test_dispatch_executor_runs_selected_argv(self) -> None:
@@ -572,6 +602,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "feature",
                 "기획변경 때 문서 정리가 누락되는 걸 막아줘",
                 Path(temp_dir),
+                isolation_required=True,
             )
             received: list[list[str]] = []
 
@@ -605,6 +636,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     "기획변경 때 문서 정리가 누락되는 걸 막아줘",
                     project,
                     route={"required_docs": [], "gates": []},
+                    isolation_required=True,
                 )
                 received: list[list[str]] = []
                 self.assertEqual(0, execute_dispatch_manifest(manifest, runner=lambda argv: received.append(argv) or 0))
@@ -630,6 +662,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     route={"required_docs": [], "gates": []},
                     reserve_worker_evidence=True,
                     defer_capsule_validation=True,
+                    isolation_required=True,
                 )
                 self.assertEqual(
                     0,
@@ -658,6 +691,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     Path(temp_dir),
                     route={"required_docs": [], "gates": []},
                     parent_context_reusable=False,
+                    isolation_required=True,
                 )
                 received: list[list[str]] = []
                 self.assertEqual(
@@ -687,6 +721,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     "기획변경 때 문서 정리가 누락되는 걸 막아줘",
                     project,
                     route={"required_docs": [], "gates": []},
+                    isolation_required=True,
                 )
                 with patch(
                     "workflow_dispatch_launch.subprocess.run",
@@ -715,6 +750,43 @@ class WorkflowRoutingTests(unittest.TestCase):
             execute_dispatch_manifest(manifest, runner=received.append)
         self.assertEqual([], received)
         self.assertIn("must not start another Codex process", manifest["execution_policy"])
+
+    def test_dispatch_stays_inline_without_parent_profile_or_for_a_mismatch(self) -> None:
+        cases = {
+            "missing parent profile": {},
+            "known profile mismatch": {
+                "parent_model": "gpt-5.6-sol",
+                "parent_reasoning_effort": "xhigh",
+                "parent_sandbox_mode": "workspace-write",
+            },
+        }
+
+        for name, parent_context in cases.items():
+            with self.subTest(name=name):
+                manifest = build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    ROOT,
+                    **parent_context,
+                )
+
+                self.assertEqual("inline", manifest["execution_mode"])
+                self.assertFalse(manifest["profile_matches_parent"])
+                self.assertIn("continue inline", manifest["selection_reason"])
+
+    def test_analysis_dispatch_never_starts_a_child_without_explicit_isolation(self) -> None:
+        manifest = build_dispatch_manifest(
+            "analysis",
+            "Inspect the current workflow routing behavior and summarize the result.",
+            ROOT,
+        )
+        received: list[list[str]] = []
+
+        self.assertEqual("analysis", manifest["work_kind"])
+        self.assertEqual("inline", manifest["execution_mode"])
+        with self.assertRaisesRegex(ValueError, "cannot execute work in the parent process"):
+            execute_dispatch_manifest(manifest, runner=received.append)
+        self.assertEqual([], received)
 
     def test_dispatch_execute_cli_rejects_inline_false_success(self) -> None:
         args = build_parser().parse_args(
@@ -785,14 +857,35 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "feature",
                 "기획변경 때 문서 정리가 누락되는 걸 막아줘",
                 ROOT,
+                isolation_required=True,
             )
 
         prompt = manifest["codex_exec_argv"][-1]
         self.assertIn("Validated parent execution capsule", prompt)
-        self.assertIn("instead of rerunning startup", prompt)
-        self.assertIn("read every required doc listed below before work", prompt)
-        self.assertIn("Open and read every required doc", prompt)
+        self.assertIn("parent already completed route, preflight, required-doc reading", prompt)
+        self.assertIn("Do not reread required docs", prompt)
+        self.assertIn("Do not reread required docs or rerun route, startup, preflight, VibeGuard, review, finish", prompt)
+        self.assertNotIn("Open and read every required doc", prompt)
         self.assertIn("parent remains the only owner of the gate ledger", prompt)
+
+    def test_dispatch_fallback_worker_keeps_normal_lifecycle_and_document_reading(self) -> None:
+        capsule_state = {
+            "path": "/tmp/execution-capsule.json",
+            "reusable": False,
+            "invalidation_reasons": ["stale"],
+            "phase": "ready",
+        }
+        with patch("workflow_dispatch._execution_capsule_state", return_value=capsule_state):
+            manifest = build_dispatch_manifest(
+                "feature",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                ROOT,
+                isolation_required=True,
+            )
+
+        prompt = manifest["codex_exec_argv"][-1]
+        self.assertIn("Follow the normal project lifecycle before work", prompt)
+        self.assertIn("Open and read every required doc from the parent route manifest", prompt)
 
     def test_dispatch_execute_cli_uses_executor(self) -> None:
         args = build_parser().parse_args(
@@ -803,6 +896,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "기획변경 때 문서 정리가 누락되는 걸 막아줘",
                 "--project",
                 str(ROOT),
+                "--require-isolation",
                 "--execute",
             ]
         )
@@ -853,6 +947,46 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIsNotNone(route)
         self.assertEqual("refactor", route["command"])
 
+    def test_analysis_preflight_routes_once_and_defers_capsule_creation(self) -> None:
+        route = resolve_docs("analysis", None, [], request_classified=True)
+        route_result = {
+            "returncode": 0,
+            "stdout": json.dumps(route),
+            "stderr": "",
+        }
+        vibeguard = {"returncode": 0, "overall": {"status": "Ready"}}
+        git_status = {"returncode": 0, "stdout": "", "stderr": ""}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            args = agent_preflight.build_parser(ROOT).parse_args(
+                [
+                    "--command",
+                    "analysis",
+                    "--request",
+                    "Inspect routing only and summarize it.",
+                    "--project",
+                    str(project),
+                    "--rules",
+                    str(ROOT),
+                ]
+            )
+            with patch.object(agent_preflight, "active_runtime_label", return_value="codex"), patch.object(
+                agent_preflight, "run_command", return_value=git_status
+            ), patch.object(agent_preflight, "route_result", return_value=route_result) as routed, patch.object(
+                agent_preflight, "cached_vibeguard", return_value=vibeguard
+            ), patch.object(agent_preflight, "lesson_summary", return_value={"accepted": [], "promoted": [], "candidate_count": 0}), patch.object(
+                agent_preflight, "check_agent_hooks", return_value=([], [])
+            ):
+                self.assertEqual(0, agent_preflight.run_preflight(args, ROOT))
+
+            evidence = json.loads((project / ".agentplaybook" / "preflight.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(1, routed.call_count)
+        self.assertIn("execution_snapshot", evidence)
+        self.assertNotIn("project_git", evidence["execution_snapshot"])
+        self.assertFalse((project / ".agentplaybook" / "execution-capsule.json").exists())
+
     def test_inspect_only_invalid_dispatch_withholds_raw_worker_command(self) -> None:
         capsule_state = {
             "path": "/tmp/execution-capsule.json",
@@ -865,6 +999,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "feature",
                 "기획변경 때 문서 정리가 누락되는 걸 막아줘",
                 ROOT,
+                isolation_required=True,
             )
 
         markdown = io.StringIO()
@@ -1199,6 +1334,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     project,
                     worker_evidence_path=worker_evidence,
                     reserve_worker_evidence=True,
+                    isolation_required=True,
                 )
 
             handoff = manifest["handoff_state"]
@@ -2525,6 +2661,12 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertEqual(1, plan["schema_version"])
         self.assertEqual([], validate_parallel_execution_plan(plan, route["gates"]))
+        self.assertEqual(3, plan["delegation_policy"]["maximum_workers"])
+        self.assertTrue(plan["delegation_policy"]["small_task_serial_fallback"])
+        self.assertIn(
+            "small bounded task that one parent can complete without a worker",
+            plan["delegation_policy"]["serial_fallbacks"],
+        )
         self.assertEqual("parallel", phases["orientation"]["mode"])
         self.assertIn(SOURCE_DOCS_GATE, phases["orientation"]["gates"])
         self.assertEqual("conditional_parallel", phases["implementation"]["mode"])

@@ -45,6 +45,13 @@ COMMANDS: Dict[str, Profile] = {
         gates=("orient", "scope", "act", "verify", "report"),
         notes=("Use for general multi-step agent work.",),
     ),
+    "analysis": Profile(
+        docs=(),
+        gates=("investigate", "report"),
+        notes=(
+            "Use for a bounded, read-only investigation with no code, test, durable documentation, or review output.",
+        ),
+    ),
     "workflow-setup": Profile(
         docs=("workflows/skills/agent-task-lifecycle/SKILL.md", "common/skills/tool-failure-recovery/SKILL.md"),
         gates=("orient", "install or repair", "runtime label handoff", "verify", "handoff"),
@@ -270,6 +277,7 @@ SPILL_ACTION_LABELS: Dict[str, Tuple[str, str]] = {
 
 
 SPILL_ROUTE_LABELS: Dict[str, Tuple[str, str]] = {
+    "analysis": ("analysis", "summarize"),
     "ambiguity": ("analysis", "classify"),
     "bugfix": ("debugging", "implement"),
     "docs": ("documentation", "draft"),

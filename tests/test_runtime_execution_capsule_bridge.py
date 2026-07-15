@@ -56,8 +56,9 @@ class RuntimeExecutionCapsuleBridgeTests(unittest.TestCase):
         agy_block = runtime_bridge_block(ROOT, "Antigravity", "AGENTS.md")
 
         self.assertIn(CODEX_DISPATCH_BRIDGE_PHRASE, codex_block)
-        self.assertIn("only when the selected model", CODEX_DISPATCH_BRIDGE_PHRASE)
-        self.assertIn("instead of launching a fresh Codex process", CODEX_DISPATCH_BRIDGE_PHRASE)
+        self.assertIn("only when isolation is explicitly required", CODEX_DISPATCH_BRIDGE_PHRASE)
+        self.assertIn("unavailable parent profile information", CODEX_DISPATCH_BRIDGE_PHRASE)
+        self.assertIn("fresh Codex process", CODEX_DISPATCH_BRIDGE_PHRASE)
         self.assertNotIn(
             "After the parent records the split decision, use workflow.py dispatch --execute",
             codex_block,
@@ -226,9 +227,10 @@ class RuntimeExecutionCapsuleBridgeTests(unittest.TestCase):
         self.assertIn("## Provider-Neutral Execution Capsule", guidance)
         self.assertIn("content-free", guidance)
         self.assertIn("run `agent-hook.py handoff`", guidance)
-        self.assertIn("capsule status `ready`", guidance)
+        self.assertIn("ready-and-valid result", guidance)
         self.assertIn("sole owner of the gate ledger", guidance)
         self.assertIn("successful fallback decision", guidance)
+        self.assertIn("must not repeat required-doc reads, VibeGuard, review, or final validation", guidance)
         self.assertRegex(guidance, r"worker-specific evidence\s+paths")
         self.assertIn("Claude passes the validated capsule to Agent/Task workers", guidance)
         self.assertIn("Gemini/Antigravity/AGY passes the validated capsule", guidance)

@@ -102,19 +102,10 @@ def _hook_summary_from_preflight(path: Path) -> list[str]:
 
 
 def _start_capsule_detail(args: argparse.Namespace) -> str:
-    """Report the capsule already captured by the single preflight lifecycle."""
+    """Describe the lazy parent-to-worker capsule boundary."""
 
-    evidence_path = preflight_evidence_path(args)
-    try:
-        from agent_execution_capsule import read_execution_capsule
-        from agent_execution_capsule_state import capsule_path_for_evidence
-
-        capsule = read_execution_capsule(capsule_path_for_evidence(evidence_path))
-    except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as error:
-        return f"execution capsule unavailable: {error}"
-    if capsule.get("phase") == "ready":
-        return "execution capsule captured required-doc and route bindings"
-    return "execution capsule is not ready; delegated work must use the full lifecycle"
+    _ = args
+    return "execution capsule creation deferred until a worker handoff"
 
 
 def finish_hook(args: argparse.Namespace) -> int:

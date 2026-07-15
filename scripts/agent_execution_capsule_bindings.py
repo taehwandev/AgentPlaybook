@@ -108,9 +108,11 @@ def git_binding_failures(
     record: dict[str, Any],
     path: Path,
     label: str,
+    *,
+    current: dict[str, str] | None = None,
 ) -> list[str]:
     try:
-        current = git_state(path)
+        current = current or git_state(path)
     except (OSError, RuntimeError):
         return [f"execution capsule {label} git state is unavailable"]
     failures = []

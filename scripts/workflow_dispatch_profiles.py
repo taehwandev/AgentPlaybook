@@ -36,6 +36,7 @@ WORK_PROFILES = {
 }
 
 AUTO_WORK_KINDS = {
+    "analysis": "analysis",
     "prd": "prd_design",
     "spec": "prd_design",
     "plan": "research",

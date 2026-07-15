@@ -15,13 +15,26 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from agent_execution_capsule import (
     REUSE_POLICY,
     capsule_path_for_evidence,
+    create_preflight_snapshot,
     read_execution_capsule,
     refresh_execution_capsule,
     synchronize_execution_capsule_gate_ledger,
     validate_execution_capsule,
 )
-from agent_execution_capsule_state import execution_capsule_binding_fingerprint
-from agent_execution_capsule_validation import validate_source_docs_binding
+from agent_execution_capsule_state import (
+    execution_capsule_binding_fingerprint,
+    git_states_for_paths,
+    preflight_snapshot_binding_fingerprint,
+)
+from agent_execution_capsule_validation import (
+    validate_preflight_snapshot,
+    validate_source_docs_binding,
+)
+from agent_finish_final_checks import (
+    record_successful_review_workflow_validation,
+    reusable_review_workflow_validation,
+    run_final_checks,
+)
 from agent_finish_check_steps import route_gate_capsule_binding_failures
 from agent_gate_evidence import (
     gate_evidence_path_for_preflight,
@@ -87,6 +100,163 @@ class ExecutionCapsuleTests(unittest.TestCase):
         self.assertNotIn(str(self.project), serialized)
         self.assertNotIn(str(self.rules), serialized)
         self.assertNotIn("git status", serialized)
+
+    def test_capsule_binds_an_explicit_request_fingerprint(self) -> None:
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        preflight["request_intake"] = {
+            "request": "inspect current lifecycle cost",
+            "request_classified": True,
+            "classification_evidence": "clear-scoped",
+        }
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self._write_ledger()
+        capsule = refresh_execution_capsule(self.project, self.rules, self.evidence_path, self.route)
+
+        self.assertRegex(capsule["request_fingerprint"], r"^[0-9a-f]{64}$")
+        preflight["request_intake"]["request"] = "implement lifecycle optimization"
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self._write_ledger()
+
+        failures = validate_execution_capsule(
+            capsule, self.project, self.rules, self.evidence_path, self.route
+        )
+        self.assertIn("execution capsule request fingerprint does not match", failures)
+
+    def test_shared_git_repository_state_is_fingerprinted_once(self) -> None:
+        state = {"head": "a" * 40, "worktree_fingerprint": "b" * 64}
+        with patch("agent_execution_capsule_state.git_repository_root", return_value=self.project), patch(
+            "agent_execution_capsule_state.git_state", return_value=state
+        ) as capture:
+            project_state, rules_state = git_states_for_paths(self.project, self.rules)
+
+        self.assertEqual(state, project_state)
+        self.assertEqual(state, rules_state)
+        self.assertEqual(1, capture.call_count)
+
+    def test_validation_uses_one_shared_git_state_capture(self) -> None:
+        capsule = refresh_execution_capsule(self.project, self.rules, self.evidence_path, self.route)
+        capsule["rules_git"] = dict(capsule["project_git"])
+        with patch(
+            "agent_execution_capsule_validation.git_states_for_paths",
+            return_value=(capsule["project_git"], capsule["project_git"]),
+        ) as capture:
+            failures = validate_execution_capsule(
+                capsule, self.project, self.rules, self.evidence_path, self.route
+            )
+
+        self.assertEqual([], failures)
+        capture.assert_called_once_with(self.project.resolve(), self.rules.resolve())
+
+    def test_serial_preflight_snapshot_preserves_source_docs_without_a_capsule(self) -> None:
+        self.route = {**self.route, "gates": ["source docs"]}
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        preflight["route"] = self.route
+        snapshot = create_preflight_snapshot(
+            self.rules,
+            self.route,
+            preflight.get("request_intake") or {},
+        )
+        preflight["execution_snapshot"] = snapshot
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self._write_ledger()
+
+        self.assertIsNotNone(preflight_snapshot_binding_fingerprint(snapshot))
+        self.assertEqual(
+            [],
+            validate_preflight_snapshot(
+                snapshot,
+                self.project,
+                self.evidence_path,
+                self.rules,
+                self.route,
+            ),
+        )
+        self.assertEqual(
+            [],
+            route_gate_capsule_binding_failures(
+                self.route,
+                self.project,
+                self.rules,
+                self.evidence_path,
+                {},
+                {},
+            ),
+        )
+        (self.rules / "guide.md").write_text("# Changed Guide\n", encoding="utf-8")
+        failures = validate_preflight_snapshot(
+            snapshot, self.project, self.evidence_path, self.rules, self.route
+        )
+        self.assertIn("execution capsule required doc hash changed: guide.md", failures)
+
+    def test_new_serial_preflight_ignores_a_stale_previous_task_capsule(self) -> None:
+        old_route = {**self.route, "gates": ["source docs"]}
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        preflight["route"] = old_route
+        preflight["request_intake"] = {"request": "previous task"}
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self._write_ledger()
+        stale_capsule = refresh_execution_capsule(
+            self.project, self.rules, self.evidence_path, old_route
+        )
+
+        self.route = {**self.route, "gates": ["source docs", "verify"]}
+        preflight["route"] = self.route
+        preflight["request_intake"] = {"request": "current serial task"}
+        snapshot = create_preflight_snapshot(self.rules, self.route, preflight["request_intake"])
+        preflight["execution_snapshot"] = snapshot
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self._write_ledger()
+        snapshot_binding = preflight_snapshot_binding_fingerprint(snapshot)
+
+        self.assertNotEqual(
+            execution_capsule_binding_fingerprint(stale_capsule), snapshot_binding
+        )
+        self.assertEqual(
+            [],
+            route_gate_capsule_binding_failures(
+                self.route,
+                self.project,
+                self.rules,
+                self.evidence_path,
+                {"source docs": "current docs read", "verify": "current check passed"},
+                {"capsule_bindings": {"source docs": snapshot_binding, "verify": snapshot_binding}},
+            ),
+        )
+
+    def test_final_checks_reuse_only_a_current_review_validation(self) -> None:
+        record_successful_review_workflow_validation(
+            self.project,
+            self.rules,
+            self.evidence_path,
+            {"returncode": 0},
+        )
+
+        reused = reusable_review_workflow_validation(self.project, self.rules)
+        self.assertIsNotNone(reused)
+        self.assertTrue(reused["reused"])
+
+        with patch(
+            "agent_finish_final_checks.run_workflow_validate",
+            side_effect=AssertionError("finish must reuse the review validation"),
+        ), patch(
+            "agent_finish_final_checks.cached_vibeguard",
+            return_value={"returncode": 0, "overall": {"status": "Ready"}},
+        ), patch(
+            "agent_finish_final_checks.run_command",
+            return_value={"returncode": 0, "stdout": "", "stderr": ""},
+        ):
+            validate, _, _, _ = run_final_checks(
+                ROOT,
+                self.project,
+                self.rules,
+                None,
+                [],
+                [],
+            )
+        self.assertTrue(validate["reused"])
+
+        (self.project / "app.txt").write_text("changed\n", encoding="utf-8")
+        self.assertIsNone(reusable_review_workflow_validation(self.project, self.rules))
 
     def test_capsule_without_required_doc_stays_preflight_and_is_not_reusable(self) -> None:
         (self.rules / "guide.md").unlink()

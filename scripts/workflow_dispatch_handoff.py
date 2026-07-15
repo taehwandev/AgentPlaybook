@@ -137,20 +137,19 @@ def build_handoff_prompt(
     instructions = [
         "You are a delegated Codex worker for one bounded task stage.",
         "Do not delegate another Codex child from this worker.",
-        "Read target instructions before changing files and preserve existing user changes.",
+        "Follow the scoped handoff and preserve existing user changes.",
     ]
     if non_authoring:
         instructions.append(
             "This is a read-only non-authoring stage. Do not modify files, write code, generate patches, or create tests."
         )
     _add_capsule_instructions(instructions, handoff_state)
+    reusable_capsule = _has_reusable_capsule(handoff_state)
     instructions.extend(
         [
             f"Workflow command: {command}",
             f"Work kind: {work_kind}",
             f"AgentPlaybook rules root: {handoff_state['rules']}",
-            f"Required docs from the parent route: {required_docs or 'resolve from the route'}",
-            "Open and read every required doc from that manifest before editing, reviewing, or running project-specific work.",
             f"Parent route gates: {gates or 'resolve from the route'}",
             f"Parent preflight evidence: {handoff_state['preflight_evidence']}",
             f"Parent gate ledger: {handoff_state['gate_ledger']}",
@@ -160,6 +159,20 @@ def build_handoff_prompt(
             request,
         ]
     )
+    if reusable_capsule:
+        instructions.insert(
+            instructions.index(f"Parent route gates: {gates or 'resolve from the route'}"),
+            f"Required docs already read by the parent: {required_docs or 'none'}",
+        )
+    else:
+        instructions.insert(
+            instructions.index(f"Parent route gates: {gates or 'resolve from the route'}"),
+            "Open and read every required doc from the parent route manifest before editing, reviewing, or running project-specific work.",
+        )
+        instructions.insert(
+            instructions.index("Open and read every required doc from the parent route manifest before editing, reviewing, or running project-specific work."),
+            f"Required docs from the parent route: {required_docs or 'resolve from the route'}",
+        )
     return "\n".join(instructions)
 
 
@@ -171,8 +184,9 @@ def _add_capsule_instructions(
         instructions.extend(
             [
                 f"Validated parent execution capsule: {capsule_state['path']}",
-                "Reuse its route, preflight, and required-doc manifest instead of rerunning startup.",
-                "The capsule does not contain document content; read every required doc listed below before work.",
+                "The parent already completed route, preflight, required-doc reading, VibeGuard, and review preparation.",
+                "Reuse that route, preflight, and document-read evidence. Do not reread required docs or rerun route, startup, preflight, VibeGuard, review, finish, or other lifecycle work.",
+                "Return only scoped implementation and verification evidence to the parent for its single integration, workflow validation, and final review.",
                 "The parent remains the only owner of the gate ledger; child runtime guards make parent evidence read-only.",
             ]
         )
@@ -198,3 +212,8 @@ def _add_capsule_instructions(
         instructions.append(
             "The launcher must reserve the worker evidence directory and mint its single-use token before this worker starts."
         )
+
+
+def _has_reusable_capsule(handoff_state: Mapping[str, object]) -> bool:
+    capsule_state = handoff_state.get("execution_capsule")
+    return isinstance(capsule_state, Mapping) and bool(capsule_state.get("reusable"))

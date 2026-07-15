@@ -44,14 +44,17 @@ The parent owns the capsule lifecycle:
    workflow list, classify, route, and preflight as a second startup sequence.
 2. Read the route's `required_docs` directly before work. Do not add a second
    document-confirmation step.
-3. At each parent-to-worker boundary, run `agent-hook.py handoff`. It refreshes
-   the capsule from the current project/rules/worktree fingerprints, route
-   manifest, and required-document fingerprints, then rebinds the parent's
-   successful ledger entries to that new snapshot. It updates only the ledger
-   hash afterward, without repeating the same expensive hash walk.
-4. A worker may reuse the parent's route, preflight, and required-doc manifest and
-   skip duplicate startup only when the handoff reports capsule status `ready`
-   and validation succeeds.
+3. At each parent-to-worker boundary, run `agent-hook.py handoff`. It lazily
+   creates the capsule from the current project/rules/worktree fingerprints,
+   route manifest, request fingerprint, and required-document snapshot, then
+   rebinds the parent's successful ledger entries to that snapshot. When
+   project and rules are in the same Git repository, capture their Git state
+   once for that handoff.
+4. A worker may reuse the parent's route, preflight, required-doc brief, and
+   gate context and skip duplicate startup only when the handoff reports capsule
+   status `ready` and validation succeeds. The parent has already read the
+   required docs; a reusable worker must not reread them, run VibeGuard, or run
+   a separate review or finish lifecycle.
 5. A missing capsule, hash mismatch, changed required document, stale evidence
    reference, project/rules mismatch, or other invalid result is a successful
    fallback decision from the handoff command, not permission to reuse. The
@@ -74,11 +77,13 @@ separate capsule command.
 
 Runtime adapters stay thin and apply the same validation semantics:
 
-- Codex uses native subagents or parallel workers when the selected profile and
-  sandbox already match the parent. Use `workflow.py dispatch --execute` only
-  when the selected model, reasoning effort, sandbox, or required isolation
-  differs; do not launch a fresh Codex process for a matching, non-isolated
-  leaf. Inspecting a child manifest does not expose runnable arguments: execute
+- The `analysis` route is a serial, read-only fast path. It retains only the
+  active runtime instruction, has no code/test/documentation/review gate, and
+  launches no worker unless isolation is explicitly requested.
+- Codex keeps a leaf inline unless isolation is explicitly required. Profile or
+  sandbox differences and missing parent-profile information are decision
+  evidence, not automatic reasons to launch a nested Codex process. Inspecting
+  an isolated child manifest does not expose runnable arguments: execute
   revalidates the capsule and mints or verifies the worker reservation directly
   before launch.
 - Claude passes the validated capsule to Agent/Task workers.
@@ -450,10 +455,9 @@ plan.
 
 For Codex, make the parent split decision first. At a bounded leaf/task
 boundary, use `workflow.py dispatch <command> --request "<USER_REQUEST>"
---execute` only when the selected model, reasoning effort, sandbox, or required
-isolation differs from the parent. If the selected profile and sandbox match
-and isolation is unnecessary, keep the leaf in the current process or use a
-native worker; do not launch a fresh Codex process. One dispatch is not
+--execute` only when isolation is explicitly required. Keep every non-isolated
+leaf in the current process or use a native worker, regardless of whether the
+selected profile, sandbox, or parent profile information matches. One dispatch is not
 multi-agent fanout. The main session remains responsible for orchestration,
 integration, and final verification. Omit `--execute` to inspect a
 non-executing handoff manifest. The profiles are explicit:
@@ -469,7 +473,7 @@ non-executing handoff manifest. The profiles are explicit:
 | Final review | Sol / xhigh |
 
 Automatic stage selection is command-based: `prd` and `spec` select PRD/design,
-`plan` and `planning` select research, `task` selects general analysis,
+`plan` and `planning` select research, `analysis` and `task` select general analysis,
 `feature`/`build`/`bugfix`/`refactor`/`workflow-setup` select implementation,
 and only quick, non-authoring `test` work selects the read-only Luna profile.
 Test creation, test fixes, code edits, and every implementation command stay on
@@ -640,17 +644,19 @@ For every runtime:
 13. Read the route's `required_docs` directly before work. Do not separately
     repeat workflow list, classify, route, or preflight after a successful
     start hook, and do not add a document-confirmation command. The existing
-    execution capsule binds the preflight and routed document hashes; finish
-    validates every required gate against that same capsule, while `source docs`
-    also receives the exact routed manifest instead of an agent-claimed empty
-    state. An empty
+    parent preflight binds the routed document snapshot and request fingerprint;
+    the handoff capsule reuses that snapshot only when a worker boundary exists.
+    Finish validates the parent-owned evidence without requiring a capsule for
+    a task that never delegates, while `source docs` also receives the exact
+    routed manifest instead of an agent-claimed empty state. An empty
     `required_docs` list is a valid no-source state and must continue once,
     with a recorded no-source decision, rather than retrying or blocking the
     capsule in preflight.
-14. Before delegating, run `scripts/agent-hook.py handoff` to refresh and
+14. Before delegating, run `scripts/agent-hook.py handoff` to lazily create and
     validate the execution capsule once. A worker may reuse the parent route,
-    preflight, and required-doc manifest only after a ready-and-valid result. An
-    invalid result is a successful fallback decision requiring the normal
+    preflight, and required-doc brief only after a ready-and-valid result; it
+    must not repeat required-doc reads, VibeGuard, review, or final validation.
+    An invalid result is a successful fallback decision requiring the normal
     lifecycle on worker-specific evidence paths. Keep the parent as the sole
     gate-ledger owner and never overwrite its evidence during fallback.
 15. When wrapper scripts are available, run `scripts/agent-hook.py finish`
@@ -707,9 +713,9 @@ Automation may proceed without another question only when all of these are true:
 - destructive work, external writes, deploys, migrations, publishing,
   credential changes, and paid-usage increases are out of scope or separately
   approved;
-- each slice still has valid preflight state, directly reads its routed
-  `required_docs`, runs review hook when required, runs finish-check, and runs
-  the nearest verification.
+- the parent has valid preflight state, directly reads its routed `required_docs`,
+  owns the single review hook and finish-check, and every worker runs only its
+  bounded implementation or verification responsibility.
 
 If any condition fails, the runtime should stop at a decision point instead of
 continuing under an "auto" label.

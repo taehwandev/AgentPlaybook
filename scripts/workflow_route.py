@@ -44,6 +44,7 @@ CODE_WORK_REQUIRED_DOCS = (
 )
 
 COMMAND_REQUIRED_DOCS = {
+    "analysis": (),
     "ambiguity": ("workflows/skills/ambiguity-gate/SKILL.md",),
     "bugfix": ("workflows/skills/bugfix-debugging/SKILL.md",),
     "build": ("workflows/skills/feature-implementation/SKILL.md",),
@@ -326,6 +327,12 @@ def route_required_docs(
     profile_docs: tuple[str, ...],
     surface_docs: list[str] | None = None,
 ) -> list[str]:
+    # A simple investigation has no work-producing gates.  Keep the runtime
+    # instruction available, but do not make it pay the full operating-skill
+    # document-read cost before it can answer.
+    if command == "analysis":
+        return ["AGENTS.md"]
+
     docs: list[str] = [*CORE_REQUIRED_DOCS, *COMMAND_REQUIRED_DOCS.get(command, profile_docs)]
 
     if command in {"build", "bugfix", "code-simplify", "feature", "product", "refactor", "task", "workflow-setup"}:

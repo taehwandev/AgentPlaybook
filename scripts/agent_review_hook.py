@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_gate_evidence import record_gate_evidence
+from agent_finish_final_checks import record_successful_review_workflow_validation
 from agent_inprocess import run_workflow_validate
 from agent_review_boundary import format_boundary_note_requirements, missing_boundary_note_fields
 from agent_review_structure import structure_review
@@ -117,6 +118,14 @@ def review_hook(
         checks["workflow_validate"] = validate
         if validate["returncode"] != 0:
             failures.append(workflow_validate_failure_detail(validate))
+        else:
+            evidence_path = args.evidence if args.evidence else args.project / ".agentplaybook" / "preflight.json"
+            record_successful_review_workflow_validation(
+                args.project,
+                args.rules,
+                evidence_path,
+                validate,
+            )
     else:
         failures.append(f"workflow validate script missing at {validate_script}")
 

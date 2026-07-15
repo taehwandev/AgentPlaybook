@@ -12,7 +12,8 @@ from typing import Any
 from agent_worktree_fingerprint import git_output, worktree_fingerprint
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+PREFLIGHT_SNAPSHOT_SCHEMA_VERSION = 1
 CAPSULE_FILENAME = "execution-capsule.json"
 REUSE_POLICY = {
     "condition": "ready_and_valid",
@@ -69,6 +70,30 @@ def git_state(path: Path) -> dict[str, str]:
     }
 
 
+def git_repository_root(path: Path) -> Path:
+    """Return the canonical top-level repository for a path.
+
+    Capsule callers frequently receive a project root and a rules root that
+    are different directories inside the same checkout.  They still describe
+    one mutable worktree, so callers must not stream its fingerprint twice.
+    """
+
+    return Path(git_output(path, "rev-parse", "--show-toplevel").strip()).resolve()
+
+
+def git_states_for_paths(project: Path, rules: Path) -> tuple[dict[str, str], dict[str, str]]:
+    """Capture project/rules state, hashing a shared repository only once."""
+
+    project = project.resolve()
+    rules = rules.resolve()
+    project_root = git_repository_root(project)
+    rules_root = git_repository_root(rules)
+    project_state = git_state(project)
+    if project_root == rules_root:
+        return project_state, project_state
+    return project_state, git_state(rules)
+
+
 def sha256_file(path: Path) -> str:
     return _sha256_and_size(path)[0]
 
@@ -94,6 +119,7 @@ def execution_capsule_binding_fingerprint(capsule: dict[str, Any]) -> str | None
         "schema_version",
         "phase",
         "route_fingerprint",
+        "request_fingerprint",
         "preflight_evidence",
         "required_docs",
         "reuse_policy",
@@ -103,6 +129,30 @@ def execution_capsule_binding_fingerprint(capsule: dict[str, Any]) -> str | None
     if capsule.get("phase") != "ready":
         return None
     payload = {field: capsule[field] for field in required}
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def preflight_snapshot_binding_fingerprint(snapshot: dict[str, Any]) -> str | None:
+    """Return the immutable parent-start binding when no worker is handed off.
+
+    A simple serial task has no reason to create an execution capsule.  Its
+    gate evidence still needs one stable, content-free pre-edit binding, so the
+    parent preflight snapshot carries the route/request/document identity until
+    a later handoff replaces it with a ready execution capsule.
+    """
+
+    required = (
+        "schema_version",
+        "route_fingerprint",
+        "request_fingerprint",
+        "required_docs",
+    )
+    if any(field not in snapshot for field in required):
+        return None
+    if snapshot.get("schema_version") != PREFLIGHT_SNAPSHOT_SCHEMA_VERSION:
+        return None
+    payload = {field: snapshot[field] for field in required}
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 

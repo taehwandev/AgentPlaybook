@@ -10,8 +10,14 @@ from typing import Any
 
 from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_execution_capsule import capsule_path_for_evidence, read_execution_capsule
-from agent_execution_capsule_state import execution_capsule_binding_fingerprint
-from agent_execution_capsule_validation import validate_source_docs_binding
+from agent_execution_capsule_state import (
+    execution_capsule_binding_fingerprint,
+    preflight_snapshot_binding_fingerprint,
+)
+from agent_execution_capsule_validation import (
+    validate_preflight_snapshot,
+    validate_source_docs_binding,
+)
 from agent_finish_common import add_gate_signal, append_unique
 from agent_finish_gate_policy import SOURCE_DOCS_GATE, validate_gate_evidence
 from agent_finish_documentation import documented_required_doc_updates
@@ -117,24 +123,64 @@ def route_gate_capsule_binding_failures(
     if not required_gates:
         return []
     capsule = read_execution_capsule(capsule_path_for_evidence(evidence_path))
+    preflight = read_preflight(evidence_path, failures=[])
+    snapshot = preflight.get("execution_snapshot") if isinstance(preflight, dict) else None
+    capsule_binding = execution_capsule_binding_fingerprint(capsule)
+    snapshot_binding = (
+        preflight_snapshot_binding_fingerprint(snapshot)
+        if isinstance(snapshot, dict)
+        else None
+    )
     failures: list[str] = []
+    expected_binding: str | None = None
     if SOURCE_DOCS_GATE in required_gates:
-        failures = validate_source_docs_binding(
-            capsule,
-            project=project,
-            rules=rules,
+        documented_updates = documented_required_doc_updates(
             evidence_path=evidence_path,
             route=route,
-            documented_updates=documented_required_doc_updates(
+        )
+        if capsule_binding:
+            capsule_failures = validate_source_docs_binding(
+                capsule,
+                project=project,
+                rules=rules,
                 evidence_path=evidence_path,
                 route=route,
-            ),
-        )
+                documented_updates=documented_updates,
+            )
+            if not capsule_failures:
+                expected_binding = capsule_binding
+            elif snapshot_binding:
+                # A previous task may leave a valid-shaped capsule behind after
+                # this parent started a new serial route.  Its stale binding
+                # must not override the current parent preflight snapshot.
+                failures = validate_preflight_snapshot(
+                    snapshot if isinstance(snapshot, dict) else {},
+                    project=project,
+                    evidence_path=evidence_path,
+                    rules=rules,
+                    route=route,
+                    documented_updates=documented_updates,
+                )
+                if not failures:
+                    expected_binding = snapshot_binding
+            else:
+                failures = capsule_failures
+        else:
+            failures = validate_preflight_snapshot(
+                snapshot if isinstance(snapshot, dict) else {},
+                project=project,
+                evidence_path=evidence_path,
+                rules=rules,
+                route=route,
+                documented_updates=documented_updates,
+            )
+            if not failures:
+                expected_binding = snapshot_binding
         if failures:
             return list(dict.fromkeys(failures))
-    expected_binding = execution_capsule_binding_fingerprint(capsule)
+    expected_binding = expected_binding or capsule_binding or snapshot_binding
     if not expected_binding:
-        return ["execution capsule is not ready for route gate evidence"]
+        return ["execution capsule or preflight snapshot is not ready for route gate evidence"]
 
     bindings = gate_evidence_ledger.get("capsule_bindings") or {}
     for gate in required_gates:

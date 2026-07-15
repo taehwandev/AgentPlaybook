@@ -14,16 +14,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from agent_execution_capsule import (
-    refresh_execution_capsule,
-    synchronize_execution_capsule_gate_ledger,
-)
+from agent_execution_capsule import create_preflight_snapshot
 from agent_execution_capsule_state import atomic_write_json
 from agent_global_lessons import lesson_summary
-from agent_hook_gate_records import (
-    bind_existing_gate_evidence,
-    reset_and_record_preflight_gate,
-)
+from agent_hook_gate_records import reset_and_record_preflight_gate
 from agent_preflight_runtime import (
     active_runtime_label,
     agy_runtime_bridge_issue,
@@ -461,20 +455,15 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
     if not failures and route_payload:
         try:
             preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
-            reset_and_record_preflight_gate(evidence_path, preflight)
-            capsule = refresh_execution_capsule(
-                project=project,
-                rules=rules,
-                evidence_path=evidence_path,
-                route=route_payload,
+            preflight["execution_snapshot"] = create_preflight_snapshot(
+                rules,
+                route_payload,
+                preflight.get("request_intake") or {},
             )
-            if capsule.get("phase") != "ready":
-                failures.append("execution capsule did not become ready after preflight")
-            else:
-                bind_existing_gate_evidence(evidence_path, preflight)
-                synchronize_execution_capsule_gate_ledger(capsule, evidence_path)
+            write_json(evidence_path, preflight)
+            reset_and_record_preflight_gate(evidence_path, preflight)
         except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as error:
-            failures.append(f"execution capsule refresh failed: {error}")
+            failures.append(f"preflight gate ledger initialization failed: {error}")
 
     print(f"Preflight evidence: {evidence_path}")
     if route_payload:

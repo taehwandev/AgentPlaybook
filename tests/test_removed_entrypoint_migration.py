@@ -203,6 +203,7 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
                 "feature",
                 "기획변경 때 문서 정리가 누락되는 걸 막아줘",
                 project,
+                isolation_required=True,
                 worker_evidence_path=worker_evidence,
                 worker_reservation_token=token,
             )
@@ -210,6 +211,7 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
                 "feature",
                 "기획변경 때 문서 정리가 누락되는 걸 막아줘",
                 project,
+                isolation_required=True,
                 worker_evidence_path=worker_evidence,
                 worker_reservation_token=token,
             )
@@ -235,6 +237,7 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
                     "feature",
                     "기획변경 때 문서 정리가 누락되는 걸 막아줘",
                     project,
+                    isolation_required=True,
                     worker_evidence_path=worker_evidence,
                     worker_reservation_token="0" * 32,
                 )

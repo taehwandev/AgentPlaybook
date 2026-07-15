@@ -10,10 +10,9 @@ RUNTIME_BRIDGE_END = "<!-- agentplaybook-runtime-bridge:end -->"
 LEGACY_RUNTIME_BRIDGE_BEGIN = "<!-- BEGIN MANAGED RUNTIME BRIDGE -->"
 LEGACY_RUNTIME_BRIDGE_END = "<!-- END MANAGED RUNTIME BRIDGE -->"
 CODEX_DISPATCH_BRIDGE_PHRASE = (
-    "For a bounded Codex leaf, use workflow.py dispatch --execute only when the selected model, "
-    "reasoning effort, sandbox, or required isolation differs from the parent. When the selected "
-    "profile and sandbox match and isolation is unnecessary, stay in the current process or use a "
-    "native worker instead of launching a fresh Codex process."
+    "For a bounded Codex leaf, use workflow.py dispatch --execute only when isolation is explicitly "
+    "required. A matching parent profile or unavailable parent profile information both stay in the "
+    "current process or use a native worker; neither condition starts a fresh Codex process."
 )
 RUNTIME_NATIVE_DELEGATION_PHRASES = {
     "Codex": (
@@ -48,12 +47,13 @@ RUNTIME_FINISH_BRIDGE_PHRASE = (
 )
 RUNTIME_CAPSULE_BRIDGE_PHRASES = [
     (
-        "At each parent-to-worker boundary, run AgentPlaybook agent-hook.py handoff; it refreshes "
-        "the provider-neutral, content-free execution capsule and validates it once."
+        "At each parent-to-worker boundary, run AgentPlaybook agent-hook.py handoff; it lazily creates "
+        "the provider-neutral, content-free execution capsule for that worker and validates it once."
     ),
     (
         "Only a ready and valid handoff lets a worker reuse the parent's route, preflight, and "
-        "required-doc manifest and skip duplicate startup."
+        "required-doc manifest and brief, skipping duplicate startup, required-doc reading, VibeGuard, "
+        "review, and finish work; the parent performs the final integration review and finish once."
     ),
     (
         "An invalid handoff is a successful fallback decision that requires the worker's normal "

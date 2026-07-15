@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -12,17 +13,19 @@ from agent_execution_capsule_bindings import (
     preflight_identity_failures,
 )
 from agent_execution_capsule_state import (
+    PREFLIGHT_SNAPSHOT_SCHEMA_VERSION,
     REUSE_POLICY,
     SCHEMA_VERSION,
+    git_states_for_paths,
     is_sha256,
 )
 from agent_execution_capsule_docs import required_doc_failures
 from agent_gate_evidence import gate_evidence_path_for_preflight
-from agent_route_state import route_fingerprint
+from agent_route_state import request_fingerprint, route_fingerprint
 
 
 _TOP_LEVEL_FIELDS = {
-    "schema_version", "created_at", "phase", "route_fingerprint",
+    "schema_version", "created_at", "phase", "route_fingerprint", "request_fingerprint",
     "preflight_evidence", "required_docs",
     "project_git", "rules_git", "gate_ledger", "reuse_policy",
 }
@@ -46,6 +49,8 @@ def validate_execution_capsule(
         failures.append("execution capsule phase is not ready")
     if capsule["route_fingerprint"] != route_fingerprint(route):
         failures.append("execution capsule route fingerprint does not match")
+    if capsule["request_fingerprint"] != request_fingerprint(_request_intake(evidence_path)):
+        failures.append("execution capsule request fingerprint does not match")
     failures.extend(
         file_binding_failures(
             capsule["preflight_evidence"], evidence_path, "preflight evidence"
@@ -56,8 +61,21 @@ def validate_execution_capsule(
     if capsule["phase"] == "ready":
         failures.extend(required_doc_failures(capsule["required_docs"], rules, route))
 
-    failures.extend(git_binding_failures(capsule["project_git"], project, "project"))
-    failures.extend(git_binding_failures(capsule["rules_git"], rules, "rules"))
+    try:
+        project_git, rules_git = git_states_for_paths(project, rules)
+    except (OSError, RuntimeError):
+        failures.append("execution capsule project/rules git state is unavailable")
+    else:
+        failures.extend(
+            git_binding_failures(
+                capsule["project_git"], project, "project", current=project_git
+            )
+        )
+        failures.extend(
+            git_binding_failures(
+                capsule["rules_git"], rules, "rules", current=rules_git
+            )
+        )
     ledger_path = gate_evidence_path_for_preflight(evidence_path)
     if capsule.get("gate_ledger") is not None:
         failures.extend(
@@ -102,6 +120,8 @@ def validate_source_docs_binding(
         failures.append("execution capsule phase is not ready for source docs")
     if capsule["route_fingerprint"] != route_fingerprint(route):
         failures.append("execution capsule route fingerprint does not match source docs")
+    if capsule["request_fingerprint"] != request_fingerprint(_request_intake(evidence_path)):
+        failures.append("execution capsule request fingerprint does not match source docs")
     failures.extend(
         file_binding_failures(
             capsule["preflight_evidence"], evidence_path, "source-docs preflight evidence"
@@ -111,6 +131,38 @@ def validate_source_docs_binding(
     failures.extend(
         required_doc_failures(
             capsule["required_docs"],
+            rules,
+            route,
+            documented_updates=documented_updates,
+        )
+    )
+    return list(dict.fromkeys(failures))
+
+
+def validate_preflight_snapshot(
+    snapshot: dict[str, Any],
+    project: Path,
+    evidence_path: Path,
+    rules: Path,
+    route: dict[str, Any],
+    documented_updates: set[str] | None = None,
+) -> list[str]:
+    """Validate the no-worker source-doc snapshot captured at parent start."""
+
+    project = project.resolve()
+    evidence_path = evidence_path.resolve()
+    rules = rules.resolve()
+    failures = _preflight_snapshot_shape_failures(snapshot)
+    if failures:
+        return failures
+    if snapshot["route_fingerprint"] != route_fingerprint(route):
+        failures.append("preflight snapshot route fingerprint does not match source docs")
+    if snapshot["request_fingerprint"] != request_fingerprint(_request_intake(evidence_path)):
+        failures.append("preflight snapshot request fingerprint does not match source docs")
+    failures.extend(preflight_identity_failures(evidence_path, project, rules))
+    failures.extend(
+        required_doc_failures(
+            snapshot["required_docs"],
             rules,
             route,
             documented_updates=documented_updates,
@@ -134,6 +186,8 @@ def _shape_failures(capsule: dict[str, Any]) -> list[str]:
         return ["execution capsule created_at is missing"]
     if not is_sha256(capsule.get("route_fingerprint")):
         return ["execution capsule route fingerprint is malformed"]
+    if not is_sha256(capsule.get("request_fingerprint")):
+        return ["execution capsule request fingerprint is malformed"]
     if not _is_file_hash(capsule.get("preflight_evidence")):
         return ["execution capsule preflight evidence is malformed"]
     if not _is_git(capsule.get("project_git")) or not _is_git(capsule.get("rules_git")):
@@ -166,3 +220,34 @@ def _is_doc(value: Any) -> bool:
             and isinstance(value.get("path"), str) and bool(value["path"])
             and isinstance(value.get("size_bytes"), int) and value["size_bytes"] >= 0
             and is_sha256(value.get("sha256")))
+
+
+def _preflight_snapshot_shape_failures(snapshot: dict[str, Any]) -> list[str]:
+    expected = {
+        "schema_version",
+        "route_fingerprint",
+        "request_fingerprint",
+        "required_docs",
+    }
+    if not isinstance(snapshot, dict) or set(snapshot) != expected:
+        return ["preflight snapshot is malformed"]
+    if snapshot.get("schema_version") != PREFLIGHT_SNAPSHOT_SCHEMA_VERSION:
+        return ["preflight snapshot has an unsupported schema version"]
+    if not is_sha256(snapshot.get("route_fingerprint")):
+        return ["preflight snapshot route fingerprint is malformed"]
+    if not is_sha256(snapshot.get("request_fingerprint")):
+        return ["preflight snapshot request fingerprint is malformed"]
+    if not isinstance(snapshot.get("required_docs"), list) or any(
+        not _is_doc(item) for item in snapshot["required_docs"]
+    ):
+        return ["preflight snapshot required docs are malformed"]
+    return []
+
+
+def _request_intake(evidence_path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    intake = payload.get("request_intake") if isinstance(payload, dict) else None
+    return dict(intake) if isinstance(intake, dict) else {}

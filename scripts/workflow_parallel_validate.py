@@ -38,18 +38,29 @@ def _validate_delegation_policy(policy: object, failures: list[str]) -> None:
     if not isinstance(policy, dict):
         failures.append("parallel_execution.delegation_policy must be an object")
         return
-    if policy.get("mode") != "automatic_when_eligible":
+    mode = policy.get("mode")
+    if mode not in {"automatic_when_eligible", "serial"}:
         failures.append(
-            "parallel_execution.delegation_policy.mode must be automatic_when_eligible"
+            "parallel_execution.delegation_policy.mode must be automatic_when_eligible or serial"
         )
     if policy.get("explicit_user_request_required") is not False:
         failures.append(
             "parallel_execution.delegation_policy.explicit_user_request_required must be false"
         )
     minimum = policy.get("minimum_independent_slices")
-    if not isinstance(minimum, int) or isinstance(minimum, bool) or minimum < 2:
+    maximum = policy.get("maximum_workers")
+    if mode == "serial":
+        if minimum != 0 or maximum != 0:
+            failures.append(
+                "serial parallel_execution policy must set minimum_independent_slices and maximum_workers to 0"
+            )
+    elif not isinstance(minimum, int) or isinstance(minimum, bool) or minimum < 2:
         failures.append(
             "parallel_execution.delegation_policy.minimum_independent_slices must be at least 2"
+        )
+    elif not isinstance(maximum, int) or isinstance(maximum, bool) or not 2 <= maximum <= 3:
+        failures.append(
+            "parallel_execution.delegation_policy.maximum_workers must be between 2 and 3"
         )
     for key in ("required_preconditions", "serial_fallbacks"):
         value = policy.get(key)

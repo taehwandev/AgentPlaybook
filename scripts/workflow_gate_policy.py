@@ -18,6 +18,10 @@ WORK_PRODUCING_COMMANDS = {
     "task",
     "workflow-setup",
 }
+# A bounded investigation is intentionally not work-producing. Keep this
+# explicit so broad automatic-gate additions cannot silently turn the
+# lightweight analysis route into a code/documentation/review lifecycle.
+LIGHTWEIGHT_ANALYSIS_COMMANDS = {"analysis"}
 AGENTIC_RUN_STATE_COMMANDS = WORK_PRODUCING_COMMANDS | {
     "multi-agent",
 }
@@ -94,6 +98,9 @@ SOURCE_DOCS_COMMANDS = WORK_PRODUCING_COMMANDS | {
 
 
 def automatic_gates(command: str) -> list[str]:
+    if command in LIGHTWEIGHT_ANALYSIS_COMMANDS:
+        return []
+
     gates: list[str] = []
     if command in SOURCE_DOCS_COMMANDS:
         gates.append(SOURCE_DOCS_GATE)

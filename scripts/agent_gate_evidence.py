@@ -12,6 +12,7 @@ from agent_execution_capsule_state import (
     atomic_write_json,
     capsule_path_for_evidence,
     execution_capsule_binding_fingerprint,
+    preflight_snapshot_binding_fingerprint,
     read_json_object,
 )
 from agent_route_state import (
@@ -511,16 +512,27 @@ def _capsule_binding_for_preflight(
     capsule = read_json_object(capsule_path_for_evidence(evidence_path))
     binding = execution_capsule_binding_fingerprint(capsule)
     if not binding:
-        return None
+        return _preflight_snapshot_binding(preflight)
     expected_hash = preflight_evidence_sha256(evidence_path)
     preflight_record = capsule.get("preflight_evidence")
     if not isinstance(preflight_record, dict):
-        return None
+        return _preflight_snapshot_binding(preflight)
     if preflight_record.get("sha256") != expected_hash:
-        return None
+        return _preflight_snapshot_binding(preflight)
     if capsule.get("route_fingerprint") != route_fingerprint(preflight.get("route") or {}):
-        return None
-    return binding
+        binding = None
+    if binding:
+        return binding
+    return _preflight_snapshot_binding(preflight)
+
+
+def _preflight_snapshot_binding(preflight: dict[str, Any]) -> str | None:
+    snapshot = preflight.get("execution_snapshot")
+    return (
+        preflight_snapshot_binding_fingerprint(snapshot)
+        if isinstance(snapshot, dict)
+        else None
+    )
 
 
 def _string_fields(fields: dict[str, Any]) -> dict[str, str]:

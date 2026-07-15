@@ -310,18 +310,29 @@ missing explicit user wording is not a serial reason. A model-profile
 `dispatch --execute` call is one bounded leaf worker and never substitutes for
 the parent agent's split decision or eligible fanout.
 
+Use the lightweight `analysis` route for read-only investigation. It has no
+code-work, test, documentation, or review gate; keep it in the current session
+and do not launch a Codex child unless the caller explicitly requires isolation.
+It retains only the active runtime instruction as a required document.
+For implementation work, keep small tasks serial. Split only when at least two
+independent scopes meet the delegation contract, then use two or three workers
+at most and keep the parent responsible for one integration review and the
+final verification.
+
 Before a parent hands work to any runtime worker, run `agent-hook.py handoff`.
-It refreshes the provider-neutral, content-free execution capsule against the
-current route, preflight, required docs, gate ledger, and project/rules state.
+It lazily creates the provider-neutral, content-free execution capsule against
+the current route, preflight, required docs, gate ledger, request fingerprint,
+and project/rules state immediately before the worker boundary.
 A Codex child launch revalidates that capsule immediately before execution, so
-an inspect-only manifest cannot reuse a stale decision. A worker may reuse the parent's route, preflight, and
-required-doc manifest only when that handoff reports a ready and valid capsule;
-otherwise the worker follows the normal lifecycle on a newly reserved,
+an inspect-only manifest cannot reuse a stale decision. A worker may reuse the
+parent's route, preflight, required-doc brief, and gate context only when that
+handoff reports a ready and valid capsule; it must not rerun route/preflight,
+reread the parent's required docs, run VibeGuard, or perform a separate review.
+Otherwise the worker follows the normal lifecycle on a newly reserved,
 single-use-token worker evidence path. The parent remains the sole gate-ledger
-owner. For Codex, start a fresh `dispatch --execute` process only
-when the selected model, reasoning effort, sandbox, or required isolation
-differs from the parent; keep matching non-isolated work inline or use native
-workers. The detailed cross-runtime contract is owned by
+owner. For Codex, keep dispatch inline unless isolation is explicitly required;
+record model, reasoning, or sandbox mismatches as a decision input, not as an
+automatic reason to nest a Codex process. The detailed cross-runtime contract is owned by
 `docs/skills/agent-runtime-integration/SKILL.md`.
 
 For local commit creation or commit preparation, use the lightweight `commit`
@@ -367,9 +378,10 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO>
 After start, read the route's `required_docs` in order before editing or
 reviewing. This remains a direct agent responsibility: there is no separate
 document-confirmation hook or standalone receipt command. Preflight records the
-required-document hashes, route fingerprint, and preflight fingerprint in the
-existing execution capsule; the `source docs` finish gate validates that binding
-alongside the agent's direct-reading takeaway. The route manifest remains the
+required-document snapshot, route fingerprint, and request fingerprint in its
+parent evidence. The `source docs` finish gate validates that parent snapshot
+alongside the direct-reading takeaway. The execution capsule is created only at
+the handoff boundary and reuses the snapshot. The route manifest remains the
 single source for required-document selection, and `reference_docs` remain
 on-demand context. An empty `required_docs` manifest is a valid document-free
 route state: record the no-source decision and continue without polling or

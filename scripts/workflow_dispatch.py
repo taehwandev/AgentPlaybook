@@ -160,6 +160,7 @@ def _select_execution_context(
     )
     profile = profile_for_work_kind(selected_kind)
     sandbox_mode = "read-only" if selected_kind == "repetitive" else "workspace-write"
+    parent_fields = (parent_model, parent_reasoning_effort, parent_sandbox_mode)
     same_profile = all(
         (
             parent_model == profile["codex_model"],
@@ -167,13 +168,24 @@ def _select_execution_context(
             parent_sandbox_mode == sandbox_mode,
         )
     )
+    # Dispatch is an execution-boundary decision, not a model-switching
+    # mechanism. Keep any profile mismatch inspectable, but stay in the
+    # parent session unless the caller explicitly requires isolation.
+    if isolation_required:
+        execution_reason = "explicit isolation requires a child process"
+    elif not all(parent_fields):
+        execution_reason = "parent profile is incomplete; continue inline"
+    elif same_profile:
+        execution_reason = "parent profile matches; continue inline"
+    else:
+        execution_reason = "parent profile differs; continue inline without a nested Codex process"
     return (
         selected_kind,
         profile,
         sandbox_mode,
-        "inline" if same_profile and not isolation_required else "child",
+        "child" if isolation_required else "inline",
         same_profile,
-        selection_reason,
+        f"{selection_reason}; {execution_reason}",
     )
 
 

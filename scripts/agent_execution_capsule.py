@@ -10,12 +10,13 @@ from pathlib import Path
 from typing import Any
 
 from agent_execution_capsule_state import (
+    PREFLIGHT_SNAPSHOT_SCHEMA_VERSION,
     REUSE_POLICY,
     SCHEMA_VERSION,
     atomic_write_json,
     capsule_path_for_evidence,
     file_hash_record,
-    git_state,
+    git_states_for_paths,
     read_json_object,
 )
 from agent_execution_capsule_validation import (
@@ -24,7 +25,7 @@ from agent_execution_capsule_validation import (
 )
 from agent_execution_capsule_docs import current_required_docs
 from agent_gate_evidence import gate_evidence_path_for_preflight
-from agent_route_state import route_fingerprint
+from agent_route_state import request_fingerprint, route_fingerprint
 
 
 def refresh_execution_capsule(
@@ -40,7 +41,7 @@ def refresh_execution_capsule(
     rules = rules.resolve()
     evidence_path = evidence_path.resolve()
     selected_output = (output_path or capsule_path_for_evidence(evidence_path)).resolve()
-    project_git = git_state(project)
+    project_git, rules_git = git_states_for_paths(project, rules)
     docs = current_required_docs(rules, route)
     ledger_path = gate_evidence_path_for_preflight(evidence_path)
     ledger_failures = gate_ledger_failures(ledger_path, evidence_path, route)
@@ -51,16 +52,38 @@ def refresh_execution_capsule(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "phase": phase,
         "route_fingerprint": route_fingerprint(route),
+        "request_fingerprint": request_fingerprint(_request_intake(evidence_path)),
         "preflight_evidence": file_hash_record(evidence_path),
         "required_docs": docs or [],
         "project_git": project_git,
-        "rules_git": project_git if rules == project else git_state(rules),
+        "rules_git": rules_git,
         "reuse_policy": REUSE_POLICY,
     }
     if ledger_path.is_file():
         capsule["gate_ledger"] = file_hash_record(ledger_path)
     atomic_write_json(selected_output, capsule)
     return capsule
+
+
+def create_preflight_snapshot(
+    rules: Path,
+    route: dict[str, Any],
+    request_intake: dict[str, Any],
+) -> dict[str, Any]:
+    """Capture the source-doc binding needed by a serial parent workflow.
+
+    This deliberately excludes mutable worktree Git state.  That expensive
+    state is only needed for a child-reuse capsule and is captured lazily by
+    the handoff boundary.
+    """
+
+    docs = current_required_docs(rules.resolve(), route)
+    return {
+        "schema_version": PREFLIGHT_SNAPSHOT_SCHEMA_VERSION,
+        "route_fingerprint": route_fingerprint(route),
+        "request_fingerprint": request_fingerprint(request_intake),
+        "required_docs": docs or [],
+    }
 
 
 def synchronize_execution_capsule_gate_ledger(
@@ -119,6 +142,14 @@ def _load_route(evidence_path: Path) -> dict[str, Any]:
     if not isinstance(route, dict):
         raise ValueError("preflight evidence does not contain a route manifest")
     return route
+
+
+def _request_intake(evidence_path: Path) -> dict[str, Any]:
+    """Read only the preflight's request-identity fields for capsule binding."""
+
+    payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+    intake = payload.get("request_intake") if isinstance(payload, dict) else None
+    return dict(intake) if isinstance(intake, dict) else {}
 
 
 def _parser() -> argparse.ArgumentParser:
