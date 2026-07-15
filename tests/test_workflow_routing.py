@@ -788,6 +788,25 @@ class WorkflowRoutingTests(unittest.TestCase):
             execute_dispatch_manifest(manifest, runner=received.append)
         self.assertEqual([], received)
 
+    def test_analysis_dispatch_is_read_only_and_non_authoring_in_all_modes(self) -> None:
+        for isolation_required, execution_mode in ((False, "inline"), (True, "child")):
+            with self.subTest(isolation_required=isolation_required):
+                manifest = build_dispatch_manifest(
+                    "analysis",
+                    "Inspect the current workflow routing behavior and summarize the result.",
+                    ROOT,
+                    isolation_required=isolation_required,
+                )
+
+                self.assertEqual("analysis", manifest["work_kind"])
+                self.assertEqual(execution_mode, manifest["execution_mode"])
+                self.assertEqual("read-only", manifest["sandbox_mode"])
+                self.assertEqual("read-only non-authoring", manifest["authoring_policy"])
+                self.assertIn(
+                    "Do not modify files, write code, generate patches, or create tests.",
+                    manifest["codex_exec_argv"][-1],
+                )
+
     def test_dispatch_execute_cli_rejects_inline_false_success(self) -> None:
         args = build_parser().parse_args(
             [

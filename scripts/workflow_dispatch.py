@@ -32,6 +32,9 @@ from workflow_request import (
 )
 
 
+READ_ONLY_WORK_KINDS = frozenset({"analysis", "repetitive"})
+
+
 def build_dispatch_manifest(
     command: str,
     request: str,
@@ -96,7 +99,7 @@ def build_dispatch_manifest(
         execution_capsule_state=_execution_capsule_state,
         isolated_worker_evidence=_isolated_worker_evidence,
     )
-    non_authoring = selected_kind == "repetitive"
+    non_authoring = selected_kind in READ_ONLY_WORK_KINDS
     handoff_prompt = build_handoff_prompt(
         command,
         request,
@@ -159,7 +162,9 @@ def _select_execution_context(
         command, classification, work_kind, complexity_evidence
     )
     profile = profile_for_work_kind(selected_kind)
-    sandbox_mode = "read-only" if selected_kind == "repetitive" else "workspace-write"
+    sandbox_mode = (
+        "read-only" if selected_kind in READ_ONLY_WORK_KINDS else "workspace-write"
+    )
     parent_fields = (parent_model, parent_reasoning_effort, parent_sandbox_mode)
     same_profile = all(
         (
