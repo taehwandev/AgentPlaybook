@@ -212,8 +212,13 @@ def configure_target_graphify(
     results.append(
         _result(
             "graph.relationships",
-            "ok" if readiness["graph_relationship_ready"] else "missing",
+            # Semantic document-to-code paths improve query quality, but an
+            # AST-only rebuild cannot always produce them.  Report coverage
+            # without turning a valid, current graph into an unfixable setup
+            # failure; explicit-path repair remains available when applicable.
+            "ok",
             (
+                f"ready={str(bool(readiness['graph_relationship_ready'])).lower()}; "
                 f"document_nodes={readiness.get('graph_document_node_count', 0)}; "
                 f"code_nodes={readiness.get('graph_code_node_count', 0)}; "
                 f"direct_edges={readiness.get('graph_document_code_edge_count', 0)}; "

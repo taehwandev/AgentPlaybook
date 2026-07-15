@@ -37,11 +37,13 @@ canonical project-local `SKILL.md` installed and read, every enabled runtime
 path resolving to that canonical directory, portable Git ownership verified,
 project integration installed, a fresh and input-complete
 `graphify-out/graph.json` present, and a scoped query smoke check successful.
-When project docs and code both exist, the graph must contain at least one
-representative project-doc-to-source path, direct or multi-hop, and the smoke
-check must traverse it. Missing any condition is a failed readiness gate,
-not permission to skip Graphify silently. A copied runtime bundle fails the
-canonical-source condition even when its content currently matches.
+Document-to-source relationships are a query-quality signal: when semantic
+inputs or explicit path citations produce them, include a representative
+doc-to-source path in the smoke check. Their absence does not fail a current,
+input-complete AST-only graph. Missing any of the seven conditions is a failed
+readiness gate, not permission to skip Graphify silently. A copied runtime
+bundle fails the canonical-source condition even when its content currently
+matches.
 
 Files visible while an editor follows a runtime directory link are views of
 the canonical target, not additional physical copies. Git ownership is ready
@@ -123,9 +125,10 @@ collapsed into one `.agentplaybook` owner.
   source revision with a manifest matching current graph inputs, includes the
   repo-local knowledge inventory, and has
   no missing/dangling/self-loop endpoints.
-- Query smoke: `graphify query "<scoped target-project question>"` succeeds;
-  when project docs and code coexist, a representative `graphify path` or
-  equivalent query crosses from a project doc/workflow to source code.
+- Query smoke: `graphify query "<scoped target-project question>"` succeeds.
+  When semantic inputs expose a project-doc-to-source relation, also exercise a
+  representative `graphify path` or equivalent query across it; AST-only graphs
+  remain ready when that relation is absent.
 
 ## Report
 

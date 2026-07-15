@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import re
+import shlex
 import shutil
 from pathlib import Path
 from typing import Iterable
@@ -39,6 +42,7 @@ def normalize_runtime_integrations(
         normalize_portable_graphify_command(
             project_path / ".claude" / "settings.json"
         )
+        remove_graphify_tool_output_hooks(project_path / ".claude" / "settings.json")
     if "antigravity" in selected:
         canonical_runtime = (
             project_path / CANONICAL_SKILL_DIR / "runtime" / "antigravity"
@@ -142,6 +146,81 @@ def normalize_portable_graphify_command(path: Path) -> None:
         updated += "\n"
     if updated != content:
         path.write_text(updated, encoding="utf-8")
+
+
+def remove_graphify_tool_output_hooks(path: Path) -> None:
+    """Remove Graphify hooks that inject mandatory instructions into tool output.
+
+    Graphify remains available through its canonical skill and explicit queries.
+    Any runtime hook that invokes ``graphify hook-guard`` can inject that
+    instruction path.  Preserve unrelated configuration, but remove those
+    commands across every hook event and supported shell wrapper form.
+    """
+
+    if not path.is_file():
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    if not isinstance(payload, dict):
+        return
+    hooks = payload.get("hooks")
+    if not isinstance(hooks, dict):
+        return
+    changed = False
+    filtered_events: dict[str, object] = {}
+    for event, registrations in hooks.items():
+        if not isinstance(registrations, list):
+            filtered_events[event] = registrations
+            continue
+        filtered_registrations: list[object] = []
+        for registration in registrations:
+            if not isinstance(registration, dict):
+                filtered_registrations.append(registration)
+                continue
+            nested = registration.get("hooks")
+            if not isinstance(nested, list):
+                filtered_registrations.append(registration)
+                continue
+            remaining = [
+                hook
+                for hook in nested
+                if not (
+                    isinstance(hook, dict)
+                    and isinstance(hook.get("command"), str)
+                    and _is_graphify_hook_guard(hook["command"])
+                )
+            ]
+            if len(remaining) == len(nested):
+                filtered_registrations.append(registration)
+            else:
+                changed = True
+                if remaining:
+                    filtered_registrations.append({**registration, "hooks": remaining})
+        if filtered_registrations:
+            filtered_events[event] = filtered_registrations
+    if not changed:
+        return
+    if filtered_events:
+        payload["hooks"] = filtered_events
+    else:
+        payload.pop("hooks", None)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _is_graphify_hook_guard(command: str) -> bool:
+    """Recognize direct, env-prefixed, and shell-wrapped hook-guard commands."""
+
+    try:
+        tokens = shlex.split(command)
+    except ValueError:
+        tokens = []
+    for index, token in enumerate(tokens[:-1]):
+        executable = Path(token).name
+        if executable == "graphify" and tokens[index + 1] == "hook-guard":
+            return True
+    return bool(re.search(r"(?<![\w-])graphify\s+hook-guard\b", command))
 
 
 def only_frontmatter(content: str) -> bool:

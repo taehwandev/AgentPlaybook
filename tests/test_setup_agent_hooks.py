@@ -28,6 +28,7 @@ from support.graphify_setup import (
     inspect_target_graphify,
 )
 from support.graphify_git_tracking import inspect_graphify_git_tracking
+from support.graphify_contract import PLATFORM_INTEGRATION_PATHS
 from support.graphify_inspection import (
     inspect_project_graph_inputs,
     inspect_project_graph_state,
@@ -39,6 +40,26 @@ from support.stable_launcher import ensure_stable_launcher, stable_launcher_path
 
 
 class SetupAgentHooksTests(unittest.TestCase):
+    def test_graphify_readiness_rejects_unregistered_json_integration_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            hooks = project / ".codex" / "hooks.json"
+            hooks.parent.mkdir(parents=True)
+            hooks.write_text('{"graphify": true}', encoding="utf-8")
+            integration_paths = {
+                **PLATFORM_INTEGRATION_PATHS,
+                "codex": (Path(".codex/hooks.json"),),
+            }
+
+            with patch(
+                "support.graphify_inspection.PLATFORM_INTEGRATION_PATHS",
+                integration_paths,
+            ):
+                readiness = inspect_target_graphify(project, ["codex"])
+
+        self.assertIn(str(hooks), readiness["missing_integrations"])
+        self.assertNotIn(str(hooks), readiness["invalid_runtime_integration_links"])
+
     def test_git_tracking_rejects_legacy_runtime_files_until_link_is_staged(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
@@ -208,7 +229,7 @@ class SetupAgentHooksTests(unittest.TestCase):
         self.assertIn("--repair-input-policy", result.stdout)
         self.assertIn("--repair-document-links", result.stdout)
 
-    def test_target_graphify_readiness_requires_canonical_skill_links_integration_and_graph(self) -> None:
+    def test_target_graphify_readiness_accepts_ast_graph_without_document_code_paths(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
             subprocess.run(["git", "init", "-q"], cwd=project, check=True)
@@ -241,6 +262,9 @@ class SetupAgentHooksTests(unittest.TestCase):
             hooks.write_text('{"graphify": true}', encoding="utf-8")
             agents = project / "AGENTS.md"
             agents.write_text("## graphify\n", encoding="utf-8")
+            guide = project / ".agents" / "wiki" / "guide.md"
+            guide.parent.mkdir(parents=True)
+            guide.write_text("# Guide\n", encoding="utf-8")
             graph = project / "graphify-out" / "graph.json"
             graph.parent.mkdir()
             graph.write_text(
@@ -252,7 +276,12 @@ class SetupAgentHooksTests(unittest.TestCase):
                                 "id": "src_main",
                                 "file_type": "code",
                                 "source_file": "src/main.py",
-                            }
+                            },
+                            {
+                                "id": "guide",
+                                "file_type": "document",
+                                "source_file": ".agents/wiki/guide.md",
+                            },
                         ],
                         "links": [],
                     }
@@ -293,6 +322,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                     {
                         "src/main.py": {"mtime": source.stat().st_mtime},
                         "AGENTS.md": {"mtime": agents.stat().st_mtime},
+                        ".agents/wiki/guide.md": {"mtime": guide.stat().st_mtime},
                     }
                 ),
                 encoding="utf-8",
@@ -305,7 +335,19 @@ class SetupAgentHooksTests(unittest.TestCase):
         self.assertEqual(str(graph), result["graph_path"])
         self.assertEqual(str(canonical), result["canonical_skill_doc"])
         self.assertTrue(result["graph_integrity_ready"])
-        self.assertTrue(result["graph_relationship_ready"])
+        self.assertFalse(result["graph_relationship_ready"])
+
+    def test_graphify_skill_matches_ast_only_readiness_policy(self) -> None:
+        skill = (
+            ROOT / "docs" / "skills" / "graphify-project-integration" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("AST-only graph", skill)
+        self.assertIn("does not fail a current", skill)
+        self.assertNotIn(
+            "When project docs and code both exist, the graph must contain",
+            skill,
+        )
 
     def test_graphify_input_policy_preserves_project_agent_knowledge(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -463,7 +505,13 @@ class SetupAgentHooksTests(unittest.TestCase):
             source = project / "src" / "main.py"
             source.parent.mkdir()
             source.write_text("VALUE = 1\n", encoding="utf-8")
-            subprocess.run(["git", "add", "src/main.py"], cwd=project, check=True)
+            deleted = project / "src" / "deleted.py"
+            deleted.write_text("VALUE = 0\n", encoding="utf-8")
+            subprocess.run(
+                ["git", "add", "src/main.py", "src/deleted.py"],
+                cwd=project,
+                check=True,
+            )
             subprocess.run(
                 [
                     "git", "-c", "user.name=AgentPlaybook", "-c",
@@ -512,13 +560,18 @@ class SetupAgentHooksTests(unittest.TestCase):
             extra_source = project / "src" / "extra.py"
             extra_source.write_text("VALUE = 2\n", encoding="utf-8")
             uncovered_source = inspect_project_graph_state(project, graph)
+            extra_source.unlink()
+            deleted.unlink()
+            deleted_source = inspect_project_graph_state(project, graph)
 
         self.assertTrue(adapter_only["graph_fresh"])
         self.assertEqual(0, adapter_only["graph_source_dirty_count"])
         self.assertFalse(uncovered_source["graph_fresh"])
         self.assertEqual(1, uncovered_source["graph_source_dirty_count"])
+        self.assertTrue(deleted_source["graph_fresh"])
+        self.assertEqual(0, deleted_source["graph_source_dirty_count"])
 
-    def test_project_graph_state_requires_current_head_and_document_code_relationship(self) -> None:
+    def test_project_graph_state_uses_current_manifest_and_reports_relationship_quality(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
             subprocess.run(["git", "init", "-q"], cwd=project, check=True)
@@ -594,6 +647,16 @@ class SetupAgentHooksTests(unittest.TestCase):
                 check=True,
             )
             stale = inspect_project_graph_state(project, graph)
+            (project / "graphify-out" / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "src/main.py": {"mtime": source.stat().st_mtime},
+                        ".agents/wiki/guide.md": {"mtime": guide.stat().st_mtime},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            rebuilt_from_dirty_worktree = inspect_project_graph_state(project, graph)
 
         self.assertTrue(disconnected["graph_fresh"])
         self.assertFalse(disconnected["graph_relationship_ready"])
@@ -604,6 +667,7 @@ class SetupAgentHooksTests(unittest.TestCase):
         self.assertEqual(1, connected["graph_document_code_path_node_count"])
         self.assertEqual(2, connected["graph_knowledge_code_path_node_count"])
         self.assertFalse(stale["graph_fresh"])
+        self.assertTrue(rebuilt_from_dirty_worktree["graph_fresh"])
 
     def test_project_graph_integrity_rejects_malformed_and_duplicate_nodes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -744,6 +808,46 @@ class SetupAgentHooksTests(unittest.TestCase):
                 "---\nkeyflow_id: generated\nstatus: review\ntype: ai-generated\n---\n\n"
                 "# graphify\nCopied registration.\n"
             )
+            settings = project / ".claude" / "settings.json"
+            settings.write_text(
+                json.dumps(
+                    {
+                        "permissions": {"allow": ["keep-this-permission"]},
+                        "hooks": {
+                            "PreToolUse": [
+                                {
+                                    "matcher": "Read|Glob",
+                                    "hooks": [
+                                        {
+                                            "type": "command",
+                                            "command": "SPILL_AI_TOOL=claude graphify hook-guard read",
+                                        }
+                                    ],
+                                }
+                            ],
+                            "PostToolUse": [
+                                {
+                                    "matcher": "Bash",
+                                    "hooks": [
+                                        {
+                                            "type": "command",
+                                            "command": 'bash -lc "graphify hook-guard read"',
+                                        }
+                                    ],
+                                }
+                            ],
+                            "UserPromptSubmit": [
+                                {
+                                    "hooks": [
+                                        {"type": "command", "command": "keep-this-hook"}
+                                    ]
+                                }
+                            ],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
 
             _normalize_runtime_integrations(project, ["antigravity", "claude", "codex"])
 
@@ -751,6 +855,13 @@ class SetupAgentHooksTests(unittest.TestCase):
             self.assertIn("## Local", (project / "AGENTS.md").read_text())
             self.assertNotIn("graphify", (project / "CLAUDE.md").read_text().lower())
             self.assertFalse(nested.exists())
+            self.assertNotIn("hook-guard", settings.read_text(encoding="utf-8"))
+            normalized_settings = json.loads(settings.read_text(encoding="utf-8"))
+            self.assertEqual(["keep-this-permission"], normalized_settings["permissions"]["allow"])
+            self.assertEqual(
+                "keep-this-hook",
+                normalized_settings["hooks"]["UserPromptSubmit"][0]["hooks"][0]["command"],
+            )
             for relative in (
                 Path(".agents/rules/graphify.md"),
                 Path(".agents/workflows/graphify.md"),
@@ -827,6 +938,8 @@ class SetupAgentHooksTests(unittest.TestCase):
                 self.assertTrue(os.access(launcher, os.X_OK))
                 self.assertEqual(f"{ROOT.resolve()}\n", pointer.read_text())
                 self.assertIn("scripts/workflow.py", launcher.read_text())
+                self.assertIn('"execution-capsule": "agent_execution_capsule.py"', launcher.read_text())
+                self.assertIn('"handoff"', launcher.read_text())
                 self.assertTrue(all(result["status"] == "installed" for result in results))
 
                 check = ensure_stable_launcher(ROOT, dry_run=True)

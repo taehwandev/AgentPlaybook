@@ -50,11 +50,11 @@ def inspect_target_graphify(
         canonical_target = PLATFORM_CANONICAL_INTEGRATION_TARGETS.get(
             path.relative_to(project_path)
         )
-        if canonical_target is not None:
-            if not file_link_ready(path, project_path / canonical_target):
-                invalid_integration_links.append(path)
-                missing_integrations.append(path)
-        elif not graphify_integration_ready(path):
+        if canonical_target is None:
+            missing_integrations.append(path)
+            continue
+        if not file_link_ready(path, project_path / canonical_target):
+            invalid_integration_links.append(path)
             missing_integrations.append(path)
 
     runtime_links = {
@@ -111,7 +111,6 @@ def inspect_target_graphify(
         runtime_ready
         and graph_state["graph_integrity_ready"]
         and graph_state["graph_fresh"] is True
-        and graph_state["graph_relationship_ready"]
         and input_state["graph_input_policy_ready"]
         and input_state["knowledge_manifest_ready"]
         and tracking["git_repository"]
@@ -144,14 +143,3 @@ def inspect_global_graphify(home_path: Path, platforms: Iterable[str]) -> dict[s
         "invalid_runtime_links": [str(path) for path in invalid_links],
         "ready": bool(cli_path and canonical_skill.is_file() and not invalid_links),
     }
-
-
-def graphify_integration_ready(path: Path) -> bool:
-    if not path.is_file():
-        return False
-    if path.name in {"hooks.json", "settings.json"}:
-        try:
-            return "graphify" in path.read_text(encoding="utf-8").lower()
-        except OSError:
-            return False
-    return True

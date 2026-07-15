@@ -33,8 +33,11 @@ PLATFORM_INTEGRATION_PATHS = {
         Path(".agents/rules/graphify.md"),
         Path(".agents/workflows/graphify.md"),
     ),
-    "claude": (Path(".claude/settings.json"),),
-    "codex": (Path(".codex/hooks.json"),),
+    # Claude and Codex discover Graphify through their canonical skill links.
+    # Their user-owned settings/hooks files may contain unrelated configuration
+    # and must not be treated as a required Graphify registration.
+    "claude": (),
+    "codex": (),
 }
 
 PLATFORM_CANONICAL_INTEGRATION_TARGETS = {

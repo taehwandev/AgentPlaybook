@@ -36,10 +36,15 @@ def inspect_graph_freshness(
     }
     return {
         "project_head": head,
+        # The manifest hashes describe the inputs actually indexed.  A graph
+        # rebuilt while the worktree is dirty deliberately retains the last
+        # commit in ``built_at_commit``; treating that diagnostic field as an
+        # input-freshness requirement makes a successful in-place rebuild
+        # impossible until the user commits.  Stale manifest entries and
+        # uncovered dirty inputs already detect both changed and newly-created
+        # source files without that deadlock.
         "graph_fresh": bool(
-            head
-            and built_at_commit == head
-            and manifest
+            manifest
             and not stale_manifest
             and not uncovered
         ),
@@ -75,6 +80,13 @@ def _dirty_source_paths(project_path: Path) -> list[str]:
         return []
     paths: list[str] = []
     for line in (completed.stdout or "").splitlines():
+        status = line[:2]
+        # A deleted path has no remaining input bytes to cover.  If it was
+        # indexed, its lingering manifest entry is already stale; if it was
+        # never indexed, counting it as an uncovered input makes a successful
+        # Graphify update permanently report stale after the deletion.
+        if "D" in status:
+            continue
         value = line[3:].split(" -> ")[-1] if len(line) > 3 else ""
         if (
             not value
