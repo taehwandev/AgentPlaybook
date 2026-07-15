@@ -21,6 +21,7 @@ from agent_execution_capsule_validation import (
 from agent_finish_common import add_gate_signal, append_unique
 from agent_finish_gate_policy import SOURCE_DOCS_GATE, validate_gate_evidence
 from agent_finish_documentation import documented_required_doc_updates
+from agent_route_state import preflight_evidence_sha256, request_fingerprint, route_fingerprint
 from workflow_common import QUESTION_ROUTE_COMMANDS
 from workflow_request import (
     classified_route_block_reason,
@@ -125,11 +126,16 @@ def route_gate_capsule_binding_failures(
     capsule = read_execution_capsule(capsule_path_for_evidence(evidence_path))
     preflight = read_preflight(evidence_path, failures=[])
     snapshot = preflight.get("execution_snapshot") if isinstance(preflight, dict) else None
-    capsule_binding = execution_capsule_binding_fingerprint(capsule)
-    snapshot_binding = (
-        preflight_snapshot_binding_fingerprint(snapshot)
-        if isinstance(snapshot, dict)
-        else None
+    capsule_binding = _current_execution_capsule_binding(
+        capsule,
+        route=route,
+        preflight=preflight,
+        evidence_path=evidence_path,
+    )
+    snapshot_binding = _current_preflight_snapshot_binding(
+        snapshot,
+        route=route,
+        preflight=preflight,
     )
     failures: list[str] = []
     expected_binding: str | None = None
@@ -150,9 +156,6 @@ def route_gate_capsule_binding_failures(
             if not capsule_failures:
                 expected_binding = capsule_binding
             elif snapshot_binding:
-                # A previous task may leave a valid-shaped capsule behind after
-                # this parent started a new serial route.  Its stale binding
-                # must not override the current parent preflight snapshot.
                 failures = validate_preflight_snapshot(
                     snapshot if isinstance(snapshot, dict) else {},
                     project=project,
@@ -191,6 +194,69 @@ def route_gate_capsule_binding_failures(
                 f"gate evidence for {gate} is not bound to the current execution capsule"
             )
     return list(dict.fromkeys(failures))
+
+
+def _current_execution_capsule_binding(
+    capsule: dict[str, Any],
+    *,
+    route: dict[str, Any],
+    preflight: dict[str, Any],
+    evidence_path: Path,
+) -> str | None:
+    """Return a capsule binding only when it belongs to this parent start.
+
+    The finish check deliberately avoids full capsule validation here: that
+    validation streams mutable worktree state and is only needed for worker
+    reuse.  Gate binding needs the immutable parent-start identity instead.
+    A capsule written for a prior serial request can otherwise be structurally
+    valid yet select the wrong binding for routes without ``source docs``.
+    """
+
+    binding = execution_capsule_binding_fingerprint(capsule)
+    if not binding:
+        return None
+    if capsule.get("route_fingerprint") != route_fingerprint(route):
+        return None
+    request_intake = preflight.get("request_intake")
+    if not isinstance(request_intake, dict):
+        request_intake = {}
+    if capsule.get("request_fingerprint") != request_fingerprint(request_intake):
+        return None
+    preflight_record = capsule.get("preflight_evidence")
+    if not isinstance(preflight_record, dict):
+        return None
+    if preflight_record.get("filename") != evidence_path.name:
+        return None
+    try:
+        current_hash = preflight_evidence_sha256(evidence_path)
+    except OSError:
+        return None
+    if preflight_record.get("sha256") != current_hash:
+        return None
+    return binding
+
+
+def _current_preflight_snapshot_binding(
+    snapshot: Any,
+    *,
+    route: dict[str, Any],
+    preflight: dict[str, Any],
+) -> str | None:
+    """Return the current serial binding without revalidating mutable docs."""
+
+    if not isinstance(snapshot, dict):
+        return None
+    binding = preflight_snapshot_binding_fingerprint(snapshot)
+    if not binding:
+        return None
+    if snapshot.get("route_fingerprint") != route_fingerprint(route):
+        return None
+    request_intake = preflight.get("request_intake")
+    if not isinstance(request_intake, dict):
+        request_intake = {}
+    if snapshot.get("request_fingerprint") != request_fingerprint(request_intake):
+        return None
+    return binding
 
 
 def check_request_intake(

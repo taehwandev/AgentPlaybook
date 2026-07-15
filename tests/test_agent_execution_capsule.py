@@ -223,6 +223,69 @@ class ExecutionCapsuleTests(unittest.TestCase):
             ),
         )
 
+    def test_new_analysis_preflight_ignores_a_stale_handoff_capsule(self) -> None:
+        analysis_route = {
+            **self.route,
+            "command": "analysis",
+            "docs": [],
+            "required_docs": [],
+            "gates": ["request intake", "investigate", "report"],
+        }
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        preflight["route"] = analysis_route
+        preflight["request_intake"] = {"request": "analysis A"}
+        preflight["execution_snapshot"] = create_preflight_snapshot(
+            self.rules,
+            analysis_route,
+            preflight["request_intake"],
+        )
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self.route = analysis_route
+        self._write_ledger()
+        stale_handoff_capsule = refresh_execution_capsule(
+            self.project,
+            self.rules,
+            self.evidence_path,
+            analysis_route,
+        )
+
+        preflight["request_intake"] = {"request": "analysis B"}
+        current_snapshot = create_preflight_snapshot(
+            self.rules,
+            analysis_route,
+            preflight["request_intake"],
+        )
+        preflight["execution_snapshot"] = current_snapshot
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self._write_ledger()
+        current_binding = preflight_snapshot_binding_fingerprint(current_snapshot)
+
+        self.assertNotEqual(
+            execution_capsule_binding_fingerprint(stale_handoff_capsule),
+            current_binding,
+        )
+        self.assertEqual(
+            [],
+            route_gate_capsule_binding_failures(
+                analysis_route,
+                self.project,
+                self.rules,
+                self.evidence_path,
+                {
+                    "request intake": "analysis B intake complete",
+                    "investigate": "analysis B investigation complete",
+                    "report": "analysis B report complete",
+                },
+                {
+                    "capsule_bindings": {
+                        "request intake": current_binding,
+                        "investigate": current_binding,
+                        "report": current_binding,
+                    }
+                },
+            ),
+        )
+
     def test_final_checks_reuse_only_a_current_review_validation(self) -> None:
         record_successful_review_workflow_validation(
             self.project,
