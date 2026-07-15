@@ -207,10 +207,14 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `test`, `review`, `webperf`, `code-simplify`, and `ship`. These aliases map
   to AgentPlaybook routes and must not replace the router with a second active
   command framework.
-- Preflight evidence wrapper:
-  `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>"`
-- Finish evidence wrapper:
-  `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" ...`
+- Canonical lifecycle start (once per task):
+  `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>"`
+- After start succeeds, open every route `required_docs` entry directly. Run
+  the review hook after meaningful changes and the finish hook before final
+  report, commit, release, or handoff.
+- `workflow.py route`, `agent-preflight.py`, and `agent-finish-check.py` are
+  lower-level diagnostics or compatibility fallbacks when the hook is
+  unavailable; do not run them as a second lifecycle for the same task.
 - Agent task lifecycle: `workflows/skills/agent-task-lifecycle/SKILL.md`
 - Request triage: `workflows/skills/request-triage/SKILL.md`
 - Agent handoff/continuation: `workflows/skills/agent-handoff-continuation/SKILL.md`
@@ -234,15 +238,13 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 ## Loading Rule
 
 For any multi-step agent task, start with `workflows/skills/agent-task-lifecycle/SKILL.md`.
-Run `scripts/workflow.py route ...` to generate the command route before
-manually selecting workflow documents, editing, reviewing, committing, or
-reporting completion. Treat the route's gate ledger as a required execution
-record, not a summary to reconstruct after the work. If the script cannot run,
-stop and report the blocker or fallback approval before continuing with
-`index.md`. Show a short gate signal after each completed gate or task step.
-When wrapper scripts are available, run `agent-preflight.py` before editing and
-`agent-finish-check.py` before final report, commit, release, or handoff.
-Missing wrapper evidence or missing route gate evidence is non-compliant.
+Run `scripts/agent-hook.py start` once to classify, route, audit, and create the
+parent evidence. Open every route `required_docs` entry directly before work,
+keep the route gate ledger current, run the review hook after meaningful
+changes, and run the finish hook before final report, commit, release, or
+handoff. If the hook is unavailable, the lower-level router/preflight/finish
+wrappers are a compatibility fallback, not a second lifecycle. Missing start,
+gate, review, or finish evidence is non-compliant.
 
 For any new request, first classify clarity, effort, and model tier with
 `common/skills/task-intake-effort-routing/SKILL.md`. Do not use the strongest model, longest
@@ -258,18 +260,19 @@ APIs, use `common/skills/stack-discovery/SKILL.md`. When a command fails, use
 agent needs to ask a blocker question or approval, use
 `common/skills/agent-interaction/SKILL.md`.
 
-For PRD-only work, use `workflows/skills/prd-creation/SKILL.md` and run this scripted route:
+For PRD-only work, use `workflows/skills/prd-creation/SKILL.md` and select the
+PRD command at the canonical start:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 For product or feature work that needs PRD -> ARD -> implementation ->
 verification gates, use `workflows/skills/product-architecture-delivery/SKILL.md` and run
-this scripted route:
+the product command at the canonical start:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Use this `product` route, not the lower-level `feature` route, when the request
@@ -294,7 +297,7 @@ knowledge-base, source-grounded/living/generated docs, runbook, onboarding,
 durable architecture, or operational docs that humans and agents will read, also
 use `common/skills/llm-wiki-documentation/SKILL.md`.
 For documentation review, use
-`python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route docs-review --concern wiki`
+`python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki`
 or manually combine `workflows/skills/review-and-commit/SKILL.md`,
 `workflows/skills/documentation-update/SKILL.md`, and `common/skills/llm-wiki-documentation/SKILL.md`.
 For planning, research, comparison, or recommendations before implementation,

@@ -12,10 +12,10 @@ before planning or implementation.
 
 ## Read
 
-When this route is executed through `scripts/workflow.py`, run the route's
-`docs-read` hook before the triage decision. Triage is the decision point that
-prevents bad work from starting, so it must not rely only on memory of these
-rules.
+When this route is executed through `scripts/workflow.py`, read its
+`required_docs` directly before the triage decision. Triage is the decision
+point that prevents bad work from starting, so it must not rely only on memory
+of these rules.
 
 - `common/skills/task-intake-effort-routing/SKILL.md`
 - `common/skills/agent-interaction/SKILL.md`

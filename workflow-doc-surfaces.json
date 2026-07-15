@@ -180,7 +180,7 @@
         "review"
       ],
       "request_any": [
-        "\\b(natural language|semantic|document routing|doc routing|doc-route|route docs|docs-read|hook|hooks?)\\b",
+        "\\b(natural language|semantic|document routing|doc routing|doc-route|route docs|required docs|hook|hooks?)\\b",
         "\\b(search|retrieval)\\b.*\\b(docs?|documents?|skills?)\\b",
         "(\\uc790\\uc5f0\\uc5b4|\\uc758\\ubbf8).*(\\uac80\\uc0c9|\\ubb38\\uc11c|\\ub77c\\uc6b0\\ud305)",
         "(\\ubb38\\uc11c|\\uc2a4\\ud0ac).*(\\uac80\\uc0c9|\\ub77c\\uc6b0\\ud305|\\ubd88\\ub7ec|\\uc77d)",
@@ -626,7 +626,7 @@
         "scripts/workflow*.py",
         "scripts/agent-preflight.py",
         "scripts/agent-hook.py",
-        "scripts/agent-docs-read.py",
+        "scripts/agent_route_state.py",
         "scripts/agent-finish-check.py",
         "scripts/agent_*",
         "scripts/agent-*",
@@ -638,7 +638,7 @@
         "common/skills/tool-failure-recovery/SKILL.md",
         "common/skills/ci-cd-automation/SKILL.md"
       ],
-      "reason": "Workflow and hook script changes affect the executable route, preflight, docs-read, and finish gates."
+      "reason": "Workflow and hook script changes affect the executable route, preflight, required-document manifest, and finish gates."
     },
     {
       "name": "request_classifier",

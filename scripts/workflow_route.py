@@ -144,7 +144,13 @@ def resolve_docs(
     routed_docs = unique(canonical_doc_path(doc) for doc in docs)
     required_docs = route_required_docs(command, platform, concerns, profile.docs, [*surface_docs, *graph_required])
     reference_docs = [doc for doc in routed_docs if doc not in set(required_docs)]
-    missing = [doc for doc in routed_docs if not (ROOT / doc).exists()]
+    manifest_docs = unique([*routed_docs, *required_docs])
+    missing = [doc for doc in manifest_docs if not (ROOT / doc).exists()]
+    document_resolution = _document_resolution(
+        search_outcome=search_outcome,
+        search_seed_docs=search_seed_docs,
+        missing=missing,
+    )
     notes = list(profile.notes)
     if command == "product" and not platform:
         notes.append("Select at least one platform card before writing ARD.")
@@ -182,6 +188,14 @@ def resolve_docs(
         notes.append(
             "Wikimap supplied natural-language seed documents to the router; seeds remain reference candidates unless an explicit route rule or required relation promotes them."
         )
+    elif document_resolution["status"] == "no_matches":
+        notes.append(
+            "Natural-language document search completed with no matching project documents. This is a terminal no-source outcome, not a retry condition; continue with the deterministic required_docs and record the no-source decision."
+        )
+    if document_resolution["status"] == "invalid_manifest":
+        notes.append(
+            "The route manifest names missing documents. Stop once with the missing paths; do not retry document discovery until the manifest or files are repaired."
+        )
     if search_outcome.fallback_reason:
         notes.append(
             "Wikimap was unavailable for this route, so the local legacy scorer supplied recovery candidates."
@@ -211,7 +225,11 @@ def resolve_docs(
             )
         if project_root and not graphify_readiness["ready"]:
             notes.append(
-                "Target-project Graphify is incomplete. The graphify readiness gate must prove CLI, the read canonical SKILL.md, runtime links resolving to it, portable Git ownership, project integration, a fresh/input-complete graph with valid relationships, and query smoke before handoff."
+                "Target-project Graphify is incomplete. The graphify readiness gate must prove "
+                "CLI, the read canonical SKILL.md, runtime links resolving to it, portable "
+                "Git ownership, project integration, a fresh/input-complete graph with valid "
+                "endpoints, and query smoke before handoff. Document-to-code relationship "
+                "coverage is query-quality guidance, not an AST-only prerequisite."
             )
 
     route = {
@@ -251,6 +269,9 @@ def resolve_docs(
     if doc_graph_matches:
         route["doc_graph_matches"] = doc_graph_matches
     route["document_search"] = {
+        "status": document_resolution["status"],
+        "terminal": document_resolution["terminal"],
+        "reason": document_resolution["reason"],
         "backend": search_outcome.backend,
         "backend_version": search_outcome.backend_version,
         "fallback_reason": search_outcome.fallback_reason,
@@ -262,6 +283,40 @@ def resolve_docs(
     if graphify_readiness:
         route["target_project_graphify"] = graphify_readiness
     return route
+
+
+def _document_resolution(
+    *,
+    search_outcome: SearchOutcome,
+    search_seed_docs: list[str],
+    missing: list[str],
+) -> dict[str, object]:
+    """Make document-discovery completion explicit for callers and hooks.
+
+    An empty successful search is useful information: it means there is no
+    project source to read for this request, not that the router should spin.
+    Missing deterministic route documents are different; they are a malformed
+    manifest and must fail once with concrete repair targets.
+    """
+
+    if missing:
+        return {
+            "status": "invalid_manifest",
+            "terminal": True,
+            "reason": "Route references missing document paths.",
+        }
+    if not search_seed_docs:
+        source = "Wikimap" if search_outcome.backend == "wikimap" else "local recovery search"
+        return {
+            "status": "no_matches",
+            "terminal": True,
+            "reason": f"{source} completed without matching project documents.",
+        }
+    return {
+        "status": "resolved",
+        "terminal": True,
+        "reason": "Natural-language document discovery returned candidate documents.",
+    }
 
 
 def route_required_docs(
@@ -322,21 +377,6 @@ def route_hooks(command: str) -> list[dict[str, object]]:
             ),
         },
     ]
-    if "route docs read" in route_gates(command):
-        hooks.append(
-            {
-                "hook": "docs-read",
-                "required": True,
-                "when": "after start/preflight and before edits, reviews, commits, or completion reports; writes the required-doc receipt",
-                "command": (
-                    "python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read "
-                    "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
-                    "--takeaway \"<doc-derived rule/takeaway>\" "
-                    "--next-action \"<immediate task action>\" "
-                    "[--receipt-output <TARGET_REPO>/.agentplaybook/route-docs-read.json]"
-                ),
-            }
-        )
     hooks.extend(
         [
         {

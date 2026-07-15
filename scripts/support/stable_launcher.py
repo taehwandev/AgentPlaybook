@@ -110,11 +110,12 @@ SCRIPT_ALIASES = {
     "agent-hook": "agent-hook.py",
     "agent-preflight": "agent-preflight.py",
     "agent-finish-check": "agent-finish-check.py",
+    "execution-capsule": "agent_execution_capsule.py",
     "agent-entry": "agent-entry.py",
     "project-discover": "project-discover.py",
     "setup-agent-hooks": "setup-agent-hooks.py",
 }
-HOOK_ALIASES = {"start", "docs-read", "gate", "review", "finish"}
+HOOK_ALIASES = {"start", "handoff", "gate", "review", "finish"}
 
 def main():
     if len(sys.argv) < 2:

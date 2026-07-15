@@ -7,11 +7,13 @@ from pathlib import Path
 
 RUNTIME_BRIDGE_BEGIN = "<!-- agentplaybook-runtime-bridge:start -->"
 RUNTIME_BRIDGE_END = "<!-- agentplaybook-runtime-bridge:end -->"
+LEGACY_RUNTIME_BRIDGE_BEGIN = "<!-- BEGIN MANAGED RUNTIME BRIDGE -->"
+LEGACY_RUNTIME_BRIDGE_END = "<!-- END MANAGED RUNTIME BRIDGE -->"
 CODEX_DISPATCH_BRIDGE_PHRASE = (
-    "After the parent records the split decision, use workflow.py dispatch --execute only for one "
-    "bounded Codex leaf/task boundary; one dispatch is not multi-agent fanout. Keep normal "
-    "implementation on Terra medium, reserve Sol high for explicit complex implementation or "
-    "PRD/design, and reserve Sol xhigh for final review."
+    "For a bounded Codex leaf, use workflow.py dispatch --execute only when the selected model, "
+    "reasoning effort, sandbox, or required isolation differs from the parent. When the selected "
+    "profile and sandbox match and isolation is unnecessary, stay in the current process or use a "
+    "native worker instead of launching a fresh Codex process."
 )
 RUNTIME_NATIVE_DELEGATION_PHRASES = {
     "Codex": (
@@ -34,9 +36,43 @@ AUTO_DELEGATION_BRIDGE_PHRASE = (
     "delegate automatically without waiting for explicit user multi-agent wording; otherwise record "
     "the concrete serial reason."
 )
+RUNTIME_START_BRIDGE_PHRASE = (
+    "For multi-step work, run AgentPlaybook agent-hook.py start once; do not separately repeat "
+    "workflow list, classify, route, or preflight. For a classified or answered request, keep "
+    "passing the current --request and add --request-classified with --classification-evidence "
+    "so delegated workers can safely reuse only the matching capsule."
+)
+RUNTIME_FINISH_BRIDGE_PHRASE = (
+    "For multi-step work, run AgentPlaybook agent-hook.py finish before final report, commit, "
+    "release, or handoff; direct agent-finish-check.py is a lower-level fallback only."
+)
+RUNTIME_CAPSULE_BRIDGE_PHRASES = [
+    (
+        "At each parent-to-worker boundary, run AgentPlaybook agent-hook.py handoff; it refreshes "
+        "the provider-neutral, content-free execution capsule and validates it once."
+    ),
+    (
+        "Only a ready and valid handoff lets a worker reuse the parent's route, preflight, and "
+        "required-doc manifest and skip duplicate startup."
+    ),
+    (
+        "An invalid handoff is a successful fallback decision that requires the worker's normal "
+        "lifecycle; never reuse mismatched capsule state."
+    ),
+    (
+        "When handoff issues a fallback worker evidence path and opaque reservation token, pass "
+        "both to dispatch or the native worker's start hook; the token is single-use, binds that "
+        "pre-reserved path, and must never be replaced by an unverified existing directory."
+    ),
+    (
+        "The parent is the sole gate-ledger owner; workers use worker-specific evidence paths, "
+        "return scoped evidence, and never overwrite the parent ledger, including after an invalid "
+        "handoff fallback."
+    ),
+]
 
 RUNTIME_BRIDGE_GRAPH_PHRASES = [
-    "Before project work, run AgentPlaybook workflow routing with the user's current request; route/search owns natural-language document discovery.",
+    "Use the route/search output from that start hook for the user's current request; route/search owns natural-language document discovery.",
     "Do not wait for the user to name document keywords; infer the work surface from the request, platform, concern, and touched files, then read the route required_docs before editing or reviewing.",
     "Use workflow-doc-surfaces.json and the local document graph as routing/search inputs; treat graph neighbors as reference_docs unless the route marks them as required_docs.",
     "If routing/search misses a clearly relevant platform, concern, or document surface, stop and report the gap instead of proceeding from memory.",
@@ -47,8 +83,10 @@ RUNTIME_BRIDGE_COMMON_REQUIRED_PHRASES = [
     "If the runtime starts outside the target repo or the target repo is not explicit, run AgentPlaybook agent-entry.py or project-discover.py before project work.",
     "If project discovery returns ambiguous or not_found, ask the user for the target project before routing, editing, testing, committing, or reporting completion.",
     "Before project work, open the project-root instruction file for the active runtime.",
+    RUNTIME_START_BRIDGE_PHRASE,
     *RUNTIME_BRIDGE_GRAPH_PHRASES,
-    "For multi-step work, run AgentPlaybook preflight before edits and finish-check before final report, commit, release, or handoff.",
+    *RUNTIME_CAPSULE_BRIDGE_PHRASES,
+    RUNTIME_FINISH_BRIDGE_PHRASE,
     AUTO_DELEGATION_BRIDGE_PHRASE,
     "Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
     "Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
@@ -86,11 +124,13 @@ def runtime_bridge_block(root: Path, runtime_name: str, instruction_file: str) -
         "- Before project work, open the project-root instruction file for the active runtime.",
         f"- {runtime_name} reads {instruction_file}.",
         "- Read project-root instructions before AgentPlaybook shared guidance.",
-        "- Before project work, run AgentPlaybook workflow routing with the user's current request; route/search owns natural-language document discovery.",
+        f"- {RUNTIME_START_BRIDGE_PHRASE}",
+        "- Use the route/search output from that start hook for the user's current request; route/search owns natural-language document discovery.",
         "- Do not wait for the user to name document keywords; infer the work surface from the request, platform, concern, and touched files, then read the route required_docs before editing or reviewing.",
         "- Use workflow-doc-surfaces.json and the local document graph as routing/search inputs; treat graph neighbors as reference_docs unless the route marks them as required_docs.",
         "- If routing/search misses a clearly relevant platform, concern, or document surface, stop and report the gap instead of proceeding from memory.",
-        "- For multi-step work, run AgentPlaybook preflight before edits and finish-check before final report, commit, release, or handoff.",
+        *[f"- {phrase}" for phrase in RUNTIME_CAPSULE_BRIDGE_PHRASES],
+        f"- {RUNTIME_FINISH_BRIDGE_PHRASE}",
         f"- {AUTO_DELEGATION_BRIDGE_PHRASE}",
         *native_delegation_phrase,
         *dispatch_phrase,
@@ -111,6 +151,16 @@ def merge_runtime_bridge(
     required_phrases: list[str],
 ) -> str:
     text = target.read_text() if target.exists() else ""
+    legacy_pattern = re.compile(
+        re.escape(LEGACY_RUNTIME_BRIDGE_BEGIN)
+        + r"[\s\S]*?"
+        + re.escape(LEGACY_RUNTIME_BRIDGE_END)
+        + r"\n?",
+        re.MULTILINE,
+    )
+    legacy_present = bool(legacy_pattern.search(text))
+    if legacy_present:
+        text = legacy_pattern.sub("", text)
     pattern = re.compile(
         re.escape(RUNTIME_BRIDGE_BEGIN)
         + r"[\s\S]*?"
@@ -120,11 +170,11 @@ def merge_runtime_bridge(
     )
     match = pattern.search(text)
     if match:
-        if match.group(0) == block:
+        if match.group(0) == block and not legacy_present:
             return "ok"
         if dry_run:
             return "missing"
-        updated = pattern.sub(block, text)
+        updated = text if match.group(0) == block else pattern.sub(block, text)
     else:
         missing = [phrase for phrase in required_phrases if phrase not in text]
         if not missing:

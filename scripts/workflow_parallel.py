@@ -14,7 +14,6 @@ from workflow_gate_policy import (
     DOCUMENTATION_IMPACT_GATE,
     DOCUMENTATION_GATE,
     MULTI_AGENT_GATE,
-    ROUTE_DOCS_READ_GATE,
     SIDE_EFFECT_AUDIT_GATE,
     SOURCE_DOCS_GATE,
     TEST_GATE,
@@ -37,7 +36,7 @@ def parallel_execution_plan(command: str, gates: list[str]) -> dict[str, Any]:
         phases,
         phase_id="orientation",
         mode="parallel",
-        gates=_existing(gates, (ROUTE_DOCS_READ_GATE, SOURCE_DOCS_GATE)),
+        gates=_existing(gates, (SOURCE_DOCS_GATE,)),
         tasks=("read independent required docs", "run read-only searches", "inspect stack and git status"),
         constraints=("read-only commands only", "preflight must succeed before edits"),
     )

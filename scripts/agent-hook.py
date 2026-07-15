@@ -9,16 +9,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
 
+from agent_handoff_hook import handoff_hook
 from agent_hook_gate_records import (
     gate_batch_hook,
     gate_hook,
     preflight_evidence_path,
-    record_hook_gate,
-    reset_and_record_start_gate,
 )
 from agent_hook_runtime import (
     REVIEW_CHANGED_PATH_LIMIT,
@@ -27,19 +27,17 @@ from agent_hook_runtime import (
     git_status,
     non_negative_int,
     parse_overall,
+    print_status,
     retry_attempt,
     run_command,
     vibeguard_command,
 )
 from agent_inprocess import run_script_main
-from agent_finish_gate_core_validators import validate_route_docs_application_fields
 from agent_review_hook import review_hook
 from agent_review_structure import (
     REVIEW_FUNCTION_LINE_LIMIT,
     REVIEW_SOURCE_FILE_LINE_LIMIT,
 )
-
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -55,6 +53,8 @@ def start_hook(args: argparse.Namespace) -> int:
     if args.request_classified:
         command.append("--request-classified")
         command.extend(["--classification-evidence", args.classification_evidence])
+        if args.request:
+            command.extend(["--request", args.request])
     else:
         command.extend(["--request", args.request])
     for platform in args.platform:
@@ -63,6 +63,8 @@ def start_hook(args: argparse.Namespace) -> int:
         command.extend(["--concern", concern])
     if args.evidence:
         command.extend(["--evidence", str(args.evidence)])
+    if args.worker_reservation_token:
+        command.extend(["--worker-reservation-token", args.worker_reservation_token])
 
     result = run_script_main(ROOT / "scripts" / "agent-preflight.py", command, args.project)
     success = result["returncode"] == 0
@@ -70,7 +72,9 @@ def start_hook(args: argparse.Namespace) -> int:
     details.extend(_summary_lines(result))
     if success:
         details.extend(_hook_summary_from_preflight(preflight_evidence_path(args)))
-        reset_and_record_start_gate(args)
+        capsule_detail = _start_capsule_detail(args)
+        if capsule_detail:
+            details.append(capsule_detail)
     return finish_with_result(
         "start",
         success,
@@ -95,6 +99,22 @@ def _hook_summary_from_preflight(path: Path) -> list[str]:
     if conditional:
         lines.append(f"Conditional hooks: {conditional}")
     return lines
+
+
+def _start_capsule_detail(args: argparse.Namespace) -> str:
+    """Report the capsule already captured by the single preflight lifecycle."""
+
+    evidence_path = preflight_evidence_path(args)
+    try:
+        from agent_execution_capsule import read_execution_capsule
+        from agent_execution_capsule_state import capsule_path_for_evidence
+
+        capsule = read_execution_capsule(capsule_path_for_evidence(evidence_path))
+    except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as error:
+        return f"execution capsule unavailable: {error}"
+    if capsule.get("phase") == "ready":
+        return "execution capsule captured required-doc and route bindings"
+    return "execution capsule is not ready; delegated work must use the full lifecycle"
 
 
 def finish_hook(args: argparse.Namespace) -> int:
@@ -125,57 +145,6 @@ def finish_hook(args: argparse.Namespace) -> int:
     )
 
 
-def docs_read_hook(args: argparse.Namespace) -> int:
-    command = [
-        "--project",
-        str(args.project),
-        "--rules",
-        str(args.rules),
-    ]
-    if args.evidence:
-        command.extend(["--evidence", str(args.evidence)])
-    receipt_output = args.receipt_output or args.output
-    if receipt_output:
-        command.extend(["--receipt-output", str(receipt_output)])
-
-    result = run_script_main(ROOT / "scripts" / "agent-docs-read.py", command, args.project)
-    success = result["returncode"] == 0
-    details = ["route docs read receipt completed" if success else "route docs read receipt failed"]
-    details.extend(_summary_lines(result))
-    if success:
-        application_failures = validate_route_docs_application_fields(
-            args.takeaway or "",
-            args.next_action or "",
-        )
-        if application_failures:
-            details.append("route docs read gate evidence is incomplete")
-            details.extend(f"required recovery: {failure}" for failure in application_failures)
-            details.append(
-                "rerun docs-read with --takeaway \"<doc-derived rule>\" "
-                "--next-action \"<immediate task action>\""
-            )
-            success = False
-    if success:
-        record_hook_gate(
-            args,
-            "route docs read",
-            "docs-read receipt completed",
-            {
-                "takeaway": args.takeaway or "",
-                "next_action": args.next_action or "",
-            },
-            "docs-read",
-        )
-    return finish_with_result(
-        "docs-read",
-        success,
-        details,
-        None,
-        {"docs_read": result},
-        args.retry_attempt,
-    )
-
-
 def _summary_lines(result: dict[str, Any]) -> list[str]:
     # FAIL lines must never be dropped: hiding some failures makes fixed
     # reruns surface "new" complaints that were failing all along.
@@ -195,9 +164,6 @@ def _summary_lines(result: dict[str, Any]) -> list[str]:
                 "Retrospective required:",
                 "Retrospective lesson candidate:",
                 "Global lessons:",
-                "SUCCESS docs-read",
-                "- receipt:",
-                "- required docs read:",
                 "- routed doc candidates:",
                 "- on-demand reference docs:",
             )):
@@ -206,21 +172,16 @@ def _summary_lines(result: dict[str, Any]) -> list[str]:
 
 
 def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("hook", choices=("start", "docs-read", "gate", "gate-batch", "review", "finish"))
+    parser.add_argument(
+        "hook",
+        choices=("start", "handoff", "gate", "gate-batch", "review", "finish"),
+    )
     parser.add_argument("--project", type=existing_path, default=Path.cwd())
     parser.add_argument("--rules", type=existing_path, default=ROOT)
     parser.add_argument(
         "--output",
         type=existing_path,
-        help=(
-            "hook evidence output for start/review/finish; legacy docs-read "
-            "alias for --receipt-output"
-        ),
-    )
-    parser.add_argument(
-        "--receipt-output",
-        type=existing_path,
-        help="docs-read receipt path; use this instead of --output for docs-read",
+        help="hook evidence output for start, handoff, review, or finish",
     )
     parser.add_argument(
         "--evidence",
@@ -238,23 +199,19 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
 def _add_start_arguments(parser: argparse.ArgumentParser) -> None:
     start = parser.add_argument_group("start hook")
     start.add_argument("--command", default="task", help="workflow route command for start")
-    start_request = start.add_mutually_exclusive_group()
-    start_request.add_argument("--request", help="current user request")
-    start_request.add_argument("--request-classified", action="store_true")
+    start.add_argument("--request", help="current user request")
+    start.add_argument(
+        "--request-classified",
+        action="store_true",
+        help="mark the request as already resolved; also pass --request so handoffs can reuse its capsule",
+    )
     start.add_argument("--classification-evidence", default="")
     start.add_argument("--platform", action="append", default=[])
     start.add_argument("--concern", action="append", default=[])
-
-
-def _add_docs_read_arguments(parser: argparse.ArgumentParser) -> None:
-    docs_read = parser.add_argument_group("docs-read hook")
-    docs_read.add_argument(
-        "--takeaway",
-        help="task-specific rule, criterion, policy, or takeaway applied from the required docs",
-    )
-    docs_read.add_argument(
-        "--next-action",
-        help="immediate next task action that applies the discovered docs",
+    start.add_argument(
+        "--worker-reservation-token",
+        default="",
+        help="opaque token issued by the parent handoff for a fallback worker start",
     )
 
 
@@ -346,7 +303,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run essential AgentPlaybook hooks.")
     _add_common_arguments(parser)
     _add_start_arguments(parser)
-    _add_docs_read_arguments(parser)
     _add_review_arguments(parser)
     _add_finish_arguments(parser)
     _add_gate_arguments(parser)
@@ -356,11 +312,18 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
+    worker_error = _apply_worker_evidence_boundary(args)
+    if worker_error:
+        print_status(args.hook, False, [worker_error])
+        return 2
     if args.hook == "start":
         if args.request_classified and not args.classification_evidence:
             parser.error("start --request-classified requires --classification-evidence")
-        if not args.request_classified and not args.request:
-            parser.error("start requires --request or --request-classified")
+        if not args.request:
+            parser.error(
+                "start requires --request; for resolved requests, keep --request and add "
+                "--request-classified with --classification-evidence"
+            )
         return start_hook(args)
     if args.hook == "review":
         args.review_path = [path.strip() for path in args.review_path if path.strip()]
@@ -369,8 +332,8 @@ def main() -> int:
         if args.review_scope == "pathspec" and not args.review_path:
             parser.error("review --review-scope pathspec requires at least one --review-path")
         return review_hook(args, run_command, git_status, vibeguard_command, parse_overall, finish_with_result)
-    if args.hook == "docs-read":
-        return docs_read_hook(args)
+    if args.hook == "handoff":
+        return handoff_hook(args)
     if args.hook == "gate":
         if not args.gate_name:
             parser.error("gate requires --gate-name")
@@ -378,6 +341,19 @@ def main() -> int:
     if args.hook == "gate-batch":
         return gate_batch_hook(args)
     return finish_hook(args)
+
+
+def _apply_worker_evidence_boundary(args: argparse.Namespace) -> str:
+    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+        return "reusable worker capsule cannot run lifecycle hooks that write parent evidence"
+    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    if not expected:
+        return ""
+    expected_path = Path(expected).expanduser().resolve()
+    if args.evidence and args.evidence.resolve() != expected_path:
+        return "worker lifecycle must use the launcher-issued isolated evidence path"
+    args.evidence = expected_path
+    return ""
 
 
 if __name__ == "__main__":

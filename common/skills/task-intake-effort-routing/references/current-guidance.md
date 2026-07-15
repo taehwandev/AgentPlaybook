@@ -235,10 +235,14 @@ the retrospective workflow before final report, commit, release, or handoff.
 - Use `scripts/workflow.py classify "<request>"` for unclear, direct-question,
   or multi-step requests when the script is available; skip it only for clear,
   low-risk answer-only tasks after answering them.
-- Use `scripts/workflow.py route <command> --request "<request>"` for multi-step
-  routes. If the script reports `direct-question`, answer before routing. If it
-  reports `grill_me: true` or legacy `question_drill: true`, use `triage` or
-  `ambiguity` and a Grill-Me `/grilling` session before work.
+- For multi-step work, run `scripts/agent-hook.py start` once with the selected
+  command and current request. Open every route `required_docs` entry directly,
+  run the review hook after meaningful changes, and run the finish hook before
+  handoff. Direct `workflow.py route` is a lower-level diagnostic fallback when
+  the hook is unavailable. If classification reports `direct-question`, answer
+  before routing. If it reports `grill_me: true` or legacy
+  `question_drill: true`, use `triage` or `ambiguity` and a Grill-Me
+  `/grilling` session before work.
 - Use `--request-classified` only after the direct question was answered or the
   ambiguity was actually resolved. Evidence that still says `vague-action`,
   `broad-product`, `risky-unclear`, `direct-question`, `answer_first`,

@@ -12,6 +12,7 @@ import json
 import sys
 from pathlib import Path
 
+from agent_execution_capsule_bindings import preflight_identity_failures
 from workflow_catalog import COMMANDS, CONCERNS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import ROOT, unique
 from workflow_dispatch import (
@@ -70,33 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     route.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
-    dispatch = subparsers.add_parser(
-        "dispatch",
-        help="Build a Codex task handoff from a workflow profile.",
-    )
-    dispatch.add_argument("command", choices=sorted(COMMANDS), help="Task command profile.")
-    dispatch.add_argument("--request", required=True, help="Current user request text.")
-    dispatch.add_argument("--project", default=".", help="Target project root for the delegated Codex task.")
-    dispatch.add_argument("--work-kind", choices=WORK_KINDS, default="auto")
-    dispatch.add_argument(
-        "--complexity-evidence",
-        default="",
-        help="Local inspection evidence required when explicitly selecting complex_implementation.",
-    )
-    dispatch.add_argument("--platform", choices=sorted(PLATFORMS), help="Affected platform.")
-    dispatch.add_argument(
-        "--concern",
-        action="append",
-        default=[],
-        choices=sorted(set(CONCERNS) | {key[1] for key in PLATFORM_CONCERNS}),
-        help="Affected concern. Can be repeated.",
-    )
-    dispatch.add_argument("--format", choices=("markdown", "json"), default="markdown")
-    dispatch.add_argument(
-        "--execute",
-        action="store_true",
-        help="Run the selected Codex worker after building the handoff manifest.",
-    )
+    _add_dispatch_parser(subparsers)
 
     classify = subparsers.add_parser("classify", help="Classify request clarity and effort.")
     classify.add_argument("request", help="User request text to classify.")
@@ -116,6 +91,37 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("list", help="List available commands, platforms, and concerns.")
     subparsers.add_parser("validate", help="Validate route references, markdown frontmatter, and links.")
     return parser
+
+
+def _add_dispatch_parser(subparsers: argparse._SubParsersAction) -> None:
+    dispatch = subparsers.add_parser(
+        "dispatch", help="Build a Codex task handoff from a workflow profile."
+    )
+    dispatch.add_argument("command", choices=sorted(COMMANDS), help="Task command profile.")
+    dispatch.add_argument("--request", required=True, help="Current user request text.")
+    dispatch.add_argument("--request-classified", action="store_true")
+    dispatch.add_argument("--classification-evidence", default="")
+    dispatch.add_argument("--project", default=".", help="Target project root for the delegated Codex task.")
+    dispatch.add_argument("--rules", type=Path, default=ROOT)
+    dispatch.add_argument("--evidence", type=Path)
+    dispatch.add_argument("--worker-evidence", type=Path)
+    dispatch.add_argument("--worker-reservation-token", default="")
+    dispatch.add_argument("--work-kind", choices=WORK_KINDS, default="auto")
+    dispatch.add_argument("--complexity-evidence", default="")
+    dispatch.add_argument("--platform", choices=sorted(PLATFORMS), help="Affected platform.")
+    dispatch.add_argument(
+        "--concern",
+        action="append",
+        default=[],
+        choices=sorted(set(CONCERNS) | {key[1] for key in PLATFORM_CONCERNS}),
+        help="Affected concern. Can be repeated.",
+    )
+    dispatch.add_argument("--format", choices=("markdown", "json"), default="markdown")
+    dispatch.add_argument("--parent-model", default="")
+    dispatch.add_argument("--parent-reasoning-effort", default="")
+    dispatch.add_argument("--parent-sandbox-mode", default="")
+    dispatch.add_argument("--require-isolation", action="store_true")
+    dispatch.add_argument("--execute", action="store_true")
 
 
 def print_supported_values() -> None:
@@ -170,7 +176,15 @@ def print_route(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 2
-    request_classification = classify_request(args.request) if args.request else None
+    # A classified handoff deliberately keeps the original request for identity
+    # binding, even when that text is a short confirmation such as "yes".  Its
+    # classification evidence, not a second classification of that reply, is
+    # the authority for opening the selected work route.
+    request_classification = (
+        None
+        if args.request_classified
+        else (classify_request(args.request) if args.request else None)
+    )
     if not request_classification and not args.request_classified:
         print(
             "Route requires request intake evidence. Pass --request \"<USER_REQUEST>\" "
@@ -223,21 +237,62 @@ def print_route(args: argparse.Namespace) -> int:
 
 
 def print_dispatch(args: argparse.Namespace) -> int:
-    request_classification = classify_request(args.request)
-    block_reason = route_block_reason(args.command, request_classification)
+    if args.request_classified and not args.classification_evidence:
+        print(
+            "Dispatch --request-classified requires --classification-evidence so request intake cannot be skipped silently.",
+            file=sys.stderr,
+        )
+        return 2
+    request_classification = (
+        None if args.request_classified else classify_request(args.request)
+    )
+    block_reason = (
+        classified_route_block_reason(args.command, args.classification_evidence)
+        if args.request_classified
+        else route_block_reason(args.command, request_classification)
+    )
     if block_reason:
         print(block_reason, file=sys.stderr)
         return 2
 
-    inferred_concerns = infer_concerns_from_request(args.request)
-    route = resolve_docs(
-        args.command,
-        args.platform,
-        unique([*args.concern, *inferred_concerns]),
-        request_classification=request_classification,
-        request_text=args.request,
-        project_root=Path(args.project).resolve(),
+    project = Path(args.project).resolve()
+    rules = args.rules.expanduser().resolve()
+    evidence_path = (
+        args.evidence.expanduser().resolve()
+        if args.evidence
+        else project / ".agentplaybook" / "preflight.json"
     )
+    parent_identity_matches = _preflight_identity_matches(
+        evidence_path,
+        project=project,
+        rules=rules,
+    )
+    parent_route = _parent_dispatch_route(
+        evidence_path,
+        command=args.command,
+        request=args.request,
+        request_classified=args.request_classified,
+        classification_evidence=args.classification_evidence,
+        platform=args.platform,
+        concerns=args.concern,
+        project=project,
+        rules=rules,
+    )
+    if not parent_identity_matches:
+        evidence_path = project / ".agentplaybook" / "preflight.json"
+    route = parent_route
+    if route is None:
+        inferred_concerns = infer_concerns_from_request(args.request)
+        route = resolve_docs(
+            args.command,
+            args.platform,
+            unique([*args.concern, *inferred_concerns]),
+            request_classification=request_classification,
+            request_classified=args.request_classified,
+            classification_evidence=args.classification_evidence,
+            request_text=args.request,
+            project_root=project,
+        )
     if route["missing"] or route.get("blocking"):
         print("Dispatch route is blocked:", file=sys.stderr)
         for item in [*route["missing"], *(route.get("blocking") or [])]:
@@ -251,18 +306,93 @@ def print_dispatch(args: argparse.Namespace) -> int:
             work_kind=args.work_kind,
             complexity_evidence=args.complexity_evidence,
             route=route,
+            request_classified=args.request_classified,
+            classification_evidence=args.classification_evidence,
+            request_classification=request_classification,
+            parent_model=args.parent_model,
+            parent_reasoning_effort=args.parent_reasoning_effort,
+            parent_sandbox_mode=args.parent_sandbox_mode,
+            isolation_required=args.require_isolation,
+            rules=rules,
+            evidence_path=evidence_path,
+            worker_evidence_path=args.worker_evidence,
+            reserve_worker_evidence=args.execute,
+            worker_reservation_token=args.worker_reservation_token,
+            parent_context_reusable=parent_route is not None,
+            defer_capsule_validation=args.execute,
         )
-    except ValueError as error:
+    except (OSError, RuntimeError, ValueError) as error:
         print(error, file=sys.stderr)
         return 2
     if args.execute:
         try:
             return execute_dispatch_manifest(manifest)
-        except RuntimeError as error:
+        except ValueError as error:
+            print(error, file=sys.stderr)
+            return 2
+        except (OSError, RuntimeError) as error:
             print(error, file=sys.stderr)
             return 1
     print_dispatch_manifest(manifest, args.format)
     return 0
+
+
+def _parent_dispatch_route(
+    evidence_path: Path,
+    *,
+    command: str,
+    request: str,
+    request_classified: bool,
+    classification_evidence: str,
+    platform: str | None,
+    concerns: list[str],
+    project: Path,
+    rules: Path,
+) -> dict[str, object] | None:
+    """Reuse the parent start route without mutating its handoff capsule."""
+
+    if not _preflight_identity_matches(evidence_path, project=project, rules=rules):
+        return None
+    try:
+        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    route = payload.get("route") if isinstance(payload, dict) else None
+    if not isinstance(route, dict) or route.get("command") != command:
+        return None
+    if platform and route.get("platform") != platform:
+        return None
+    routed_concerns = {
+        str(item) for item in (route.get("concerns") or []) if str(item).strip()
+    }
+    if any(concern not in routed_concerns for concern in concerns):
+        return None
+    intake = payload.get("request_intake")
+    if not isinstance(intake, dict):
+        return None
+    if request_classified:
+        if not intake.get("request_classified"):
+            return None
+        if intake.get("classification_evidence") != classification_evidence:
+            return None
+        # A classification description is reusable policy evidence, not a
+        # request identity.  Reuse a classified parent route only when start
+        # also captured the exact current request; otherwise resolve a fresh
+        # route and keep the old capsule invalid for this dispatch.
+        if not intake.get("request") or intake.get("request") != request:
+            return None
+    elif intake.get("request") != request:
+        return None
+    return dict(route)
+
+
+def _preflight_identity_matches(
+    evidence_path: Path,
+    *,
+    project: Path,
+    rules: Path,
+) -> bool:
+    return not preflight_identity_failures(evidence_path, project, rules)
 
 
 def main(argv: list[str]) -> int:

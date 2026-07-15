@@ -240,15 +240,19 @@ write scope, session model, and cross-repo verification.
 Shared AgentPlaybook guidance:
 ${AGENTPLAYBOOK_HOME}/AGENTS.md
 ${AGENTPLAYBOOK_HOME}/index.md
+${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py
 ${AGENTPLAYBOOK_HOME}/scripts/workflow.py
 ${AGENTPLAYBOOK_HOME}/scripts/setup-agent-hooks.py
 ${AGENTPLAYBOOK_HOME}/scripts/agent-preflight.py
 ${AGENTPLAYBOOK_HOME}/scripts/agent-finish-check.py
 
 Use repo-local instructions first.
-For multi-step tasks, use the workflow script first when it exists.
-When the preflight and finish-check wrappers exist, use them to create local
-evidence before editing and before final report, commit, release, or handoff.
+For multi-step tasks, run agent-hook.py start once. It performs routing and
+preflight; then read every route required_docs entry directly before work.
+Use the review hook after meaningful edits and the finish hook before final
+report, commit, release, or handoff. Direct workflow.py route,
+agent-preflight.py, and agent-finish-check.py calls are lower-level diagnostic
+or compatibility fallbacks only; never run them as a second lifecycle.
 Use the shared index only to select the smallest relevant document set.
 Do not load every shared document by default.
 ```
@@ -387,11 +391,15 @@ flow instead of copying the whole library:
    bridge must explicitly tell the runtime to read the current target project's
    local instructions first: Codex-style agents read `AGENTS.md`, Claude reads
    `CLAUDE.md`, and Antigravity reads `AGENTS.md`.
-13. For follow-up work, run `workflow.py classify` when request clarity is
-   uncertain, then `workflow.py route ... --request "<USER_REQUEST>"` and
-   follow the gate ledger. Answer direct questions before routing.
-14. When wrapper scripts are available, run `agent-preflight.py` before edits and
-   `agent-finish-check.py` before final report, commit, release, or handoff.
+13. For multi-step follow-up work, run `agent-hook.py start ... --request
+   "<USER_REQUEST>"` once and follow its route and gate ledger. It performs
+   classification, routing, and preflight; do not repeat those commands after a
+   successful start. Answer direct questions before start.
+14. Read every route `required_docs` entry directly after start, run the review
+   hook after meaningful edits, and run the finish hook before final report,
+   commit, release, or handoff. Direct `workflow.py route`,
+   `agent-preflight.py`, and `agent-finish-check.py` calls are lower-level
+   diagnostic or compatibility fallbacks only.
 15. Before reporting success, verify the routing block, VibeGuard gate result,
    and any route gates that were required.
 
@@ -418,6 +426,7 @@ AgentPlaybook.
 Then use AgentPlaybook:
 <AGENTPLAYBOOK_ROOT>/AGENTS.md
 <AGENTPLAYBOOK_ROOT>/index.md
+<AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
@@ -426,12 +435,15 @@ Apply the required VibeGuard safety gate with <AGENTPLAYBOOK_ROOT> as the rule
 source before editing. Use the published VibeGuard package command; the
 VibeGuard site is a human reference and does not need to be fetched by the
 agent.
-For multi-step work, run the workflow route with `--request "<USER_REQUEST>"`
-and follow its gate ledger. If the user asks a direct question, answer it before
-starting project work.
-When the wrapper scripts exist, run `agent-preflight.py` before editing and
-`agent-finish-check.py` before final report, commit, release, or handoff. Missing
-wrapper evidence or missing route gate evidence is non-compliant.
+For multi-step work, run `agent-hook.py start` once with `--request
+"<USER_REQUEST>"`; it performs routing and preflight. Read every route
+`required_docs` entry directly before work and follow the gate ledger. If the
+user asks a direct question, answer it before starting project work. Run the
+review hook after meaningful edits and the finish hook before final report,
+commit, release, or handoff. Direct `workflow.py route`, `agent-preflight.py`,
+and `agent-finish-check.py` calls are lower-level diagnostic or compatibility
+fallbacks only. Missing wrapper evidence or missing route gate evidence is
+non-compliant.
 After each completed or failed gate or task step, show:
 Gate signal: 🐱🟢 SUCCESS | gate: <gate> | evidence: <evidence> | next: <next gate>
 
@@ -440,10 +452,10 @@ gate was blocked, failed, missed, or lacks evidence and must use missed-gate
 recovery. Do not report any third gate state.
 
 For PRD-only work:
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 
 For PRD -> ARD -> implementation:
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Full bootstrap instructions live in [docs/skills/agent-bootstrap/SKILL.md](docs/skills/agent-bootstrap/SKILL.md).
@@ -527,8 +539,18 @@ AgentPlaybook provides shared defaults only.
 
 ## Workflow Router
 
-For multi-step work, agents must generate a route manifest before selecting
-documents manually, editing, reviewing, committing, or reporting completion:
+For multi-step work, agents generate the route manifest through one start hook
+before selecting documents manually, editing, reviewing, committing, or
+reporting completion:
+
+```bash
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command product --request "<USER_REQUEST>" --platform web --concern security --concern ui
+```
+
+The start hook performs classification, routing, and preflight. Read its
+`required_docs` directly before work; do not separately repeat the lower-level
+commands. Use these only for diagnostics, compatibility fallback, or route
+development when the start hook is unavailable:
 
 ```bash
 python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" list
@@ -602,10 +624,11 @@ When an agent runtime executes these wrapper commands, resolve
 `${AGENTPLAYBOOK_HOME}` to the absolute path first. Do not leave `$HOME`,
 `${HOME}`, `~`, or a relative path in approval-sensitive executable commands.
 
-Before multi-step edits:
+Before multi-step edits, run one lifecycle entry that performs routing and
+preflight:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-preflight.py" \
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start \
   --project . \
   --rules "${AGENTPLAYBOOK_HOME}" \
   --command task \
@@ -613,19 +636,26 @@ python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-preflight.py" \
   --concern wiki
 ```
 
-Before final report, commit, release, or handoff:
+Read every route `required_docs` entry directly after start and before work. Run
+the review hook after meaningful edits. Before final report, commit, release, or
+handoff:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-finish-check.py" \
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" finish \
   --project . \
   --rules "${AGENTPLAYBOOK_HOME}" \
   --gate "request intake=<route/classification evidence>" \
-  --gate "orient=<instructions and route docs read>" \
+  --gate "orient=<instructions and required-doc route>" \
   --gate "scope=<scope decision evidence>" \
   --gate "act=<diff or changed files evidence>" \
   --gate "verify=<commands and results>" \
   --gate "report=<final report prepared>"
 ```
+
+Direct `workflow.py route`, `agent-preflight.py`, and `agent-finish-check.py`
+calls remain available only as lower-level diagnostic or compatibility
+fallbacks when the corresponding hook cannot run; never run them as a second
+lifecycle after a successful start or finish hook.
 
 The scripts write to `.agentplaybook/preflight.json` and
 `.agentplaybook/finish.json`. That directory is local runtime evidence and
@@ -727,28 +757,30 @@ where state should live, and what evidence proves the work.
   meaning and voice while reducing generic AI-writing signals in prose,
   documentation, release notes, marketing copy, and email.
 
-For implementation work, route with the platform and concern instead of relying
-on only a broad architecture card:
+For implementation work, start once with the platform and concern instead of
+relying on only a broad architecture card. Each line is an alternative task
+entry, not a sequence:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform ios --concern swiftui
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform ios --concern uikit
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform web --concern react --concern ui
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform android --concern compose
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform kmp --concern compose --concern platform
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform flutter --concern widget --concern channel
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform server --concern api --concern auth
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform application --concern desktop
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform ios --concern swiftui
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform ios --concern uikit
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform web --concern react --concern ui
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform android --concern compose
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform kmp --concern compose --concern platform
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform flutter --concern widget --concern channel
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform server --concern api --concern auth
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform application --concern desktop
 ```
 
 ## Loading Model
 
 1. Start from the target repo's local instructions.
 2. Open this repository's `AGENTS.md`.
-3. For multi-step work, run `scripts/workflow.py route ... --request
-   "<USER_REQUEST>"` to generate the command route before selecting task
-   documents.
-4. Use `index.md` to choose the smallest relevant document set.
+3. For multi-step work, run `scripts/agent-hook.py start ... --request
+   "<USER_REQUEST>"` once to generate routing and preflight evidence before
+   selecting task documents. Do not repeat lower-level route or preflight.
+4. Read every route `required_docs` entry directly before work; use `index.md`
+   only for a simple answer or an explicitly accepted fallback.
 5. Read the common baseline cards required for the task.
 6. Add exactly the platform, product-pattern, or workflow cards that match the
    touched surface.
@@ -764,10 +796,13 @@ This is the core design: small cards, loaded only when relevant.
 - Use `index.md` to choose only the needed documents.
 - Answer direct user questions before starting workflow routing, editing, or
   project-specific commands.
-- Run `scripts/workflow.py route ... --request "<USER_REQUEST>"` for multi-step
-  workflows before selecting documents manually.
-- Use `scripts/agent-preflight.py` and `scripts/agent-finish-check.py` when
-  available; missing executable evidence is non-compliant.
+- Run `scripts/agent-hook.py start ... --request "<USER_REQUEST>"` once for
+  multi-step workflows, then read every route `required_docs` entry directly.
+- Use the review hook after meaningful edits and the finish hook before final
+  report, commit, release, or handoff. Direct `workflow.py route`,
+  `agent-preflight.py`, and `agent-finish-check.py` calls are lower-level
+  diagnostic or compatibility fallbacks only; missing executable evidence is
+  non-compliant.
 - Classify unclear requests before loading broad context or using deep model
   effort.
 - Discover the repo stack before choosing package managers, framework APIs, or

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,13 +16,23 @@ from agent_finish_check_steps import (
     check_preflight_vibeguard,
     check_request_intake,
     check_required_gates,
-    read_route_docs_receipt_for_preflight,
     read_preflight,
     resolve_paths,
+    route_gate_capsule_binding_failures,
 )
-from agent_finish_common import display_signal, parse_gate, requires_retrospective, write_json
+from agent_finish_common import (
+    add_gate_signal,
+    display_signal,
+    parse_gate,
+    requires_retrospective,
+    write_json,
+)
 from agent_finish_final_checks import run_final_checks
-from agent_gate_evidence import incomplete_gate_evidence_failures, merge_gate_evidence_from_ledger
+from agent_gate_evidence import (
+    incomplete_gate_evidence_failures,
+    merge_gate_evidence_from_ledger,
+    record_cli_gate_evidence,
+)
 
 
 def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
@@ -53,7 +64,6 @@ def build_result(
     gate_signals: list[dict[str, str]],
     missed_gates: list[str],
     gate_evidence_ledger: dict[str, Any],
-    route_docs_receipt: dict[str, Any],
     delegation_plan: dict[str, Any],
     grill_me_required: bool,
     retrospective_required: bool,
@@ -77,7 +87,6 @@ def build_result(
         "gate_evidence_ledger": gate_evidence_ledger,
         "gate_signals": gate_signals,
         "missed_gates": missed_gates,
-        "route_docs_read_receipt": route_docs_receipt,
         "agent_delegation_plan": delegation_plan,
         "grill_me_required": grill_me_required,
         "question_drill_required": grill_me_required,
@@ -112,17 +121,29 @@ def print_result(output_path: Path, required_gates: list[str], overall: str, res
 def main() -> int:
     playbook_root = Path(__file__).resolve().parents[1]
     args = build_parser(playbook_root).parse_args()
+    worker_error = _apply_worker_evidence_boundary(args)
+    if worker_error:
+        print(f"FAIL: {worker_error}", file=sys.stderr)
+        return 2
     project, rules, evidence_path, output_path = resolve_paths(args)
     failures: list[str] = []
     preflight = read_preflight(evidence_path, failures)
     route = preflight.get("route") or {}
-    route_docs_receipt = read_route_docs_receipt_for_preflight(evidence_path)
+    cli_gate_evidence = dict(args.gate)
+    if cli_gate_evidence and preflight:
+        try:
+            record_cli_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                cli_gate_evidence=cli_gate_evidence,
+            )
+        except (OSError, ValueError) as error:
+            failures.append(f"finish CLI gate evidence could not be recorded: {error}")
     delegation_plan = read_delegation_plan(project)
     gate_evidence, gate_evidence_ledger = merge_gate_evidence_from_ledger(
         route=route,
         evidence_path=evidence_path,
-        route_docs_receipt=route_docs_receipt,
-        cli_gate_evidence=dict(args.gate),
+        cli_gate_evidence={},
     )
     failures.extend(incomplete_gate_evidence_failures(gate_evidence_ledger))
     gate_signals: list[dict[str, str]] = []
@@ -131,10 +152,20 @@ def main() -> int:
         gate_evidence,
         gate_signals,
         failures,
-        route_docs_receipt,
-        evidence_path,
         delegation_plan,
     )
+    capsule_binding_failures = route_gate_capsule_binding_failures(
+        route,
+        project,
+        rules,
+        evidence_path,
+        gate_evidence,
+        gate_evidence_ledger,
+    )
+    for failure in capsule_binding_failures:
+        add_gate_signal(gate_signals, "FAIL", "execution capsule", "failed", failure)
+        failures.append(failure)
+    gate_policy_failures.extend(capsule_binding_failures)
     grill_me_required = check_request_intake(
         route,
         preflight.get("request_intake") or {},
@@ -185,7 +216,6 @@ def main() -> int:
         gate_signals=gate_signals,
         missed_gates=missed_gates,
         gate_evidence_ledger=gate_evidence_ledger,
-        route_docs_receipt=route_docs_receipt,
         delegation_plan=delegation_plan,
         grill_me_required=grill_me_required,
         retrospective_required=retrospective_required,
@@ -203,6 +233,19 @@ def main() -> int:
             print(f"FAIL: {failure}", file=sys.stderr)
         return 1
     return 0
+
+
+def _apply_worker_evidence_boundary(args: argparse.Namespace) -> str:
+    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+        return "reusable worker capsule cannot run a finish check against parent evidence"
+    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    if not expected:
+        return ""
+    expected_path = Path(expected).expanduser().resolve()
+    if args.evidence and args.evidence.resolve() != expected_path:
+        return "worker finish check must use the launcher-issued isolated evidence path"
+    args.evidence = expected_path
+    return ""
 
 
 if __name__ == "__main__":

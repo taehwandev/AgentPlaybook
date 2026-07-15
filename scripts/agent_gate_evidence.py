@@ -3,16 +3,27 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from agent_finish_gate_core_validators import validate_route_docs_application_fields
-from agent_route_docs import preflight_evidence_sha256, route_fingerprint, validate_route_doc_receipt
+from agent_execution_capsule_state import (
+    atomic_write_json,
+    capsule_path_for_evidence,
+    execution_capsule_binding_fingerprint,
+    read_json_object,
+)
+from agent_route_state import (
+    preflight_evidence_sha256,
+    required_docs_for_route,
+    route_fingerprint,
+)
 
 
 GATE_EVIDENCE_FILENAME = "gate-evidence.json"
 SCHEMA_VERSION = 1
+CAPSULE_BINDING_FIELD = "execution_capsule_binding"
 
 
 FIELD_REQUIREMENTS: dict[str, tuple[str, ...]] = {
@@ -40,9 +51,8 @@ FIELD_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "query_smoke",
     ),
     "multi-agent split decision": ("mode", "reason", "verification"),
-    "route docs read": ("takeaway", "next_action"),
     "side-effect audit": ("scope", "result"),
-    "source docs": ("source", "outcome"),
+    "source docs": ("required_docs", "source", "takeaway"),
     "tests": ("check", "result"),
 }
 
@@ -83,6 +93,7 @@ def read_gate_evidence_ledger(path: Path) -> dict[str, Any]:
 
 
 def reset_gate_evidence_ledger(evidence_path: Path, preflight: dict[str, Any]) -> dict[str, Any]:
+    _enforce_worker_evidence_boundary(evidence_path)
     ledger = _new_ledger(evidence_path, preflight)
     _write_gate_evidence_ledger(gate_evidence_path_for_preflight(evidence_path), ledger)
     return ledger
@@ -122,6 +133,7 @@ def record_many_gate_evidence(
 ) -> list[dict[str, Any]]:
     if not records:
         return []
+    _enforce_worker_evidence_boundary(evidence_path)
     path = gate_evidence_path_for_preflight(evidence_path)
     ledger = read_gate_evidence_ledger(path)
     if not _ledger_matches_preflight(ledger, evidence_path, preflight):
@@ -135,7 +147,14 @@ def record_many_gate_evidence(
         status = str(record.get("status") or "SUCCESS").strip()
         if status not in {"SUCCESS", "FAIL"}:
             raise ValueError(f"gate evidence record has invalid status: {status}")
-        fields = _string_fields(record.get("fields") or {})
+        fields = _canonical_gate_fields(
+            gate,
+            _string_fields(record.get("fields") or {}),
+            preflight,
+        )
+        capsule_binding = _capsule_binding_for_preflight(evidence_path, preflight)
+        if capsule_binding:
+            fields[CAPSULE_BINDING_FIELD] = capsule_binding
         entry = {
             "created_at": datetime.now(timezone.utc).isoformat(),
             "gate": gate,
@@ -152,11 +171,90 @@ def record_many_gate_evidence(
     return recorded
 
 
+def record_cli_gate_evidence(
+    *,
+    evidence_path: Path,
+    preflight: dict[str, Any],
+    cli_gate_evidence: dict[str, str],
+) -> list[dict[str, Any]]:
+    """Persist finish CLI fallback evidence before it participates in validation.
+
+    A direct ``--gate`` value is compatibility input, not an in-memory
+    override.  Writing it through the same ledger path gives it the current
+    execution-capsule fingerprint and keeps every required gate subject to the
+    same binding check.
+    """
+
+    records = [
+        {
+            "gate": gate,
+            "evidence": evidence,
+            "source": "finish cli fallback",
+        }
+        for gate, evidence in cli_gate_evidence.items()
+    ]
+    return record_many_gate_evidence(
+        evidence_path=evidence_path,
+        preflight=preflight,
+        records=records,
+    )
+
+
+def bind_gate_evidence_to_capsule(
+    *,
+    evidence_path: Path,
+    preflight: dict[str, Any],
+) -> int:
+    """Attach the ready capsule fingerprint to already-recorded route gates.
+
+    Start must record request intake before a capsule can become ready.  This
+    post-refresh pass closes that ordering gap without making a second
+    document-reading command part of the lifecycle.
+    """
+
+    _enforce_worker_evidence_boundary(evidence_path)
+    binding = _capsule_binding_for_preflight(evidence_path, preflight)
+    if not binding:
+        return 0
+    path = gate_evidence_path_for_preflight(evidence_path)
+    ledger = read_gate_evidence_ledger(path)
+    if not _ledger_matches_preflight(ledger, evidence_path, preflight):
+        return 0
+    required_gates = {str(gate) for gate in (preflight.get("route") or {}).get("gates", [])}
+    changed = 0
+    entries = ledger.get("entries")
+    if not isinstance(entries, list):
+        return 0
+    for entry in entries:
+        if (
+            not isinstance(entry, dict)
+            or entry.get("status") != "SUCCESS"
+            or str(entry.get("gate") or "") not in required_gates
+        ):
+            continue
+        fields = _string_fields(entry.get("fields") or {})
+        if fields.get(CAPSULE_BINDING_FIELD) == binding:
+            continue
+        fields[CAPSULE_BINDING_FIELD] = binding
+        entry["fields"] = dict(sorted(fields.items()))
+        changed += 1
+    if changed:
+        _write_gate_evidence_ledger(path, ledger)
+    return changed
+
+
+def _enforce_worker_evidence_boundary(evidence_path: Path) -> None:
+    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+        raise PermissionError("reusable worker capsule cannot write parent gate evidence")
+    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    if expected and evidence_path.resolve() != Path(expected).expanduser().resolve():
+        raise PermissionError("worker may write only its launcher-issued gate evidence")
+
+
 def merge_gate_evidence_from_ledger(
     *,
     route: dict[str, Any],
     evidence_path: Path,
-    route_docs_receipt: dict[str, Any],
     cli_gate_evidence: dict[str, str],
 ) -> tuple[dict[str, str], dict[str, Any]]:
     path = gate_evidence_path_for_preflight(evidence_path)
@@ -167,15 +265,20 @@ def merge_gate_evidence_from_ledger(
         "warnings": [],
         "missing_fields": {},
         "sources": {},
+        "capsule_bindings": {},
     }
+    if cli_gate_evidence:
+        diagnostics["warnings"].append(
+            "CLI gate evidence must be persisted before ledger merge"
+        )
     if not ledger:
-        return dict(cli_gate_evidence), diagnostics
+        return {}, diagnostics
     if ledger.get("invalid_json"):
         diagnostics["warnings"].append("gate evidence ledger is not valid JSON")
-        return dict(cli_gate_evidence), diagnostics
+        return {}, diagnostics
     if not _ledger_matches_route(ledger, evidence_path, route):
         diagnostics["warnings"].append("gate evidence ledger is stale for the current preflight route")
-        return dict(cli_gate_evidence), diagnostics
+        return {}, diagnostics
 
     merged: dict[str, str] = {}
     required_gates = {str(gate) for gate in (route.get("gates") or [])}
@@ -189,8 +292,6 @@ def merge_gate_evidence_from_ledger(
             gate,
             str(entry.get("evidence") or ""),
             _string_fields(entry.get("fields") or {}),
-            route_docs_receipt,
-            route,
         )
         if missing:
             if gate not in merged:
@@ -199,11 +300,13 @@ def merge_gate_evidence_from_ledger(
         if evidence:
             merged[gate] = evidence
             diagnostics["sources"][gate] = str(entry.get("source") or "ledger")
+            binding = _string_fields(entry.get("fields") or {}).get(CAPSULE_BINDING_FIELD)
+            if binding:
+                diagnostics["capsule_bindings"][gate] = binding
+            else:
+                diagnostics["capsule_bindings"].pop(gate, None)
             diagnostics["missing_fields"].pop(gate, None)
 
-    merged.update(cli_gate_evidence)
-    for gate in merged:
-        diagnostics["missing_fields"].pop(gate, None)
     diagnostics["used"] = bool(merged)
     return merged, diagnostics
 
@@ -212,28 +315,7 @@ def synthesize_gate_evidence(
     gate: str,
     evidence: str,
     fields: dict[str, str],
-    route_docs_receipt: dict[str, Any],
-    route: dict[str, Any] | None = None,
 ) -> tuple[str, list[str]]:
-    if gate == "route docs read":
-        receipt_failures = validate_route_doc_receipt(route or {}, route_docs_receipt)
-        if receipt_failures:
-            return "", ["matching route docs receipt"]
-        missing = missing_structured_gate_fields(gate, evidence, fields)
-        if missing:
-            return "", missing
-        application_failures = validate_route_docs_application_fields(
-            fields["takeaway"],
-            fields["next_action"],
-        )
-        if application_failures:
-            return "", application_failures
-        return (
-            "read required skill/guidance docs before code, implementation, or editing "
-            f"with docs-read receipt; applied rule/takeaway: {fields['takeaway']}; "
-            f"immediate next action: {fields['next_action']}",
-            [],
-        )
     missing = missing_structured_gate_fields(gate, evidence, fields)
     if missing:
         return "", missing
@@ -296,8 +378,10 @@ def synthesize_gate_evidence(
         )
     if gate == "source docs":
         return (
+            "read every route required_docs entry directly before implementation or edits; "
+            f"required-doc reading: {fields['required_docs']}; "
             "searched and opened/read source-of-truth docs before implementation or edits; "
-            f"source: {fields['source']}; outcome used/applied: {fields['outcome']}",
+            f"source: {fields['source']}; applied takeaway: {fields['takeaway']}",
             [],
         )
     if gate == "tests":
@@ -361,7 +445,7 @@ def _new_ledger(evidence_path: Path, preflight: dict[str, Any]) -> dict[str, Any
     return {
         "schema_version": SCHEMA_VERSION,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "preflight_evidence": str(evidence_path),
+        "preflight_evidence": str(evidence_path.resolve()),
         "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
         "route_fingerprint": route_fingerprint(route),
         "entries": [],
@@ -379,11 +463,18 @@ def _ledger_matches_preflight(
 def _ledger_matches_route(ledger: dict[str, Any], evidence_path: Path, route: dict[str, Any]) -> bool:
     if ledger.get("schema_version") != SCHEMA_VERSION:
         return False
-    if ledger.get("preflight_evidence") != str(evidence_path):
+    if not _same_evidence_path(ledger.get("preflight_evidence"), evidence_path):
         return False
     if ledger.get("preflight_evidence_sha256") != preflight_evidence_sha256(evidence_path):
         return False
     return ledger.get("route_fingerprint") == route_fingerprint(route)
+
+
+def _same_evidence_path(recorded: Any, evidence_path: Path) -> bool:
+    try:
+        return Path(str(recorded)).expanduser().resolve() == evidence_path.resolve()
+    except (OSError, RuntimeError, ValueError):
+        return False
 
 
 def _refresh_ledger_binding(
@@ -391,9 +482,45 @@ def _refresh_ledger_binding(
     evidence_path: Path,
     preflight: dict[str, Any],
 ) -> None:
-    ledger["preflight_evidence"] = str(evidence_path)
+    ledger["preflight_evidence"] = str(evidence_path.resolve())
     ledger["preflight_evidence_sha256"] = preflight_evidence_sha256(evidence_path)
     ledger["route_fingerprint"] = route_fingerprint(preflight.get("route") or {})
+
+
+def _canonical_gate_fields(
+    gate: str,
+    fields: dict[str, str],
+    preflight: dict[str, Any],
+) -> dict[str, str]:
+    """Populate fields the agent must not be allowed to self-declare."""
+
+    if gate != "source docs":
+        return fields
+    required_docs = required_docs_for_route(preflight.get("route") or {})
+    if required_docs:
+        fields["required_docs"] = "required_docs manifest: " + ", ".join(required_docs)
+    else:
+        fields["required_docs"] = "required_docs manifest: empty"
+    return fields
+
+
+def _capsule_binding_for_preflight(
+    evidence_path: Path,
+    preflight: dict[str, Any],
+) -> str | None:
+    capsule = read_json_object(capsule_path_for_evidence(evidence_path))
+    binding = execution_capsule_binding_fingerprint(capsule)
+    if not binding:
+        return None
+    expected_hash = preflight_evidence_sha256(evidence_path)
+    preflight_record = capsule.get("preflight_evidence")
+    if not isinstance(preflight_record, dict):
+        return None
+    if preflight_record.get("sha256") != expected_hash:
+        return None
+    if capsule.get("route_fingerprint") != route_fingerprint(preflight.get("route") or {}):
+        return None
+    return binding
 
 
 def _string_fields(fields: dict[str, Any]) -> dict[str, str]:
@@ -401,5 +528,4 @@ def _string_fields(fields: dict[str, Any]) -> dict[str, str]:
 
 
 def _write_gate_evidence_ledger(path: Path, ledger: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(ledger, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    atomic_write_json(path, ledger)

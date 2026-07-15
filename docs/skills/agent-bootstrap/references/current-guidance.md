@@ -119,8 +119,10 @@ scripts/workflow.py
 ```
 
 If a usable root is found, use it. Do not reinstall.
-When `scripts/agent-preflight.py` and `scripts/agent-finish-check.py` exist in
-that root, they are the required evidence wrappers for multi-step work.
+When `scripts/agent-hook.py` exists in that root, its start and finish hooks are
+the required lifecycle wrappers for multi-step work. `agent-preflight.py` and
+`agent-finish-check.py` are lower-level diagnostic or compatibility fallbacks
+when the hook is unavailable, not a second lifecycle.
 
 ## Required VibeGuard Gate
 
@@ -301,17 +303,16 @@ that subsystem.
     runtime links or thin adapters. Do not maintain parallel Codex, Claude, and
     Antigravity/AGY copies of the same knowledge.
 11. Do not paste the full AgentPlaybook library into repo-local files.
-12. For multi-step setup or migration work, run
-   `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route ... --request
-   "<USER_REQUEST>"` before editing, keep the workflow route gate ledger,
-   and verify every required gate is `🐱🟢 SUCCESS` with evidence before
-   reporting success.
-13. When wrapper scripts are available, run
-   `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py ...` before edits
-   and `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py ...` before
-   final report, commit, release, or handoff. Missing wrapper evidence or gate
-   evidence is non-compliant. Human-visible status should use only
-   `🐱🟢 SUCCESS` and `🐱🔴 FAIL` badges. Do not report any third gate state.
+12. For multi-step setup or migration work, run `agent-hook.py start` once with
+   the current request. Open every route `required_docs` entry directly, keep
+   the workflow route gate ledger, run the review hook after meaningful
+   changes, and run the finish hook before final report, commit, release, or
+   handoff.
+13. Direct `workflow.py route`, `agent-preflight.py`, and
+   `agent-finish-check.py` calls are lower-level diagnostics or compatibility
+   fallbacks when the hook is unavailable, not a second lifecycle. Missing
+   start or gate evidence is non-compliant. Human-visible status should use
+   only `🐱🟢 SUCCESS` and `🐱🔴 FAIL` badges. Do not report a third gate state.
 
 Use `templates/repo-agents-routing.md` as the routing block source.
 

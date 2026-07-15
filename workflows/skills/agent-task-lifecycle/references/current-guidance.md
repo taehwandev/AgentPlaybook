@@ -62,18 +62,19 @@ memory.
 4. Risk scan: mark touched surfaces such as secrets, external state, auth,
    billing, data, release, generated files, dependencies, local tools, runtime
    bridges, or usage metering evidence.
-5. Route: for multi-step tasks, run `scripts/workflow.py route ... --request
-   "<USER_REQUEST>"` before manually choosing workflow cards. Use `index.md`
-   only for simple answer-only work or an explicitly accepted fallback when the
-   script cannot run.
-6. Route docs read: read the route's `required_docs` / `Read First` docs before
+5. Start: for multi-step tasks, run `scripts/agent-hook.py start ... --request
+   "<USER_REQUEST>"` once before manually choosing workflow cards. It performs
+   routing and preflight; do not separately repeat workflow list, classify,
+   route, or preflight after it succeeds. Direct `workflow.py route` and
+   `agent-preflight.py` calls are lower-level diagnostic or compatibility
+   fallbacks only. Use `index.md` only for simple answer-only work or an
+   explicitly accepted fallback when the start hook cannot run.
+6. Required docs: after start, read the route's `required_docs` / `Read First` docs before
    editing, coding, reviewing, or running project-specific work. Treat
    `reference_docs` as lazy context and open one only when the current task
-   touches that concern, platform, gate, or verification path. When the route
-   includes `route docs read`, record evidence that the required skill/guidance
-   docs were read before code, implementation, or edits. The evidence must match
-   the `docs-read` receipt for the preflight route manifest; generic "docs
-   checked" wording is a missed gate.
+   touches that concern, platform, gate, or verification path. Required-document
+   selection is owned by the route; reading those documents is a direct agent
+   responsibility rather than a separate confirmation gate.
 7. Gate ledger: create a ledger for every route gate, mark each gate when it is
    executed, and show a short `SUCCESS` or `FAIL` gate signal after each
    completed or failed gate or task step.
@@ -97,13 +98,14 @@ memory.
 
 ### Completion Evidence Fields
 
-When a finish gate requires evidence, record the actual decision rather than a
-receipt-only summary. At minimum:
+When a finish gate requires evidence, record the actual decision. At minimum:
 
-- `route docs read`: name the required docs read before implementation, the
-  applied takeaway, and the immediate next action.
-- `source docs`: state which source-of-truth documents were searched and read,
-  or that none existed, and how that result shaped the work.
+- `source docs`: state which route `required_docs` were read directly, which
+  source-of-truth documents were searched and read (or that none existed), and
+  the task-specific takeaway applied before work. Structured records use the
+  exact fields `required_docs`, `source`, and `takeaway`; the ledger fills
+  `required_docs` from the active route so a self-reported empty manifest cannot
+  bypass required documents.
 - `documentation impact` and `documentation`: state the artifact class, the
   updated/created/unchanged/not-applicable decision, affected path or class,
   and why the durable behavior or acceptance criteria require that result.
@@ -133,9 +135,13 @@ receipt-only summary. At minimum:
     plan, use or update the generated global lesson candidate when safe, apply
     safe scoped fixes, then restart at the first missed gate or same failed
     scope. The restarted attempt must cite or apply the plan.
-20. Review: inspect the final diff, output, or artifact against the request and
-    risks.
-21. Report: state what changed or was found, verification status, skipped
+20. Review: after meaningful edits, run the route's review hook and inspect the
+    final diff, output, or artifact against the request and risks.
+21. Finish: run `scripts/agent-hook.py finish` before final report, handoff,
+    commit, or release. Use `agent-finish-check.py` directly only as a
+    lower-level diagnostic or compatibility fallback when the finish hook is
+    unavailable.
+22. Report: state what changed or was found, verification status, skipped
     checks, and residual risk.
 
 ## Route To

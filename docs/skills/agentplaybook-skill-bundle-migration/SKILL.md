@@ -31,7 +31,7 @@ guidance in the `SKILL.md` plus `references/` layout.
 5. Keep a temporary compatibility stub only when a downstream/runtime reference
    still requires that exact path.
 6. Update `index.md` and route canonicalization when the load target changes.
-7. Validate links, route output, and docs-read behavior before reporting
+7. Validate links, route output, and required-document selection before reporting
    completion.
 
 ## Do Not

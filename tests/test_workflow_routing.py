@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import io
+import importlib.util
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from contextlib import redirect_stderr, redirect_stdout
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -15,7 +18,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from agent_finish_common import requires_retrospective
-from agent_finish_gate_core_validators import validate_route_docs_application_fields
 from agent_finish_gate_policy import (
     PLATFORM_SELECTION_GATE,
     PRD_DRAFT_GATE,
@@ -25,9 +27,7 @@ from agent_finish_gate_policy import (
 )
 from agent_finish_check_steps import (
     check_request_intake,
-    read_route_docs_receipt_for_preflight,
     validate_grill_me_skill_evidence,
-    validate_route_docs_manifest_evidence,
 )
 from agent_gate_evidence import (
     gate_evidence_path_for_preflight,
@@ -37,6 +37,7 @@ from agent_gate_evidence import (
     reset_gate_evidence_ledger,
     synthesize_gate_evidence,
 )
+from agent_worker_evidence import worker_reservation_matches
 from agent_delegation_plan import validate_delegation_plan_evidence
 from agent_global_lessons import lesson_summary, write_retrospective_candidate
 from agent_hook_runtime import hook_failure_policy
@@ -47,12 +48,6 @@ from agent_preflight_runtime import (
 from agent_review_hook import review_hook, review_vibeguard_command, workflow_validate_failure_detail
 from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
-from agent_route_docs import (
-    preflight_evidence_sha256,
-    receipt_path_for_evidence,
-    route_docs_to_read,
-    route_fingerprint,
-)
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
 from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
@@ -75,9 +70,9 @@ from workflow_gate_policy import (
     MULTI_AGENT_GATE,
     PRODUCT_REENTRY_GATE,
     PRODUCT_REENTRY_COMMANDS,
-    ROUTE_DOCS_READ_GATE,
     SIDE_EFFECT_AUDIT_GATE,
     SOURCE_DOCS_GATE,
+    SOURCE_DOCS_COMMANDS,
     TEST_GATE,
     ALIGNMENT_BRIEF_COMMANDS,
     WORK_PRODUCING_COMMANDS,
@@ -86,7 +81,11 @@ from workflow_request import infer_concerns_from_request
 from workflow_request import classify_request
 from workflow_request import classified_route_block_reason
 from workflow_request import route_block_reason
-from workflow_dispatch import build_dispatch_manifest, execute_dispatch_manifest
+from workflow_dispatch import (
+    build_dispatch_manifest,
+    execute_dispatch_manifest,
+    print_dispatch_manifest,
+)
 from workflow_dispatch_profiles import profile_for_work_kind, select_work_kind
 from workflow_doc_surfaces import (
     extract_request_surface_paths,
@@ -102,11 +101,19 @@ from workflow_doc_graph import (
 )
 from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import resolve_docs
-from workflow_search import search_docs, search_docs_outcome
+from workflow_search import SearchOutcome, search_docs, search_docs_outcome
 from workflow_skill_paths import canonical_doc_path
 from workflow_spill import spill_tool_label, validate_spill_label_contracts
 from workflow import build_parser, print_dispatch
 from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS, markdown_files_to_validate
+
+
+_PREFLIGHT_SPEC = importlib.util.spec_from_file_location(
+    "agent_preflight_under_test", ROOT / "scripts" / "agent-preflight.py"
+)
+assert _PREFLIGHT_SPEC and _PREFLIGHT_SPEC.loader
+agent_preflight = importlib.util.module_from_spec(_PREFLIGHT_SPEC)
+_PREFLIGHT_SPEC.loader.exec_module(agent_preflight)
 
 
 def route_doc(path: str) -> str:
@@ -157,7 +164,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                 route = resolve_docs(command, None, [], request_classified=True)
 
                 self.assertIn("request intake", route["gates"])
-                self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
+                self.assertTrue(route["required_docs"])
 
         self.assertIn(route_doc("common/skills/incremental-implementation/SKILL.md"), resolve_docs("build", None, [], request_classified=True)["docs"])
         self.assertIn(route_doc("common/skills/performance-verification/SKILL.md"), resolve_docs("webperf", None, [], request_classified=True)["docs"])
@@ -168,12 +175,10 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(route_doc("common/skills/scenario-driven-testing/SKILL.md"), test_route["docs"])
 
         webperf_route = resolve_docs("webperf", None, [], request_classified=True)
-        self.assertLess(webperf_route["gates"].index(ROUTE_DOCS_READ_GATE), webperf_route["gates"].index("baseline"))
         self.assertLess(webperf_route["gates"].index(ALIGNMENT_BRIEF_GATE), webperf_route["gates"].index("baseline"))
 
         spec_route = resolve_docs("spec", None, [], request_classified=True)
-        self.assertLess(spec_route["gates"].index(ROUTE_DOCS_READ_GATE), spec_route["gates"].index("local product docs"))
-        self.assertLess(spec_route["gates"].index(ROUTE_DOCS_READ_GATE), spec_route["gates"].index("ambiguity check"))
+        self.assertTrue(spec_route["required_docs"])
 
     def test_agent_skills_gap_concerns_are_registered(self) -> None:
         expected = {
@@ -558,22 +563,236 @@ class WorkflowRoutingTests(unittest.TestCase):
         manifest = json.loads(completed.stdout)
         self.assertEqual("gpt-5.6-terra", manifest["work_profile"]["codex_model"])
         self.assertEqual("medium", manifest["work_profile"]["reasoning_effort"])
-        self.assertIn("inspectable by default", manifest["execution_policy"])
+        self.assertIn("Inspect-only manifest", manifest["execution_policy"])
+        self.assertEqual([], manifest["codex_exec_argv"])
 
     def test_dispatch_executor_runs_selected_argv(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manifest = build_dispatch_manifest(
+                "feature",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                Path(temp_dir),
+            )
+            received: list[list[str]] = []
+
+            def runner(argv: list[str]) -> int:
+                received.append(argv)
+                return 17
+
+            self.assertEqual(17, execute_dispatch_manifest(manifest, runner=runner))
+            self.assertEqual(1, len(received))
+            self.assertEqual("codex", received[0][0])
+            self.assertIn("worker-reservation-token", received[0][-1])
+
+    def test_dispatch_revalidates_capsule_and_mints_worker_token_at_launch(self) -> None:
+        reusable = {
+            "path": "/tmp/execution-capsule.json",
+            "reusable": True,
+            "invalidation_reasons": [],
+            "phase": "ready",
+        }
+        stale = {
+            "path": "/tmp/execution-capsule.json",
+            "reusable": False,
+            "invalidation_reasons": ["project worktree status changed"],
+            "phase": "ready",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            with patch("workflow_dispatch._execution_capsule_state", side_effect=[reusable, stale]):
+                manifest = build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    project,
+                    route={"required_docs": [], "gates": []},
+                )
+                received: list[list[str]] = []
+                self.assertEqual(0, execute_dispatch_manifest(manifest, runner=lambda argv: received.append(argv) or 0))
+
+        self.assertEqual(1, len(received))
+        prompt = received[0][-1]
+        self.assertIn("No reusable execution capsule is available", prompt)
+        self.assertRegex(prompt, r"worker-reservation-token [0-9a-f]{32}")
+
+    def test_dispatch_execute_defers_duplicate_capsule_hashing_until_launch(self) -> None:
+        stale = {
+            "path": "/tmp/execution-capsule.json",
+            "reusable": False,
+            "invalidation_reasons": ["project worktree status changed"],
+            "phase": "ready",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("workflow_dispatch._execution_capsule_state", return_value=stale) as state:
+                manifest = build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    Path(temp_dir),
+                    route={"required_docs": [], "gates": []},
+                    reserve_worker_evidence=True,
+                    defer_capsule_validation=True,
+                )
+                self.assertEqual(
+                    0,
+                    execute_dispatch_manifest(manifest, runner=lambda _argv: 0),
+                )
+
+        self.assertEqual(1, state.call_count)
+
+    def test_dispatch_launch_preserves_request_mismatch_for_capsule_reuse(self) -> None:
+        calls: list[bool] = []
+
+        def capsule_state(*_args, parent_context_reusable: bool) -> dict[str, object]:
+            calls.append(parent_context_reusable)
+            return {
+                "path": "/tmp/execution-capsule.json",
+                "reusable": parent_context_reusable,
+                "invalidation_reasons": [] if parent_context_reusable else ["request mismatch"],
+                "phase": "ready",
+            }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("workflow_dispatch._execution_capsule_state", side_effect=capsule_state):
+                manifest = build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    Path(temp_dir),
+                    route={"required_docs": [], "gates": []},
+                    parent_context_reusable=False,
+                )
+                received: list[list[str]] = []
+                self.assertEqual(
+                    0,
+                    execute_dispatch_manifest(
+                        manifest,
+                        runner=lambda argv: received.append(argv) or 0,
+                    ),
+                )
+
+        self.assertEqual([False, False], calls)
+        self.assertFalse(manifest["handoff_state"]["parent_context_reusable"])
+        self.assertIn("No reusable execution capsule is available", received[0][-1])
+
+    def test_dispatch_launch_exports_only_worker_evidence_boundary(self) -> None:
+        stale = {
+            "path": "/tmp/execution-capsule.json",
+            "reusable": False,
+            "invalidation_reasons": ["stale"],
+            "phase": "ready",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            with patch("workflow_dispatch._execution_capsule_state", side_effect=[stale, stale]):
+                manifest = build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    project,
+                    route={"required_docs": [], "gates": []},
+                )
+                with patch(
+                    "workflow_dispatch_launch.subprocess.run",
+                    return_value=SimpleNamespace(returncode=0),
+                ) as launch:
+                    self.assertEqual(0, execute_dispatch_manifest(manifest))
+
+        environment = launch.call_args.kwargs["env"]
+        self.assertTrue(environment["AGENTPLAYBOOK_WORKER_EVIDENCE"].endswith("preflight.json"))
+        self.assertRegex(environment["AGENTPLAYBOOK_WORKER_RESERVATION_TOKEN"], r"^[0-9a-f]{32}$")
+        self.assertNotIn("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY", environment)
+
+    def test_dispatch_stays_inline_when_parent_profile_and_sandbox_match(self) -> None:
         manifest = build_dispatch_manifest(
             "feature",
             "기획변경 때 문서 정리가 누락되는 걸 막아줘",
             ROOT,
+            parent_model="gpt-5.6-terra",
+            parent_reasoning_effort="medium",
+            parent_sandbox_mode="workspace-write",
         )
         received: list[list[str]] = []
 
-        def runner(argv: list[str]) -> int:
-            received.append(argv)
-            return 17
+        self.assertEqual("inline", manifest["execution_mode"])
+        with self.assertRaisesRegex(ValueError, "cannot execute work in the parent process"):
+            execute_dispatch_manifest(manifest, runner=received.append)
+        self.assertEqual([], received)
+        self.assertIn("must not start another Codex process", manifest["execution_policy"])
 
-        self.assertEqual(17, execute_dispatch_manifest(manifest, runner=runner))
-        self.assertEqual([manifest["codex_exec_argv"]], received)
+    def test_dispatch_execute_cli_rejects_inline_false_success(self) -> None:
+        args = build_parser().parse_args(
+            [
+                "dispatch",
+                "feature",
+                "--request",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                "--project",
+                str(ROOT),
+                "--parent-model",
+                "gpt-5.6-terra",
+                "--parent-reasoning-effort",
+                "medium",
+                "--parent-sandbox-mode",
+                "workspace-write",
+                "--execute",
+            ]
+        )
+        error = io.StringIO()
+
+        with redirect_stderr(error):
+            result = print_dispatch(args)
+
+        self.assertEqual(2, result)
+        self.assertIn("Inline dispatch is a decision only", error.getvalue())
+
+    def test_inline_dispatch_does_not_reserve_worker_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            manifest = build_dispatch_manifest(
+                "feature",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                project,
+                parent_model="gpt-5.6-terra",
+                parent_reasoning_effort="medium",
+                parent_sandbox_mode="workspace-write",
+                reserve_worker_evidence=True,
+            )
+
+            self.assertEqual("inline", manifest["execution_mode"])
+            self.assertFalse(manifest["handoff_state"]["worker_evidence_reserved"])
+            self.assertFalse((project / ".agentplaybook" / "workers").exists())
+
+    def test_dispatch_requires_child_when_isolation_is_explicit(self) -> None:
+        manifest = build_dispatch_manifest(
+            "feature",
+            "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ROOT,
+            parent_model="gpt-5.6-terra",
+            parent_reasoning_effort="medium",
+            parent_sandbox_mode="workspace-write",
+            isolation_required=True,
+        )
+
+        self.assertEqual("child", manifest["execution_mode"])
+        self.assertTrue(manifest["profile_matches_parent"])
+
+    def test_dispatch_reuses_validated_parent_capsule_in_handoff_prompt(self) -> None:
+        capsule_state = {
+            "path": "/tmp/execution-capsule.json",
+            "reusable": True,
+            "invalidation_reasons": [],
+            "phase": "ready",
+        }
+        with patch("workflow_dispatch._execution_capsule_state", return_value=capsule_state):
+            manifest = build_dispatch_manifest(
+                "feature",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                ROOT,
+            )
+
+        prompt = manifest["codex_exec_argv"][-1]
+        self.assertIn("Validated parent execution capsule", prompt)
+        self.assertIn("instead of rerunning startup", prompt)
+        self.assertIn("read every required doc listed below before work", prompt)
+        self.assertIn("Open and read every required doc", prompt)
+        self.assertIn("parent remains the only owner of the gate ledger", prompt)
 
     def test_dispatch_execute_cli_uses_executor(self) -> None:
         args = build_parser().parse_args(
@@ -593,6 +812,362 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         execute.assert_called_once()
 
+    def test_dispatch_accepts_parent_classification_for_answered_question(self) -> None:
+        args = build_parser().parse_args(
+            [
+                "dispatch",
+                "workflow-setup",
+                "--request",
+                "이 워크플로우가 코덱스와 안 맞나?",
+                "--request-classified",
+                "--classification-evidence",
+                "answered direct question; separate actionable clear-scoped workflow setup",
+                "--project",
+                str(ROOT),
+            ]
+        )
+
+        with patch("workflow.execute_dispatch_manifest") as execute:
+            self.assertEqual(0, print_dispatch(args))
+
+        execute.assert_not_called()
+
+    def test_preflight_keeps_resolved_classification_for_short_confirmation(self) -> None:
+        args = SimpleNamespace(
+            command="refactor",
+            request="응",
+            request_classified=True,
+            classification_evidence=(
+                "clear-scoped: implement the confirmed workflow fixes"
+            ),
+            platform=[],
+            concern=[],
+            surface_path=[],
+            project=ROOT,
+        )
+
+        route, error, returncode = agent_preflight.route_payload(args, {})
+
+        self.assertEqual("", error)
+        self.assertEqual(0, returncode)
+        self.assertIsNotNone(route)
+        self.assertEqual("refactor", route["command"])
+
+    def test_inspect_only_invalid_dispatch_withholds_raw_worker_command(self) -> None:
+        capsule_state = {
+            "path": "/tmp/execution-capsule.json",
+            "reusable": False,
+            "invalidation_reasons": ["stale"],
+            "phase": "ready",
+        }
+        with patch("workflow_dispatch._execution_capsule_state", return_value=capsule_state):
+            manifest = build_dispatch_manifest(
+                "feature",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                ROOT,
+            )
+
+        markdown = io.StringIO()
+        with redirect_stdout(markdown):
+            print_dispatch_manifest(manifest, "markdown")
+        self.assertNotIn("codex exec --model", markdown.getvalue())
+        self.assertIn("withholds the raw worker command", markdown.getvalue())
+        self.assertIn("--execute", markdown.getvalue())
+
+        encoded = io.StringIO()
+        with redirect_stdout(encoded):
+            print_dispatch_manifest(manifest, "json")
+        payload = json.loads(encoded.getvalue())
+        self.assertEqual([], payload["codex_exec_argv"])
+        self.assertEqual("", payload["codex_exec_command"])
+
+    def test_dispatch_reuses_only_matching_parent_start_route_without_mutating_capsule(self) -> None:
+        request = "기획변경 때 문서 정리가 누락되는 걸 막아줘"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence.parent.mkdir(parents=True)
+            parent_route = {
+                "command": "feature",
+                "missing": [],
+                "blocking": [],
+                "required_docs": ["parent-only.md"],
+                "gates": ["verify"],
+            }
+            evidence.write_text(
+                json.dumps(
+                    {
+                        "project": str(project.resolve()),
+                        "rules": str(ROOT.resolve()),
+                        "request_intake": {
+                            "request": request,
+                            "request_classified": False,
+                            "classification_evidence": "",
+                        },
+                        "route": parent_route,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            capsule = evidence.parent / "execution-capsule.json"
+            capsule.write_text('{"sentinel": true}\n', encoding="utf-8")
+            args = build_parser().parse_args(
+                [
+                    "dispatch",
+                    "feature",
+                    "--request",
+                    request,
+                    "--project",
+                    str(project),
+                    "--evidence",
+                    str(evidence),
+                    "--execute",
+                ]
+            )
+
+            with patch("workflow.build_dispatch_manifest", return_value={"execution_mode": "child"}) as build:
+                with patch("workflow.execute_dispatch_manifest", return_value=0):
+                    self.assertEqual(0, print_dispatch(args))
+
+            self.assertEqual(parent_route, build.call_args.kwargs["route"])
+            self.assertTrue(build.call_args.kwargs["parent_context_reusable"])
+            self.assertEqual('{"sentinel": true}\n', capsule.read_text(encoding="utf-8"))
+
+    def test_dispatch_rejects_stale_same_command_parent_request_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence.parent.mkdir(parents=True)
+            evidence.write_text(
+                json.dumps(
+                    {
+                        "project": str(project.resolve()),
+                        "rules": str(ROOT.resolve()),
+                        "request_intake": {
+                            "request": "old feature request",
+                            "request_classified": False,
+                            "classification_evidence": "",
+                        },
+                        "route": {
+                            "command": "feature",
+                            "missing": [],
+                            "blocking": [],
+                            "required_docs": ["stale-parent-only.md"],
+                            "gates": ["verify"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            capsule = evidence.parent / "execution-capsule.json"
+            capsule.write_text('{"sentinel": true}\n', encoding="utf-8")
+            args = build_parser().parse_args(
+                [
+                    "dispatch",
+                    "feature",
+                    "--request",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    "--project",
+                    str(project),
+                    "--evidence",
+                    str(evidence),
+                    "--execute",
+                ]
+            )
+
+            with patch("workflow.build_dispatch_manifest", return_value={"execution_mode": "child"}) as build:
+                with patch("workflow.execute_dispatch_manifest", return_value=0):
+                    self.assertEqual(0, print_dispatch(args))
+
+            self.assertFalse(build.call_args.kwargs["parent_context_reusable"])
+            self.assertNotIn("stale-parent-only.md", build.call_args.kwargs["route"]["required_docs"])
+            self.assertEqual('{"sentinel": true}\n', capsule.read_text(encoding="utf-8"))
+
+    def test_dispatch_rejects_parent_route_missing_current_explicit_facets(self) -> None:
+        request = "기획변경 때 문서 정리가 누락되는 걸 막아줘"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence.parent.mkdir(parents=True)
+            evidence.write_text(
+                json.dumps(
+                    {
+                        "project": str(project.resolve()),
+                        "rules": str(ROOT.resolve()),
+                        "request_intake": {
+                            "request": request,
+                            "request_classified": False,
+                            "classification_evidence": "",
+                        },
+                        "route": {
+                            "command": "feature",
+                            "platform": None,
+                            "concerns": [],
+                            "missing": [],
+                            "blocking": [],
+                            "required_docs": ["stale-unfaceted-parent.md"],
+                            "gates": ["verify"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            args = build_parser().parse_args(
+                [
+                    "dispatch",
+                    "feature",
+                    "--request",
+                    request,
+                    "--platform",
+                    "ios",
+                    "--concern",
+                    "ui",
+                    "--project",
+                    str(project),
+                    "--evidence",
+                    str(evidence),
+                    "--format",
+                    "json",
+                ]
+            )
+
+            with patch("workflow.build_dispatch_manifest", return_value={"execution_mode": "child"}) as build:
+                self.assertEqual(0, print_dispatch(args))
+
+            self.assertFalse(build.call_args.kwargs["parent_context_reusable"])
+            fresh_route = build.call_args.kwargs["route"]
+            self.assertEqual("ios", fresh_route["platform"])
+            self.assertIn("ui", fresh_route["concerns"])
+            self.assertNotIn("stale-unfaceted-parent.md", fresh_route["required_docs"])
+
+    def test_dispatch_rejects_foreign_project_parent_evidence(self) -> None:
+        request = "기획변경 때 문서 정리가 누락되는 걸 막아줘"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            project = root / "current"
+            foreign = root / "foreign"
+            project.mkdir()
+            evidence = foreign / ".agentplaybook" / "preflight.json"
+            evidence.parent.mkdir(parents=True)
+            evidence.write_text(
+                json.dumps(
+                    {
+                        "project": str(foreign.resolve()),
+                        "rules": str(ROOT.resolve()),
+                        "request_intake": {
+                            "request": request,
+                            "request_classified": False,
+                            "classification_evidence": "",
+                        },
+                        "route": {
+                            "command": "feature",
+                            "missing": [],
+                            "blocking": [],
+                            "required_docs": ["foreign-parent-only.md"],
+                            "gates": ["verify"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            args = build_parser().parse_args(
+                [
+                    "dispatch",
+                    "feature",
+                    "--request",
+                    request,
+                    "--project",
+                    str(project),
+                    "--evidence",
+                    str(evidence),
+                    "--format",
+                    "json",
+                ]
+            )
+
+            with patch("workflow.build_dispatch_manifest", return_value={"execution_mode": "child"}) as build:
+                self.assertEqual(0, print_dispatch(args))
+
+            self.assertFalse(build.call_args.kwargs["parent_context_reusable"])
+            self.assertNotIn(
+                "foreign-parent-only.md", build.call_args.kwargs["route"]["required_docs"]
+            )
+            self.assertEqual(
+                project.resolve() / ".agentplaybook" / "preflight.json",
+                build.call_args.kwargs["evidence_path"],
+            )
+
+    def test_dispatch_reuses_classified_parent_only_for_exact_request_and_evidence(self) -> None:
+        request = "apply the resolved runtime workflow change"
+        classification = "answered direct question; separate actionable clear-scoped workflow setup"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence.parent.mkdir(parents=True)
+            parent_route = {
+                "command": "workflow-setup",
+                "missing": [],
+                "blocking": [],
+                "required_docs": ["classified-parent-only.md"],
+                "gates": ["verify"],
+            }
+            evidence.write_text(
+                json.dumps(
+                    {
+                        "project": str(project.resolve()),
+                        "rules": str(ROOT.resolve()),
+                        "request_intake": {
+                            "request": request,
+                            "request_classified": True,
+                            "classification_evidence": classification,
+                        },
+                        "route": parent_route,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            def dispatch_args(current_request: str, current_evidence: str) -> argparse.Namespace:
+                return build_parser().parse_args(
+                    [
+                        "dispatch",
+                        "workflow-setup",
+                        "--request",
+                        current_request,
+                        "--request-classified",
+                        "--classification-evidence",
+                        current_evidence,
+                        "--project",
+                        str(project),
+                        "--evidence",
+                        str(evidence),
+                        "--format",
+                        "json",
+                    ]
+                )
+
+            with patch("workflow.build_dispatch_manifest", return_value={"execution_mode": "child"}) as build:
+                self.assertEqual(0, print_dispatch(dispatch_args(request, classification)))
+            self.assertTrue(build.call_args.kwargs["parent_context_reusable"])
+            self.assertEqual(parent_route, build.call_args.kwargs["route"])
+
+            with patch("workflow.build_dispatch_manifest", return_value={"execution_mode": "child"}) as build:
+                self.assertEqual(
+                    0,
+                    print_dispatch(
+                        dispatch_args("a different resolved workflow change", classification)
+                    ),
+                )
+            self.assertFalse(build.call_args.kwargs["parent_context_reusable"])
+            self.assertNotIn(
+                "classified-parent-only.md", build.call_args.kwargs["route"]["required_docs"]
+            )
+
+            different_evidence = "answered direct question; separate actionable clear-exact setup"
+            with patch("workflow.build_dispatch_manifest", return_value={"execution_mode": "child"}) as build:
+                self.assertEqual(0, print_dispatch(dispatch_args(request, different_evidence)))
+            self.assertFalse(build.call_args.kwargs["parent_context_reusable"])
+
     def test_dispatch_handoff_state_preserves_parent_evidence_paths(self) -> None:
         manifest = build_dispatch_manifest(
             "feature",
@@ -603,10 +1178,103 @@ class WorkflowRoutingTests(unittest.TestCase):
         prompt = manifest["codex_exec_argv"][-1]
 
         self.assertTrue(str(handoff_state["preflight_evidence"]).endswith("preflight.json"))
-        self.assertTrue(str(handoff_state["docs_read_receipt"]).endswith("route-docs-read.json"))
         self.assertTrue(str(handoff_state["gate_ledger"]).endswith("gate-evidence.json"))
-        self.assertIn("Parent docs-read receipt", prompt)
-        self.assertIn("Do not overwrite parent receipts", prompt)
+        self.assertNotIn("receipt", prompt.lower())
+        self.assertIn("Do not overwrite parent gate-ledger entries", prompt)
+
+    def test_dispatch_invalid_capsule_uses_isolated_worker_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            worker_evidence = project / ".agentplaybook" / "workers" / "test-worker" / "preflight.json"
+            capsule_state = {
+                "path": "/tmp/execution-capsule.json",
+                "reusable": False,
+                "invalidation_reasons": ["stale"],
+                "phase": "ready",
+            }
+            with patch("workflow_dispatch._execution_capsule_state", return_value=capsule_state):
+                manifest = build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    project,
+                    worker_evidence_path=worker_evidence,
+                    reserve_worker_evidence=True,
+                )
+
+            handoff = manifest["handoff_state"]
+            prompt = manifest["codex_exec_argv"][-1]
+            self.assertEqual(
+                str(worker_evidence.resolve()), handoff["worker_preflight_evidence"]
+            )
+            self.assertTrue(worker_evidence.resolve().parent.is_dir())
+            self.assertNotEqual(handoff["preflight_evidence"], handoff["worker_preflight_evidence"])
+            self.assertNotEqual(handoff["gate_ledger"], handoff["worker_gate_ledger"])
+            self.assertIn("Pass the worker preflight path with --evidence", prompt)
+            self.assertIn("Never write the parent evidence files", prompt)
+            token = handoff["worker_reservation_token"]
+            self.assertRegex(token, r"^[0-9a-f]{32}$")
+            self.assertTrue(worker_reservation_matches(worker_evidence.parent, token))
+
+    def test_dispatch_rejects_worker_evidence_outside_isolated_root_or_parent_collision(self) -> None:
+        parent = ROOT / ".agentplaybook" / "preflight.json"
+        outside = ROOT / ".agentplaybook" / "not-isolated.json"
+        parent_in_worker_root = ROOT / ".agentplaybook" / "workers" / "parent" / "preflight.json"
+        for parent_path, worker_path, expected in (
+            (parent, parent, "under <project>/.agentplaybook/workers"),
+            (parent, outside, "under <project>/.agentplaybook/workers"),
+            (parent_in_worker_root, parent_in_worker_root, "must not overlap parent evidence"),
+        ):
+            with self.subTest(worker_path=worker_path):
+                with self.assertRaisesRegex(ValueError, expected):
+                    build_dispatch_manifest(
+                        "feature",
+                        "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                        ROOT,
+                        evidence_path=parent_path,
+                        worker_evidence_path=worker_path,
+                    )
+
+    def test_dispatch_rejects_symlinked_worker_evidence_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            project = root / "project"
+            outside = root / "outside"
+            (project / ".agentplaybook").mkdir(parents=True)
+            outside.mkdir()
+            (project / ".agentplaybook" / "workers").symlink_to(
+                outside,
+                target_is_directory=True,
+            )
+
+            with self.assertRaisesRegex(ValueError, "must not resolve through a symlink"):
+                build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    project,
+                )
+
+    def test_dispatch_accepts_custom_rules_and_parent_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            project = root / "project"
+            rules = root / "rules"
+            project.mkdir()
+            rules.mkdir()
+            evidence = project / ".agentplaybook" / "parent-a.json"
+            manifest = build_dispatch_manifest(
+                "feature",
+                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                project,
+                rules=rules,
+                evidence_path=evidence,
+            )
+
+        handoff = manifest["handoff_state"]
+        prompt = manifest["codex_exec_argv"][-1]
+        self.assertEqual(str(rules), handoff["rules"])
+        self.assertEqual(str(evidence), handoff["preflight_evidence"])
+        self.assertTrue(str(handoff["gate_ledger"]).endswith("parent-a-gate-evidence.json"))
+        self.assertIn(f"AgentPlaybook rules root: {rules}", prompt)
 
     def test_dispatch_spill_label_contract_is_preserved(self) -> None:
         self.assertEqual(("workflow_setup", "plan"), SPILL_ACTION_LABELS["dispatch"])
@@ -728,7 +1396,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         route = resolve_docs("git_commit", None, [], request_classified=True)
 
         self.assertEqual(
-            [ROUTE_DOCS_READ_GATE, "review hook", "commit readiness"],
+            ["source docs", "review hook", "commit readiness"],
             [gate for gate in route["gates"] if gate != "request intake"],
         )
         self.assertNotIn(AMBIGUITY_GATE, route["gates"])
@@ -980,7 +1648,7 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertIn("workflow_gate_policy.py", entries)
         self.assertIn("workflow_concern_docs.py", entries)
-        self.assertIn("agent-docs-read.py", entries)
+        self.assertNotIn("agent-docs-read.py", entries)
         self.assertIn("agent_delegation_plan.py", entries)
         self.assertIn("agent_finish_gate_policy.py", entries)
         self.assertIn("agent_gate_evidence.py", entries)
@@ -1073,7 +1741,6 @@ class WorkflowRoutingTests(unittest.TestCase):
         route = resolve_docs("feature", None, ["testing"], request_classified=True)
 
         for gate in (
-            ROUTE_DOCS_READ_GATE,
             SOURCE_DOCS_GATE,
             AMBIGUITY_GATE,
             DOCUMENTATION_IMPACT_GATE,
@@ -1106,16 +1773,10 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(route_doc("workflows/skills/cycle-contract/SKILL.md"), route["reference_docs"])
         self.assertIn(route_doc("workflows/skills/product-architecture-delivery/SKILL.md"), route["reference_docs"])
         self.assertNotIn(route_doc("workflows/skills/product-architecture-delivery/SKILL.md"), route["required_docs"])
-        self.assertLess(
-            route["gates"].index(ROUTE_DOCS_READ_GATE),
-            route["gates"].index("PRD/ARD applicability"),
-        )
         self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index(AMBIGUITY_GATE))
         self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index(DOCUMENTATION_IMPACT_GATE))
         self.assertLess(route["gates"].index(DOCUMENTATION_IMPACT_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index("implementation"))
-        self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index(AMBIGUITY_GATE))
-        self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(CYCLE_CONTRACT_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index(CYCLE_CONTRACT_GATE))
@@ -1210,11 +1871,10 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "project_integration": "AGENTS section and Codex hook present",
                 "graph": (
                     "target graphify-out/graph.json fresh; manifest input coverage complete; "
-                    "integrity valid; representative relationship path connected"
+                    "integrity valid; AST-only graph indexed"
                 ),
                 "query_smoke": "graphify query passed",
             },
-            {},
         )
 
         self.assertEqual([], missing)
@@ -1232,7 +1892,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
         self.assertTrue(any("incomplete condition" in failure for failure in failures))
 
-        for graph_state in ("stale", "incomplete", "disconnected"):
+        for graph_state in ("stale", "incomplete"):
             with self.subTest(graph_state=graph_state):
                 failures = validate_gate_evidence(
                     {
@@ -1247,6 +1907,20 @@ class WorkflowRoutingTests(unittest.TestCase):
                 self.assertTrue(
                     any("incomplete condition" in failure for failure in failures)
                 )
+
+        relationship_quality_only = (
+            "cli=resolved; skill doc=read; runtime links=canonical; "
+            "git ownership=portable; project integration=installed; "
+            "target graph=fresh; manifest input coverage complete; integrity valid; "
+            "relationship coverage disconnected; query smoke=succeeded"
+        )
+        self.assertEqual(
+            [],
+            validate_gate_evidence(
+                {"graphify readiness": relationship_quality_only},
+                ["graphify readiness"],
+            ),
+        )
 
         for field, value in (
             ("target graph", "dirty"),
@@ -1263,7 +1937,7 @@ class WorkflowRoutingTests(unittest.TestCase):
                     "project integration": "installed",
                     "target graph": (
                         "fresh; manifest input coverage complete; integrity valid; "
-                        "relationship path connected"
+                        "AST-only index"
                     ),
                     "query smoke": "passed",
                 }
@@ -1285,7 +1959,6 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "project_integration": "hook present",
                 "graph": "graph present",
             },
-            {},
         )
         self.assertEqual(["query_smoke"], missing)
 
@@ -1300,7 +1973,6 @@ class WorkflowRoutingTests(unittest.TestCase):
                 "graph": "graph present",
                 "query_smoke": "query passed",
             },
-            {},
         )
         self.assertEqual(["git_ownership"], missing)
 
@@ -1557,6 +2229,39 @@ class WorkflowRoutingTests(unittest.TestCase):
                 set(route["required_docs"]) | set(route["reference_docs"])
             )
         )
+
+    def test_document_search_no_matches_is_terminal_not_a_retry_loop(self) -> None:
+        outcome = SearchOutcome(
+            results=[],
+            backend="wikimap",
+            backend_version="1.0.0",
+        )
+        with patch("workflow_route.search_docs_outcome", return_value=outcome):
+            route = resolve_docs(
+                "workflow-setup",
+                None,
+                [],
+                request_classified=True,
+                request_text="no matching project document should be found",
+            )
+
+        self.assertEqual("no_matches", route["document_search"]["status"])
+        self.assertTrue(route["document_search"]["terminal"])
+        self.assertEqual([], route["missing"])
+        self.assertTrue(route["required_docs"])
+        self.assertTrue(any("terminal no-source outcome" in note for note in route["notes"]))
+
+    def test_missing_required_document_is_invalid_manifest_not_search_retry(self) -> None:
+        with patch(
+            "workflow_route.route_required_docs",
+            return_value=["missing-required-document.md"],
+        ):
+            route = resolve_docs("review", None, [], request_classified=True)
+
+        self.assertEqual(["missing-required-document.md"], route["missing"])
+        self.assertEqual("invalid_manifest", route["document_search"]["status"])
+        self.assertTrue(route["document_search"]["terminal"])
+        self.assertTrue(any("Stop once" in note for note in route["notes"]))
 
     def test_planning_change_request_promotes_documentation_impact_docs(self) -> None:
         route = resolve_docs(
@@ -1821,7 +2526,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertEqual(1, plan["schema_version"])
         self.assertEqual([], validate_parallel_execution_plan(plan, route["gates"]))
         self.assertEqual("parallel", phases["orientation"]["mode"])
-        self.assertIn(ROUTE_DOCS_READ_GATE, phases["orientation"]["gates"])
+        self.assertIn(SOURCE_DOCS_GATE, phases["orientation"]["gates"])
         self.assertEqual("conditional_parallel", phases["implementation"]["mode"])
         self.assertIn(MULTI_AGENT_GATE, phases["implementation"]["gates"])
         self.assertEqual("serial", phases["integration_review"]["mode"])
@@ -1879,6 +2584,19 @@ class WorkflowRoutingTests(unittest.TestCase):
                 )
                 self.assertLess(route["gates"].index(CYCLE_CONTRACT_GATE), route["gates"].index(implementation_anchor))
                 self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index(AMBIGUITY_GATE))
+
+    def test_source_docs_gate_covers_source_driven_routes_only(self) -> None:
+        for command in sorted(SOURCE_DOCS_COMMANDS):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(SOURCE_DOCS_GATE, route["gates"])
+
+        for command in ("ambiguity", "commit", "git_commit", "retrospective", "test", "triage"):
+            with self.subTest(restored_command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(SOURCE_DOCS_GATE, route["gates"])
 
     def test_multi_agent_route_requires_agentic_run_state(self) -> None:
         route = resolve_docs("multi-agent", None, [], request_classified=True)
@@ -1960,7 +2678,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         route = {
             "command": "workflow-setup",
             "docs": ["AGENTS.md"],
-            "gates": [ROUTE_DOCS_READ_GATE, CYCLE_CONTRACT_GATE],
+            "gates": [CYCLE_CONTRACT_GATE],
         }
         with tempfile.TemporaryDirectory() as temp_dir:
             evidence_path = Path(temp_dir) / "preflight.json"
@@ -1968,16 +2686,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
             reset_gate_evidence_ledger(evidence_path, preflight)
 
-            record_gate_evidence(
-                evidence_path=evidence_path,
-                preflight=preflight,
-                gate=ROUTE_DOCS_READ_GATE,
-                fields={
-                    "takeaway": "use structured ledger evidence instead of manual finish prose",
-                    "next_action": "record route-doc gate evidence before continuing implementation",
-                },
-                source="docs-read",
-            )
             record_gate_evidence(
                 evidence_path=evidence_path,
                 preflight=preflight,
@@ -1994,34 +2702,16 @@ class WorkflowRoutingTests(unittest.TestCase):
                 },
                 source="manual",
             )
-            receipt = {
-                "schema_version": 1,
-                "route_fingerprint": route_fingerprint(route),
-                "doc_count": 1,
-                "preflight_evidence": str(evidence_path),
-                "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
-                "docs": [{"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"}],
-            }
-
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                route_docs_receipt=receipt,
                 cli_gate_evidence={},
-            )
-            route_docs_failures = validate_route_docs_manifest_evidence(
-                route,
-                gate_evidence,
-                receipt,
-                evidence_path,
             )
 
             self.assertTrue(gate_evidence_path_for_preflight(evidence_path).exists())
             self.assertTrue(diagnostics["used"])
-            self.assertIn(ROUTE_DOCS_READ_GATE, gate_evidence)
             self.assertIn(CYCLE_CONTRACT_GATE, gate_evidence)
             self.assertEqual([], validate_gate_evidence(gate_evidence, route["gates"]))
-            self.assertEqual([], route_docs_failures)
 
     def test_gate_evidence_ledger_requires_structured_fields_for_structured_gates(self) -> None:
         route = {
@@ -2053,7 +2743,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                route_docs_receipt={},
                 cli_gate_evidence={},
             )
 
@@ -2102,7 +2791,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                route_docs_receipt={},
                 cli_gate_evidence={},
             )
 
@@ -2143,7 +2831,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                route_docs_receipt={},
                 cli_gate_evidence={},
             )
 
@@ -2187,7 +2874,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                route_docs_receipt={},
                 cli_gate_evidence={},
             )
 
@@ -2224,7 +2910,12 @@ class WorkflowRoutingTests(unittest.TestCase):
             project = Path(temp_dir)
             evidence_path = project / ".agentplaybook" / "preflight.json"
             evidence_path.parent.mkdir(parents=True)
-            evidence_path.write_text(json.dumps({"route": route}), encoding="utf-8")
+            preflight = {
+                "project": str(project),
+                "rules": str(ROOT.resolve()),
+                "route": route,
+            }
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
             records = [
                 {
                     "gate": BOUNDARY_PLAN_GATE,
@@ -2726,259 +3417,93 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=stale_preflight["route"],
                 evidence_path=evidence_path,
-                route_docs_receipt={},
                 cli_gate_evidence={},
             )
 
         self.assertEqual({}, gate_evidence)
         self.assertIn("stale", " ".join(diagnostics["warnings"]))
 
-    def test_route_docs_read_evidence_must_match_preflight_doc_manifest(self) -> None:
-        route = {
-            "gates": [ROUTE_DOCS_READ_GATE],
-            "docs": [
-                "AGENTS.md",
-                "common/skills/agent-operating-skill/SKILL.md",
-                "workflows/skills/scripted-agent-workflow/SKILL.md",
-            ],
-            "required_docs": [
-                "AGENTS.md",
-                "common/skills/agent-operating-skill/SKILL.md",
-            ],
-            "reference_docs": [
-                "workflows/skills/scripted-agent-workflow/SKILL.md",
-            ],
-        }
-
-        failures = validate_route_docs_manifest_evidence(
-            route,
-            {
-                ROUTE_DOCS_READ_GATE: (
-                    "read routed docs before edits: AGENTS.md and common/skills/agent-operating-skill/SKILL.md"
-                )
-            },
-            {},
-        )
-
-        self.assertTrue(any("route docs read receipt is missing" in failure for failure in failures))
-
-        failures = validate_route_docs_manifest_evidence(
-            route,
-            {ROUTE_DOCS_READ_GATE: "read required docs from the preflight route manifest before edits"},
-            {},
-        )
-
-        self.assertTrue(any("route docs read receipt is missing" in failure for failure in failures))
-
-        failures = validate_route_docs_manifest_evidence(
-            route,
-            {ROUTE_DOCS_READ_GATE: "read routed docs before edits with docs-read receipt"},
-            {
-                "schema_version": 1,
-                "route_fingerprint": route_fingerprint(route),
-                "doc_count": 2,
-                "docs": [
-                    {"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"},
-                    {"path": "common/skills/agent-operating-skill/SKILL.md", "size_bytes": 1, "sha256": "def"},
-                ],
-            },
-        )
-
-        self.assertEqual([], failures)
-        self.assertEqual(route["required_docs"], route_docs_to_read(route))
-
-    def test_route_docs_read_receipt_rejects_refreshed_preflight_hash(self) -> None:
-        route = {
-            "gates": [ROUTE_DOCS_READ_GATE],
-            "docs": ["AGENTS.md"],
-        }
-        with tempfile.TemporaryDirectory() as temp_dir:
-            evidence_path = Path(temp_dir) / "preflight.json"
-            evidence_path.write_text('{"route":"a"}\n', encoding="utf-8")
-            receipt = {
-                "schema_version": 1,
-                "route_fingerprint": route_fingerprint(route),
-                "doc_count": 1,
-                "preflight_evidence": str(evidence_path),
-                "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
-                "docs": [{"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"}],
-            }
-
-            self.assertEqual(
-                [],
-                validate_route_docs_manifest_evidence(
-                    route,
-                    {ROUTE_DOCS_READ_GATE: "read routed docs before edits; applied takeaway: wrapper receipt policy"},
-                    receipt,
-                    evidence_path,
-                ),
-            )
-
-            evidence_path.write_text('{"route":"b"}\n', encoding="utf-8")
-            failures = validate_route_docs_manifest_evidence(
-                route,
-                {ROUTE_DOCS_READ_GATE: "read routed docs before edits; applied takeaway: wrapper receipt policy"},
-                receipt,
-                evidence_path,
-            )
-
-        self.assertTrue(any("stale" in failure for failure in failures))
-
-    def test_route_docs_read_receipt_still_binds_to_preflight_evidence_path(self) -> None:
-        route = {
-            "gates": [ROUTE_DOCS_READ_GATE],
-            "docs": ["AGENTS.md"],
-        }
-        with tempfile.TemporaryDirectory() as temp_dir:
-            current_evidence = Path(temp_dir) / "current-preflight.json"
-            old_evidence = Path(temp_dir) / "old-preflight.json"
-            current_evidence.write_text('{"route":"a"}\n', encoding="utf-8")
-            old_evidence.write_text('{"route":"a"}\n', encoding="utf-8")
-            receipt = {
-                "schema_version": 1,
-                "route_fingerprint": route_fingerprint(route),
-                "doc_count": 1,
-                "preflight_evidence": str(old_evidence),
-                "preflight_evidence_sha256": preflight_evidence_sha256(old_evidence),
-                "docs": [{"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"}],
-            }
-
-            failures = validate_route_docs_manifest_evidence(
-                route,
-                {ROUTE_DOCS_READ_GATE: "read routed docs before edits; applied takeaway: wrapper receipt policy"},
-                receipt,
-                current_evidence,
-            )
-
-        self.assertTrue(any("different preflight evidence file" in failure for failure in failures))
-
-    def test_docs_read_hook_requires_takeaway_and_next_action(self) -> None:
+    def test_handoff_hook_refreshes_one_ready_parent_capsule(self) -> None:
         route = {
             "command": "workflow-setup",
             "docs": ["AGENTS.md"],
-            "gates": [ROUTE_DOCS_READ_GATE],
+            "required_docs": ["AGENTS.md"],
+            "reference_docs": [],
+            "gates": ["verify"],
         }
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir).resolve()
-            evidence_path = (project / "preflight.json").resolve()
-            evidence_path.write_text(json.dumps({"route": route}), encoding="utf-8")
-
-            missing_application = subprocess.run(
+            subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+            (project / ".gitignore").write_text(".agentplaybook/\n", encoding="utf-8")
+            subprocess.run(["git", "add", ".gitignore"], cwd=project, check=True)
+            subprocess.run(
                 [
-                    sys.executable,
-                    str(ROOT / "scripts" / "agent-hook.py"),
-                    "docs-read",
-                    "--project",
-                    str(project),
-                    "--rules",
-                    str(ROOT),
-                    "--evidence",
-                    str(evidence_path),
+                    "git",
+                    "-c",
+                    "user.name=AgentPlaybook Tests",
+                    "-c",
+                    "user.email=tests@example.invalid",
+                    "commit",
+                    "-qm",
+                    "test baseline",
                 ],
-                cwd=ROOT,
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=False,
+                cwd=project,
+                check=True,
             )
-
-            self.assertNotEqual(0, missing_application.returncode)
-            self.assertIn("required recovery", missing_application.stdout)
-            self.assertFalse(gate_evidence_path_for_preflight(evidence_path).exists())
-
-            applied_application = subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / "scripts" / "agent-hook.py"),
-                    "docs-read",
-                    "--project",
-                    str(project),
-                    "--rules",
-                    str(ROOT),
-                    "--evidence",
-                    str(evidence_path),
-                    "--takeaway",
-                    "workflow policy requires actionable required-doc evidence before work",
-                    "--next-action",
-                    "record the docs-read gate before continuing workflow implementation",
-                ],
-                cwd=ROOT,
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=False,
-            )
-
-            self.assertEqual(0, applied_application.returncode, applied_application.stderr)
-            receipt = json.loads(
-                receipt_path_for_evidence(evidence_path).read_text(encoding="utf-8")
-            )
-            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
-                route=route,
-                evidence_path=evidence_path,
-                route_docs_receipt=receipt,
-                cli_gate_evidence={},
-            )
-
-        self.assertTrue(diagnostics["used"])
-        self.assertIn("immediate next action", gate_evidence[ROUTE_DOCS_READ_GATE])
-
-    def test_docs_read_next_action_accepts_concrete_english_and_korean_actions(self) -> None:
-        takeaway = "workflow policy requires task-specific action evidence"
-
-        for next_action in (
-            "inspect validator callers",
-            "run focused tests",
-            "현재 저장 경로를 추적해 충돌 지점을 확인한다",
-        ):
-            with self.subTest(next_action=next_action):
-                self.assertEqual(
-                    [],
-                    validate_route_docs_application_fields(takeaway, next_action),
-                )
-
-    def test_docs_read_next_action_rejects_embedded_marker_and_repetition(self) -> None:
-        takeaway = "workflow policy requires task-specific action evidence"
-
-        for next_action in (
-            "runtime metadata is available",
-            "run run run run run",
-            "do not run the focused tests",
-        ):
-            with self.subTest(next_action=next_action):
-                self.assertTrue(
-                    validate_route_docs_application_fields(takeaway, next_action)
-                )
-
-    def test_custom_preflight_gets_isolated_route_docs_receipt_path(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-
-            self.assertEqual(
-                root / "route-docs-read.json",
-                receipt_path_for_evidence(root / "preflight.json"),
-            )
-            self.assertEqual(
-                root / "worker-a-route-docs-read.json",
-                receipt_path_for_evidence(root / "worker-a.json"),
-            )
-
-    def test_finish_can_read_default_receipt_bound_to_custom_preflight(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            evidence_path = root / "preflight-release-retry.json"
-            evidence_path.write_text('{"route":"release"}\n', encoding="utf-8")
-            receipt = {
-                "schema_version": 1,
-                "preflight_evidence": str(evidence_path),
-                "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
-                "route_fingerprint": "abc",
-                "doc_count": 0,
-                "docs": [],
+            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path.parent.mkdir(parents=True)
+            preflight = {
+                "project": str(project),
+                "rules": str(ROOT.resolve()),
+                "route": route,
             }
-            (root / "route-docs-read.json").write_text(json.dumps(receipt), encoding="utf-8")
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            reset_gate_evidence_ledger(evidence_path, preflight)
+            record_gate_evidence(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                gate="request intake",
+                evidence="preflight request intake completed: test scope is clear",
+                fields={"classification_evidence": "test scope is clear"},
+                source="start",
+            )
 
-            self.assertEqual(receipt, read_route_docs_receipt_for_preflight(evidence_path))
+            handoff = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "agent-hook.py"),
+                    "handoff",
+                    "--project",
+                    str(project),
+                    "--rules",
+                    str(ROOT),
+                    "--evidence",
+                    str(evidence_path),
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+
+        self.assertEqual(0, handoff.returncode, handoff.stderr)
+        self.assertIn("SUCCESS handoff", handoff.stdout)
+        self.assertIn("execution capsule is ready and valid", handoff.stdout)
+        self.assertIn("parent remains the sole gate-ledger owner", handoff.stdout)
+
+    def test_document_confirmation_hook_is_not_an_available_interface(self) -> None:
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "agent-hook.py"), "docs-read"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(2, result.returncode)
+        self.assertIn("invalid choice", result.stderr)
 
     def test_prd_and_product_routes_require_alignment_brief(self) -> None:
         prd_route = resolve_docs("prd", None, [], request_classified=True)
@@ -3484,13 +4009,9 @@ class WorkflowRoutingTests(unittest.TestCase):
 
     def test_review_hook_command_requests_code_work_evidence(self) -> None:
         route = resolve_docs("feature", None, ["testing"], request_classified=True)
-        docs_read_hook = next(hook for hook in route["hooks"] if hook["hook"] == "docs-read")
         review_hook = next(hook for hook in route["hooks"] if hook["hook"] == "review")
 
-        self.assertTrue(docs_read_hook["required"])
-        self.assertIn("agent-hook.py docs-read", docs_read_hook["command"])
-        self.assertIn("--takeaway", docs_read_hook["command"])
-        self.assertIn("--next-action", docs_read_hook["command"])
+        self.assertEqual(["start", "review", "finish"], [hook["hook"] for hook in route["hooks"]])
         self.assertIn("--review-scope working-tree", review_hook["command"])
         self.assertIn("[--review-path <task-owned-path>]", review_hook["command"])
         self.assertIn("--boundary-plan-evidence", review_hook["command"])
@@ -3508,13 +4029,12 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertNotIn("--boundary-plan-evidence", review_hook["command"])
         self.assertNotIn("--side-effect-audit-evidence", review_hook["command"])
 
-    def test_triage_and_ambiguity_read_route_docs_without_code_work_gates(self) -> None:
+    def test_triage_and_ambiguity_select_required_docs_without_code_work_gates(self) -> None:
         for command in ("triage", "ambiguity"):
             with self.subTest(command=command):
                 route = resolve_docs(command, None, [], request_classified=True)
 
-                self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
-                self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index(ALIGNMENT_BRIEF_GATE))
+                self.assertTrue(route["required_docs"])
                 self.assertNotIn(TEST_GATE, route["gates"])
                 self.assertNotIn(MULTI_AGENT_GATE, route["gates"])
 
@@ -3566,6 +4086,31 @@ class WorkflowRoutingTests(unittest.TestCase):
         route = json.loads(supplied.stdout)
         self.assertTrue(route["request_classified"])
         self.assertEqual("direct question was answered and user asked for review", route["classification_evidence"])
+
+    def test_classified_confirmation_uses_evidence_instead_of_reclassifying_reply(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "route",
+                "review",
+                "--request",
+                "응",
+                "--request-classified",
+                "--classification-evidence",
+                "answered direct question; separate actionable clear-scoped review",
+                "--format",
+                "json",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertTrue(json.loads(completed.stdout)["request_classified"])
 
     def test_request_classified_unresolved_ambiguity_cannot_open_work_route(self) -> None:
         for evidence in (
@@ -3685,29 +4230,21 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertNotIn(TEST_GATE, route["gates"])
         self.assertNotIn(MULTI_AGENT_GATE, route["gates"])
 
-    def test_workflow_setup_reads_route_docs_before_repair(self) -> None:
+    def test_workflow_setup_selects_required_docs_before_repair(self) -> None:
         route = resolve_docs("workflow-setup", None, ["structure"], request_classified=True)
 
-        self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
-        self.assertLess(
-            route["gates"].index(ROUTE_DOCS_READ_GATE),
-            route["gates"].index(AMBIGUITY_GATE),
-        )
-        self.assertLess(
-            route["gates"].index(ROUTE_DOCS_READ_GATE),
-            route["gates"].index("install or repair"),
-        )
+        self.assertTrue(route["required_docs"])
+        self.assertIn(SOURCE_DOCS_GATE, route["gates"])
 
-    def test_docs_route_reads_route_docs_before_edit(self) -> None:
+    def test_docs_route_selects_required_docs_without_confirmation_gate(self) -> None:
         route = resolve_docs("docs", None, ["structure"], request_classified=True)
 
-        self.assertIn(ROUTE_DOCS_READ_GATE, route["gates"])
-        self.assertLess(route["gates"].index(ROUTE_DOCS_READ_GATE), route["gates"].index("edit"))
+        self.assertTrue(route["required_docs"])
+        self.assertNotIn("route docs read", route["gates"])
 
     def test_finish_policy_rejects_empty_gate_phrases(self) -> None:
         failures = validate_gate_evidence(
             {
-                ROUTE_DOCS_READ_GATE: "done",
                 AMBIGUITY_GATE: "done",
                 ALIGNMENT_BRIEF_GATE: "done",
                 DOCUMENTATION_IMPACT_GATE: "done",
@@ -3723,7 +4260,6 @@ class WorkflowRoutingTests(unittest.TestCase):
                 SIDE_EFFECT_AUDIT_GATE: "done",
             },
             [
-                ROUTE_DOCS_READ_GATE,
                 AMBIGUITY_GATE,
                 ALIGNMENT_BRIEF_GATE,
                 DOCUMENTATION_IMPACT_GATE,
@@ -3740,7 +4276,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             ],
         )
 
-        self.assertEqual(14, len(failures))
+        self.assertEqual(13, len(failures))
 
     def test_required_gate_skip_evidence_fails_unless_gate_allows_skip(self) -> None:
         failures = validate_gate_evidence(
@@ -3874,12 +4410,6 @@ class WorkflowRoutingTests(unittest.TestCase):
     def test_finish_policy_accepts_specific_evidence(self) -> None:
         failures = validate_gate_evidence(
             {
-                ROUTE_DOCS_READ_GATE: (
-                    "read routed docs before code: AGENTS.md, index.md, "
-                    "common/skills/agent-operating-skill/SKILL.md; applied takeaway: wrapper "
-                    "receipt policy and gate evidence criteria; immediate next action: "
-                    "record structured gate evidence before continuing implementation"
-                ),
                 AMBIGUITY_GATE: "no blockers; safe assumption recorded",
                 ALIGNMENT_BRIEF_GATE: (
                     "same understanding: explicit goal captured; possible differences: uncertain scope; "
@@ -3895,8 +4425,9 @@ class WorkflowRoutingTests(unittest.TestCase):
                     "source-of-truth updated for durable agent behavior"
                 ),
                 SOURCE_DOCS_GATE: (
-                    "searched PRD/spec/ARD source-of-truth docs before implementation; "
-                    "none found; used user request as source of truth"
+                    "read every route required_docs entry directly before implementation; "
+                    "searched PRD/spec/ARD source-of-truth docs; none found; "
+                    "applied takeaway: used the user request as source of truth"
                 ),
                 PLATFORM_SELECTION_GATE: (
                     "selected platform: ios; loaded platforms/ios/skills/ios-architecture/SKILL.md "
@@ -3924,7 +4455,6 @@ class WorkflowRoutingTests(unittest.TestCase):
                 SIDE_EFFECT_AUDIT_GATE: "final diff checked; no unexpected generated files or lockfile changes",
             },
             [
-                ROUTE_DOCS_READ_GATE,
                 AMBIGUITY_GATE,
                 ALIGNMENT_BRIEF_GATE,
                 DOCUMENTATION_IMPACT_GATE,
@@ -3949,19 +4479,70 @@ class WorkflowRoutingTests(unittest.TestCase):
             [SOURCE_DOCS_GATE],
         )
 
-        self.assertTrue(any("source-of-truth docs" in failure for failure in failures))
+        self.assertTrue(any("route required_docs" in failure for failure in failures))
 
         failures = validate_gate_evidence(
             {
                 SOURCE_DOCS_GATE: (
                     "searched source-of-truth docs before implementation; "
-                    "found docs/module/README.md and read it; applied module boundary to the work"
+                    "found docs/module/README.md and read it; "
+                    "applied the module boundary to the work"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+        )
+
+        self.assertTrue(any("route required_docs" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "read every route required_docs entry directly before implementation; "
+                    "searched source-of-truth docs and found docs/module/README.md; "
+                    "no task-specific rule was recorded"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+        )
+
+        self.assertTrue(any("task-specific takeaway" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "read the route required_docs manifest directly before implementation; "
+                    "searched source-of-truth docs and found docs/module/README.md; "
+                    "applied takeaway: keep the module boundary unchanged in this work"
                 )
             },
             [SOURCE_DOCS_GATE],
         )
 
         self.assertEqual([], failures)
+
+    def test_source_docs_structured_fields_synthesize_finish_valid_evidence(self) -> None:
+        evidence, missing = synthesize_gate_evidence(
+            SOURCE_DOCS_GATE,
+            "",
+            {
+                "required_docs": "all 27 route required_docs entries read directly",
+                "source": "AGENTS.md and routed workflow/skill cards",
+                "takeaway": "use one start hook and keep the parent as ledger owner",
+            },
+        )
+
+        self.assertEqual([], missing)
+        self.assertEqual(
+            [],
+            validate_gate_evidence({SOURCE_DOCS_GATE: evidence}, [SOURCE_DOCS_GATE]),
+        )
+
+        _, legacy_missing = synthesize_gate_evidence(
+            SOURCE_DOCS_GATE,
+            "",
+            {"source": "AGENTS.md", "outcome": "applied one-start"},
+        )
+        self.assertEqual(["required_docs", "takeaway"], legacy_missing)
 
     def test_platform_selection_evidence_requires_platform_or_not_applicable_reason(self) -> None:
         failures = validate_gate_evidence(
@@ -4330,8 +4911,9 @@ class WorkflowRoutingTests(unittest.TestCase):
         failures = validate_gate_evidence(
             {
                 SOURCE_DOCS_GATE: (
-                    "searched PRD/spec/ARD source-of-truth docs before implementation; "
-                    "none found; used user request as source of truth"
+                    "read every route required_docs entry directly before implementation; "
+                    "searched PRD/spec/ARD source-of-truth docs; none found; "
+                    "applied takeaway: used the user request as source of truth"
                 ),
                 DOCUMENTATION_IMPACT_GATE: (
                     "before code documentation impact decision: artifact: module README; "
@@ -4346,8 +4928,9 @@ class WorkflowRoutingTests(unittest.TestCase):
         failures = validate_gate_evidence(
             {
                 SOURCE_DOCS_GATE: (
-                    "searched PRD/spec/ARD source-of-truth docs before implementation; "
-                    "none found; used user request as source of truth"
+                    "read every route required_docs entry directly before implementation; "
+                    "searched PRD/spec/ARD source-of-truth docs; none found; "
+                    "applied takeaway: used the user request as source of truth"
                 ),
                 DOCUMENTATION_IMPACT_GATE: (
                     "before code documentation impact decision: artifact: module README; "
@@ -4359,82 +4942,59 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertEqual([], failures)
 
-    def test_route_docs_read_evidence_requires_applied_takeaway(self) -> None:
-        failures = validate_gate_evidence(
-            {ROUTE_DOCS_READ_GATE: "read routed docs before edits with docs-read receipt"},
-            [ROUTE_DOCS_READ_GATE],
-        )
-
-        self.assertTrue(any("applied" in failure for failure in failures))
-
-    def test_route_docs_read_evidence_requires_immediate_next_action(self) -> None:
+    def test_source_docs_gate_accepts_a_bound_empty_required_manifest(self) -> None:
         failures = validate_gate_evidence(
             {
-                ROUTE_DOCS_READ_GATE: (
-                    "read routed docs before edits with docs-read receipt; "
-                    "applied takeaway: wrapper receipt policy and gate evidence criteria"
+                SOURCE_DOCS_GATE: (
+                    "before implementation verified route required_docs manifest empty; "
+                    "searched PRD/spec/ARD source-of-truth docs; none found; "
+                    "applied takeaway: used the user request as source of truth"
                 )
             },
-            [ROUTE_DOCS_READ_GATE],
-        )
-
-        self.assertTrue(any("immediate next action" in failure for failure in failures))
-
-    def test_route_docs_read_evidence_allows_commit_before_work_terms(self) -> None:
-        failures = validate_gate_evidence(
-            {
-                ROUTE_DOCS_READ_GATE: (
-                    "required skill docs read before committing; "
-                    "applied rule: one commit should carry one reviewable intent; "
-                    "immediate next action: commit the staged graphify artifact unit"
-                )
-            },
-            [ROUTE_DOCS_READ_GATE],
+            [SOURCE_DOCS_GATE],
         )
 
         self.assertEqual([], failures)
 
-    def test_route_docs_read_evidence_rejects_receipt_only_takeaway(self) -> None:
+    def test_source_docs_empty_manifest_claim_cannot_bypass_route_required_docs(self) -> None:
         route = {
             "command": "workflow-setup",
-            "docs": ["AGENTS.md"],
-            "gates": [ROUTE_DOCS_READ_GATE],
+            "required_docs": ["AGENTS.md", "common/skills/agent-operating-skill/SKILL.md"],
+            "gates": [SOURCE_DOCS_GATE],
         }
-        with tempfile.TemporaryDirectory() as temp_dir:
-            evidence_path = Path(temp_dir) / "preflight.json"
-            preflight = {"route": route}
-            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
-            reset_gate_evidence_ledger(evidence_path, preflight)
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "before implementation verified route required_docs manifest empty; "
+                    "searched source-of-truth docs; none found; "
+                    "applied takeaway: use the current route"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+            route=route,
+        )
 
-            record_gate_evidence(
-                evidence_path=evidence_path,
-                preflight=preflight,
-                gate=ROUTE_DOCS_READ_GATE,
-                fields={
-                    "takeaway": "route docs receipt matched the current preflight manifest",
-                    "next_action": "continue by editing the scoped workflow hook",
-                },
-                source="docs-read",
-            )
-            receipt = {
-                "schema_version": 1,
-                "route_fingerprint": route_fingerprint(route),
-                "doc_count": 1,
-                "preflight_evidence": str(evidence_path),
-                "preflight_evidence_sha256": preflight_evidence_sha256(evidence_path),
-                "docs": [{"path": "AGENTS.md", "size_bytes": 1, "sha256": "abc"}],
-            }
+        self.assertTrue(any("claims the required_docs manifest is empty" in failure for failure in failures))
 
-            gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
-                route=route,
-                evidence_path=evidence_path,
-                route_docs_receipt=receipt,
-                cli_gate_evidence={},
-            )
+    def test_source_docs_route_validation_requires_the_actual_manifest_entries(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "required_docs": ["AGENTS.md", "common/skills/agent-operating-skill/SKILL.md"],
+            "gates": [SOURCE_DOCS_GATE],
+        }
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "read every route required_docs entry directly before implementation; "
+                    "AGENTS.md; searched source-of-truth docs; none found; "
+                    "applied takeaway: use the current route"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+            route=route,
+        )
 
-        self.assertEqual({}, gate_evidence)
-        self.assertIn(ROUTE_DOCS_READ_GATE, diagnostics["missing_fields"])
-        self.assertTrue(any("task-specific" in item for item in diagnostics["missing_fields"][ROUTE_DOCS_READ_GATE]))
+        self.assertTrue(any("missing:" in failure for failure in failures))
 
     def test_parallel_subagent_evidence_requires_contract_forbidden_scope_and_verification(self) -> None:
         failures = validate_gate_evidence(
@@ -4551,6 +5111,19 @@ class WorkflowRoutingTests(unittest.TestCase):
                 )
             },
             {},
+        )
+
+        self.assertEqual([], failures)
+
+    def test_serial_multi_agent_decision_accepts_dirty_working_tree_wording(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                MULTI_AGENT_GATE: (
+                    "serial single-agent because the dirty working tree has overlapping "
+                    "workflow ownership; verification: full unittest"
+                )
+            },
+            [MULTI_AGENT_GATE],
         )
 
         self.assertEqual([], failures)

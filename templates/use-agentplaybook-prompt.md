@@ -51,7 +51,9 @@ Rules:
    apology-only message. Repair the action path or stop with the specific
    blocker.
 2. Do not assume this runtime automatically loaded AgentPlaybook. Explicitly
-   read <AGENTPLAYBOOK_ROOT>/AGENTS.md and <AGENTPLAYBOOK_ROOT>/index.md.
+   read <AGENTPLAYBOOK_ROOT>/AGENTS.md. Let the start hook route the smallest
+   required document set; open <AGENTPLAYBOOK_ROOT>/index.md only for a simple
+   answer-only lookup or an explicitly accepted routing fallback.
 3. Do not copy the whole AgentPlaybook library into this repo. Link only the
    relevant root, index, workflow script, and selected cards. If you edit
    committed repo-local instruction files, use a portable root reference such
@@ -68,12 +70,11 @@ Rules:
    need to be fetched by the agent. If the VibeGuard command cannot run, stop
    and report the blocker. Use VibeGuard update only when I explicitly choose
    to refresh an existing managed block.
-5. For multi-step tasks, run this before selecting task documents, editing,
-   reviewing, committing, or reporting completion:
-   python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
-   python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<USER_REQUEST>"
-   python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
-   Use the route output as the command manifest.
+5. For multi-step tasks, run this once before selecting task documents,
+   editing, reviewing, committing, or reporting completion:
+   python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
+   It performs workflow routing/preflight and returns the command manifest. Do
+   not separately repeat workflow list, classify, route, or preflight.
    Do not wait for me to name document keywords. Let routing/search infer the
    work surface from the request, platform, concern, and touched files; use
    workflow-doc-surfaces.json and the local document graph as inputs; read the
@@ -81,15 +82,27 @@ Rules:
    as `reference_docs` unless the route promotes them to `required_docs`.
    If routing/search misses a clearly relevant platform, concern, or document
    surface, stop and report the gap instead of proceeding from memory.
-   After routing, preflight, and required-doc reading, consume
+   After the start hook and required-doc reading, consume
    `parallel_execution.delegation_policy`. If this runtime exposes workers and
    at least two meaningful slices have disjoint scopes, a stable contract, an
    integration owner, and focused verification, delegate automatically without
    waiting for me to request multi-agent work. Otherwise record the concrete
    serial reason. Use Codex native workers, Claude Agent/Task workers, or the
-   Gemini/AGY Antigravity agent runner according to the active runtime. Treat
-   one model-profile dispatch as a leaf worker, not multi-agent fanout; the
-   parent makes the split decision first.
+   Gemini/AGY Antigravity agent runner according to the active runtime. At each
+   parent-to-worker boundary, run:
+   python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py handoff --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+   This refreshes the provider-neutral, content-free execution capsule and
+   validates it once. A ready and valid handoff lets the worker reuse the
+   parent's route, preflight, and required-doc manifest and skip duplicate
+   startup. An invalid handoff is a successful fallback decision that requires
+   the worker's normal lifecycle; never reuse mismatched capsule state. The
+   parent is the sole gate-ledger owner. Workers use worker-specific evidence
+   paths, return scoped evidence, and never overwrite the parent ledger,
+   including after an invalid handoff fallback. For a Codex leaf, use `dispatch
+   --execute` only when the selected model, reasoning effort, sandbox, or
+   required isolation differs from the parent. When the selected profile and
+   sandbox match and isolation is unnecessary, stay in the current process or
+   use a native worker instead of launching a fresh Codex process.
    If the request is a direct question, answer it before routing or editing.
    If the direct question asks how to start app, product, or feature work,
    answer with PRD -> ARD -> implementation gates before lower-level coding
@@ -100,11 +113,10 @@ Rules:
    Use the lowest capable effort level. Do not use deep reasoning or a
    specialist agent for clear, low-risk requests unless local evidence expands
    the scope.
-6. When available, run this wrapper before editing, reviewing, committing, or
-   reporting completion:
-   python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
-   It records the route, git status, and VibeGuard result in
-   <TARGET_REPO>/.agentplaybook/preflight.json.
+6. Read every `required_docs` entry from the route before editing or reviewing.
+   The start hook records the route, git status, and VibeGuard result in
+   <TARGET_REPO>/.agentplaybook/preflight.json. Do not add a second document
+   confirmation step.
 7. Keep a gate execution ledger from the route output. Mark each required gate
    when it is executed or fails, include concrete evidence such as a command,
    file, diff, manual check, or decision note, and assign only one of two public
@@ -134,7 +146,10 @@ Rules:
     `<AGENTPLAYBOOK_ROOT>` with the resolved absolute path; do not leave
     `$HOME`, `${HOME}`, `~`, or a relative path in the executable command. When
     available, run:
-    python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
+    python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+    Use explicit `--gate "<gate>=<evidence>"` only as a one-off compatibility
+    input: finish records it in the bound ledger before validation. Use
+    `agent-hook.py gate` or `gate-batch` for structured gate fields.
     Missing wrapper evidence or missing route gate evidence is non-compliant.
     If `--request-classified` is used, include `--classification-evidence`.
     Work routes require resolved-scope evidence such as `clear-scoped`,

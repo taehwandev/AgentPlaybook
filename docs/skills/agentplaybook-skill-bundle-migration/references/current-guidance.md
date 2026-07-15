@@ -91,7 +91,7 @@ into each skill card.
 3. Put detailed rules, examples, source coverage, and long checklists in
    focused files under `references/`.
 4. Remove the flat compatibility file after internal links, route surfaces,
-   tests, and docs-read paths target the bundle directly.
+   tests, and required-document manifests target the bundle directly.
 5. Keep a short compatibility pointer only when a named downstream/runtime
    dependency still requires the old path, and record that dependency.
 6. Update `index.md` and workflow routing to prefer bundle entrypoints.
@@ -116,7 +116,7 @@ documented temporary compatibility exception.
 
 ## Stop If
 
-- A path change would break `scripts/workflow.py route`, docs-read receipts, or
+- A path change would break `scripts/workflow.py route`, required-doc manifests, or
   `python3 scripts/workflow.py validate`.
 - A flat compatibility stub is proposed without a named downstream/runtime
   dependency that still needs the exact old path.

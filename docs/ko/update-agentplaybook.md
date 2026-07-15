@@ -37,22 +37,26 @@ vibeguard audit . --rules .
 
 최신화 후 여러 단계 작업을 맡길 때는 에이전트가 wrapper evidence를 만들게 하는 것이 안전합니다. 지침을 읽었다는 말만으로는 충분하지 않습니다.
 
-작업 전:
+작업 전에는 `agent-hook.py start`를 한 번만 실행합니다. 이 명령이 라우팅과
+preflight를 함께 수행하므로 성공 뒤에 `workflow.py route`나
+`agent-preflight.py`를 따로 반복하지 않습니다:
 
 에이전트 런타임에서 실행할 때는 `${AGENTPLAYBOOK_HOME}`을 먼저 실제 절대 경로로 치환하세요. 승인 민감 명령에는 `$HOME`, `${HOME}`, `~`, 상대 경로를 남기지 않습니다.
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-preflight.py" \
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start \
   --project . \
   --rules "${AGENTPLAYBOOK_HOME}" \
   --command task \
   --request "<USER_REQUEST>"
 ```
 
-마무리 전:
+start가 만든 route의 `required_docs`를 수정이나 검토 전에 직접 읽습니다.
+의미 있는 수정 뒤에는 `agent-hook.py review` review hook을 실행하고,
+마무리 전에는 finish hook을 실행합니다:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-finish-check.py" \
+python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" finish \
   --project . \
   --rules "${AGENTPLAYBOOK_HOME}" \
   --gate "request intake=<근거>" \
@@ -62,6 +66,10 @@ python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-finish-check.py" \
   --gate "verify=<근거>" \
   --gate "report=<근거>"
 ```
+
+`workflow.py route`, `agent-preflight.py`, `agent-finish-check.py` 직접 호출은
+hook이 unavailable인 경우의 하위(lower-level) 진단 또는 호환성 fallback일 뿐이며 같은
+작업에서 두 번째 lifecycle로 실행하지 않습니다.
 
 이 스크립트들은 대상 저장소의 `.agentplaybook/` 아래에 로컬 JSON 근거를 남깁니다. 보통 이 디렉터리는 커밋하지 않고 `.gitignore`에 둡니다. preflight 근거, finish-check 근거, route gate 근거가 없으면 결과물이 맞아 보여도 AgentPlaybook 기준으로는 non-compliant입니다. 사람이 보는 보고에는 두 가지 고양이 신호 배지만 씁니다: `🐱🟢 SUCCESS`는 근거와 함께 실행됨, `🐱🔴 FAIL`은 차단, 실패, 누락 또는 근거 없음입니다. 제3의 gate 상태는 보고하지 않습니다. `--request-classified`를 쓸 때는 `--classification-evidence`를 함께 남겨야 하며, "그릴미"처럼 질문 드릴을 요청한 경우 드릴 근거가 없으면 `🐱🔴 FAIL`입니다.
 

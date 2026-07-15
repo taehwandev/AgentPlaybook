@@ -67,28 +67,41 @@ application drill first: add pointer vs merge vs pin; audit-only vs refresh
 with update vs first-time setup; apply now vs prepare instructions only.
 Default to preserving current guardrails and running audit only unless the user
 chooses to refresh the managed block.
-For multi-step tasks, run `agent-hook.py start` first with `--request
+For multi-step tasks, run `agent-hook.py start` once with `--request
 "<USER_REQUEST>"`; it runs workflow routing/preflight and reports the required
-hooks for the route. Use its output as the command manifest before selecting
-task documents, editing, reviewing, committing, or reporting completion. If the
+hooks for the route. Do not separately repeat workflow list, classify, route, or
+preflight. Use the start output as the command manifest before selecting task
+documents, editing, reviewing, committing, or reporting completion. If the
 current user message is a direct question, answer it before routing or editing.
 Do not wait for the user to name document keywords. Let routing/search infer
 the work surface from the request, platform, concern, and touched files; use
 `workflow-doc-surfaces.json` and the local document graph as inputs; read the
-route `required_docs` before editing or reviewing; and treat graph neighbors as
+route's `required_docs` before editing or reviewing; and treat graph neighbors as
 `reference_docs` unless the route promotes them to `required_docs`. If
 routing/search misses a clearly relevant platform, concern, or document
-surface, stop and report the gap instead of proceeding from memory.
-After routing, preflight, and required-doc reading, consume
+surface, stop and report the gap instead of proceeding from memory. Reading the
+selected `required_docs` is a direct agent responsibility; do not add a second
+document-confirmation step.
+After the start hook and required-doc reading, consume
 `parallel_execution.delegation_policy`. When the runtime exposes workers and
 the multi-agent collaboration skill identifies at least two meaningful slices
 with disjoint scopes, a stable contract, an integration owner, and focused
 verification, delegate automatically without waiting for explicit user
 multi-agent wording. Use Codex native workers, Claude Agent/Task workers, or
 the Gemini/AGY Antigravity agent runner according to the active runtime.
-Otherwise record the concrete serial reason. A Codex `dispatch --execute` call
-is one bounded leaf worker, not fanout; the parent must make the split decision
-first.
+Otherwise record the concrete serial reason. At each parent-to-worker boundary,
+run `agent-hook.py handoff`; it refreshes the provider-neutral, content-free
+execution capsule and validates it once. A ready and valid handoff lets the
+worker reuse the parent's route, preflight, and required-doc manifest and skip
+duplicate startup. An invalid handoff is a successful fallback decision that
+requires the worker's normal lifecycle; never reuse mismatched capsule state.
+The parent is the sole gate-ledger owner. Workers use worker-specific evidence
+paths, return scoped evidence, and never overwrite the parent ledger, including
+after an invalid handoff fallback. For a Codex leaf, use `dispatch --execute`
+only when the selected model, reasoning effort, sandbox, or required isolation
+differs from the parent. When the selected profile and sandbox match and
+isolation is unnecessary, stay in the current process or use a native worker
+instead of launching a fresh Codex process.
 If the direct question asks how to start app, product, or feature work, answer
 with the PRD -> ARD -> implementation path before lower-level coding steps. If
 the work then proceeds into code, use the `product` route unless an existing
@@ -114,8 +127,8 @@ finalization, roll back only dependent agent-made changes after the missed gate
 when safe, return to the first missed gate only, and run the retrospective
 workflow. The missed gate gets one recovery retry; do not restart the whole
 route. Do not report any third gate state.
-When the wrapper scripts are available, run `agent-hook.py start` before
-editing, `agent-hook.py review` after the scoped diff is ready, and
+When the wrapper scripts are available, keep the existing start evidence,
+run `agent-hook.py review` after the scoped diff is ready, and run
 `agent-hook.py finish` before final report, commit, release, or handoff. Pass
 evidence for every route gate to the finish check. The wrappers write local
 evidence under

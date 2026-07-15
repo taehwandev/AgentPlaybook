@@ -2,18 +2,34 @@
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
-from shlex import join
 from typing import Callable, Mapping
 
+from workflow_dispatch_evidence import (
+    execution_capsule_state as _execution_capsule_state,
+    isolated_worker_evidence as _isolated_worker_evidence,
+)
+from workflow_dispatch_handoff import (
+    build_handoff_state,
+    build_handoff_prompt,
+    codex_argv as _codex_argv,
+    execution_policy as _execution_policy,
+)
+from workflow_dispatch_launch import (
+    execute_dispatch_manifest as _execute_dispatch_manifest,
+    print_dispatch_manifest as _print_dispatch_manifest,
+)
 from workflow_dispatch_profiles import (
     ORCHESTRATOR_PROFILE,
     WORK_KINDS,
     profile_for_work_kind,
     select_work_kind,
 )
-from workflow_request import classify_request, route_block_reason
+from workflow_request import (
+    classified_route_block_reason,
+    classify_request,
+    route_block_reason,
+)
 
 
 def build_dispatch_manifest(
@@ -24,34 +40,63 @@ def build_dispatch_manifest(
     work_kind: str = "auto",
     complexity_evidence: str = "",
     route: Mapping[str, object] | None = None,
+    request_classified: bool = False,
+    classification_evidence: str = "",
+    request_classification: Mapping[str, object] | None = None,
+    parent_model: str = "",
+    parent_reasoning_effort: str = "",
+    parent_sandbox_mode: str = "",
+    isolation_required: bool = False,
+    rules: Path | None = None,
+    evidence_path: Path | None = None,
+    worker_evidence_path: Path | None = None,
+    parent_context_reusable: bool = True,
+    reserve_worker_evidence: bool = False,
+    worker_reservation_token: str = "",
+    defer_capsule_validation: bool = False,
 ) -> dict[str, object]:
-    """Create an inspectable Codex handoff for one bounded task stage."""
-    classification = classify_request(request)
-    block_reason = route_block_reason(command, classification)
-    if block_reason:
-        raise ValueError(block_reason)
+    """Create an inspectable dispatch decision for one bounded task stage."""
 
-    selected_kind, selection_reason = select_work_kind(
+    classification = dict(request_classification or classify_request(request))
+    _raise_if_request_is_blocked(
         command,
         classification,
-        work_kind,
-        complexity_evidence,
+        request_classified=request_classified,
+        classification_evidence=classification_evidence,
     )
-    profile = profile_for_work_kind(selected_kind)
-    non_authoring = selected_kind == "repetitive"
-    sandbox_mode = "read-only" if non_authoring else "workspace-write"
+    selected_kind, profile, sandbox_mode, execution_mode, same_profile, selection_reason = (
+        _select_execution_context(
+            command,
+            classification,
+            work_kind=work_kind,
+            complexity_evidence=complexity_evidence,
+            parent_model=parent_model,
+            parent_reasoning_effort=parent_reasoning_effort,
+            parent_sandbox_mode=parent_sandbox_mode,
+            isolation_required=isolation_required,
+        )
+    )
+    lexical_project = project.expanduser().absolute()
     project = project.expanduser().resolve()
-    evidence_directory = project / ".agentplaybook"
-    handoff_state = {
-        "route_command": command,
-        "required_docs": list(route.get("required_docs", [])) if route else [],
-        "gates": list(route.get("gates", [])) if route else [],
-        "evidence_directory": str(evidence_directory),
-        "preflight_evidence": str(evidence_directory / "preflight.json"),
-        "docs_read_receipt": str(evidence_directory / "route-docs-read.json"),
-        "gate_ledger": str(evidence_directory / "gate-evidence.json"),
-        "verification_plan": "run the nearest verification required by the parent route",
-    }
+    rules = (rules or Path(__file__).resolve().parents[1]).expanduser().resolve()
+    parent_evidence = _parent_evidence_path(project, evidence_path)
+    handoff_state = build_handoff_state(
+        command=command,
+        project=project,
+        lexical_project=lexical_project,
+        rules=rules,
+        route=route,
+        parent_evidence=parent_evidence,
+        parent_context_reusable=parent_context_reusable,
+        worker_evidence_path=worker_evidence_path,
+        execution_mode=execution_mode,
+        reserve_worker_evidence=reserve_worker_evidence,
+        worker_reservation_token=worker_reservation_token,
+        defer_capsule_validation=defer_capsule_validation,
+        execution_capsule_state=_execution_capsule_state,
+        isolated_worker_evidence=_isolated_worker_evidence,
+    )
+    non_authoring = selected_kind == "repetitive"
     handoff_prompt = build_handoff_prompt(
         command,
         request,
@@ -59,75 +104,81 @@ def build_dispatch_manifest(
         handoff_state,
         non_authoring=non_authoring,
     )
-    codex_argv = [
-        "codex",
-        "exec",
-        "--model",
-        profile["codex_model"],
-        "--config",
-        f'model_reasoning_effort="{profile["reasoning_effort"]}"',
-        "--sandbox",
-        sandbox_mode,
-        "--cd",
-        str(project),
-        handoff_prompt,
-    ]
-
+    argv = _codex_argv(project, profile, sandbox_mode, handoff_prompt)
     return {
         "schema_version": 1,
         "project": str(project),
         "command": command,
+        "request": request,
         "request_classification": classification,
         "orchestrator_profile": ORCHESTRATOR_PROFILE,
         "work_profile": profile,
+        "work_kind": selected_kind,
         "authoring_policy": "read-only non-authoring" if non_authoring else "code authoring allowed",
         "sandbox_mode": sandbox_mode,
         "selection_reason": selection_reason,
+        "execution_mode": execution_mode,
+        "profile_matches_parent": same_profile,
+        "isolation_required": isolation_required,
         "handoff_state": handoff_state,
-        "codex_exec_argv": codex_argv,
-        "codex_exec_command": join(codex_argv),
-        "execution_policy": (
-            "The manifest is inspectable by default. The orchestrator runs the generated command "
-            "with dispatch --execute only at a task or subagent boundary."
-        ),
+        # Kept for programmatic callers. Human-facing output always redacts it:
+        # launch revalidates and rebuilds this argv immediately before execution.
+        "codex_exec_argv": argv,
+        "execution_policy": _execution_policy(execution_mode),
     }
 
 
-def build_handoff_prompt(
+def _raise_if_request_is_blocked(
     command: str,
-    request: str,
-    work_kind: str,
-    handoff_state: Mapping[str, object],
+    classification: Mapping[str, object],
     *,
-    non_authoring: bool,
-) -> str:
-    required_docs = ", ".join(str(doc) for doc in handoff_state["required_docs"])
-    gates = ", ".join(str(gate) for gate in handoff_state["gates"])
-    instructions = [
-        "You are a delegated Codex worker for one bounded task stage.",
-        "Do not delegate another Codex child from this worker.",
-        "Read the target repository instructions before changing files and preserve existing user changes.",
-    ]
-    if non_authoring:
-        instructions.append(
-            "This is a read-only non-authoring stage. Do not modify files, write code, generate patches, or create tests."
-        )
-    instructions.extend(
-        [
-            f"Workflow command: {command}",
-            f"Work kind: {work_kind}",
-            f"Required docs from the parent route: {required_docs or 'resolve from the route'}",
-            f"Parent route gates: {gates or 'resolve from the route'}",
-            f"Parent preflight evidence: {handoff_state['preflight_evidence']}",
-            f"Parent docs-read receipt: {handoff_state['docs_read_receipt']}",
-            f"Parent gate ledger: {handoff_state['gate_ledger']}",
-            f"Verification plan: {handoff_state['verification_plan']}",
-            "Read existing parent evidence when present. Do not overwrite parent receipts or gate ledger entries.",
-            "User request:",
-            request,
-        ]
+    request_classified: bool,
+    classification_evidence: str,
+) -> None:
+    reason = (
+        classified_route_block_reason(command, classification_evidence)
+        if request_classified
+        else route_block_reason(command, classification)
     )
-    return "\n".join(instructions)
+    if reason:
+        raise ValueError(reason)
+
+
+def _select_execution_context(
+    command: str,
+    classification: Mapping[str, object],
+    *,
+    work_kind: str,
+    complexity_evidence: str,
+    parent_model: str,
+    parent_reasoning_effort: str,
+    parent_sandbox_mode: str,
+    isolation_required: bool,
+) -> tuple[str, Mapping[str, str], str, str, bool, str]:
+    selected_kind, selection_reason = select_work_kind(
+        command, classification, work_kind, complexity_evidence
+    )
+    profile = profile_for_work_kind(selected_kind)
+    sandbox_mode = "read-only" if selected_kind == "repetitive" else "workspace-write"
+    same_profile = all(
+        (
+            parent_model == profile["codex_model"],
+            parent_reasoning_effort == profile["reasoning_effort"],
+            parent_sandbox_mode == sandbox_mode,
+        )
+    )
+    return (
+        selected_kind,
+        profile,
+        sandbox_mode,
+        "inline" if same_profile and not isolation_required else "child",
+        same_profile,
+        selection_reason,
+    )
+
+
+def _parent_evidence_path(project: Path, evidence_path: Path | None) -> Path:
+    return evidence_path.expanduser().resolve() if evidence_path else project / ".agentplaybook" / "preflight.json"
 
 
 def execute_dispatch_manifest(
@@ -135,39 +186,15 @@ def execute_dispatch_manifest(
     *,
     runner: Callable[[list[str]], int] | None = None,
 ) -> int:
-    """Run a previously selected worker profile at the explicit handoff boundary."""
-    argv = manifest.get("codex_exec_argv")
-    if not isinstance(argv, list) or not all(isinstance(arg, str) for arg in argv):
-        raise ValueError("Dispatch manifest is missing a valid codex_exec_argv")
-
-    if runner:
-        return runner(argv)
-    try:
-        completed = subprocess.run(argv, check=False)
-    except OSError as error:
-        raise RuntimeError("Unable to start the delegated Codex worker") from error
-    return completed.returncode
+    return _execute_dispatch_manifest(
+        manifest,
+        runner=runner,
+        execution_capsule_state=_execution_capsule_state,
+        isolated_worker_evidence=_isolated_worker_evidence,
+        codex_argv=_codex_argv,
+        build_handoff_prompt=build_handoff_prompt,
+    )
 
 
 def print_dispatch_manifest(manifest: Mapping[str, object], output_format: str) -> None:
-    if output_format == "json":
-        import json
-
-        print(json.dumps(manifest, indent=2, sort_keys=True))
-        return
-
-    profile = manifest["work_profile"]
-    assert isinstance(profile, Mapping)
-    print("# AgentPlaybook Codex Handoff")
-    print()
-    print(f"- Work kind: `{profile['work_kind']}`")
-    print(f"- Model tier: `{profile['model_tier']}`")
-    print(f"- Codex model: `{profile['codex_model']}`")
-    print(f"- Reasoning effort: `{profile['reasoning_effort']}`")
-    print(f"- Authoring policy: `{manifest['authoring_policy']}`")
-    print(f"- Selection: {manifest['selection_reason']}")
-    print()
-    print("## Handoff Command")
-    print(f"`{manifest['codex_exec_command']}`")
-    print()
-    print(manifest["execution_policy"])
+    _print_dispatch_manifest(manifest, output_format)

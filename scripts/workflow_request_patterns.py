@@ -101,7 +101,7 @@ TEST_ACTION_PATTERNS = (
 )
 WORKFLOW_SETUP_ACTION_PATTERNS = (
     r"\b(natural language|semantic)\b.*\b(search|routing|retrieval|docs?|documents?|skills?)\b",
-    r"\b(doc routing|document routing|doc-route|route docs|docs-read)\b",
+    r"\b(doc routing|document routing|doc-route|route docs|required docs)\b",
     r"\b(hook|hooks?)\b.*\b(docs?|documents?|search|read|routing)\b",
     r"\b(planning|requirements?|acceptance criteria)\b.*\b(docs?|documentation)\b.*\b(missing|omitted|skipped|forgotten|enforce|gate|guard)\b",
     r"\b(docs?|documentation)\b.*\b(missing|omitted|skipped|forgotten|enforce|gate|guard)\b.*\b(planning|requirements?|acceptance criteria)\b",

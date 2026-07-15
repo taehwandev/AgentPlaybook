@@ -10,6 +10,11 @@ from support.spill_permissions import spill_helper_permission_commands as _spill
 from support.stable_launcher import stable_launcher_path
 
 
+# Historical names retained only so setup can remove obsolete permissions.
+# They are not executable entrypoints and must never be offered to a runtime.
+STALE_PERMISSION_ENTRYPOINTS = ("agent-docs-read.py", "agent_route_docs.py")
+
+
 def claude_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
     for command in _stable_launcher_commands("claude", include_spill_env=spill_available):
@@ -22,7 +27,7 @@ def claude_permission_entries(scripts_dir: Path, *, spill_available: bool = True
 
 def claude_legacy_permission_entries(scripts_dir: Path) -> list[str]:
     entries: list[str] = []
-    for script in _agentplaybook_python_scripts(scripts_dir):
+    for script in _legacy_agentplaybook_python_scripts(scripts_dir):
         for command in _python_entrypoint_commands(script, "claude", include_legacy=True):
             _add_permission_command_entries(entries, "Bash", command)
     return entries
@@ -50,7 +55,7 @@ def agy_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -
 
 def agy_legacy_permission_entries(scripts_dir: Path) -> list[str]:
     entries: list[str] = []
-    for script in _agentplaybook_python_scripts(scripts_dir):
+    for script in _legacy_agentplaybook_python_scripts(scripts_dir):
         for command in _python_entrypoint_commands(script, "antigravity", include_legacy=True):
             _add_permission_command_entries(entries, "command", command)
     for command in _spill_helper_permission_commands("antigravity"):
@@ -69,7 +74,17 @@ def codex_prefix_rule_entries(scripts_dir: Path) -> list[str]:
 
 
 def _agentplaybook_python_scripts(scripts_dir: Path) -> list[Path]:
-    return sorted(scripts_dir.glob("*.py"))
+    return sorted(
+        script
+        for script in scripts_dir.glob("*.py")
+        if script.name not in STALE_PERMISSION_ENTRYPOINTS
+    )
+
+
+def _legacy_agentplaybook_python_scripts(scripts_dir: Path) -> list[Path]:
+    current = _agentplaybook_python_scripts(scripts_dir)
+    removed = [scripts_dir / name for name in STALE_PERMISSION_ENTRYPOINTS]
+    return sorted({*current, *removed})
 
 
 def _python_entrypoint_commands(

@@ -127,7 +127,7 @@ Run this drill before creating a new card or splitting an existing one:
 
 Flat `.md` compatibility stubs are temporary exceptions, not the normal
 AgentPlaybook layout. Prefer deleting them after internal routes, links, tests,
-and docs-read paths target the canonical bundle.
+and required-document manifests target the canonical bundle.
 
 Keep a flat stub only when a named downstream repo instruction, runtime bridge,
 or external published link still requires the exact legacy path. A retained stub

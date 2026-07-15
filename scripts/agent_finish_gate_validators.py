@@ -85,10 +85,31 @@ DURABLE_DOC_CHANGE_PATTERNS = (
 )
 
 
-def validate_source_docs_evidence(evidence: str) -> list[str]:
+def validate_source_docs_evidence(
+    evidence: str,
+    *,
+    required_docs: list[str] | None = None,
+) -> list[str]:
     text = evidence.lower()
     if not text:
         return []
+    empty_required_manifest = any(
+        re.search(pattern, text)
+        for pattern in (
+            r"\b(?:route\s+)?required_docs\b.{0,48}\b(?:empty|none|no entries|zero|0)\b",
+            r"\b(?:route\s+)?required[- ]docs?\s+manifest\b.{0,48}\b(?:empty|none|no entries|zero|0)\b",
+            r"(?:route의\s*)?(?:required_docs|필수\s*문서).{0,40}(?:비어|없음|0개)",
+        )
+    )
+    reads_route_required_docs = any(
+        re.search(pattern, text)
+        for pattern in (
+            r"\b(?:read|opened|reviewed|loaded)\b.{0,80}\b(?:route\s+required_docs|required_docs|route\s+required\s+docs|required[- ]docs?\s+manifest|required[- ]documents?\s+manifest|every\s+required\s+doc|all\s+required\s+docs)\b",
+            r"\b(?:route\s+required_docs|required_docs|route\s+required\s+docs|required[- ]docs?\s+manifest|required[- ]documents?\s+manifest|every\s+required\s+doc|all\s+required\s+docs)\b.{0,80}\b(?:read|opened|reviewed|loaded)\b",
+            r"(?:route의\s*)?(?:required_docs|필수\s*문서).{0,40}(?:읽|열람|검토)",
+            r"(?:읽|열람|검토).{0,40}(?:route의\s*)?(?:required_docs|필수\s*문서)",
+        )
+    )
     has_discovery = has_any(
         text,
         (
@@ -118,25 +139,52 @@ def validate_source_docs_evidence(evidence: str) -> list[str]:
             "구현 전", "수정 전", "작업 전",
         ),
     )
-    explains_outcome = has_any(
+    applies_task_takeaway = has_any(
         text,
         (
-            "used", "applied", "updated", "created", "unchanged",
-            "not applicable", "none found", "no prd", "no spec",
-            "user request as source", "source of truth", "source-of-truth",
-            "반영", "적용", "갱신", "없음", "기준",
+            "applied takeaway", "takeaway:", "takeaway=", "rule applied",
+            "applied", "used", "informed", "guided", "adopted",
+            "반영", "적용", "핵심 규칙", "배운 점",
         ),
     )
-    if has_discovery and names_source and before_work and explains_outcome:
+    if empty_required_manifest and required_docs:
+        return [
+            "source docs evidence claims the required_docs manifest is empty, but "
+            "the current route requires: " + ", ".join(required_docs)
+        ]
+    if required_docs == [] and not empty_required_manifest:
+        return [
+            "source docs evidence must record that the current required_docs manifest is empty "
+            "for this document-free route"
+        ]
+    if required_docs:
+        missing_docs = [doc for doc in required_docs if doc.lower() not in text]
+        if missing_docs:
+            return [
+                "source docs evidence must include the current route required_docs "
+                "manifest; missing: " + ", ".join(missing_docs)
+            ]
+    # A route with no required documents is a completed discovery outcome, not
+    # a skipped source-docs gate. The caller supplies the actual route manifest
+    # so an asserted empty state can never mask a non-empty manifest.
+    if empty_required_manifest and has_discovery and before_work and applies_task_takeaway:
+        return []
+    if (
+        reads_route_required_docs
+        and has_discovery
+        and names_source
+        and before_work
+        and applies_task_takeaway
+    ):
         return []
     return [
-        "source docs evidence must state that relevant source-of-truth docs "
-        "were searched and opened/read before implementation or edits, or that "
-        "none were found. Source docs can be PRD/spec/ARD, issue/design note, "
+        "source docs evidence must state that every route required_docs entry "
+        "was opened/read directly before implementation or edits and name the "
+        "task-specific takeaway that was applied. It must also identify the "
+        "relevant source-of-truth docs searched, or state that none were found. "
+        "Source docs can be PRD/spec/ARD, issue/design note, "
         "ADR/RFC, module README, API contract, runbook, migration note, release "
-        "note, test plan, skill/platform/workflow card, or agent instruction. "
-        "Evidence must explain how that source affected the work or "
-        "documentation artifact decision"
+        "note, test plan, skill/platform/workflow card, or agent instruction"
     ]
 
 

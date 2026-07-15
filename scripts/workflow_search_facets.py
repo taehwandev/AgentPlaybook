@@ -82,13 +82,13 @@ QUERY_FACETS: tuple[dict[str, object], ...] = (
     {
         "name": "natural_language_doc_routing",
         "patterns": (
-            r"\b(natural language|semantic|document routing|doc routing|doc-route|route docs|docs-read|hook|hooks?)\b",
+            r"\b(natural language|semantic|document routing|doc routing|doc-route|route docs|required docs|hook|hooks?)\b",
             r"\b(search|retrieval)\b.*\b(docs?|documents?|skills?)\b",
             r"(자연어|의미).*(검색|문서|라우팅)",
             r"(문서|스킬).*(검색|라우팅|불러|읽)",
             r"(훅|hook).*(문서|검색|읽)",
         ),
-        "terms": ("workflow", "routing", "required docs", "reference docs", "docs-read", "source-driven", "task intake", "skill card"),
+        "terms": ("workflow", "routing", "required docs", "reference docs", "source-driven", "task intake", "skill card"),
         "docs": ("workflows/skills/scripted-agent-workflow/SKILL.md", "workflows/skills/agent-task-lifecycle/SKILL.md", "common/skills/task-intake-effort-routing/SKILL.md", "common/skills/source-driven-development/SKILL.md", "common/skills/agent-skill-card-anatomy/SKILL.md", "common/skills/tool-failure-recovery/SKILL.md"),
     },
 )

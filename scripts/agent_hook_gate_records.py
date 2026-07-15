@@ -13,6 +13,7 @@ from agent_delegation_plan import (
     validate_delegation_plan_evidence,
 )
 from agent_gate_evidence import (
+    bind_gate_evidence_to_capsule,
     missing_structured_gate_fields,
     parse_field,
     record_gate_evidence,
@@ -129,6 +130,26 @@ def reset_and_record_start_gate(args: argparse.Namespace) -> None:
         preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return
+    reset_and_record_preflight_gate(evidence_path, preflight, source="start")
+
+
+def bind_existing_gate_evidence(evidence_path: Path, preflight: dict[str, Any]) -> int:
+    """Bind start-time entries after their execution capsule becomes ready."""
+
+    return bind_gate_evidence_to_capsule(
+        evidence_path=evidence_path,
+        preflight=preflight,
+    )
+
+
+def reset_and_record_preflight_gate(
+    evidence_path: Path,
+    preflight: dict[str, Any],
+    *,
+    source: str = "preflight",
+) -> None:
+    """Give direct preflight callers the same ledger initialization as start."""
+
     reset_gate_evidence_ledger(evidence_path, preflight)
     classification_evidence = (
         (preflight.get("request_intake") or {}).get("classification_evidence")
@@ -141,7 +162,7 @@ def reset_and_record_start_gate(args: argparse.Namespace) -> None:
         evidence=f"preflight request intake completed: {classification_evidence}",
         fields={"classification_evidence": str(classification_evidence)},
         status="SUCCESS",
-        source="start",
+        source=source,
     )
 
 
@@ -200,6 +221,11 @@ def _validate_records_before_write(
         gate = str(record.get("gate") or "").strip()
         evidence = str(record.get("evidence") or "")
         fields = {str(key): str(value) for key, value in (record.get("fields") or {}).items()}
+        if gate == "source docs":
+            # The ledger replaces this placeholder with the canonical current
+            # route manifest when it writes the record. Do not make callers
+            # restate that manifest merely to satisfy local field validation.
+            fields.setdefault("required_docs", "bound from current route manifest")
         missing = missing_structured_gate_fields(gate, evidence, fields)
         if missing:
             raise ValueError(
@@ -212,8 +238,6 @@ def _validate_records_before_write(
                 gate,
                 evidence,
                 fields,
-                {},
-                route,
             )
             if synthesis_failures:
                 raise ValueError(

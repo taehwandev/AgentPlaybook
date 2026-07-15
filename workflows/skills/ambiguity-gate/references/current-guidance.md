@@ -11,10 +11,10 @@ Use before PRD, ARD, task breakdown, implementation plan, or code work when the 
 For initial request clarity, effort level, token budget, and Grill-Me protocol
 decisions, also use `../common/skills/task-intake-effort-routing/SKILL.md`.
 
-When this route is executed through `scripts/workflow.py`, run the route's
-`docs-read` hook before classifying unknowns or asking blockers. Ambiguity
-handling is not a memory-only step; the current routed guidance must be read
-before turning an unknown into an assumption.
+When this route is executed through `scripts/workflow.py`, read its
+`required_docs` directly before classifying unknowns or asking blockers.
+Ambiguity handling is not a memory-only step; the current routed guidance must
+be read before turning an unknown into an assumption.
 
 ## Core Rule
 

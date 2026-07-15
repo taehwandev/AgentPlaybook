@@ -9,13 +9,12 @@ from pathlib import Path
 from typing import Any
 
 from agent_delegation_plan import validate_delegation_plan_evidence
+from agent_execution_capsule import capsule_path_for_evidence, read_execution_capsule
+from agent_execution_capsule_state import execution_capsule_binding_fingerprint
+from agent_execution_capsule_validation import validate_source_docs_binding
 from agent_finish_common import add_gate_signal, append_unique
-from agent_finish_gate_policy import ROUTE_DOCS_READ_GATE, validate_gate_evidence
-from agent_route_docs import (
-    read_route_doc_receipt,
-    receipt_candidate_paths_for_evidence,
-    validate_route_doc_receipt,
-)
+from agent_finish_gate_policy import SOURCE_DOCS_GATE, validate_gate_evidence
+from agent_finish_documentation import documented_required_doc_updates
 from workflow_common import QUESTION_ROUTE_COMMANDS
 from workflow_request import (
     classified_route_block_reason,
@@ -73,8 +72,6 @@ def check_required_gates(
     gate_evidence: dict[str, str],
     gate_signals: list[dict[str, str]],
     failures: list[str],
-    route_docs_receipt: dict[str, Any] | None = None,
-    evidence_path: Path | None = None,
     delegation_plan: dict[str, Any] | None = None,
 ) -> tuple[list[str], list[str], list[str]]:
     required_gates = route.get("gates") or []
@@ -92,17 +89,13 @@ def check_required_gates(
     if missed_gates:
         failures.append("missing required gate evidence: " + ", ".join(missed_gates))
 
-    gate_policy_failures = validate_gate_evidence(gate_evidence, required_gates)
-    gate_policy_failures.extend(
-        validate_delegation_plan_evidence(required_gates, gate_evidence, delegation_plan or {})
+    gate_policy_failures = validate_gate_evidence(
+        gate_evidence,
+        required_gates,
+        route=route,
     )
     gate_policy_failures.extend(
-        validate_route_docs_manifest_evidence(
-            route,
-            gate_evidence,
-            route_docs_receipt or {},
-            evidence_path,
-        )
+        validate_delegation_plan_evidence(required_gates, gate_evidence, delegation_plan or {})
     )
     for failure in gate_policy_failures:
         add_gate_signal(gate_signals, "FAIL", "gate evidence policy", "failed", failure)
@@ -110,35 +103,48 @@ def check_required_gates(
     return required_gates, missed_gates, gate_policy_failures
 
 
-def read_route_docs_receipt_for_preflight(evidence_path: Path) -> dict[str, Any]:
-    first_invalid: dict[str, Any] = {}
-    for path in receipt_candidate_paths_for_evidence(evidence_path):
-        receipt = read_route_doc_receipt(path)
-        if not receipt:
-            continue
-        if receipt.get("invalid_json"):
-            first_invalid = first_invalid or receipt
-            continue
-        if receipt.get("preflight_evidence") == str(evidence_path):
-            return receipt
-        if not receipt.get("preflight_evidence"):
-            return receipt
-    return first_invalid
-
-
-def validate_route_docs_manifest_evidence(
+def route_gate_capsule_binding_failures(
     route: dict[str, Any],
+    project: Path,
+    rules: Path,
+    evidence_path: Path,
     gate_evidence: dict[str, str],
-    route_docs_receipt: dict[str, Any],
-    evidence_path: Path | None = None,
+    gate_evidence_ledger: dict[str, Any],
 ) -> list[str]:
-    required_gates = route.get("gates") or []
-    if ROUTE_DOCS_READ_GATE not in required_gates:
+    """Bind every completed gate to one capsule and validate source docs when required."""
+
+    required_gates = [str(gate) for gate in (route.get("gates") or [])]
+    if not required_gates:
         return []
-    evidence = gate_evidence.get(ROUTE_DOCS_READ_GATE, "")
-    if not evidence:
-        return []
-    return validate_route_doc_receipt(route, route_docs_receipt, evidence_path)
+    capsule = read_execution_capsule(capsule_path_for_evidence(evidence_path))
+    failures: list[str] = []
+    if SOURCE_DOCS_GATE in required_gates:
+        failures = validate_source_docs_binding(
+            capsule,
+            project=project,
+            rules=rules,
+            evidence_path=evidence_path,
+            route=route,
+            documented_updates=documented_required_doc_updates(
+                evidence_path=evidence_path,
+                route=route,
+            ),
+        )
+        if failures:
+            return list(dict.fromkeys(failures))
+    expected_binding = execution_capsule_binding_fingerprint(capsule)
+    if not expected_binding:
+        return ["execution capsule is not ready for route gate evidence"]
+
+    bindings = gate_evidence_ledger.get("capsule_bindings") or {}
+    for gate in required_gates:
+        if not gate_evidence.get(gate):
+            continue
+        if bindings.get(gate) != expected_binding:
+            failures.append(
+                f"gate evidence for {gate} is not bound to the current execution capsule"
+            )
+    return list(dict.fromkeys(failures))
 
 
 def check_request_intake(

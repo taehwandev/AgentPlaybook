@@ -97,8 +97,6 @@ def validate_route_contracts() -> list[str]:
             hooks = []
         hook_names = [hook.get("hook") for hook in hooks if isinstance(hook, dict)]
         expected_hook_names = ["start", "review", "finish"]
-        if "route docs read" in route["gates"]:
-            expected_hook_names.insert(1, "docs-read")
         if hook_names != expected_hook_names:
             failures.append(f"{command}: route hooks must be {', '.join(expected_hook_names)}")
         hook_required = {
@@ -108,8 +106,6 @@ def validate_route_contracts() -> list[str]:
         }
         if hook_required.get("start") is not True:
             failures.append(f"{command}: start hook must be required")
-        if "route docs read" in route["gates"] and hook_required.get("docs-read") is not True:
-            failures.append(f"{command}: docs-read hook must be required")
         if hook_required.get("finish") is not True:
             failures.append(f"{command}: finish hook must be required")
         expected_review_required = command in REVIEW_HOOK_REQUIRED_COMMANDS

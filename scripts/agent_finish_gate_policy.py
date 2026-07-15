@@ -18,7 +18,6 @@ from agent_finish_gate_collaboration_validators import (
 from agent_finish_gate_core_validators import (
     validate_alignment_brief,
     validate_ambiguity,
-    validate_route_docs_read,
 )
 from agent_finish_gate_doc_test_validators import validate_documentation, validate_tests
 from agent_finish_gate_cycle_validators import (
@@ -34,10 +33,10 @@ from agent_finish_gate_validators import (
     validate_review_readiness_evidence,
     validate_source_docs_evidence,
 )
+from agent_route_state import required_docs_for_route
 
 
 AMBIGUITY_GATE = "ambiguity check"
-ROUTE_DOCS_READ_GATE = "route docs read"
 ALIGNMENT_BRIEF_GATE = "alignment brief"
 DOCUMENTATION_IMPACT_GATE = "documentation impact"
 DOCUMENTATION_GATE = "documentation"
@@ -70,7 +69,6 @@ SKIP_ALLOWED_GATES = {
     PLATFORM_SELECTION_GATE,
 }
 VALIDATED_GATES = {
-    ROUTE_DOCS_READ_GATE,
     AMBIGUITY_GATE,
     ALIGNMENT_BRIEF_GATE,
     DOCUMENTATION_IMPACT_GATE,
@@ -95,7 +93,12 @@ VALIDATED_GATES = {
 }
 
 
-def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[str]) -> list[str]:
+def validate_gate_evidence(
+    gate_evidence: dict[str, str],
+    required_gates: list[str],
+    *,
+    route: dict[str, object] | None = None,
+) -> list[str]:
     failures: list[str] = []
     required = set(required_gates)
     for gate in required:
@@ -106,8 +109,6 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
                 SKIP_ALLOWED_GATES,
             )
         )
-    if ROUTE_DOCS_READ_GATE in required:
-        failures.extend(validate_route_docs_read(gate_evidence.get(ROUTE_DOCS_READ_GATE, "")))
     if AMBIGUITY_GATE in required:
         failures.extend(validate_ambiguity(gate_evidence.get(AMBIGUITY_GATE, "")))
     if ALIGNMENT_BRIEF_GATE in required:
@@ -121,7 +122,13 @@ def validate_gate_evidence(gate_evidence: dict[str, str], required_gates: list[s
     if DOCUMENTATION_GATE in required:
         failures.extend(validate_documentation(gate_evidence.get(DOCUMENTATION_GATE, "")))
     if SOURCE_DOCS_GATE in required:
-        failures.extend(validate_source_docs_evidence(gate_evidence.get(SOURCE_DOCS_GATE, "")))
+        required_docs = required_docs_for_route(route) if route is not None else None
+        failures.extend(
+            validate_source_docs_evidence(
+                gate_evidence.get(SOURCE_DOCS_GATE, ""),
+                required_docs=required_docs,
+            )
+        )
     if PRODUCT_REENTRY_GATE in required:
         failures.extend(validate_product_reentry_evidence(gate_evidence.get(PRODUCT_REENTRY_GATE, "")))
     if GRAPHIFY_READINESS_GATE in required:
@@ -197,7 +204,6 @@ def _validate_graphify_readiness(evidence: str) -> list[str]:
         "=stale",
         "=outdated",
         "=incomplete",
-        "=disconnected",
         "=dirty",
         "=invalid",
         "=error",
@@ -209,7 +215,7 @@ def _validate_graphify_readiness(evidence: str) -> list[str]:
         return [
             "graphify readiness evidence contains an incomplete condition; CLI, read skill "
             "doc, canonical runtime links, portable Git ownership, project integration, "
-            "fresh input-complete target graph with valid relationships, and query smoke "
+            "fresh input-complete target graph with valid endpoints, and query smoke "
             "must all succeed"
         ]
     positive_requirements = {
@@ -237,7 +243,6 @@ def _validate_graphify_readiness(evidence: str) -> list[str]:
                 ("fresh",),
                 ("input", "manifest"),
                 ("valid", "integrity"),
-                ("relationship", "connected", "path"),
             )
             if any(not any(signal in value for signal in group) for group in groups):
                 weak.append(anchor.rstrip("="))

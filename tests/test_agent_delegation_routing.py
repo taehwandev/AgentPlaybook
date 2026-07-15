@@ -274,7 +274,6 @@ class DelegationEvidenceTests(unittest.TestCase):
             merged, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                route_docs_receipt={},
                 cli_gate_evidence={},
             )
 
@@ -373,7 +372,6 @@ class DelegationEvidenceTests(unittest.TestCase):
             merged, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                route_docs_receipt={},
                 cli_gate_evidence={},
             )
 
@@ -412,7 +410,7 @@ class AutomaticDelegationRoutingTests(unittest.TestCase):
     def test_parallel_plan_requires_automatic_delegation_when_eligible(self) -> None:
         plan = parallel_execution_plan(
             "feature",
-            ["request intake", "route docs read", MULTI_AGENT_GATE, "implementation", "tests"],
+            ["request intake", "source docs", MULTI_AGENT_GATE, "implementation", "tests"],
         )
 
         policy = plan["delegation_policy"]

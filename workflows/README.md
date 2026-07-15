@@ -55,9 +55,9 @@ commands:
 - `code-simplify`: behavior-preserving simplification.
 - `ship`: release, package, rollout, rollback, and launch checks.
 
-These aliases are convenience entrypoints into `scripts/workflow.py route`.
-They must not bypass the normal route docs, preflight, VibeGuard, review hook,
-finish-check, or repo-local instructions.
+These aliases are convenience entrypoints into the normal lifecycle. They must
+not bypass Start Hook, direct reading of the route `required_docs`, VibeGuard,
+review hook, finish-check, or repo-local instructions.
 
 ## Decision Rule
 
@@ -136,26 +136,19 @@ the update.
   section/line candidates; explicit workflow facets and
   `workflow-doc-surfaces.json` remain the policy layer. Search candidates stay
   in `reference_docs` unless deterministic route policy or an explicit
-  `requires_docs` relation promotes them. The hook only enforces that routed
-  docs were read; it does not become the search engine or mutate the route.
-  Graphify remains responsible for target-project code and relationship
-  analysis.
+  `requires_docs` relation promotes them. Agents read `required_docs` directly;
+  hooks do not mutate the route. The existing `source docs` finish evidence
+  records which routed required documents were read and the task-specific
+  takeaway that was applied. Graphify remains responsible for target-project
+  code and relationship analysis.
   Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.
-- `Docs-Read Hook`: run after Start Hook and before edits when the route
-  includes `route docs read`. It reads the route's `required_docs` from the
-  preflight manifest, leaves `reference_docs` for on-demand context, and writes
-  `.agentplaybook/route-docs-read.json` for the default `preflight.json`, or
-  `<preflight-stem>-route-docs-read.json` for a custom preflight evidence file.
-  The receipt includes path, size, doc hash, route fingerprint,
-  required-document count, and preflight evidence hash. Finish Hook rejects
-  route-doc evidence when this receipt is missing, stale, or mismatched.
-  Receipt or manifest matching is not the gate by itself. The hook must receive
-  a task-specific `--takeaway` from the required docs and a concrete
-  `--next-action` that applies that takeaway to the current work; otherwise it
-  returns `FAIL` with the smallest recovery action instead of recording
-  successful gate evidence.
-  Use `--receipt-output` only for a non-default receipt path.
-  Use `python3 scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --takeaway "<doc-derived rule/takeaway>" --next-action "<immediate task action>"`.
+- `Required Documents`: after Start Hook, read the route's `required_docs`
+  directly before edits or review. Keep `reference_docs` for on-demand context.
+  There is no separate confirmation hook or receipt artifact. When the route
+  includes `source docs`, its finish evidence must name the direct
+  `required_docs` reading and the task-specific takeaway applied before work.
+  The required-document file snapshot is revalidated only for routes with that
+  gate; every other route gate still requires the same execution-capsule binding.
 - `Review Hook`: the primary hook. Run it immediately after meaningful edits
   and before finish. It must record code review evidence and docs freshness
   evidence, then run structural review, local diff hygiene, workflow validation,

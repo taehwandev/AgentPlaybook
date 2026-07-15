@@ -30,6 +30,66 @@ canonical bundle under `.agentplaybook/skills/<skill>` and use repo-relative
 runtime links or thin adapters. Do not maintain full runtime-specific copies of
 the same operational knowledge.
 
+## Provider-Neutral Execution Capsule
+
+Use one local execution capsule as the reusable parent-to-worker handoff for
+Codex, Claude, and Gemini/Antigravity/AGY. This is deterministic workflow state,
+not conversational or long-term model memory. The capsule must remain
+content-free: do not store prompts, responses, command output, logs, diffs,
+source text, environment values, or secrets.
+
+The parent owns the capsule lifecycle:
+
+1. Run `agent-hook.py start` once for the multi-step task. Do not separately run
+   workflow list, classify, route, and preflight as a second startup sequence.
+2. Read the route's `required_docs` directly before work. Do not add a second
+   document-confirmation step.
+3. At each parent-to-worker boundary, run `agent-hook.py handoff`. It refreshes
+   the capsule from the current project/rules/worktree fingerprints, route
+   manifest, and required-document fingerprints, then rebinds the parent's
+   successful ledger entries to that new snapshot. It updates only the ledger
+   hash afterward, without repeating the same expensive hash walk.
+4. A worker may reuse the parent's route, preflight, and required-doc manifest and
+   skip duplicate startup only when the handoff reports capsule status `ready`
+   and validation succeeds.
+5. A missing capsule, hash mismatch, changed required document, stale evidence
+   reference, project/rules mismatch, or other invalid result is a successful
+   fallback decision from the handoff command, not permission to reuse. The
+   worker must follow the normal lifecycle using a newly reserved worker-specific
+   evidence path and its single-use claim token. Never guess that cached state
+   is close enough or overwrite parent evidence during fallback.
+
+Reuse is an execution optimization, not a gate exemption. The parent remains
+the sole owner of the gate ledger, integration review, and final verification.
+Workers receive bounded write scopes, return scoped evidence, and must not
+overwrite parent preflight, gate-ledger, review, or finish evidence. Workers use
+worker-specific evidence paths whenever they must run the normal lifecycle,
+including after an invalid handoff fallback.
+The capsule itself does not prove that a gate passed.
+
+Runtime bridges and workers use `agent-hook.py handoff` through the same
+approved wrapper or stable-launcher path as the other lifecycle hooks. A direct
+capsule-core CLI is diagnostic only; do not make each runtime integrate a
+separate capsule command.
+
+Runtime adapters stay thin and apply the same validation semantics:
+
+- Codex uses native subagents or parallel workers when the selected profile and
+  sandbox already match the parent. Use `workflow.py dispatch --execute` only
+  when the selected model, reasoning effort, sandbox, or required isolation
+  differs; do not launch a fresh Codex process for a matching, non-isolated
+  leaf. Inspecting a child manifest does not expose runnable arguments: execute
+  revalidates the capsule and mints or verifies the worker reservation directly
+  before launch.
+- Claude passes the validated capsule to Agent/Task workers.
+- Gemini/Antigravity/AGY passes the validated capsule through its native
+  parallel agent runner.
+
+Keep this section as the canonical policy. Generated runtime bridges and
+repo-local templates should carry only the short invocation, reuse, ownership,
+and fallback contract rather than duplicating the full schema or invalidation
+rules.
+
 ## Setup Modes
 
 Select one mode before wiring a runtime:
@@ -307,13 +367,16 @@ Gemini/Antigravity/AGY should read the current project's `AGENTS.md`.
 Then tell the agent to follow AgentPlaybook as shared guidance only after those
 local instructions.
 
-After routing, preflight, and required-doc reading, runtime bridges must also
-tell the parent agent to consume `parallel_execution.delegation_policy`. When
+After the start hook and required-doc reading, runtime bridges must also tell
+the parent agent to consume `parallel_execution.delegation_policy`. When
 the active runtime exposes workers and the multi-agent collaboration skill finds
 at least two meaningful disjoint slices with a stable contract, integration
 owner, and focused verification, the parent delegates automatically without
 waiting for explicit user multi-agent wording. Otherwise it records the
-concrete serial reason. Keep eligibility detail in the multi-agent skill; the
+concrete serial reason. At each parent-to-worker boundary, run `agent-hook.py
+handoff` to refresh and validate the shared execution capsule before a worker
+reuses parent startup evidence.
+Keep eligibility and capsule details in their canonical shared skills; the
 bridge is only the invocation pointer. Map eligible execution to the runtime's
 native primitive: Codex subagents/parallel workers, Claude Agent/Task workers,
 or the Gemini/AGY Antigravity parallel runner.
@@ -326,6 +389,7 @@ short and point to:
 <AGENTPLAYBOOK_ROOT>/index.md
 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
 <AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
+<AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
@@ -381,15 +445,18 @@ verification strength.
 
 Switch models only at a task, subagent, or session boundary unless the runtime
 provides a safe mid-task handoff. A handoff must preserve the selected project,
-route, required docs, docs-read receipt, gate ledger, unresolved blockers, and
-verification plan.
+route, required-doc manifest, gate ledger, unresolved blockers, and verification
+plan.
 
-For Codex, make the parent split decision first, then use `workflow.py dispatch
-<command> --request "<USER_REQUEST>" --execute` at one bounded leaf/task
-boundary. One dispatch is not multi-agent fanout. The main session remains
-responsible for orchestration, integration, and final verification. Omit
-`--execute` to inspect a non-executing handoff manifest. The profiles are
-explicit:
+For Codex, make the parent split decision first. At a bounded leaf/task
+boundary, use `workflow.py dispatch <command> --request "<USER_REQUEST>"
+--execute` only when the selected model, reasoning effort, sandbox, or required
+isolation differs from the parent. If the selected profile and sandbox match
+and isolation is unnecessary, keep the leaf in the current process or use a
+native worker; do not launch a fresh Codex process. One dispatch is not
+multi-agent fanout. The main session remains responsible for orchestration,
+integration, and final verification. Omit `--execute` to inspect a
+non-executing handoff manifest. The profiles are explicit:
 
 | Stage | Tier and reasoning effort |
 | --- | --- |
@@ -417,8 +484,8 @@ inspection provides deep or specialist evidence, such as cross-module
 architecture, security, data, migration, release, or repeated failure risk. When the orchestrator explicitly selects
 `complex_implementation` after local inspection, it must pass the concrete
 `--complexity-evidence`; the dispatcher rejects an unexplained promotion. The
-handoff carries the parent preflight evidence, docs-read receipt, gate ledger,
-and verification plan. A delegated worker must not dispatch another child or
+handoff carries the parent preflight evidence, required-doc manifest, gate
+ledger, and verification plan. A delegated worker must not dispatch another child or
 overwrite those parent evidence files.
 
 ## Runtime Notes
@@ -433,7 +500,8 @@ Codex:
   AgentPlaybook itself or editing shared runtime bridge files.
 - Do not expect `AGENTS.md` or `.codex/rules` to change sandbox roots; they
   control behavior and permission matching, not the runtime's workspace root.
-- Use the workflow router for multi-step work.
+- Use `agent-hook.py start` once for multi-step work; do not run a second
+  classify, route, or preflight sequence after it succeeds.
 - AgentPlaybook command permissions belong in user-level
   `~/.codex/rules/default.rules` as narrow `prefix_rule` entries for the
   current `<AGENTPLAYBOOK_ROOT>/scripts/*.py` files.
@@ -472,8 +540,9 @@ Claude:
   refreshes `~/.agentplaybook/agentplaybook-root` to the current checkout and
   removes stale managed hook commands that still point at old roots. The stable
   launcher supports both script aliases such as `workflow` and direct
-  `agent-hook.py` subcommand aliases such as `start`, `docs-read`, `review`,
-  and `finish`; these aliases must execute the hook, not skip with success.
+  `agent-hook.py` subcommand aliases such as `start`, `handoff`, `review`, and
+  `finish`; these aliases must execute the hook, not skip with
+  success.
 - Claude AgentPlaybook permissions should allow only that stable launcher and
   the narrow managed helper commands with the runtime's trailing wildcard form
   for arguments, for example
@@ -563,26 +632,43 @@ For every runtime:
    separate file exists. Offer optional Step 2 for personal/global runtime
    bridges; only update those files when the user chooses it.
 11. Read AgentPlaybook `AGENTS.md`.
-12. For multi-step tasks, run `scripts/workflow.py route ... --request
-    "<USER_REQUEST>"` to select the smallest document set and gate manifest.
-    If the request is a direct question, answer it before routing or editing.
-    Use `index.md` only for simple answer-only work or an explicitly accepted
-    fallback when the script cannot run.
-13. When wrapper scripts are available, run `scripts/agent-preflight.py` before
-    editing and `scripts/agent-finish-check.py` before final report, commit,
-    release, or handoff. Missing wrapper evidence or route gate evidence is
-    non-compliant.
-14. Keep a gate execution ledger, mark each route gate with evidence when it is
-   executed or fails, assign only `🐱🟢 SUCCESS` or `🐱🔴 FAIL`, and show a
-   short gate signal after each completed or failed gate or task step.
-15. Load only selected cards.
-16. Execute repo-local commands only from trusted repo-local instructions.
-17. Before reporting completion, confirm every required route gate is
+12. For multi-step tasks, run `scripts/agent-hook.py start` once with the
+    current request to produce routing and preflight evidence. If the request
+    is a direct question, answer it before the start hook or editing. Use
+    `index.md` only for simple answer-only work or an explicitly accepted
+    fallback when the hook cannot run.
+13. Read the route's `required_docs` directly before work. Do not separately
+    repeat workflow list, classify, route, or preflight after a successful
+    start hook, and do not add a document-confirmation command. The existing
+    execution capsule binds the preflight and routed document hashes; finish
+    validates every required gate against that same capsule, while `source docs`
+    also receives the exact routed manifest instead of an agent-claimed empty
+    state. An empty
+    `required_docs` list is a valid no-source state and must continue once,
+    with a recorded no-source decision, rather than retrying or blocking the
+    capsule in preflight.
+14. Before delegating, run `scripts/agent-hook.py handoff` to refresh and
+    validate the execution capsule once. A worker may reuse the parent route,
+    preflight, and required-doc manifest only after a ready-and-valid result. An
+    invalid result is a successful fallback decision requiring the normal
+    lifecycle on worker-specific evidence paths. Keep the parent as the sole
+    gate-ledger owner and never overwrite its evidence during fallback.
+15. When wrapper scripts are available, run `scripts/agent-hook.py finish`
+    before final report, commit, release, or handoff. Call
+    `scripts/agent-finish-check.py` directly only as a lower-level fallback.
+    Missing wrapper evidence or route gate evidence is non-compliant.
+16. Keep a gate execution ledger, mark each route gate with evidence when it is
+    executed or fails, bind successful records to the ready execution capsule,
+    assign only `🐱🟢 SUCCESS` or `🐱🔴 FAIL`, and show a
+    short gate signal after each completed or failed gate or task step.
+17. Load only selected cards.
+18. Execute repo-local commands only from trusted repo-local instructions.
+19. Before reporting completion, confirm every required route gate is
     `🐱🟢 SUCCESS` with ledger evidence.
-18. When a VibeGuard execution evidence adapter is configured, use the
+20. When a VibeGuard execution evidence adapter is configured, use the
     VibeGuard CLI evidence command and compare the summary with claimed
     commands.
-19. Report verification and residual risk.
+21. Report verification and residual risk.
 
 ## Lifecycle Aliases
 
@@ -603,11 +689,12 @@ call AgentPlaybook routing instead of creating a second active workflow router.
 The alias should run:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <route-command> --request "<USER_REQUEST>"
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <route-command> --request "<USER_REQUEST>"
 ```
 
-Do not let aliases bypass request intake, preflight, route docs, VibeGuard,
-review hook, finish-check, or repo-local instructions.
+Do not let aliases bypass Start Hook, direct reading of the route
+`required_docs`, VibeGuard, review hook, finish-check, or repo-local
+instructions.
 
 ## Controlled Auto Mode
 
@@ -620,8 +707,9 @@ Automation may proceed without another question only when all of these are true:
 - destructive work, external writes, deploys, migrations, publishing,
   credential changes, and paid-usage increases are out of scope or separately
   approved;
-- each slice still runs preflight, route docs, review hook when required,
-  finish-check, and the nearest verification.
+- each slice still has valid preflight state, directly reads its routed
+  `required_docs`, runs review hook when required, runs finish-check, and runs
+  the nearest verification.
 
 If any condition fails, the runtime should stop at a decision point instead of
 continuing under an "auto" label.
@@ -659,6 +747,14 @@ After connecting a runtime, verify:
 - the VibeGuard gate passed or stopped with a reported blocker
 - multi-step work has preflight and finish-check evidence when wrapper scripts
   are available
+- multi-step startup uses one `agent-hook.py start` invocation followed by
+  direct reading of the selected `required_docs`, without a duplicated
+  list/classify/route/preflight or document-confirmation sequence
+- `agent-hook.py handoff` refreshes and validates the content-free execution
+  capsule once, reuses startup evidence only after a ready-and-valid result,
+  returns a successful normal-lifecycle fallback decision on mismatch, uses
+  worker-specific evidence paths for that fallback, and leaves the parent gate
+  ledger unchanged
 - VibeGuard evidence was summarized through VibeGuard docs when an evidence
   adapter was configured
 - the route gate ledger was completed for every multi-step task

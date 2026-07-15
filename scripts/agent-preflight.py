@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -13,7 +14,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_execution_capsule import (
+    refresh_execution_capsule,
+    synchronize_execution_capsule_gate_ledger,
+)
+from agent_execution_capsule_state import atomic_write_json
 from agent_global_lessons import lesson_summary
+from agent_hook_gate_records import (
+    bind_existing_gate_evidence,
+    reset_and_record_preflight_gate,
+)
 from agent_preflight_runtime import (
     active_runtime_label,
     agy_runtime_bridge_issue,
@@ -21,6 +31,7 @@ from agent_preflight_runtime import (
 )
 from agent_preflight_spill import write_spill_label
 from agent_vibeguard_cache import cached_vibeguard
+from agent_worker_evidence import claim_worker_reservation
 from agent_workspace_policy import is_git_status_review_only, non_git_writing_workspace_note
 from workflow_catalog import COMMANDS, CONCERNS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import unique
@@ -105,6 +116,8 @@ def route_command(args: argparse.Namespace, playbook_root: Path) -> list[str]:
     ]
     if args.request_classified:
         command.extend(["--request-classified", "--classification-evidence", args.classification_evidence])
+        if args.request:
+            command.extend(["--request", args.request])
     else:
         command.extend(["--request", args.request])
     for platform in args.platform:
@@ -154,7 +167,14 @@ def route_payload(
             "Route --request-classified requires --classification-evidence so request intake cannot be skipped silently.",
             2,
         )
-    request_classification = classify_request(args.request) if args.request else None
+    # A caller that supplies resolved classification evidence may retain a
+    # short acknowledgement as request identity.  Reclassifying that text here
+    # can reopen clarification/Grill-Me after the parent already resolved it.
+    request_classification = (
+        None
+        if args.request_classified
+        else (classify_request(args.request) if args.request else None)
+    )
     if not request_classification and not args.request_classified:
         return (
             None,
@@ -207,8 +227,7 @@ def route_payload(
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    atomic_write_json(path, payload)
 
 
 def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
@@ -216,12 +235,14 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
         description="Run route, git status, and VibeGuard before agent work."
     )
     parser.add_argument("--command", required=True, choices=sorted(COMMANDS), help="workflow.py route command")
-    request_group = parser.add_mutually_exclusive_group(required=True)
-    request_group.add_argument("--request", help="current user request")
-    request_group.add_argument(
+    parser.add_argument("--request", help="current user request")
+    parser.add_argument(
         "--request-classified",
         action="store_true",
-        help="use only after request classification or answer-first handling",
+        help=(
+            "use only after request classification or answer-first handling; "
+            "also pass --request so classified handoffs can reuse the capsule"
+        ),
     )
     parser.add_argument(
         "--classification-evidence",
@@ -246,15 +267,72 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
     parser.add_argument("--project", type=Path, default=Path.cwd())
     parser.add_argument("--rules", type=Path, default=playbook_root)
     parser.add_argument("--evidence", type=Path)
+    parser.add_argument(
+        "--worker-reservation-token",
+        default="",
+        help="opaque token issued by the parent handoff for this worker evidence path",
+    )
     return parser
 
 
 def resolve_evidence_path(args: argparse.Namespace, project: Path) -> Path:
-    return (
-        args.evidence.resolve()
-        if args.evidence
-        else project / ".agentplaybook" / "preflight.json"
-    )
+    _enforce_worker_environment(args)
+    if not args.evidence:
+        return project / ".agentplaybook" / "preflight.json"
+    requested = args.evidence.expanduser().absolute()
+    worker_root = project / ".agentplaybook" / "workers"
+    lexical_worker_root = args.project.expanduser().absolute() / ".agentplaybook" / "workers"
+    try:
+        try:
+            relative = requested.relative_to(worker_root)
+        except ValueError:
+            relative = requested.relative_to(lexical_worker_root)
+    except ValueError:
+        if args.worker_reservation_token:
+            raise ValueError(
+                "worker reservation tokens are valid only under the project worker evidence root"
+            )
+        return requested.resolve()
+    requested = worker_root / relative
+    if len(relative.parts) != 2 or relative.parts[-1] != "preflight.json":
+        raise ValueError(
+            "worker evidence must use one reserved worker directory and preflight.json"
+        )
+    if worker_root.resolve() != worker_root:
+        raise ValueError("worker evidence root must not resolve through a symlink")
+    if not requested.parent.is_dir() or requested.parent.resolve() != requested.parent:
+        raise ValueError(
+            "worker evidence directory must already be exclusively reserved and must not be a symlink"
+        )
+    if not args.worker_reservation_token:
+        raise ValueError(
+            "worker evidence requires a single-use worker reservation token"
+        )
+    if not claim_worker_reservation(
+        requested.parent,
+        args.worker_reservation_token,
+    ):
+        raise ValueError(
+            "worker reservation token was already claimed or does not match this evidence path"
+        )
+    return requested
+
+
+def _enforce_worker_environment(args: argparse.Namespace) -> None:
+    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+        raise ValueError(
+            "this worker received a reusable parent capsule and cannot create or overwrite parent evidence"
+        )
+    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    if not expected:
+        return
+    expected_path = Path(expected).expanduser().resolve()
+    actual = args.evidence.expanduser().resolve() if args.evidence else None
+    if actual != expected_path:
+        raise ValueError("worker start must use the launcher-issued isolated evidence path")
+    expected_token = os.environ.get("AGENTPLAYBOOK_WORKER_RESERVATION_TOKEN", "")
+    if not expected_token or args.worker_reservation_token != expected_token:
+        raise ValueError("worker start must use the launcher-issued single-use reservation token")
 
 
 def request_intake(args: argparse.Namespace) -> dict[str, Any]:
@@ -371,7 +449,6 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
         "vibeguard": vibeguard,
         "global_lessons": global_lessons,
     })
-
     hook_warnings, hook_failures = check_agent_hooks(playbook_root)
     failures = collect_failures(
         route_result_payload,
@@ -381,6 +458,23 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
         vibeguard,
         hook_failures,
     )
+    if not failures and route_payload:
+        try:
+            preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
+            reset_and_record_preflight_gate(evidence_path, preflight)
+            capsule = refresh_execution_capsule(
+                project=project,
+                rules=rules,
+                evidence_path=evidence_path,
+                route=route_payload,
+            )
+            if capsule.get("phase") != "ready":
+                failures.append("execution capsule did not become ready after preflight")
+            else:
+                bind_existing_gate_evidence(evidence_path, preflight)
+                synchronize_execution_capsule_gate_ledger(capsule, evidence_path)
+        except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as error:
+            failures.append(f"execution capsule refresh failed: {error}")
 
     print(f"Preflight evidence: {evidence_path}")
     if route_payload:
@@ -409,7 +503,13 @@ def main() -> int:
             "--request-classified requires --classification-evidence so request "
             "intake cannot be skipped silently"
         )
-    return run_preflight(args, playbook_root)
+    if not args.request and not args.request_classified:
+        parser.error("preflight requires --request or --request-classified")
+    try:
+        return run_preflight(args, playbook_root)
+    except ValueError as error:
+        print(f"FAIL: {error}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

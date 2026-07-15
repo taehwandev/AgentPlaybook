@@ -21,19 +21,23 @@ explicitly trivial and already scoped by an existing PRD/ARD.
 This is a common workflow. Platform-specific cards decide how to implement and
 verify each phase.
 
-For agent execution, run the scripted route before PRD, ARD, or implementation:
+For agent execution, run the canonical start once before PRD, ARD, or implementation:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
-Use that output as the command manifest before writing PRD or ARD.
+Open every route `required_docs` entry directly and use that output as the
+command manifest before writing PRD or ARD. Run the review hook after meaningful
+changes and the finish hook before handoff. Direct `workflow.py route`,
+`agent-preflight.py`, and `agent-finish-check.py` calls are lower-level
+diagnostic fallbacks when the hook is unavailable.
 
 When the requested deliverable is only a PRD or product requirements note, use
 `workflows/skills/prd-creation/SKILL.md` through the PRD route instead:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Use the full `product` route when the task continues from PRD into ARD and code.

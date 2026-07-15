@@ -150,9 +150,13 @@ files are present, update their AgentPlaybook pointer in the same pass or point
 them back to AGENTS.md. Do not create a separate runtime-specific file only to
 duplicate guidance when the active runtime already reads AGENTS.md.
 
-For any multi-step setup or follow-up task, run the workflow route with
+For any multi-step setup or follow-up task, run `agent-hook.py start` once with
 `--request "<USER_REQUEST>"` before selecting task documents, editing,
-reviewing, committing, or reporting completion. If the request is a direct
+reviewing, committing, or reporting completion. It performs workflow routing
+and preflight; do not separately repeat workflow list, classify, route, or
+preflight after it succeeds. Direct `workflow.py route` and
+`agent-preflight.py` calls are lower-level diagnostic or compatibility
+fallbacks only. If the request is a direct
 question, answer it before routing or editing. If the direct question asks how
 to start app, product, or feature work, answer with PRD -> ARD ->
 implementation gates before lower-level coding steps. If the task proceeds into
@@ -167,19 +171,26 @@ Completion requires every required gate to be 🐱🟢 SUCCESS. 🐱🔴 FAIL me
 gate was blocked, failed, missed, or lacks evidence and must use missed-gate
 recovery. Do not report any third gate state.
 
-When the wrapper scripts are available, run preflight before editing, reviewing,
-committing, or reporting completion:
+When the wrapper scripts are available, use the single start hook before
+editing, reviewing, committing, or reporting completion:
 
 Before executing wrapper commands, replace `<AGENTPLAYBOOK_ROOT>` with the
 resolved absolute path; do not leave `$HOME`, `${HOME}`, `~`, or a relative path
 in the executable command.
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py --project . --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project . --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
+
+Read every route `required_docs` entry directly after start and before editing
+or reviewing. Use the route's review hook after meaningful edits.
 
 Before final report, commit, release, or handoff, run finish check with evidence
 for every required route gate:
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py --project . --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project . --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
+
+Call `workflow.py route`, `agent-preflight.py`, or `agent-finish-check.py`
+directly only as lower-level diagnostic or compatibility fallbacks when the
+corresponding hook is unavailable; never run them as a second lifecycle.
 
 The wrappers write local evidence under .agentplaybook/. Missing wrapper
 evidence or missing gate evidence is non-compliant even if the final files look
@@ -241,8 +252,14 @@ The bridge must force this behavior:
 - Claude reads CLAUDE.md.
 - Antigravity reads AGENTS.md.
 - Do not claim an instruction file was read unless you actually opened it.
-- Before selecting task documents manually, run AgentPlaybook workflow routing
-  with my current request.
+- For multi-step work, run `agent-hook.py start` once with my current request;
+  it performs AgentPlaybook workflow routing and preflight. Do not separately
+  repeat workflow list, classify, route, or preflight after it succeeds.
+- Read every route `required_docs` entry directly after start and before editing
+  or reviewing. Keep the route's review and finish hooks in the lifecycle.
+- Treat direct `workflow.py route`, `agent-preflight.py`, and
+  `agent-finish-check.py` calls as lower-level diagnostic or compatibility
+  fallbacks only; never run them as a second lifecycle.
 - Do not wait for me to name document keywords. Infer the work surface from the
   request, platform, concern, and touched files, then read the route
   `required_docs` before editing or reviewing.
@@ -264,9 +281,9 @@ The bridge must force this behavior:
   implementation before lower-level coding steps.
 - If my request is ambiguous and the answer changes behavior, scope, safety, or
   external state, ask before working.
-- For multi-step tasks, require AgentPlaybook preflight and finish-check
-  evidence when those wrapper scripts are available; missing wrapper or gate
-  evidence is non-compliant.
+- For multi-step tasks, require AgentPlaybook start and finish hook evidence
+  when those wrapper scripts are available; missing wrapper or gate evidence is
+  non-compliant.
 
 Optional local project registry for this machine:
 ~/.agentplaybook/projects.json

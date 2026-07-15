@@ -21,23 +21,6 @@ WORK_PRODUCING_COMMANDS = {
 AGENTIC_RUN_STATE_COMMANDS = WORK_PRODUCING_COMMANDS | {
     "multi-agent",
 }
-ROUTE_DOCS_READ_COMMANDS = WORK_PRODUCING_COMMANDS | {
-    "ambiguity",
-    "commit",
-    "git_commit",
-    "docs",
-    "docs-review",
-    "multi-agent",
-    "plan",
-    "prd",
-    "release",
-    "retrospective",
-    "review",
-    "spec",
-    "test",
-    "triage",
-    "webperf",
-}
 CODE_WORK_COMMANDS = {
     "build",
     "bugfix",
@@ -72,7 +55,6 @@ ALIGNMENT_BRIEF_COMMANDS = {
 }
 
 AMBIGUITY_GATE = "ambiguity check"
-ROUTE_DOCS_READ_GATE = "route docs read"
 ALIGNMENT_BRIEF_GATE = "alignment brief"
 DOCUMENTATION_IMPACT_GATE = "documentation impact"
 DOCUMENTATION_GATE = "documentation"
@@ -95,27 +77,24 @@ PRODUCT_REENTRY_COMMANDS = {
     "planning",
 }
 
-SOURCE_DOCS_COMMANDS = {
-    "build",
-    "bugfix",
-    "code-simplify",
-    "docs",
-    "feature",
-    "product",
-    "prd",
-    "refactor",
-    "release",
-    "ship",
-    "spec",
-    "task",
-    "workflow-setup",
+SOURCE_DOCS_COMMANDS = WORK_PRODUCING_COMMANDS | {
+    "ambiguity",
+    "commit",
+    "docs-review",
+    "git_commit",
+    "multi-agent",
+    "plan",
+    "planning",
+    "retrospective",
+    "review",
+    "test",
+    "triage",
+    "webperf",
 }
 
 
 def automatic_gates(command: str) -> list[str]:
     gates: list[str] = []
-    if command in ROUTE_DOCS_READ_COMMANDS:
-        gates.append(ROUTE_DOCS_READ_GATE)
     if command in SOURCE_DOCS_COMMANDS:
         gates.append(SOURCE_DOCS_GATE)
     if command in WORK_PRODUCING_COMMANDS:
@@ -138,8 +117,6 @@ def automatic_gates(command: str) -> list[str]:
 def automatic_docs(command: str) -> list[str]:
     docs: list[str] = []
     gates = set(automatic_gates(command))
-    if command in {"commit", "git_commit"}:
-        return docs
     if AMBIGUITY_GATE in gates:
         docs.append("workflows/skills/ambiguity-gate/SKILL.md")
     if ALIGNMENT_BRIEF_GATE in gates:
@@ -201,28 +178,23 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
     for gate in automatic_gates(command):
         if gate in result:
             continue
-        if gate == ROUTE_DOCS_READ_GATE:
-            if "orient" in result:
-                _insert_after_any(result, gate, anchors=("orient",))
-            else:
-                result.insert(0, gate)
-        elif gate == SOURCE_DOCS_GATE:
+        if gate == SOURCE_DOCS_GATE:
             _insert_after_any(
                 result,
                 gate,
-                anchors=(ROUTE_DOCS_READ_GATE, "orient"),
+                anchors=("orient",),
             )
         elif gate == AMBIGUITY_GATE:
             _insert_after_any(
                 result,
                 gate,
-                anchors=(SOURCE_DOCS_GATE, ROUTE_DOCS_READ_GATE, "orient", "PRD/ARD applicability", "reproduce"),
+                anchors=(SOURCE_DOCS_GATE, "orient", "PRD/ARD applicability", "reproduce"),
             )
         elif gate == DOCUMENTATION_IMPACT_GATE:
             _insert_after_any(
                 result,
                 gate,
-                anchors=(SOURCE_DOCS_GATE, ROUTE_DOCS_READ_GATE, "orient"),
+                anchors=(SOURCE_DOCS_GATE, "orient"),
             )
         elif gate == ALIGNMENT_BRIEF_GATE:
             _insert_before_any(
@@ -266,7 +238,7 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
             _insert_after_any(
                 result,
                 gate,
-                anchors=(ALIGNMENT_BRIEF_GATE, AMBIGUITY_GATE, ROUTE_DOCS_READ_GATE, "orient"),
+                anchors=(ALIGNMENT_BRIEF_GATE, AMBIGUITY_GATE, SOURCE_DOCS_GATE, "orient"),
             )
         elif gate == CYCLE_CONTRACT_GATE:
             _insert_before_any(result, gate, anchors=before_implementation)

@@ -14,19 +14,18 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 2. Classify request clarity and effort before loading broad context. If the user asks a direct question, answer it before starting workflow routing, editing, or project-specific commands.
 3. Read repo-local instructions before changing files.
 4. Discover the project stack before choosing commands or libraries.
-5. For multi-step tasks, run `scripts/workflow.py route ... --request "<USER_REQUEST>"` before selecting task documents, editing, reviewing, committing, or reporting completion.
-6. Read the route's `required_docs` / `Read First` docs before editing,
+5. For multi-step tasks, run `scripts/agent-hook.py start ... --request
+   "<USER_REQUEST>"` once before selecting task documents, editing, reviewing,
+   committing, or reporting completion. It performs routing and preflight; do
+   not separately repeat workflow list, classify, route, or preflight after it
+   succeeds. Direct `workflow.py route` and `agent-preflight.py` calls are
+   lower-level diagnostic or compatibility fallbacks only.
+6. After start, read the route's `required_docs` / `Read First` docs before editing,
    reviewing, coding, or running project-specific work. Treat `reference_docs`
    as lazy context and open one only when the current task touches that concern,
-   platform, gate, or verification path. Record `route docs read` evidence when
-   the route includes that gate; the evidence must name that required
-   skill/guidance docs were read before code, implementation, or edits, and
-   must name the applied rule, criterion, or takeaway used for this task and
-   the immediate next action that applies it. Generic evidence such as "docs
-   read" or receipt/manifest matching is not enough; run the `docs-read` hook
-   after preflight with `--takeaway` and `--next-action` so the finish check can
-   compare the receipt against the current preflight evidence path, preflight
-   evidence hash, route manifest, and required-document count.
+   platform, gate, or verification path. The router owns required-document
+   selection; agents consume that manifest directly without a second
+   confirmation hook, receipt, or finish gate.
    A required gate cannot pass by recording a skip, not-applicable,
    unable-to-run, deferred, or follow-up reason unless that gate explicitly
    allows that outcome. If the evidence names an unresolved, must-fix,
@@ -122,11 +121,7 @@ Before editing:
 - Read the route's `Read First` / `required_docs` docs before code,
   implementation, review, or edit work. Do not load `Reference On Demand` docs
   unless the current task touches that concern, platform, gate, or verification
-  path. If the route includes `route docs read`, finish evidence must state that
-  required skill/guidance docs were read before work, name the applied
-  rule/criterion or takeaway, name the immediate next action, and the
-  `docs-read` receipt must match the current preflight evidence file, route
-  manifest, and required-document count.
+  path. Do not add a duplicate document-confirmation command after routing.
 - For feature, product, build, release, or other behavior-changing work, search
   and open repo-local PRD/spec/ARD/source-of-truth docs before implementation.
   Finish evidence must say whether those docs were found and read, or whether
@@ -158,10 +153,11 @@ Before editing:
   route documents and read-only orientation commands in parallel when possible.
   Do not serialize document reads unless one document determines whether
   another is needed.
-- `agent-preflight.py` may run in parallel with read-only orientation after the
-  request is answered or classified, but no edit, setup, update, fix, commit,
-  push, release, migration, or external-state change may start until preflight
-  succeeds.
+- The single `agent-hook.py start` call may run alongside independent read-only
+  orientation after the request is answered or classified, but no edit, setup,
+  update, fix, commit, push, release, migration, or external-state change may
+  start until it succeeds. Use `agent-preflight.py` directly only as the
+  lower-level fallback when start is unavailable; never run both startup paths.
 
 While editing:
 
@@ -181,6 +177,10 @@ While editing:
 
 Before finishing:
 
+- Run the route's review hook after meaningful edits, then run
+  `scripts/agent-hook.py finish` before final report, handoff, commit, or
+  release. Use `agent-finish-check.py` directly only as a lower-level diagnostic
+  or compatibility fallback when the finish hook is unavailable.
 - Confirm every required workflow route gate has structured ledger evidence
   when a scripted route was used. Treat missing fields as missing work or
   missing evidence to complete, not as a prompt to write vague pass-through

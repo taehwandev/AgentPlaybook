@@ -40,6 +40,7 @@ def validate_multi_agent(evidence: str) -> list[str]:
             "unstable",
             "overlap",
             "dirty worktree",
+            "dirty working tree",
             "migration",
             "dependency",
             "release",

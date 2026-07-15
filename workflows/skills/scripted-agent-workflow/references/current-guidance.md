@@ -37,18 +37,19 @@ as the delegation contract.
 
 ## Default Script
 
-Run this shared router for every multi-step task when it exists:
+Run the shared start hook once for every multi-step task when it exists. It
+performs request intake, routing, and preflight as one lifecycle entry:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
-The route command requires request intake evidence. Pass the current user
-request with `--request`, or pass `--request-classified` only after the request
-was already classified or answered and include `--classification-evidence`
-with the prior classification, answer-first handling, or user-visible alignment
-checkpoint. Direct `workflow.py route --request-classified` without
-classification evidence is a workflow failure. If the request is a direct
+The start hook requires the current request with `--request`. After the request
+was already classified or answered, keep `--request` and add
+`--request-classified` plus `--classification-evidence` with the prior
+classification, answer-first handling, or user-visible alignment checkpoint.
+Direct `agent-hook.py start --request-classified` without both the current
+request and classification evidence is a workflow failure. If the request is a direct
 question, the script blocks routing so the agent answers before editing or
 running project commands. Work routes require evidence that proves the request
 is actionable, such as `clear-exact`, `clear-scoped`, `answered ... separate
@@ -57,15 +58,9 @@ actionable`, or `blockers resolved`; weak evidence such as `classified` or
 `no blockers` are also insufficient unless they name the resolved scope,
 decision, blocker-question outcome, or remaining separate action.
 
-When the request clarity or correct command profile is uncertain, classify first:
-
-```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py classify "<request text>"
-```
-
-`classify` outputs the clarity label, effort level, recommended route command,
+The start hook classifies the request and records the recommended route,
 whether the Grill-Me protocol is needed, response mode, and a short reason. Use
-the recommended route as the `<command>` argument to `route`. If `response_mode:
+the matching `<command>` in the start call. If `response_mode:
 answer_first`, answer the user before routing or editing. When an answer-first
 question asks how to start app, product, or feature work, the answer must include
 PRD -> ARD -> implementation gates before lower-level coding steps. If
@@ -202,10 +197,10 @@ list.
 Examples:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "<USER_REQUEST>" --platform android --concern security --concern ui
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route bugfix --request "<USER_REQUEST>" --platform server --concern api
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route docs-review --request "<USER_REQUEST>" --concern wiki
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route product --request "Show me how we build an app feature here" --platform android --concern ui
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform android --concern security --concern ui
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command bugfix --request "<USER_REQUEST>" --platform server --concern api
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "Show me how we build an app feature here" --platform android --concern ui
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
 ```
 
@@ -242,20 +237,20 @@ Work-producing, documentation, release, review, and retrospective routes must
 include the relevant common gates below even when an individual command profile
 forgets them:
 
-- `route docs read`: after routing and before code, implementation, review,
-  edit, triage, or ambiguity work, read the route's `required_docs` / `Read
-  First` list. Treat `reference_docs` / `Reference On Demand` as lazy context;
-  open one only when the current task touches that concern, platform, gate, or
-  verification path. Evidence must say that the required skill/guidance docs
-  were read before work and name the applied rule, criterion, or takeaway used
-  for this task, plus the immediate next action that applies it. Merely listing
-  documents in the route output, or proving that the receipt matches the route
-  manifest, is not evidence that the agent consumed or used them.
-  Run the `docs-read` hook after preflight and before edits so finish-check can
-  compare its receipt against the current preflight evidence file, route
-  manifest, and required-document count. The hook must receive `--takeaway` and
-  `--next-action`; generic wording such as "checked docs", "read guidance", or
-  "receipt matched the manifest" is a missed gate.
+- Required-document reading is route input rather than a separate finish gate.
+  After routing and before work, read the route's `required_docs` / `Read First`
+  list directly. Treat `reference_docs` / `Reference On Demand` as lazy context
+  and open one only when the task touches that concern, platform, gate, or
+  verification path. Do not add a separate confirmation command or receipt;
+  the existing `source docs` finish evidence records the direct reading and the
+  applied task-specific takeaway. Finish revalidates the required-document
+  hash/size snapshot only when the route includes `source docs`; every route
+  gate remains bound to the same execution capsule regardless of that scope.
+- Treat an empty completed natural-language search as terminal `no_matches`:
+  record the no-source result and continue with deterministic `required_docs`.
+  Do not poll or retry discovery waiting for a document to appear. A route whose
+  deterministic or promoted required path is absent is `invalid_manifest`;
+  stop once with the missing paths and repair the manifest or source instead.
 - Required gates cannot pass by recording a skip, not-applicable,
   unable-to-run, deferred, or follow-up reason unless that specific gate allows
   the outcome and the evidence names the allowed reason. Evidence that names an
@@ -404,13 +399,23 @@ shows which parts can overlap safely.
   or runtime-capability reasons from the policy.
 - Treat one model-profile dispatch as a leaf worker, not fanout. The parent
   records the split decision first and remains the integration owner.
+- At each parent-to-worker boundary, run `agent-hook.py handoff` to refresh the
+  provider-neutral execution capsule once. A ready and valid
+  capsule lets the worker reuse the parent's route, preflight, and required-doc
+  evidence instead of repeating startup. A Codex child launch validates the
+  capsule again immediately before it starts; an inspect-only handoff is never
+  launch authority. Any mismatch is a successful fallback decision that
+  requires the worker's normal lifecycle on a reserved, single-use-token
+  evidence path. The parent remains the sole gate-ledger owner. Keep the detailed schema and runtime mapping in
+  `docs/skills/agent-runtime-integration/SKILL.md` rather than duplicating it
+  per runtime.
 - Treat `mode: serial` phases as ordering barriers. Do not cross them with
   writes, generated artifacts, dependency changes, release config, migrations,
   shared contracts, same-file edits, or final reporting.
-- `agent-preflight.py` may run in parallel with read-only orientation after the
-  request has been answered or classified. Treat it as a gate dependency:
-  implementation, setup, update, fix, commit, push, release, migration, and
-  external-state changes must wait until preflight succeeds.
+- The start hook must succeed before read-only orientation fans out. Treat its
+  in-process preflight as a gate dependency: implementation, setup, update,
+  fix, commit, push, release, migration, and external-state changes must wait
+  until start succeeds.
 - Do not parallelize commands that write the same evidence file, mutate project
   files, stage or commit changes, install/update guardrails, run fixers, publish
   artifacts, deploy, migrate data, or depend on one another's output.
@@ -529,7 +534,7 @@ Compose, Swift design-system UI, and Web React UI should each promote the
 matching UI, state, structure, review, visual verification, and performance
 guidance. This surface routing is for document selection only: it does not
 replace request classification, command/profile selection, repo-local
-instructions, or the requirement to record a task-specific docs-read takeaway
+instructions, or the requirement to read every routed `required_docs` entry
 before edits.
 
 The route/search layer uses the repository-pinned Wikimap source for
@@ -552,14 +557,20 @@ Promote a result to `required_docs` only through deterministic route policy or
 an explicit required relation such as frontmatter `requires_docs`.
 
 Natural-language document discovery belongs in the routing/search layer, not in
-the hook body. Hooks are enforcement points: they stop work until preflight,
-docs-read receipts, and finish evidence exist. The router and `workflow.py
-query` carry retrieval through Wikimap, then apply reusable policy facets such
+the hook body. Hooks do not select or read documents for the agent. The
+existing `source docs` gate validates evidence that the routed required docs
+were read directly and applied. The router and `workflow.py query` carry
+retrieval through Wikimap, then apply reusable policy facets such
 as cleanup, review, verification, UI feature work, skill docs, or document
 routing and use the local document graph to add connected candidates. Target
 projects continue to use Graphify for code symbols, architecture, and
 relationships; Wikimap does not replace the project graph or its readiness
 gate.
+
+Wikimap completion is explicit: `no_matches` is a terminal no-source result,
+while `invalid_manifest` names route paths that are actually missing. Neither
+state may enter an unbounded discovery retry loop. The first continues with
+deterministic guidance; the second stops for a source or routing repair.
 
 The command includes task-specific arguments, but persistent runtime permission
 prefixes must not. For Codex escalation, request only
@@ -573,27 +584,24 @@ permission prefix.
 preflight evidence. Calling `agent-preflight.py` directly is acceptable only as
 a lower-level wrapper path when the start hook is unavailable.
 
-After preflight and before edits, reviews, commits, or completion reports, read
-the route's required docs and write the route-doc receipt:
-
-```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py docs-read --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --takeaway "<doc-derived rule/takeaway>" --next-action "<immediate task action>"
-```
-
-The docs-read hook reads each required doc from the preflight manifest and
-writes `<TARGET_REPO>/.agentplaybook/route-docs-read.json` for the default
-`preflight.json`, or `<preflight-stem>-route-docs-read.json` for a custom
-preflight evidence file. The receipt includes path, size, doc hash, route
-fingerprint, required-document count, and diagnostic preflight metadata. Use
-`--receipt-output` only when the receipt must be written to a non-default path;
-`--output` is a legacy alias for that docs-read receipt path.
-Finish-check validates the receipt against the current route required-doc
-manifest, preflight evidence path, and preflight evidence hash. If the
-preflight file is refreshed, rerun `docs-read` for that preflight instead of
-reusing an older receipt with the same route shape. A missing, stale, or
-mismatched receipt is a missed `route docs read` gate. A matching receipt alone
-is also a missed gate unless the hook records the task-specific required-doc
-takeaway and immediate next action.
+After preflight, read every route `required_docs` entry directly before edits or
+review. There is no separate document-confirmation command, receipt artifact,
+or standalone document-reading gate. The existing execution capsule records the
+preflight fingerprint, route fingerprint, and hashes of that required-doc set;
+the `source docs` finish gate validates this binding without reintroducing a
+read hook. Its structured record is populated with the exact routed
+`required_docs` manifest, not an agent-supplied count or empty-manifest claim;
+finish rejects an empty claim for a non-empty route. Record the direct reading
+and applied takeaway in finish evidence.
+`reference_docs` remain on-demand context. An empty `required_docs` list is a
+valid document-free route state; record the no-source decision and continue
+once rather than retrying discovery or holding the capsule in preflight.
+When the task intentionally updates one of its own `required_docs`, the final
+structured `documentation` record must use `decision=updated` and name that
+exact route-relative path as `target`. Finish preserves the original capsule
+snapshot and permits only that declared path to differ; an undeclared required
+document change still fails the source-doc binding instead of creating a
+finish/handoff deadlock.
 
 Before final report, commit, release, or handoff:
 
@@ -604,13 +612,15 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO
 Do not wait until finish to write all gate evidence by hand. The default path
 is a structured gate ledger at
 `<TARGET_REPO>/.agentplaybook/gate-evidence.json`, bound to the current
-preflight evidence hash and route fingerprint. Custom preflight evidence files
+preflight evidence hash, route fingerprint, and stable execution-capsule
+fingerprint (the preflight, route, and required-document snapshot). Custom preflight evidence files
 use `<preflight-stem>-gate-evidence.json` so parallel jobs do not overwrite one
-another's ledger. `agent-hook.py finish` reads that ledger first, then applies
-any explicit `--gate "<gate>=<evidence>"` arguments as compatibility overrides.
+another's ledger. `agent-hook.py finish` writes any explicit
+`--gate "<gate>=<evidence>"` compatibility input into that same ledger before
+validation; it never applies an unbound in-memory override.
 
-The `start`, `docs-read`, and `review` hooks record their own successful gate
-evidence in the ledger. For gates that only the active agent can prove, batch
+The `start` and `review` hooks record their own successful gate evidence in the
+ledger. For gates that only the active agent can prove, batch
 structured records instead of spawning one shell process per gate:
 
 ```text
@@ -618,6 +628,10 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py gate-batch --project <TARGET_
 ```
 
 Use this ledger to capture what happened, not to craft magic validator prose.
+Finish rejects a required ledger record whose capsule fingerprint does not
+match the current validated capsule. This applies to every required gate, not
+only `source docs`; a direct `--gate` fallback is persisted and checked through
+the same path, but should remain exceptional.
 If a structured entry is missing required fields, finish-check should fail and
 the recovery is to complete or record the missing gate fact, not to add a vague
 sentence. Use `agent-hook.py gate` only for a single immediate gate. Manual
@@ -625,9 +639,10 @@ sentence. Use `agent-hook.py gate` only for a single immediate gate. Manual
 should not become the normal finish path.
 
 When a one-off manual override is unavoidable, keep the evidence machine-clear
-instead of relying on equivalent prose or alternate key spellings. Say
-`required docs` and `before implementation`, name the applied rule and
-`immediate next action`, and use the Graphify readiness anchors exactly as
+instead of relying on equivalent prose or alternate key spellings. Use
+`gate`/`gate-batch` for any structured gate because `--gate` supplies only a
+single evidence string. Use the
+Graphify readiness anchors exactly as
 `cli=`, `skill doc=`, `runtime links=`, `git ownership=`,
 `project integration=`, `target graph=`, and `query smoke=`. For `source docs`, say which
 source-of-truth class was searched and opened before implementation and how it
@@ -754,9 +769,10 @@ The current script exposes these stable command profiles:
 For a multi-step task:
 
 1. Identify the target repo and repo-local instructions.
-2. Run the workflow router before selecting task documents, editing, reviewing,
-   committing, or reporting completion.
-3. Read the route output as the task command manifest.
+2. Run `agent-hook.py start` once before selecting task documents, editing,
+   reviewing, committing, or reporting completion. Do not separately rerun
+   classify, route, or preflight after it succeeds.
+3. Read the route stored by start as the task command manifest.
 4. Load `required_docs` / `Read First` in order; load `reference_docs` only
    when the task touches that concern, platform, gate, or verification path.
 5. Follow the listed gates before editing, reviewing, testing, or committing.

@@ -9,11 +9,16 @@ type: human-reviewed-needed
 Use when the deliverable is a PRD or product requirements note before ARD,
 implementation, tests, or release planning.
 
-For agent execution, run the scripted route before writing the PRD:
+For agent execution, run the canonical start once before writing the PRD:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
+
+Open every route `required_docs` entry directly. Run the review hook after
+meaningful changes and the finish hook before handoff. Direct `workflow.py
+route`, `agent-preflight.py`, and `agent-finish-check.py` calls are lower-level
+diagnostic fallbacks when the hook is unavailable.
 
 Use `workflows/skills/product-architecture-delivery/SKILL.md` only when the work continues
 from PRD into ARD and code.
