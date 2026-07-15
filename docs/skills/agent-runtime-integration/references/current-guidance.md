@@ -77,9 +77,12 @@ separate capsule command.
 
 Runtime adapters stay thin and apply the same validation semantics:
 
-- The `analysis` route is a serial, read-only fast path. It retains only the
-  active runtime instruction, has no code/test/documentation/review gate, and
-  launches no worker unless isolation is explicitly requested.
+- The `analysis` route is a serial, read-only fast path. Its dispatch manifest
+  must use `authoring_policy: read-only non-authoring` and
+  `sandbox_mode: read-only` in both inline and explicitly isolated execution.
+  It retains only the active runtime instruction, has no
+  code/test/documentation/review gate, and launches no worker unless isolation
+  is explicitly requested.
 - Codex keeps a leaf inline unless isolation is explicitly required. Profile or
   sandbox differences and missing parent-profile information are decision
   evidence, not automatic reasons to launch a nested Codex process. Inspecting
@@ -133,6 +136,11 @@ runtime selector. For example, Codex-only setup uses:
 ```text
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --runtime codex
 ```
+
+A runtime-scoped check or repair validates and changes that runtime's managed
+bridge and permission rules only. In particular, `--runtime codex` must not
+run, require, or alter global Graphify setup; use the unscoped setup or the
+explicit target Graphify flow when Graphify is in scope.
 
 This setup is global because the AgentPlaybook Python wrappers and graph-backed
 document routing are shared by every target repo. Keep it narrow: install or

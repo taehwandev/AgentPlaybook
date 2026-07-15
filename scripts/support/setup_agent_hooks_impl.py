@@ -118,7 +118,9 @@ def main() -> None:
     global_graphify_platforms = graphify_platforms_for_runtimes(
         selected_runtimes or {"agy", "claude", "codex"}
     )
-    if shutil.which("graphify") or (Path.home() / CANONICAL_SKILL_PATH).is_file():
+    if _should_configure_global_graphify(selected_runtimes) and (
+        shutil.which("graphify") or (Path.home() / CANONICAL_SKILL_PATH).is_file()
+    ):
         results += configure_global_graphify(
             Path.home(), global_graphify_platforms, dry_run
         )
@@ -195,6 +197,11 @@ def _has_claude() -> bool:
 
 def _runtime_selected(runtime: str, selected_runtimes: set[str]) -> bool:
     return not selected_runtimes or runtime in selected_runtimes
+
+
+def _should_configure_global_graphify(selected_runtimes: set[str]) -> bool:
+    """Keep a Codex-only bridge repair independent from global Graphify setup."""
+    return not selected_runtimes or bool(selected_runtimes - {"codex"})
 
 
 def _has_codex() -> bool:

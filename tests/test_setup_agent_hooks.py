@@ -35,11 +35,45 @@ from support.graphify_inspection import (
 )
 from support.graphify_document_links import repair_project_document_links
 from support.graphify_tracking import install_tracking_policies
-from support.setup_agent_hooks_impl import ensure_local_claude_excluded
+from support import setup_agent_hooks_impl
+from support.setup_agent_hooks_impl import (
+    _should_configure_global_graphify,
+    ensure_local_claude_excluded,
+)
 from support.stable_launcher import ensure_stable_launcher, stable_launcher_path, stable_root_pointer_path
 
 
 class SetupAgentHooksTests(unittest.TestCase):
+    def test_codex_only_setup_skips_unrelated_global_graphify(self) -> None:
+        with (
+            patch.object(
+                sys,
+                "argv",
+                ["setup-agent-hooks.py", "--check", "--runtime", "codex"],
+            ),
+            patch.object(setup_agent_hooks_impl, "_has_codex", return_value=True),
+            patch.object(setup_agent_hooks_impl, "configure_codex", return_value=[]),
+            patch.object(
+                setup_agent_hooks_impl.shutil,
+                "which",
+                return_value="/tmp/graphify",
+            ),
+            patch.object(
+                setup_agent_hooks_impl,
+                "configure_global_graphify",
+            ) as configure_global,
+            patch.object(setup_agent_hooks_impl, "configure_target_projects", return_value=[]),
+        ):
+            setup_agent_hooks_impl.main()
+
+        configure_global.assert_not_called()
+
+    def test_global_graphify_stays_enabled_outside_codex_only_setup(self) -> None:
+        self.assertFalse(_should_configure_global_graphify({"codex"}))
+        self.assertTrue(_should_configure_global_graphify(set()))
+        self.assertTrue(_should_configure_global_graphify({"claude"}))
+        self.assertTrue(_should_configure_global_graphify({"codex", "claude"}))
+
     def test_graphify_readiness_rejects_unregistered_json_integration_path(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
