@@ -57,9 +57,13 @@ def agy_legacy_permission_entries(scripts_dir: Path) -> list[str]:
     entries: list[str] = []
     for script in _legacy_agentplaybook_python_scripts(scripts_dir):
         for command in _python_entrypoint_commands(script, "antigravity", include_legacy=True):
-            _add_permission_command_entries(entries, "command", command)
+            entries.append(f"command({command})")
+            entries.append(f"command({command}:*)")
+            entries.append(f"command({command} *)")
     for command in _spill_helper_permission_commands("antigravity"):
-        _add_permission_command_entries(entries, "command", command)
+        entries.append(f"command({command})")
+        entries.append(f"command({command}:*)")
+        entries.append(f"command({command} *)")
     return entries
 
 
@@ -172,8 +176,9 @@ def _legacy_entrypoint_path_variants(script: Path) -> list[str]:
 
 def _add_permission_command_entries(entries: list[str], prefix: str, command: str) -> None:
     entries.append(f"{prefix}({command})")
-    entries.append(f"{prefix}({command}:*)")
-    entries.append(f"{prefix}({command} *)")
+    if prefix != "command":
+        entries.append(f"{prefix}({command}:*)")
+        entries.append(f"{prefix}({command} *)")
 
 
 def _codex_prefix_rule(pattern: list[str]) -> str:
