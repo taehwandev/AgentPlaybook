@@ -2810,6 +2810,44 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertEqual([], failures)
 
+    def test_korean_parallel_evidence_is_recognized(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                MULTI_AGENT_GATE: (
+                    "병렬 워커 2개가 소유 범위와 금지 범위를 나눠 작업했고, 계약과 브리프를 공유했다. "
+                    "인수 조건과 통합 담당을 정했으며 검증 패스를 완료했다."
+                )
+            },
+            [MULTI_AGENT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_korean_serial_evidence_is_recognized(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                MULTI_AGENT_GATE: (
+                    "직렬 단일 에이전트로 진행했다. 작은 작업이고 같은 파일과 계약이 겹쳐 병렬화가 안전하지 않았다. "
+                    "검증: focused test"
+                )
+            },
+            [MULTI_AGENT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_negative_worker_language_does_not_require_parallel_plan(self) -> None:
+        from agent_delegation_plan import validate_delegation_plan_evidence
+
+        evidence = {
+            MULTI_AGENT_GATE: (
+                "직렬 단일 에이전트로 처리했고 워커 불필요. 작은 작업이라 병렬 안 함. "
+                "검증은 focused test로 완료했다."
+            )
+        }
+
+        self.assertEqual([], validate_delegation_plan_evidence([MULTI_AGENT_GATE], evidence, {}))
+
     def test_cycle_contract_evidence_requires_bounded_cycle_details(self) -> None:
         failures = validate_gate_evidence(
             {CYCLE_CONTRACT_GATE: "cycle contract completed"},

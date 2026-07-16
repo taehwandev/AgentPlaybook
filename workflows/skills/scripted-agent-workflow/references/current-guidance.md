@@ -673,6 +673,16 @@ incomplete ledger entry. Once merge selects that complete replacement, it must
 clear the older missing-field diagnostic; obsolete omissions must not consume
 the recovery retry after the gate has actually been corrected.
 
+Structured evidence synthesis preserves the original evidence note alongside
+the canonical fields for `source docs`, `documentation impact`, and
+`documentation`. This prevents an inspected/read or coverage explanation from
+being lost when the ledger renders fields into validator text. Collaboration
+validators treat equivalent Korean and English terms (for example `병렬` /
+`parallel`, `워커` / `worker`, `소유 범위` / `owned scope`, and `검증` /
+`verification`) the same way, while explicit negation such as `워커 불필요` or
+`병렬 안 함` remains a serial decision and does not create a false delegation
+plan requirement.
+
 `agent-hook.py finish` runs the finish-check logic in-process. Calling
 `agent-finish-check.py` directly is acceptable only as a lower-level wrapper path
 when the finish hook is unavailable.

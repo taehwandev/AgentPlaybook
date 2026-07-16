@@ -368,13 +368,13 @@ def synthesize_gate_evidence(
         return (
             "pre-code/pre-edit documentation artifact selection: "
             f"{fields['artifact']}; impact decision: {fields['decision']}; "
-            f"reason: {fields['reason']}",
+            f"reason: {fields['reason']}; original evidence: {evidence}",
             [],
         )
     if gate == "documentation":
         return (
             f"documentation decision: {fields['decision']}; source-of-truth target: "
-            f"{fields['target']}; reason: {fields['reason']}",
+            f"{fields['target']}; reason: {fields['reason']}; original evidence: {evidence}",
             [],
         )
     if gate == "source docs":
@@ -382,7 +382,8 @@ def synthesize_gate_evidence(
             "read every route required_docs entry directly before implementation or edits; "
             f"required-doc reading: {fields['required_docs']}; "
             "searched and opened/read source-of-truth docs before implementation or edits; "
-            f"source: {fields['source']}; applied takeaway: {fields['takeaway']}",
+            f"source: {fields['source']}; applied takeaway: {fields['takeaway']}; "
+            f"original evidence: {evidence}",
             [],
         )
     if gate == "tests":

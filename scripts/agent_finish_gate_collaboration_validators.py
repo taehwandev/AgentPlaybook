@@ -13,10 +13,19 @@ def validate_multi_agent(evidence: str) -> list[str]:
             "serial",
             "single-agent",
             "single agent",
+            "직렬",
+            "단일 에이전트",
+            "단일에이전트",
             "not applicable",
             "no subagent",
             "no sub-agent",
             "no parallel",
+            "no worker",
+            "no workers",
+            "워커 없음",
+            "워커 불필요",
+            "병렬 안 함",
+            "병렬하지 않",
         )
     )
     parallel = any(
@@ -26,19 +35,28 @@ def validate_multi_agent(evidence: str) -> list[str]:
             "subagent",
             "sub-agent",
             "parallel",
+            "병렬",
+            "병렬화",
             "split",
             "worker",
+            "워커",
         )
     )
     has_serial_reason = any(
         phrase in text
         for phrase in (
             "small",
+            "작은 작업",
             "single-file",
             "same file",
+            "단일 파일",
+            "같은 파일",
             "contract",
+            "계약",
             "unstable",
             "overlap",
+            "겹침",
+            "중복",
             "dirty worktree",
             "dirty working tree",
             "migration",
@@ -50,9 +68,14 @@ def validate_multi_agent(evidence: str) -> list[str]:
     )
     if serial and has_serial_reason:
         return []
-    has_owned = "owned" in text or "owner" in text or "scope" in text
-    has_forbidden = "forbidden" in text or "do not touch" in text or "excluded" in text
-    has_contract = "contract" in text or "brief" in text or "input" in text or "output" in text
+    has_owned = any(phrase in text for phrase in ("owned", "owner", "scope", "소유 범위", "담당 범위"))
+    has_forbidden = any(
+        phrase in text
+        for phrase in ("forbidden", "do not touch", "excluded", "금지 범위", "건드리지 않을 범위")
+    )
+    has_contract = any(
+        phrase in text for phrase in ("contract", "brief", "input", "output", "계약", "브리프", "입력", "출력")
+    )
     has_acceptance = any(
         phrase in text
         for phrase in (
@@ -60,12 +83,17 @@ def validate_multi_agent(evidence: str) -> list[str]:
             "acceptance check",
             "acceptance criteria",
             "done means",
+            "인수 조건",
+            "완료 조건",
+            "수용 기준",
         )
     )
     has_integration_owner = (
-        ("integration" in text and any(phrase in text for phrase in ("owner", "lead", "integrator")))
+        (("integration" in text or "통합" in text)
+         and any(phrase in text for phrase in ("owner", "lead", "integrator", "담당", "리드")))
         or "integration_owner" in text
         or "integration owner" in text
+        or "통합 담당" in text
     )
     has_verification = any(
         phrase in text
@@ -76,6 +104,9 @@ def validate_multi_agent(evidence: str) -> list[str]:
             "check",
             "manual",
             "smoke",
+            "검증",
+            "테스트",
+            "확인",
         )
     )
     if (

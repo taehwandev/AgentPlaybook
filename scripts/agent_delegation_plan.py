@@ -21,6 +21,10 @@ PARALLEL_SIGNALS = (
     "parallel",
     "split",
     "worker",
+    "병렬",
+    "병렬화",
+    "워커",
+    "분할",
 )
 SERIAL_SIGNALS = (
     "serial",
@@ -29,6 +33,16 @@ SERIAL_SIGNALS = (
     "no subagent",
     "no sub-agent",
     "no parallel",
+    "no worker",
+    "no workers",
+    "직렬",
+    "단일 에이전트",
+    "단일에이전트",
+    "병렬 아님",
+    "워커 없음",
+    "워커 불필요",
+    "병렬 안 함",
+    "병렬하지 않",
 )
 
 
