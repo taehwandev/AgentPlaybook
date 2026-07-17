@@ -24,6 +24,7 @@ class AgentObservabilityTests(unittest.TestCase):
             self.assertTrue(snapshot["snapshot_id"])
             self.assertTrue(snapshot["captured_at"])
             self.assertEqual("project-state-lock", snapshot["consistency"])
+            self.assertEqual(1, snapshot["api_contract"]["contract_version"])
             self.assertEqual(1, snapshot["active_runs"])
             self.assertEqual({"queued": 1}, snapshot["task_counts"])
             self.assertTrue(snapshot["events"]["run.started"])

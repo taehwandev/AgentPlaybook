@@ -12,6 +12,7 @@ from agent_run_registry import registry_path
 from agent_scheduler import scheduler_path
 from agent_execution_capsule_state import read_json_object
 from agent_state_lock import project_state_lock, state_lock
+from agent_os_api import api_contract_manifest
 
 
 API_VERSION = 2
@@ -45,6 +46,7 @@ def status_snapshot(project: Path) -> dict[str, Any]:
         "snapshot_id": uuid.uuid4().hex,
         "captured_at": captured_at,
         "consistency": "project-state-lock",
+        "api_contract": api_contract_manifest(),
         "active_runs": sum(run.get("state") in {"running", "paused"} for run in runs if isinstance(run, dict)),
         "task_counts": task_counts,
         "events": event_counts,

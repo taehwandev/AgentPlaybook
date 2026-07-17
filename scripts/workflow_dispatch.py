@@ -26,6 +26,7 @@ from workflow_dispatch_profiles import (
     select_work_kind,
 )
 from agent_capability_policy import READ_ONLY_WORK_KINDS, capability_profile, validate_capability_profile
+from agent_os_api import api_contract_manifest, runtime_adapter_contract, validate_runtime_adapter_contract
 from workflow_request import (
     classified_route_block_reason,
     classify_request,
@@ -101,6 +102,18 @@ def build_dispatch_manifest(
     capability_failures = validate_capability_profile(capability)
     if capability_failures:
         raise ValueError("invalid capability profile: " + "; ".join(capability_failures))
+    runtime_contract = runtime_adapter_contract(
+        "codex",
+        capabilities={
+            "read_only": capability["sandbox_mode"] == "read-only",
+            "workspace_write": capability["sandbox_mode"] == "workspace-write",
+            "isolated_write": capability.get("isolation_mode") == "isolated-write",
+        },
+        enforcement=str(capability["enforcement"]),
+    )
+    runtime_failures = validate_runtime_adapter_contract(runtime_contract)
+    if runtime_failures:
+        raise ValueError("invalid runtime adapter contract: " + "; ".join(runtime_failures))
     non_authoring = selected_kind in READ_ONLY_WORK_KINDS
     handoff_prompt = build_handoff_prompt(
         command,
@@ -122,6 +135,8 @@ def build_dispatch_manifest(
         "authoring_policy": capability["authoring_policy"],
         "sandbox_mode": capability["sandbox_mode"],
         "capability_profile": capability,
+        "api_contract": api_contract_manifest(),
+        "runtime_adapter": runtime_contract,
         "selection_reason": selection_reason,
         "execution_mode": execution_mode,
         "profile_matches_parent": same_profile,
