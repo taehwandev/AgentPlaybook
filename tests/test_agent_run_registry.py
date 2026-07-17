@@ -40,6 +40,16 @@ class AgentRunRegistryTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 transition_run(Path(directory), Path(directory) / "preflight.json", "unknown")
 
+    def test_run_id_transition_avoids_same_evidence_collision(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            evidence = project / "preflight.json"
+            first = register_run(project, evidence, {"command": "task"}, {})
+            second = register_run(project, evidence, {"command": "task"}, {})
+            completed = transition_run(project, evidence, "completed", run_id=first["run_id"])
+            self.assertEqual(first["run_id"], completed["run_id"])
+            self.assertEqual("running", [run for run in active_runs(project) if run["run_id"] == second["run_id"]][0]["state"])
+
     def test_stale_run_is_recovered_and_can_resume(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)

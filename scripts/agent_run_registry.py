@@ -58,17 +58,19 @@ def transition_run(
     project: Path,
     evidence_path: Path,
     state: str,
+    *,
+    run_id: str | None = None,
 ) -> dict[str, Any] | None:
-    """Transition the newest run bound to an evidence file."""
+    """Transition a run by opaque ID, falling back to newest evidence binding."""
 
     if state not in RUN_STATES:
         raise ValueError(f"unsupported run state: {state}")
     path = registry_path(project)
     with project_state_lock(project), state_lock(path):
         payload = _read_registry(path)
-        candidates = [
-            run for run in payload["runs"] if run.get("evidence_name") == evidence_path.name
-        ]
+        candidates = [run for run in payload["runs"] if run.get("evidence_name") == evidence_path.name]
+        if run_id:
+            candidates = [run for run in candidates if run.get("run_id") == run_id]
         if not candidates:
             return None
         target = candidates[-1]

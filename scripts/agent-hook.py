@@ -31,6 +31,7 @@ from agent_hook_runtime import (
     retry_attempt,
     run_command,
     vibeguard_command,
+    write_json,
 )
 from agent_inprocess import run_script_main
 from agent_review_hook import review_hook
@@ -147,12 +148,14 @@ def _register_started_run(args: argparse.Namespace, details: list[str]) -> None:
     try:
         evidence_path = preflight_evidence_path(args)
         payload = json.loads(evidence_path.read_text(encoding="utf-8"))
-        register_run(
+        run = register_run(
             args.project,
             evidence_path,
             payload.get("route") or {},
             payload.get("request_intake") or {},
         )
+        payload["agent_run_id"] = run["run_id"]
+        write_json(evidence_path, payload)
         details.append("agent run registry: running")
     except (OSError, ValueError, TypeError, json.JSONDecodeError):
         details.append("agent run registry: unavailable; lifecycle continues")
@@ -160,12 +163,15 @@ def _register_started_run(args: argparse.Namespace, details: list[str]) -> None:
 
 def _transition_finished_run(args: argparse.Namespace, success: bool) -> None:
     try:
+        evidence_path = args.evidence or args.project / ".agentplaybook" / "preflight.json"
+        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
         transition_run(
             args.project,
-            args.evidence or args.project / ".agentplaybook" / "preflight.json",
+            evidence_path,
             "completed" if success else "failed",
+            run_id=payload.get("agent_run_id"),
         )
-    except (OSError, ValueError, TypeError):
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
         return
 
 
