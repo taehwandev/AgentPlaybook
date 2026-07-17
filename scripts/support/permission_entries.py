@@ -22,6 +22,8 @@ def claude_permission_entries(scripts_dir: Path, *, spill_available: bool = True
     if spill_available:
         for command in _spill_helper_permission_commands("claude"):
             _add_permission_command_entries(entries, "Bash", command)
+    for command in _common_playbook_tool_commands():
+        _add_permission_command_entries(entries, "Bash", command)
     return entries
 
 
@@ -39,6 +41,8 @@ def claude_project_permission_entries(scripts_dir: Path, *, spill_available: boo
         _add_permission_command_entries(entries, "Bash", command)
     for subcommand in ("log", "status", "diff", "show", "branch"):
         entries.append(f"Bash(git -C * {subcommand} *)")
+    for command in _common_playbook_tool_commands():
+        _add_permission_command_entries(entries, "Bash", command)
     return entries
 
 
@@ -50,6 +54,8 @@ def agy_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -
     if spill_available:
         for command in _spill_helper_permission_commands("antigravity"):
             _add_permission_command_entries(entries, "command", command)
+    for command in _common_playbook_tool_commands():
+        _add_permission_command_entries(entries, "command", command)
     return entries
 
 
@@ -78,11 +84,16 @@ def codex_prefix_rule_entries(scripts_dir: Path) -> list[str]:
 
 
 def _agentplaybook_python_scripts(scripts_dir: Path) -> list[Path]:
-    return sorted(
-        script
-        for script in scripts_dir.glob("*.py")
-        if script.name not in STALE_PERMISSION_ENTRYPOINTS
-    )
+    project_root = scripts_dir.parent
+    scripts: list[Path] = []
+    exclude_dirs = {".git", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache", ".wikimap"}
+    for path in project_root.rglob("*.py"):
+        if any(part in exclude_dirs for part in path.parts):
+            continue
+        if path.name in STALE_PERMISSION_ENTRYPOINTS:
+            continue
+        scripts.append(path)
+    return sorted(scripts)
 
 
 def _legacy_agentplaybook_python_scripts(scripts_dir: Path) -> list[Path]:
@@ -140,7 +151,7 @@ def _stable_launcher_path_variants() -> list[str]:
 
 def _entrypoint_path_variants(script: Path) -> list[str]:
     raw = str(script.resolve())
-    return [raw]
+    return [raw, quote(raw), _double_quote(raw)]
 
 
 def _legacy_entrypoint_path_variants(script: Path) -> list[str]:
@@ -176,9 +187,8 @@ def _legacy_entrypoint_path_variants(script: Path) -> list[str]:
 
 def _add_permission_command_entries(entries: list[str], prefix: str, command: str) -> None:
     entries.append(f"{prefix}({command})")
-    if prefix != "command":
-        entries.append(f"{prefix}({command}:*)")
-        entries.append(f"{prefix}({command} *)")
+    entries.append(f"{prefix}({command}:*)")
+    entries.append(f"{prefix}({command} *)")
 
 
 def _codex_prefix_rule(pattern: list[str]) -> str:
@@ -199,3 +209,22 @@ def _dedupe(values: list[str]) -> list[str]:
         seen.add(value)
         result.append(value)
     return result
+
+
+def _common_playbook_tool_commands() -> list[str]:
+    return [
+        "vibeguard",
+        "npx --yes @taehwandev/vibeguard",
+        "npx --yes @taehwandev/vibeguard audit",
+        "git status",
+        "git status --short",
+        "git status --short --untracked-files=all",
+        "git diff",
+        "git diff --check",
+        "git log",
+        "git log -n 1",
+        "npm test",
+        "pytest",
+        "python3 -m pytest",
+        "python -m pytest",
+    ]
