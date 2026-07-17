@@ -95,6 +95,10 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
   문서·검증에서 혼동하지 않도록 한다.
 - capability profile에 `enforcement`를 추가해 runtime read-only, runtime
   workspace-write, filesystem boundary를 구분하고 dispatch에서 검증한다.
+- isolation child는 `worker-evidence-and-state` enforcement scope를 환경에
+  전달하고, worker evidence 경계가 확인되지 않으면 lifecycle hook을 거부한다.
+- provider가 제공하지 않는 OS-level sandbox를 지원한다고 주장하지 않으며,
+  실제 sandbox adapter는 별도 runtime 통합 단계로 남긴다.
 - state lock은 Unix `fcntl`과 Windows `msvcrt` backend를 선택하도록 추상화한다.
 
 운영 환경에 맞춘 실제 보존 기간과 retry 횟수는 maintenance CLI 인자로

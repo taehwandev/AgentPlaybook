@@ -233,11 +233,13 @@ def worker_environment(handoff: Mapping[str, object]) -> dict[str, str]:
     capsule = handoff.get("execution_capsule")
     if isinstance(capsule, Mapping) and capsule.get("reusable"):
         environment["AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY"] = "1"
+        environment["AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT"] = "parent-evidence-readonly"
         return environment
     environment["AGENTPLAYBOOK_WORKER_EVIDENCE"] = str(handoff["worker_preflight_evidence"])
     environment["AGENTPLAYBOOK_WORKER_RESERVATION_TOKEN"] = str(
         handoff["worker_reservation_token"]
     )
+    environment["AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT"] = "worker-evidence-and-state"
     return environment
 
 

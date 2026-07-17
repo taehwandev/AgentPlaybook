@@ -15,6 +15,7 @@ class AgentCapabilityPolicyTests(unittest.TestCase):
         profile = capability_profile("analysis")
         self.assertEqual("read-only", profile["sandbox_mode"])
         self.assertEqual("runtime-read-only", profile["enforcement"])
+        self.assertEqual("runtime-read-only", profile["enforcement_scope"])
         self.assertEqual("deny", profile["child_process"])
         self.assertEqual([], validate_capability_profile(profile))
 
@@ -23,6 +24,7 @@ class AgentCapabilityPolicyTests(unittest.TestCase):
         self.assertEqual("workspace-write", profile["sandbox_mode"])
         self.assertEqual("isolated-write", profile["isolation_mode"])
         self.assertEqual("filesystem-boundary", profile["enforcement"])
+        self.assertEqual("worker-evidence-and-state", profile["enforcement_scope"])
         self.assertEqual("isolated-write", profile["filesystem"])
         self.assertEqual([], validate_capability_profile(profile))
 

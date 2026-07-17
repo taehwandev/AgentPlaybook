@@ -734,6 +734,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         environment = launch.call_args.kwargs["env"]
         self.assertTrue(environment["AGENTPLAYBOOK_WORKER_EVIDENCE"].endswith("preflight.json"))
         self.assertRegex(environment["AGENTPLAYBOOK_WORKER_RESERVATION_TOKEN"], r"^[0-9a-f]{32}$")
+        self.assertEqual("worker-evidence-and-state", environment["AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT"])
         self.assertNotIn("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY", environment)
 
     def test_dispatch_stays_inline_when_parent_profile_and_sandbox_match(self) -> None:

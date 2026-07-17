@@ -17,6 +17,7 @@ def capability_profile(work_kind: str, *, isolation_required: bool = False) -> d
             "authoring_policy": "read-only non-authoring",
             "sandbox_mode": "read-only",
             "enforcement": "runtime-read-only",
+            "enforcement_scope": "runtime-read-only",
             "filesystem": "read-only",
             "network": "deny",
             "child_process": "deny",
@@ -29,6 +30,7 @@ def capability_profile(work_kind: str, *, isolation_required: bool = False) -> d
         "sandbox_mode": "workspace-write",
         "isolation_mode": "isolated-write" if isolation_required else "workspace",
         "enforcement": "filesystem-boundary" if isolation_required else "runtime-workspace-write",
+        "enforcement_scope": "worker-evidence-and-state" if isolation_required else "project-workspace",
         "filesystem": "isolated-write" if isolation_required else "workspace-write",
         "network": "runtime-policy",
         "child_process": "explicit-isolation-only",
@@ -55,4 +57,9 @@ def validate_capability_profile(profile: dict[str, Any]) -> list[str]:
         failures.append("read-only sandbox requires runtime-read-only enforcement")
     if isolation_mode == "isolated-write" and enforcement != "filesystem-boundary":
         failures.append("isolated-write isolation requires filesystem-boundary enforcement")
+    scope = profile.get("enforcement_scope")
+    if scope not in {"runtime-read-only", "runtime-workspace-write", "worker-evidence-and-state", "project-workspace"}:
+        failures.append("enforcement_scope is unsupported")
+    if isolation_mode == "isolated-write" and scope != "worker-evidence-and-state":
+        failures.append("isolated-write isolation requires worker-evidence-and-state scope")
     return failures

@@ -391,6 +391,8 @@ def main() -> int:
 def _apply_worker_evidence_boundary(args: argparse.Namespace) -> str:
     if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
         return "reusable worker capsule cannot run lifecycle hooks that write parent evidence"
+    if os.environ.get("AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT") == "parent-evidence-readonly":
+        return "parent-evidence-readonly workers cannot run lifecycle hooks"
     expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
     if not expected:
         return ""
