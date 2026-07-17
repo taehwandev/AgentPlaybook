@@ -121,7 +121,7 @@ pin a new copy anyway, or should I reuse the existing root?
 
 ```bash
 export AGENTPLAYBOOK_HOME="/path/to/existing/AgentPlaybook"
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 ```
 
 ### Path B: First-Time Local Shared Install
@@ -132,7 +132,7 @@ shared install for multiple personal repos.
 ```bash
 export AGENTPLAYBOOK_HOME="$HOME/.agent-playbook"
 git clone https://github.com/taehwandev/AgentPlaybook.git "$AGENTPLAYBOOK_HOME"
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 ```
 
 ### Path C: Team-Pinned Install
@@ -143,7 +143,7 @@ after the repo owner approves the pinned location and update policy.
 
 ```bash
 git submodule add https://github.com/taehwandev/AgentPlaybook.git .agents/AgentPlaybook
-python3 .agents/AgentPlaybook/scripts/workflow.py validate
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 ```
 
 ### Updating An Existing Install
@@ -154,7 +154,7 @@ the selected AgentPlaybook root between tasks:
 ```bash
 cd "${AGENTPLAYBOOK_HOME}"
 git pull --ff-only
-python3 scripts/workflow.py validate
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 npx --yes @taehwandev/vibeguard audit . --rules .
 ```
 
@@ -169,7 +169,7 @@ normal review flow:
 ```bash
 cd <target-repo>
 git submodule update --remote .agents/AgentPlaybook
-python3 .agents/AgentPlaybook/scripts/workflow.py validate
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 git add .agents/AgentPlaybook
 ```
 
@@ -197,7 +197,7 @@ When starting an agent from `~`, a workspace parent, or another repo, resolve
 the target first:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-entry.py" --runtime codex --request "<USER_REQUEST>" --cwd "$PWD"
+~/.agentplaybook/bin/agentplaybook-hook agent-entry --runtime codex --request "<USER_REQUEST>" --cwd "$PWD"
 ```
 
 If discovery returns `selected`, use the reported `runtime_launch` guidance for
@@ -247,7 +247,7 @@ ${AGENTPLAYBOOK_HOME}/scripts/agent-preflight.py
 ${AGENTPLAYBOOK_HOME}/scripts/agent-finish-check.py
 
 Use repo-local instructions first.
-For multi-step tasks, run agent-hook.py start once. It performs routing and
+For multi-step tasks, run ~/.agentplaybook/bin/agentplaybook-hook start once. It performs routing and
 preflight; then read every route required_docs entry directly before work.
 Use the review hook after meaningful edits and the finish hook before final
 report, commit, release, or handoff. Direct workflow.py route,
@@ -288,7 +288,7 @@ Audit only, preserving existing guardrails:
 
 ```bash
 export AGENTPLAYBOOK_HOME="/path/to/existing/AgentPlaybook"
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 npx --yes @taehwandev/vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
 ```
 
@@ -296,7 +296,7 @@ Refresh an existing managed VibeGuard block only when explicitly requested:
 
 ```bash
 export AGENTPLAYBOOK_HOME="/path/to/existing/AgentPlaybook"
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 npx --yes @taehwandev/vibeguard update . --rules "${AGENTPLAYBOOK_HOME}"
 npx --yes @taehwandev/vibeguard audit . --fix --rules "${AGENTPLAYBOOK_HOME}"
 npx --yes @taehwandev/vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
@@ -306,7 +306,7 @@ First-time VibeGuard setup only when the target has no guardrails yet:
 
 ```bash
 export AGENTPLAYBOOK_HOME="/path/to/existing/AgentPlaybook"
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 npx --yes @taehwandev/vibeguard setup . --rules "${AGENTPLAYBOOK_HOME}"
 npx --yes @taehwandev/vibeguard audit . --fix --rules "${AGENTPLAYBOOK_HOME}"
 npx --yes @taehwandev/vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"
@@ -367,7 +367,7 @@ flow instead of copying the whole library:
    and reuse it unless the user explicitly approves a new download or pinned
    copy.
 4. Validate the selected AgentPlaybook root with
-   `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate`.
+   `~/.agentplaybook/bin/agentplaybook-hook workflow validate`.
 5. Inspect existing VibeGuard and repo-local instruction files. Ask the
    application drill when the repo already has custom instructions or guardrails.
 6. Apply the selected VibeGuard mode with the selected AgentPlaybook root as the
@@ -391,7 +391,7 @@ flow instead of copying the whole library:
    bridge must explicitly tell the runtime to read the current target project's
    local instructions first: Codex-style agents read `AGENTS.md`, Claude reads
    `CLAUDE.md`, and Antigravity reads `AGENTS.md`.
-13. For multi-step follow-up work, run `agent-hook.py start ... --request
+13. For multi-step follow-up work, run `~/.agentplaybook/bin/agentplaybook-hook start ... --request
    "<USER_REQUEST>"` once and follow its route and gate ledger. It performs
    classification, routing, and preflight; do not repeat those commands after a
    successful start. Answer direct questions before start.
@@ -435,7 +435,7 @@ Apply the required VibeGuard safety gate with <AGENTPLAYBOOK_ROOT> as the rule
 source before editing. Use the published VibeGuard package command; the
 VibeGuard site is a human reference and does not need to be fetched by the
 agent.
-For multi-step work, run `agent-hook.py start` once with `--request
+For multi-step work, run `~/.agentplaybook/bin/agentplaybook-hook start` once with `--request
 "<USER_REQUEST>"`; it performs routing and preflight. Read every route
 `required_docs` entry directly before work and follow the gate ledger. If the
 user asks a direct question, answer it before starting project work. Run the
@@ -452,10 +452,10 @@ gate was blocked, failed, missed, or lacks evidence and must use missed-gate
 recovery. Do not report any third gate state.
 
 For PRD-only work:
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+~/.agentplaybook/bin/agentplaybook-hook start --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 
 For PRD -> ARD -> implementation:
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+~/.agentplaybook/bin/agentplaybook-hook start --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Full bootstrap instructions live in [docs/skills/agent-bootstrap/SKILL.md](docs/skills/agent-bootstrap/SKILL.md).
@@ -488,13 +488,13 @@ file or a pasted prompt.
   the user did not name document keywords.
 - When a runtime starts from `~` or another non-project directory, resolve the
   target first with
-  `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>`.
+  `~/.agentplaybook/bin/agentplaybook-hook agent-entry --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>`.
   Continue only when it returns `selected`; ask the user when it returns
   `ambiguous` or `not_found`. Optional local aliases can live in
   `~/.agentplaybook/projects.json`.
 - To avoid repeated prompts for AgentPlaybook's required Python wrappers, run
-  `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check`, then run
-  `python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py` after approval if
+  `~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks --check`, then run
+  `~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks` after approval if
   user-level bridges, hooks, or permissions are missing. This writes short
   managed bridge blocks for Codex, Claude, and AGY plus global runtime config
   only for AgentPlaybook-managed entrypoints; it does not broadly allow
@@ -544,7 +544,7 @@ before selecting documents manually, editing, reviewing, committing, or
 reporting completion:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command product --request "<USER_REQUEST>" --platform web --concern security --concern ui
+~/.agentplaybook/bin/agentplaybook-hook start --command product --request "<USER_REQUEST>" --platform web --concern security --concern ui
 ```
 
 The start hook performs classification, routing, and preflight. Read its
@@ -553,14 +553,14 @@ commands. Use these only for diagnostics, compatibility fallback, or route
 development when the start hook is unavailable:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" list
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" classify "Change the button on home"
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route triage --request "Change the button on home"
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route product --request "<USER_REQUEST>" --platform web --concern security --concern ui
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform kmp --concern compose --concern state
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route feature --request "<USER_REQUEST>" --platform flutter --concern widget --concern state
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route docs-review --request "<USER_REQUEST>" --concern wiki
-python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" validate
+~/.agentplaybook/bin/agentplaybook-hook workflow list
+~/.agentplaybook/bin/agentplaybook-hook workflow classify "Change the button on home"
+~/.agentplaybook/bin/agentplaybook-hook workflow route triage --request "Change the button on home"
+~/.agentplaybook/bin/agentplaybook-hook workflow route product --request "<USER_REQUEST>" --platform web --concern security --concern ui
+~/.agentplaybook/bin/agentplaybook-hook workflow route feature --request "<USER_REQUEST>" --platform kmp --concern compose --concern state
+~/.agentplaybook/bin/agentplaybook-hook workflow route feature --request "<USER_REQUEST>" --platform flutter --concern widget --concern state
+~/.agentplaybook/bin/agentplaybook-hook workflow route docs-review --request "<USER_REQUEST>" --concern wiki
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 ```
 
 Supported commands are `ambiguity`, `bugfix`, `docs`, `docs-review`, `feature`,
@@ -628,7 +628,7 @@ Before multi-step edits, run one lifecycle entry that performs routing and
 preflight:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start \
+~/.agentplaybook/bin/agentplaybook-hook start \
   --project . \
   --rules "${AGENTPLAYBOOK_HOME}" \
   --command task \
@@ -641,7 +641,7 @@ the review hook after meaningful edits. Before final report, commit, release, or
 handoff:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" finish \
+~/.agentplaybook/bin/agentplaybook-hook finish \
   --project . \
   --rules "${AGENTPLAYBOOK_HOME}" \
   --gate "request intake=<route/classification evidence>" \
@@ -762,21 +762,21 @@ relying on only a broad architecture card. Each line is an alternative task
 entry, not a sequence:
 
 ```bash
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform ios --concern swiftui
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform ios --concern uikit
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform web --concern react --concern ui
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform android --concern compose
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform kmp --concern compose --concern platform
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform flutter --concern widget --concern channel
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform server --concern api --concern auth
-python3 "${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py" start --command feature --request "<USER_REQUEST>" --platform application --concern desktop
+~/.agentplaybook/bin/agentplaybook-hook start --command feature --request "<USER_REQUEST>" --platform ios --concern swiftui
+~/.agentplaybook/bin/agentplaybook-hook start --command feature --request "<USER_REQUEST>" --platform ios --concern uikit
+~/.agentplaybook/bin/agentplaybook-hook start --command feature --request "<USER_REQUEST>" --platform web --concern react --concern ui
+~/.agentplaybook/bin/agentplaybook-hook start --command feature --request "<USER_REQUEST>" --platform android --concern compose
+~/.agentplaybook/bin/agentplaybook-hook start --command feature --request "<USER_REQUEST>" --platform kmp --concern compose --concern platform
+~/.agentplaybook/bin/agentplaybook-hook start --command feature --request "<USER_REQUEST>" --platform flutter --concern widget --concern channel
+~/.agentplaybook/bin/agentplaybook-hook start --command feature --request "<USER_REQUEST>" --platform server --concern api --concern auth
+~/.agentplaybook/bin/agentplaybook-hook start --command feature --request "<USER_REQUEST>" --platform application --concern desktop
 ```
 
 ## Loading Model
 
 1. Start from the target repo's local instructions.
 2. Open this repository's `AGENTS.md`.
-3. For multi-step work, run `scripts/agent-hook.py start ... --request
+3. For multi-step work, run `~/.agentplaybook/bin/agentplaybook-hook start ... --request
    "<USER_REQUEST>"` once to generate routing and preflight evidence before
    selecting task documents. Do not repeat lower-level route or preflight.
 4. Read every route `required_docs` entry directly before work; use `index.md`
@@ -796,7 +796,7 @@ This is the core design: small cards, loaded only when relevant.
 - Use `index.md` to choose only the needed documents.
 - Answer direct user questions before starting workflow routing, editing, or
   project-specific commands.
-- Run `scripts/agent-hook.py start ... --request "<USER_REQUEST>"` once for
+- Run `~/.agentplaybook/bin/agentplaybook-hook start ... --request "<USER_REQUEST>"` once for
   multi-step workflows, then read every route `required_docs` entry directly.
 - Use the review hook after meaningful edits and the finish hook before final
   report, commit, release, or handoff. Direct `workflow.py route`,

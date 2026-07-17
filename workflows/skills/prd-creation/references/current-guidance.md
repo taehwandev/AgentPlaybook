@@ -12,7 +12,7 @@ implementation, tests, or release planning.
 For agent execution, run the canonical start once before writing the PRD:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Open every route `required_docs` entry directly. Run the review hook after

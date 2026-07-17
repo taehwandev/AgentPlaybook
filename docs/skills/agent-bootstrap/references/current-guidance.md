@@ -303,7 +303,7 @@ that subsystem.
     runtime links or thin adapters. Do not maintain parallel Codex, Claude, and
     Antigravity/AGY copies of the same knowledge.
 11. Do not paste the full AgentPlaybook library into repo-local files.
-12. For multi-step setup or migration work, run `agent-hook.py start` once with
+12. For multi-step setup or migration work, run `~/.agentplaybook/bin/agentplaybook-hook start` once with
    the current request. Open every route `required_docs` entry directly, keep
    the workflow route gate ledger, run the review hook after meaningful
    changes, and run the finish hook before final report, commit, release, or

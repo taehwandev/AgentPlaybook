@@ -38,7 +38,7 @@ serial/small-scope reason.
 Discover available scripted commands with:
 
 ```text
-python3 scripts/workflow.py list
+~/.agentplaybook/bin/agentplaybook-hook workflow list
 ```
 
 ## Lifecycle Aliases
@@ -141,7 +141,7 @@ the update.
   records which routed required documents were read and the task-specific
   takeaway that was applied. Graphify remains responsible for target-project
   code and relationship analysis.
-  Use `python3 scripts/agent-hook.py start --command <command> --request "<request>"`.
+  Use `~/.agentplaybook/bin/agentplaybook-hook start --command <command> --request "<request>"`.
 - `Required Documents`: after Start Hook, read the route's `required_docs`
   directly before edits or review. Keep `reference_docs` for on-demand context.
   There is no separate confirmation hook or receipt artifact. When the route
@@ -180,7 +180,7 @@ the update.
   fails by default when the changed path count is too broad for one review pass,
   so the work must be split before retrying.
   Use
-  `python3 scripts/agent-hook.py review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
+  `~/.agentplaybook/bin/agentplaybook-hook review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
 - `Finish Hook`: run before final report, commit, release, or handoff. It
   verifies the required route gate evidence, final validation, diff hygiene,
   and final VibeGuard state. Prefer executable hook evidence plus one
@@ -221,4 +221,4 @@ the update.
 Workflow files should reference cards instead of copying them. If workflow text
 starts repeating a common rule, move the rule into `common/` and link it here.
 If a workflow becomes a stable repeated command, add or update the matching
-profile in `scripts/workflow.py` and run `python3 scripts/workflow.py validate`.
+profile in `scripts/workflow.py` and run `~/.agentplaybook/bin/agentplaybook-hook workflow validate`.

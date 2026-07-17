@@ -973,6 +973,10 @@ class SetupAgentHooksTests(unittest.TestCase):
                 self.assertEqual(f"{ROOT.resolve()}\n", pointer.read_text())
                 self.assertIn("scripts/workflow.py", launcher.read_text())
                 self.assertIn('"execution-capsule": "agent_execution_capsule.py"', launcher.read_text())
+                self.assertIn('"agent-os-status": "agent-os-status.py"', launcher.read_text())
+                self.assertIn('"agent-os-watchdog": "agent-os-watchdog.py"', launcher.read_text())
+                self.assertIn('"agent-os-maintenance": "agent-os-maintenance.py"', launcher.read_text())
+                self.assertIn('"workflow-dispatch": "workflow_dispatch.py"', launcher.read_text())
                 self.assertIn('"handoff"', launcher.read_text())
                 self.assertTrue(all(result["status"] == "installed" for result in results))
 

@@ -114,6 +114,11 @@ SCRIPT_ALIASES = {
     "agent-entry": "agent-entry.py",
     "project-discover": "project-discover.py",
     "setup-agent-hooks": "setup-agent-hooks.py",
+    "agent-os-status": "agent-os-status.py",
+    "agent-os-watchdog": "agent-os-watchdog.py",
+    "agent-os-maintenance": "agent-os-maintenance.py",
+    "workflow-dispatch": "workflow_dispatch.py",
+    "workflow-dispatch-launch": "workflow_dispatch_launch.py",
 }
 HOOK_ALIASES = {"start", "handoff", "gate", "review", "finish"}
 

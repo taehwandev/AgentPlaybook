@@ -24,7 +24,7 @@ verify each phase.
 For agent execution, run the canonical start once before PRD, ARD, or implementation:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Open every route `required_docs` entry directly and use that output as the
@@ -37,7 +37,7 @@ When the requested deliverable is only a PRD or product requirements note, use
 `workflows/skills/prd-creation/SKILL.md` through the PRD route instead:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Use the full `product` route when the task continues from PRD into ARD and code.

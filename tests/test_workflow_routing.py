@@ -100,7 +100,7 @@ from workflow_doc_graph import (
     graph_required_docs,
 )
 from workflow_parallel_validate import validate_parallel_execution_plan
-from workflow_route import resolve_docs
+from workflow_route import resolve_docs, route_hooks
 from workflow_search import SearchOutcome, search_docs, search_docs_outcome
 from workflow_skill_paths import canonical_doc_path
 from workflow_spill import spill_tool_label, validate_spill_label_contracts
@@ -129,6 +129,13 @@ class WorkflowRoutingTests(unittest.TestCase):
             os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
         else:
             os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+
+    def test_required_hook_commands_use_stable_launcher(self) -> None:
+        hooks = route_hooks("task")
+        commands = {hook["hook"]: hook["command"] for hook in hooks}
+        for name in ("start", "review", "finish"):
+            self.assertIn(str(stable_launcher_path()), commands[name])
+            self.assertNotIn("scripts/agent-hook.py", commands[name])
 
     def test_testing_concern_is_registered(self) -> None:
         self.assertIn("testing", CONCERNS)
@@ -748,6 +755,25 @@ class WorkflowRoutingTests(unittest.TestCase):
             {"partial_result_id": "result-1"},
         )
         self.assertEqual("result-1", environment["AGENTPLAYBOOK_RESUME_RESULT_ID"])
+        self.assertEqual("task-1", worker_environment({
+            "worker_preflight_evidence": "/tmp/preflight.json",
+            "worker_reservation_token": "a" * 32,
+        }, {"task_id": "task-1"})["AGENTPLAYBOOK_TASK_ID"])
+
+    def test_dispatch_manifest_carries_explicit_partial_result_id(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = build_dispatch_manifest(
+                "task",
+                "Resume a bounded worker",
+                Path(directory),
+                work_kind="analysis",
+                partial_result_id="partial-1",
+                request_classified=True,
+                classification_evidence="clear-scoped task blockers resolved",
+                request_classification={"work_kind": "task", "classification": "clear"},
+                route={"required_docs": ["AGENTS.md"], "gates": []},
+            )
+            self.assertEqual("partial-1", manifest["partial_result_id"])
 
     def test_dispatch_stays_inline_when_parent_profile_and_sandbox_match(self) -> None:
         manifest = build_dispatch_manifest(

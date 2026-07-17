@@ -29,6 +29,7 @@ from workflow_parallel import parallel_execution_plan
 from workflow_search import SearchOutcome, search_docs_outcome
 from workflow_skill_paths import canonical_doc_path
 from workflow_wikimap import WIKIMAP_VERSION
+from support.stable_launcher import stable_launcher_path
 
 
 CORE_REQUIRED_DOCS = (
@@ -371,6 +372,7 @@ def route_gates(command: str, *, graphify_required: bool = False) -> list[str]:
 
 
 def route_hooks(command: str) -> list[dict[str, object]]:
+    launcher = str(stable_launcher_path())
     review_required = command in REVIEW_HOOK_REQUIRED_COMMANDS
     hooks: list[dict[str, object]] = [
         {
@@ -378,7 +380,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
             "required": True,
             "when": "before edits, reviews, commits, or completion reports",
             "command": (
-                "python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start "
+                f"{launcher} start "
                 "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
                 f"--command {command} --request \"<USER_REQUEST>\""
             ),
@@ -397,7 +399,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
             "required": True,
             "when": "before final report, commit, release, or handoff",
             "command": (
-                "python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish "
+                f"{launcher} finish "
                 "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
                 "[--gate \"<gate>=<evidence override>\"]"
             ),
@@ -414,8 +416,9 @@ def _review_hook_timing(required: bool) -> str:
 
 
 def _review_hook_command(command: str) -> str:
+    launcher = str(stable_launcher_path())
     base = (
-        "python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py review "
+        f"{launcher} review "
         "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
         "--review-scope working-tree "
         "--code-review-evidence \"<evidence>\" "

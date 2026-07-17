@@ -106,16 +106,16 @@ Use ${AGENTPLAYBOOK_HOME} for shared local installs or a repo-relative pinned pa
 Full local paths belong only in shell env setup, one-shot prompts, or user-level runtime bridges.
 
 Check user-level runtime bridges, hooks, and permission allowlists with the selected AgentPlaybook root:
-python3 &lt;AGENTPLAYBOOK_ROOT&gt;/scripts/setup-agent-hooks.py --check
+~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks --check
 
 If the check reports missing bridges, hooks, or permissions, ask for approval to update user-level runtime config, then run:
-python3 &lt;AGENTPLAYBOOK_ROOT&gt;/scripts/setup-agent-hooks.py
+~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks
 
 This is required for Codex, Claude, and AGY to run AgentPlaybook Python wrappers without repeated permission failures. Keep the allowlist narrow; do not broadly allow python3.
 
 If agent instructions or VibeGuard files already exist, ask me how to apply AgentPlaybook before running setup or update.
 Only run VibeGuard update if I choose to refresh an existing managed block; otherwise audit current guardrails.
-For multi-step work, run agent-hook.py start once with --request; it performs routing and preflight. Do not separately repeat workflow list, classify, route, or preflight after it succeeds.
+For multi-step work, run ~/.agentplaybook/bin/agentplaybook-hook start once with --request; it performs routing and preflight. Do not separately repeat workflow list, classify, route, or preflight after it succeeds.
 Read every route required_docs entry directly after start and before editing or reviewing. Run the review hook after meaningful edits and the finish hook before final report, commit, release, or handoff.
 Direct workflow.py route, agent-preflight.py, and agent-finish-check.py calls are lower-level diagnostic or compatibility fallbacks only; never run them as a second lifecycle.
 Missing wrapper evidence or missing route gate evidence is non-compliant.
@@ -159,10 +159,10 @@ Use this only if I choose the optional setup for better future agent behavior.
 Preserve existing personal instructions. Add or update a short managed block; do not replace unrelated user content.
 
 Also run the AgentPlaybook runtime setup check:
-python3 &lt;AGENTPLAYBOOK_ROOT&gt;/scripts/setup-agent-hooks.py --check
+~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks --check
 
 If bridges, hooks, or permissions are missing, ask for approval to update user-level runtime config and then run:
-python3 &lt;AGENTPLAYBOOK_ROOT&gt;/scripts/setup-agent-hooks.py
+~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks
 
 Keep the permission allowlist narrow: allow only the current AgentPlaybook scripts/*.py files by exact path and suffix-aware runtime matcher, not broad python3.
 

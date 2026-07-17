@@ -182,7 +182,7 @@ do not separately repeat workflow list, classify, route, or preflight after it
 succeeds:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 Use the start output as the route, document, and gate manifest, then execute the
@@ -257,13 +257,13 @@ paths and must stop once rather than retry search.
 Discover valid commands, platforms, and concerns with:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
+~/.agentplaybook/bin/agentplaybook-hook workflow list
 ```
 
 When the right document is not obvious from `index.md`, search by keyword:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py query <keyword> [<keyword> ...]
+~/.agentplaybook/bin/agentplaybook-hook workflow query <keyword> [<keyword> ...]
 ```
 
 The query command uses the pinned Wikimap source to return exact sections and
@@ -361,7 +361,7 @@ with arguments, any change to those arguments (e.g., different project paths or
 options) will fail prefix matching and trigger repeated prompts.
 For Codex `exec_command` escalations, set `prefix_rule` to only the executable
 and resolved wrapper path, such as
-`["python3", "/absolute/path/to/AgentPlaybook/scripts/agent-hook.py"]`; never
+`["/Users/USER/.agentplaybook/bin/agentplaybook-hook"]`; never
 include `--project`, `--request`, `--gate`, `$(pwd)`, `$HOME`, or other runtime
 arguments in the saved prefix. AGY (Antigravity) permission allowlists must follow the same
 shape with only an absolute wrapper command plus a trailing argument wildcard.
@@ -377,7 +377,7 @@ hooks must use the stable launcher installed by `setup-agent-hooks.py` at
 hook command does not point at a stale checkout path.
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 After start, read the route's `required_docs` in order before editing or
@@ -428,7 +428,7 @@ Before final report, commit, release, or handoff, run the finish hook and pass
 evidence for every required route gate:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
+~/.agentplaybook/bin/agentplaybook-hook finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
 ```
 
 Call `agent-finish-check.py` directly only as a lower-level diagnostic or

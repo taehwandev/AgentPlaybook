@@ -31,7 +31,7 @@ Do not claim the file was read unless you actually opened it.
 If the target project is not explicit or the runtime starts outside the target,
 run the AgentPlaybook entry helper before reading project docs:
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
+~/.agentplaybook/bin/agentplaybook-hook agent-entry --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
 
 Continue only when it returns `selected`. If it returns `ambiguous` or
 `not_found`, ask me for the target project instead of guessing.
@@ -58,16 +58,16 @@ Select one setup mode and tell me which one you selected before editing:
 A usable AgentPlaybook root must contain AGENTS.md, index.md, and
 scripts/workflow.py. Validate it with:
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 
 Check user-level runtime bridges, hooks, and permission allowlists:
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
+~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks --check
 
 If the check reports missing bridges, hooks, or permissions, ask for approval
 to update user-level runtime config, then run:
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
+~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks
 
 This setup is global by design. It allows only AgentPlaybook-managed
 entrypoints with suffix-aware runtime matchers. It must not broadly allow
@@ -150,7 +150,7 @@ files are present, update their AgentPlaybook pointer in the same pass or point
 them back to AGENTS.md. Do not create a separate runtime-specific file only to
 duplicate guidance when the active runtime already reads AGENTS.md.
 
-For any multi-step setup or follow-up task, run `agent-hook.py start` once with
+For any multi-step setup or follow-up task, run `~/.agentplaybook/bin/agentplaybook-hook start` once with
 `--request "<USER_REQUEST>"` before selecting task documents, editing,
 reviewing, committing, or reporting completion. It performs workflow routing
 and preflight; do not separately repeat workflow list, classify, route, or
@@ -178,7 +178,7 @@ Before executing wrapper commands, replace `<AGENTPLAYBOOK_ROOT>` with the
 resolved absolute path; do not leave `$HOME`, `${HOME}`, `~`, or a relative path
 in the executable command.
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project . --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
+~/.agentplaybook/bin/agentplaybook-hook start --project . --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
 
 Read every route `required_docs` entry directly after start and before editing
 or reviewing. Use the route's review hook after meaningful edits.
@@ -186,7 +186,7 @@ or reviewing. Use the route's review hook after meaningful edits.
 Before final report, commit, release, or handoff, run finish check with evidence
 for every required route gate:
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project . --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
+~/.agentplaybook/bin/agentplaybook-hook finish --project . --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
 
 Call `workflow.py route`, `agent-preflight.py`, or `agent-finish-check.py`
 directly only as lower-level diagnostic or compatibility fallbacks when the
@@ -219,12 +219,12 @@ not replace unrelated user content.
 
 Also run the AgentPlaybook runtime setup check:
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
+~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks --check
 
 If bridges, hooks, or permissions are missing, ask for approval to update
 user-level runtime config and then run:
 
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
+~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks
 
 Keep the permission allowlist narrow: allow only AgentPlaybook-managed
 entrypoints by suffix-aware runtime matcher, not broad `python3`. For Claude
@@ -252,7 +252,7 @@ The bridge must force this behavior:
 - Claude reads CLAUDE.md.
 - Antigravity reads AGENTS.md.
 - Do not claim an instruction file was read unless you actually opened it.
-- For multi-step work, run `agent-hook.py start` once with my current request;
+- For multi-step work, run `~/.agentplaybook/bin/agentplaybook-hook start` once with my current request;
   it performs AgentPlaybook workflow routing and preflight. Do not separately
   repeat workflow list, classify, route, or preflight after it succeeds.
 - Read every route `required_docs` entry directly after start and before editing

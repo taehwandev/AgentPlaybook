@@ -41,7 +41,7 @@ Run the shared start hook once for every multi-step task when it exists. It
 performs request intake, routing, and preflight as one lifecycle entry:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 The start hook requires the current request with `--request`. After the request
@@ -207,11 +207,11 @@ list.
 Examples:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform android --concern security --concern ui
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command bugfix --request "<USER_REQUEST>" --platform server --concern api
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "Show me how we build an app feature here" --platform android --concern ui
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform android --concern security --concern ui
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command bugfix --request "<USER_REQUEST>" --platform server --concern api
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "Show me how we build an app feature here" --platform android --concern ui
+~/.agentplaybook/bin/agentplaybook-hook workflow validate
 ```
 
 Do not force broad app/product requests through the `feature` route. The router
@@ -530,7 +530,7 @@ workflow's executable checklist:
 Before editing, reviewing, committing, or reporting completion:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 The route may promote additional `required_docs` from the root

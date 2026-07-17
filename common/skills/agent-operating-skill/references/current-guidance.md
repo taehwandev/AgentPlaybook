@@ -14,7 +14,7 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 2. Classify request clarity and effort before loading broad context. If the user asks a direct question, answer it before starting workflow routing, editing, or project-specific commands.
 3. Read repo-local instructions before changing files.
 4. Discover the project stack before choosing commands or libraries.
-5. For multi-step tasks, run `scripts/agent-hook.py start ... --request
+5. For multi-step tasks, run `~/.agentplaybook/bin/agentplaybook-hook start ... --request
    "<USER_REQUEST>"` once before selecting task documents, editing, reviewing,
    committing, or reporting completion. It performs routing and preflight; do
    not separately repeat workflow list, classify, route, or preflight after it
@@ -178,7 +178,7 @@ While editing:
 Before finishing:
 
 - Run the route's review hook after meaningful edits, then run
-  `scripts/agent-hook.py finish` before final report, handoff, commit, or
+  `~/.agentplaybook/bin/agentplaybook-hook finish` before final report, handoff, commit, or
   release. Use `agent-finish-check.py` directly only as a lower-level diagnostic
   or compatibility fallback when the finish hook is unavailable.
 - Confirm every required workflow route gate has structured ledger evidence

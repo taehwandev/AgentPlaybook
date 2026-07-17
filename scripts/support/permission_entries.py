@@ -227,4 +227,8 @@ def _common_playbook_tool_commands() -> list[str]:
         "pytest",
         "python3 -m pytest",
         "python -m pytest",
+        "python3 -m unittest",
+        "python -m unittest",
+        "python3 -m unittest discover -s tests",
+        "python -m unittest discover -s tests",
     ]

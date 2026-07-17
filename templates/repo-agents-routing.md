@@ -19,10 +19,7 @@ Shared AgentPlaybook library:
 <AGENTPLAYBOOK_ROOT>/index.md
 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
 <AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
-<AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py
-<AGENTPLAYBOOK_ROOT>/scripts/workflow.py
-<AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
-<AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
+~/.agentplaybook/bin/agentplaybook-hook
 
 Use repo-local instructions first. If this block is being installed into a
 personal or global runtime instructions file, and the runtime starts outside the
@@ -67,7 +64,7 @@ application drill first: add pointer vs merge vs pin; audit-only vs refresh
 with update vs first-time setup; apply now vs prepare instructions only.
 Default to preserving current guardrails and running audit only unless the user
 chooses to refresh the managed block.
-For multi-step tasks, run `agent-hook.py start` once with `--request
+For multi-step tasks, run `~/.agentplaybook/bin/agentplaybook-hook start` once with `--request
 "<USER_REQUEST>"`; it runs workflow routing/preflight and reports the required
 hooks for the route. Do not separately repeat workflow list, classify, route, or
 preflight. Use the start output as the command manifest before selecting task
@@ -90,7 +87,7 @@ verification, delegate automatically without waiting for explicit user
 multi-agent wording. Use Codex native workers, Claude Agent/Task workers, or
 the Gemini/AGY Antigravity agent runner according to the active runtime.
 Otherwise record the concrete serial reason. At each parent-to-worker boundary,
-run `agent-hook.py handoff`; it refreshes the provider-neutral, content-free
+run `~/.agentplaybook/bin/agentplaybook-hook handoff`; it refreshes the provider-neutral, content-free
 execution capsule and validates it once. A ready and valid handoff lets the
 worker reuse the parent's route, preflight, and required-doc manifest and skip
 duplicate startup. An invalid handoff is a successful fallback decision that
@@ -128,8 +125,8 @@ when safe, return to the first missed gate only, and run the retrospective
 workflow. The missed gate gets one recovery retry; do not restart the whole
 route. Do not report any third gate state.
 When the wrapper scripts are available, keep the existing start evidence,
-run `agent-hook.py review` after the scoped diff is ready, and run
-`agent-hook.py finish` before final report, commit, release, or handoff. Pass
+run `~/.agentplaybook/bin/agentplaybook-hook review` after the scoped diff is ready, and run
+`~/.agentplaybook/bin/agentplaybook-hook finish` before final report, commit, release, or handoff. Pass
 evidence for every route gate to the finish check. The wrappers write local
 evidence under
 `.agentplaybook/`; this directory is runtime evidence and should usually be
@@ -181,12 +178,10 @@ Editing safety: <AGENTPLAYBOOK_ROOT>/common/skills/agent-editing-safety/SKILL.md
 Worktree hygiene: <AGENTPLAYBOOK_ROOT>/common/skills/worktree-hygiene/SKILL.md
 Defensive boundaries: <AGENTPLAYBOOK_ROOT>/common/skills/defensive-boundaries/SKILL.md
 UI visual verification: <AGENTPLAYBOOK_ROOT>/common/skills/ui-visual-verification/SKILL.md
-Workflow script: <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
-Agent hook wrapper: <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py
-Agent entry manifest: <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
-Project discovery: <AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
-Preflight evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
-Finish evidence script: <AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
+Workflow and lifecycle wrapper: ~/.agentplaybook/bin/agentplaybook-hook
+  (aliases: workflow, start, handoff, gate, review, finish, agent-entry,
+  project-discover, agent-preflight, agent-finish-check, agent-os-status,
+  agent-os-watchdog, agent-os-maintenance, workflow-dispatch)
 Android architecture: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-architecture/SKILL.md
 Android Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-compose-ui/SKILL.md
 Android module/package structure: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-module-structure/SKILL.md

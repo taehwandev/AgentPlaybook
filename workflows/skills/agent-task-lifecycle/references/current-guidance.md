@@ -62,7 +62,7 @@ memory.
 4. Risk scan: mark touched surfaces such as secrets, external state, auth,
    billing, data, release, generated files, dependencies, local tools, runtime
    bridges, or usage metering evidence.
-5. Start: for multi-step tasks, run `scripts/agent-hook.py start ... --request
+5. Start: for multi-step tasks, run `~/.agentplaybook/bin/agentplaybook-hook start ... --request
    "<USER_REQUEST>"` once before manually choosing workflow cards. It performs
    routing and preflight; do not separately repeat workflow list, classify,
    route, or preflight after it succeeds. Direct `workflow.py route` and
@@ -137,7 +137,7 @@ When a finish gate requires evidence, record the actual decision. At minimum:
     scope. The restarted attempt must cite or apply the plan.
 20. Review: after meaningful edits, run the route's review hook and inspect the
     final diff, output, or artifact against the request and risks.
-21. Finish: run `scripts/agent-hook.py finish` before final report, handoff,
+21. Finish: run `~/.agentplaybook/bin/agentplaybook-hook finish` before final report, handoff,
     commit, or release. Use `agent-finish-check.py` directly only as a
     lower-level diagnostic or compatibility fallback when the finish hook is
     unavailable.

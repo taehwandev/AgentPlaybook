@@ -34,7 +34,7 @@ Rules:
    override files.
    If the target repo is not explicit or the runtime current directory is
    outside the target, run:
-   python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
+   ~/.agentplaybook/bin/agentplaybook-hook agent-entry --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
    Continue only when it returns `selected`; ask me to choose when it returns
    `ambiguous` or `not_found`.
    Do not rely on implicit runtime discovery. If you are Codex-style, explicitly
@@ -72,7 +72,7 @@ Rules:
    to refresh an existing managed block.
 5. For multi-step tasks, run this once before selecting task documents,
    editing, reviewing, committing, or reporting completion:
-   python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
+   ~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
    It performs workflow routing/preflight and returns the command manifest. Do
    not separately repeat workflow list, classify, route, or preflight.
    Do not wait for me to name document keywords. Let routing/search infer the
@@ -90,7 +90,7 @@ Rules:
    serial reason. Use Codex native workers, Claude Agent/Task workers, or the
    Gemini/AGY Antigravity agent runner according to the active runtime. At each
    parent-to-worker boundary, run:
-   python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py handoff --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+   ~/.agentplaybook/bin/agentplaybook-hook handoff --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
    This refreshes the provider-neutral, content-free execution capsule and
    validates it once. A ready and valid handoff lets the worker reuse the
    parent's route, preflight, and required-doc manifest and skip duplicate
@@ -146,7 +146,7 @@ Rules:
     `<AGENTPLAYBOOK_ROOT>` with the resolved absolute path; do not leave
     `$HOME`, `${HOME}`, `~`, or a relative path in the executable command. When
     available, run:
-    python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+    ~/.agentplaybook/bin/agentplaybook-hook finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
     Use explicit `--gate "<gate>=<evidence>"` only as a one-off compatibility
     input: finish records it in the bound ledger before validation. Use
     `agent-hook.py gate` or `gate-batch` for structured gate fields.
