@@ -11,7 +11,7 @@ from typing import Callable, Mapping
 
 from agent_gate_evidence import gate_evidence_path_for_preflight
 from agent_run_registry import latest_run_id
-from agent_scheduler import claim_next, choose_capacity, enqueue_task, transition_task
+from agent_scheduler import claim_next, choose_capacity, enqueue_task, retry_task, transition_task
 from agent_worker_evidence import create_worker_reservation, worker_reservation_matches
 from workflow_dispatch_handoff import execution_policy
 
@@ -73,12 +73,14 @@ def _claim_scheduler_task(
     parent_evidence = Path(str(prepared["preflight_evidence"])).resolve()
     run_id = latest_run_id(project, parent_evidence) or uuid.uuid4().hex
     independent_slices = int(manifest.get("independent_slices") or 1)
+    max_retries = int(manifest.get("max_retries") or 0)
     capacity = choose_capacity(independent_slices, int(manifest.get("requested_workers") or 1))
     task = enqueue_task(
         project,
         run_id,
         priority=int(manifest.get("priority") or 0),
         independent_slices=independent_slices,
+        max_retries=max_retries,
     )
     claimed = claim_next(project, capacity=capacity)
     if not claimed or claimed.get("task_id") != task.get("task_id"):
@@ -89,13 +91,29 @@ def _claim_scheduler_task(
 def _run_scheduled_worker(
     argv: list[str], runner: Callable[[list[str]], int], project: Path, task: Mapping[str, object]
 ) -> int:
-    try:
-        result = runner(argv)
-    except BaseException:
-        transition_task(project, str(task["task_id"]), "failed")
-        raise
-    transition_task(project, str(task["task_id"]), "completed" if result == 0 else "failed")
-    return result
+    task_id = str(task["task_id"])
+    while True:
+        try:
+            result = runner(argv)
+        except BaseException:
+            transition_task(project, task_id, "failed")
+            raise
+        if result == 0:
+            transition_task(project, task_id, "completed")
+            return result
+        transition_task(project, task_id, "failed")
+        retried = retry_task(project, task_id)
+        if retried is None:
+            return result
+        claimed = claim_next(
+            project,
+            capacity=choose_capacity(
+                int(retried.get("independent_slices") or 1),
+                int(retried.get("requested_workers") or 1),
+            ),
+        )
+        if not claimed or claimed.get("task_id") != task_id:
+            return result
 
 
 def prepare_launch_handoff(

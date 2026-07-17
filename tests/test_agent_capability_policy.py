@@ -20,6 +20,7 @@ class AgentCapabilityPolicyTests(unittest.TestCase):
     def test_isolated_authoring_keeps_runtime_mode_and_isolates_filesystem(self) -> None:
         profile = capability_profile("feature", isolation_required=True)
         self.assertEqual("workspace-write", profile["sandbox_mode"])
+        self.assertEqual("isolated-write", profile["isolation_mode"])
         self.assertEqual("isolated-write", profile["filesystem"])
         self.assertEqual([], validate_capability_profile(profile))
 
@@ -29,4 +30,3 @@ class AgentCapabilityPolicyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

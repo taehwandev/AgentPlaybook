@@ -22,10 +22,10 @@ def capability_profile(work_kind: str, *, isolation_required: bool = False) -> d
     return {
         "work_kind": work_kind,
         "authoring_policy": "code authoring allowed",
-            # The runtime sandbox remains workspace-write for compatibility;
-            # isolation is enforced by the separate filesystem capability and
-            # worker evidence boundary.
-            "sandbox_mode": "workspace-write",
+        # The runtime sandbox remains workspace-write for compatibility;
+        # isolation is enforced by explicit filesystem and worker boundaries.
+        "sandbox_mode": "workspace-write",
+        "isolation_mode": "isolated-write" if isolation_required else "workspace",
         "filesystem": "isolated-write" if isolation_required else "workspace-write",
         "network": "runtime-policy",
         "child_process": "explicit-isolation-only",
@@ -40,4 +40,9 @@ def validate_capability_profile(profile: dict[str, Any]) -> list[str]:
         failures.append("read-only sandbox requires non-authoring policy")
     if profile.get("sandbox_mode") == "isolated-write" and profile.get("filesystem") != "isolated-write":
         failures.append("isolated-write sandbox requires isolated filesystem capability")
+    isolation_mode = profile.get("isolation_mode", "workspace")
+    if isolation_mode not in {"workspace", "isolated-write"}:
+        failures.append("isolation_mode must be workspace or isolated-write")
+    if isolation_mode == "isolated-write" and profile.get("filesystem") != "isolated-write":
+        failures.append("isolated-write isolation requires isolated filesystem capability")
     return failures

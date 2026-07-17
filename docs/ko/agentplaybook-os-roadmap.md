@@ -51,7 +51,26 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
 경로와 registry·event channel·status snapshot이 연결된 상태다. stale-run
 재개를 위한 stale-run 감지·실패 전환·resume primitive도 추가했다. 상태
 조회는 `scripts/agent-os-status.py --project <repo>`로 확인할 수 있다.
-장기 보존 정책과 실제 자동 재시작 정책은 다음 hardening 단계의 작업이다.
+세부 운영 환경에 맞춘 보존 기간 튜닝과 자동 재시작 정책 확장은 다음 hardening 단계로 남긴다.
+
+## 운영 hardening 상태
+
+- `retry_task`와 dispatch 재시도 루프로 bounded retry/restart를 제공한다.
+- `recover_stale_runs`와 `resume_run`으로 stale 실행을 실패 처리한 뒤 재개할 수 있다.
+- `agent_retention.py`와 `agent-os-maintenance.py`가 terminal run/task/event의
+  보존 기간과 최대 기록 수를 제한한다.
+- status snapshot에 `api_version`과 생성 시각을 추가해 외부 소비자가 계약을
+  식별할 수 있게 했다.
+- registry·scheduler·event의 read-modify-write 구간에 프로세스 간 lock을
+  적용해 병렬 worker의 lost update와 capacity 초과 claim을 방지한다.
+- multiprocessing 회귀 테스트로 동시 run 등록, event 기록, serial claim의
+  보존과 capacity bound를 검증한다.
+- capability profile은 runtime `sandbox_mode`와 filesystem 격리 수준을
+  `isolation_mode`로 분리해, workspace-write runtime과 isolated-write 경계를
+  문서·검증에서 혼동하지 않도록 한다.
+
+운영 환경에 맞춘 실제 보존 기간과 retry 횟수는 maintenance CLI 인자로
+설정하며, 기본값은 보수적인 bounded 값으로 유지한다.
 
 ## 추가해야 할 계층
 

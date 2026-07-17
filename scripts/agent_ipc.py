@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_execution_capsule_state import atomic_write_json, read_json_object
+from agent_state_lock import state_lock
 
 
 SCHEMA_VERSION = 1
@@ -41,17 +42,20 @@ def emit_event(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     path = events_path(project)
-    payload = read_json_object(path)
-    events = payload.get("events") if payload.get("schema_version") == SCHEMA_VERSION else []
-    if not isinstance(events, list):
-        events = []
-    events.append(event)
-    atomic_write_json(path, {"schema_version": SCHEMA_VERSION, "events": events[-MAX_EVENTS:]})
+    with state_lock(path):
+        payload = read_json_object(path)
+        events = payload.get("events") if payload.get("schema_version") == SCHEMA_VERSION else []
+        if not isinstance(events, list):
+            events = []
+        events.append(event)
+        atomic_write_json(path, {"schema_version": SCHEMA_VERSION, "events": events[-MAX_EVENTS:]})
     return event
 
 
 def read_events(project: Path, *, event_type: str | None = None) -> list[dict[str, Any]]:
-    payload = read_json_object(events_path(project))
+    path = events_path(project)
+    with state_lock(path):
+        payload = read_json_object(path)
     events = payload.get("events") if payload.get("schema_version") == SCHEMA_VERSION else []
     if not isinstance(events, list):
         return []
@@ -66,4 +70,3 @@ def summarize_events(project: Path) -> dict[str, int]:
         event_type = str(event.get("event_type") or "unknown")
         summary[event_type] = summary.get(event_type, 0) + 1
     return summary
-

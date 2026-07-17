@@ -9,7 +9,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_scheduler import claim_next, choose_capacity, enqueue_task, transition_task
+from agent_scheduler import claim_next, choose_capacity, enqueue_task, retry_task, transition_task
 
 
 class AgentSchedulerTests(unittest.TestCase):
@@ -36,7 +36,18 @@ class AgentSchedulerTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 transition_task(Path(directory), "missing", "unknown")
 
+    def test_retry_is_bounded(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            task = enqueue_task(project, "run-1", max_retries=1)
+            self.assertEqual(task["task_id"], claim_next(project)["task_id"])
+            transition_task(project, task["task_id"], "failed")
+            retried = retry_task(project, task["task_id"])
+            self.assertEqual(2, retried["attempt"])
+            self.assertEqual(task["task_id"], claim_next(project)["task_id"])
+            transition_task(project, task["task_id"], "failed")
+            self.assertIsNone(retry_task(project, task["task_id"]))
+
 
 if __name__ == "__main__":
     unittest.main()
-
