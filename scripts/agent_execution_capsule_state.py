@@ -158,41 +158,26 @@ def preflight_snapshot_binding_fingerprint(snapshot: dict[str, Any]) -> str | No
 
 
 def atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
+    if path.parent.is_symlink():
+        raise OSError(f"Symbolic link detected in directory: {path.parent}")
+
     path.parent.mkdir(parents=True, exist_ok=True)
     encoded = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
-    directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
-    directory_fd = os.open(path.parent, directory_flags)
-    temporary_name = f".{path.name}.{uuid.uuid4().hex}.tmp"
+    temporary_path = path.parent / f".{path.name}.{uuid.uuid4().hex}.tmp"
     try:
-        file_fd = os.open(
-            temporary_name,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
-            0o600,
-            dir_fd=directory_fd,
-        )
+        temporary_path.write_bytes(encoded)
         try:
-            with os.fdopen(file_fd, "wb") as stream:
-                stream.write(encoded)
-                stream.flush()
-                os.fsync(stream.fileno())
-        except BaseException:
-            try:
-                os.unlink(temporary_name, dir_fd=directory_fd)
-            except OSError:
-                pass
-            raise
-        os.replace(
-            temporary_name,
-            path.name,
-            src_dir_fd=directory_fd,
-            dst_dir_fd=directory_fd,
-        )
-    finally:
-        try:
-            os.unlink(temporary_name, dir_fd=directory_fd)
+            os.chmod(temporary_path, 0o600)
         except OSError:
             pass
-        os.close(directory_fd)
+        temporary_path.replace(path)
+    except BaseException:
+        try:
+            if temporary_path.exists():
+                temporary_path.unlink()
+        except OSError:
+            pass
+        raise
 
 
 def _sha256_and_size(path: Path) -> tuple[str, int]:

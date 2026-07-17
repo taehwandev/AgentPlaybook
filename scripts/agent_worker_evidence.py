@@ -14,24 +14,26 @@ RESERVATION_FILENAME = ".agentplaybook-reservation"
 CLAIMED_FILENAME = ".agentplaybook-reservation-claimed"
 
 
+def _check_no_symlink(path: Path) -> None:
+    if path.is_symlink():
+        raise OSError(f"Symbolic link detected in path: {path}")
+
+
 def create_worker_reservation(worker_dir: Path) -> str:
     """Create a content-free reservation token in an already reserved directory."""
 
+    _check_no_symlink(worker_dir)
     token = uuid.uuid4().hex
-    directory_fd = _open_directory(worker_dir)
+    marker_path = worker_dir / RESERVATION_FILENAME
     try:
-        marker_fd = os.open(
-            RESERVATION_FILENAME,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
-            0o600,
-            dir_fd=directory_fd,
-        )
-        with os.fdopen(marker_fd, "wb") as marker:
-            marker.write((token + "\n").encode("ascii"))
-            marker.flush()
-            os.fsync(marker.fileno())
-    finally:
-        os.close(directory_fd)
+        with open(marker_path, "x", encoding="ascii") as marker:
+            marker.write(token + "\n")
+        try:
+            os.chmod(marker_path, 0o600)
+        except OSError:
+            pass
+    except FileExistsError as error:
+        raise FileExistsError(f"reservation marker already exists: {marker_path}") from error
     return token
 
 
@@ -41,17 +43,12 @@ def worker_reservation_matches(worker_dir: Path, token: str) -> bool:
     if len(token) != 32 or any(character not in "0123456789abcdef" for character in token):
         return False
     try:
-        directory_fd = _open_directory(worker_dir)
-        try:
-            marker_fd = os.open(
-                RESERVATION_FILENAME,
-                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
-                dir_fd=directory_fd,
-            )
-            with os.fdopen(marker_fd, "rb") as marker:
-                recorded = marker.read(64).decode("ascii").strip()
-        finally:
-            os.close(directory_fd)
+        _check_no_symlink(worker_dir)
+    except OSError:
+        return False
+    marker_path = worker_dir / RESERVATION_FILENAME
+    try:
+        recorded = marker_path.read_text(encoding="ascii").strip()
     except (OSError, UnicodeDecodeError):
         return False
     return hmac.compare_digest(recorded, token)
@@ -60,30 +57,21 @@ def worker_reservation_matches(worker_dir: Path, token: str) -> bool:
 def claim_worker_reservation(worker_dir: Path, token: str) -> bool:
     """Atomically consume a valid reservation so only one worker can claim it."""
 
+    try:
+        _check_no_symlink(worker_dir)
+    except OSError:
+        return False
     if not worker_reservation_matches(worker_dir, token):
         return False
+    marker_path = worker_dir / RESERVATION_FILENAME
+    claimed_path = worker_dir / CLAIMED_FILENAME
     try:
-        directory_fd = _open_directory(worker_dir)
-        try:
-            os.rename(
-                RESERVATION_FILENAME,
-                CLAIMED_FILENAME,
-                src_dir_fd=directory_fd,
-                dst_dir_fd=directory_fd,
-            )
-            claimed_fd = os.open(
-                CLAIMED_FILENAME,
-                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
-                dir_fd=directory_fd,
-            )
-            with os.fdopen(claimed_fd, "rb") as marker:
-                recorded = marker.read(64).decode("ascii").strip()
-            if not hmac.compare_digest(recorded, token):
-                return False
-            os.unlink(CLAIMED_FILENAME, dir_fd=directory_fd)
-            return True
-        finally:
-            os.close(directory_fd)
+        marker_path.replace(claimed_path)
+        recorded = claimed_path.read_text(encoding="ascii").strip()
+        if not hmac.compare_digest(recorded, token):
+            return False
+        claimed_path.unlink()
+        return True
     except (OSError, UnicodeDecodeError):
         return False
 
@@ -173,8 +161,3 @@ def reserve_isolated_worker_evidence(
         gate_evidence_path_for_preflight(preflight),
         create_worker_reservation(preflight.parent),
     )
-
-
-def _open_directory(path: Path) -> int:
-    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
-    return os.open(path, flags)
