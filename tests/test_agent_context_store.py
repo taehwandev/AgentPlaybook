@@ -1,0 +1,34 @@
+from __future__ import annotations
+
+import tempfile
+import unittest
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from agent_context_store import refresh_context_snapshot, validate_context_snapshot
+
+
+class AgentContextStoreTests(unittest.TestCase):
+    def test_snapshot_refresh_and_validation_follow_route_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            rules = ROOT
+            route = {"required_docs": ["AGENTS.md"], "gates": []}
+            snapshot = refresh_context_snapshot(project, rules, route)
+            self.assertEqual("AGENTS.md", snapshot["required_docs"][0]["path"])
+            self.assertEqual([], validate_context_snapshot(project, rules, route))
+
+    def test_route_change_invalidates_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            refresh_context_snapshot(project, ROOT, {"required_docs": ["AGENTS.md"], "gates": []})
+            failures = validate_context_snapshot(project, ROOT, {"required_docs": [], "gates": []})
+            self.assertTrue(failures)
+
+
+if __name__ == "__main__":
+    unittest.main()
+

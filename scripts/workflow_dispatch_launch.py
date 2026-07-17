@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import uuid
 from pathlib import Path
 from typing import Callable, Mapping
 
 from agent_gate_evidence import gate_evidence_path_for_preflight
+from agent_run_registry import latest_run_id
+from agent_scheduler import claim_next, choose_capacity, enqueue_task, transition_task
 from agent_worker_evidence import create_worker_reservation, worker_reservation_matches
 from workflow_dispatch_handoff import execution_policy
 
@@ -47,13 +50,52 @@ def execute_dispatch_manifest(
     argv = codex_argv(
         Path(str(manifest["project"])), profile, str(manifest["sandbox_mode"]), prompt
     )
+    project = Path(str(manifest["project"])).resolve()
+    scheduler_task = _claim_scheduler_task(manifest, prepared, project)
     if runner:
-        return runner(argv)
+        return _run_scheduled_worker(argv, runner, project, scheduler_task)
     try:
         completed = subprocess.run(argv, check=False, env=worker_environment(prepared))
     except OSError as error:
+        transition_task(project, str(scheduler_task["task_id"]), "failed")
         raise RuntimeError("Unable to start the delegated Codex worker") from error
+    transition_task(
+        project,
+        str(scheduler_task["task_id"]),
+        "completed" if completed.returncode == 0 else "failed",
+    )
     return completed.returncode
+
+
+def _claim_scheduler_task(
+    manifest: Mapping[str, object], prepared: Mapping[str, object], project: Path
+) -> dict[str, object]:
+    parent_evidence = Path(str(prepared["preflight_evidence"])).resolve()
+    run_id = latest_run_id(project, parent_evidence) or uuid.uuid4().hex
+    independent_slices = int(manifest.get("independent_slices") or 1)
+    capacity = choose_capacity(independent_slices, int(manifest.get("requested_workers") or 1))
+    task = enqueue_task(
+        project,
+        run_id,
+        priority=int(manifest.get("priority") or 0),
+        independent_slices=independent_slices,
+    )
+    claimed = claim_next(project, capacity=capacity)
+    if not claimed or claimed.get("task_id") != task.get("task_id"):
+        raise RuntimeError("scheduler capacity is exhausted; worker remains queued")
+    return task
+
+
+def _run_scheduled_worker(
+    argv: list[str], runner: Callable[[list[str]], int], project: Path, task: Mapping[str, object]
+) -> int:
+    try:
+        result = runner(argv)
+    except BaseException:
+        transition_task(project, str(task["task_id"]), "failed")
+        raise
+    transition_task(project, str(task["task_id"]), "completed" if result == 0 else "failed")
+    return result
 
 
 def prepare_launch_handoff(

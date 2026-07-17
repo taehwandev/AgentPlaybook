@@ -38,6 +38,8 @@ from agent_review_structure import (
     REVIEW_FUNCTION_LINE_LIMIT,
     REVIEW_SOURCE_FILE_LINE_LIMIT,
 )
+from agent_run_registry import register_run, transition_run
+from agent_context_store import refresh_context_snapshot
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -75,6 +77,8 @@ def start_hook(args: argparse.Namespace) -> int:
         capsule_detail = _start_capsule_detail(args)
         if capsule_detail:
             details.append(capsule_detail)
+        _register_started_run(args, details)
+        _refresh_started_context(args, details)
     return finish_with_result(
         "start",
         success,
@@ -126,6 +130,7 @@ def finish_hook(args: argparse.Namespace) -> int:
     success = result["returncode"] == 0
     details = ["finish check completed" if success else "finish check failed"]
     details.extend(_summary_lines(result))
+    _transition_finished_run(args, success)
     return finish_with_result(
         "finish",
         success,
@@ -134,6 +139,44 @@ def finish_hook(args: argparse.Namespace) -> int:
         {"finish_check": result},
         args.retry_attempt,
     )
+
+
+def _register_started_run(args: argparse.Namespace, details: list[str]) -> None:
+    """Persist lifecycle state without making registry health a startup blocker."""
+
+    try:
+        evidence_path = preflight_evidence_path(args)
+        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+        register_run(
+            args.project,
+            evidence_path,
+            payload.get("route") or {},
+            payload.get("request_intake") or {},
+        )
+        details.append("agent run registry: running")
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        details.append("agent run registry: unavailable; lifecycle continues")
+
+
+def _transition_finished_run(args: argparse.Namespace, success: bool) -> None:
+    try:
+        transition_run(
+            args.project,
+            args.evidence or args.project / ".agentplaybook" / "preflight.json",
+            "completed" if success else "failed",
+        )
+    except (OSError, ValueError, TypeError):
+        return
+
+
+def _refresh_started_context(args: argparse.Namespace, details: list[str]) -> None:
+    try:
+        evidence_path = preflight_evidence_path(args)
+        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+        refresh_context_snapshot(args.project, args.rules, payload.get("route") or {})
+        details.append("context snapshot: refreshed")
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        details.append("context snapshot: unavailable; lifecycle continues")
 
 
 def _summary_lines(result: dict[str, Any]) -> list[str]:

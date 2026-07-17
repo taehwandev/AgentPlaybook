@@ -25,14 +25,12 @@ from workflow_dispatch_profiles import (
     profile_for_work_kind,
     select_work_kind,
 )
+from agent_capability_policy import READ_ONLY_WORK_KINDS, capability_profile
 from workflow_request import (
     classified_route_block_reason,
     classify_request,
     route_block_reason,
 )
-
-
-READ_ONLY_WORK_KINDS = frozenset({"analysis", "repetitive"})
 
 
 def build_dispatch_manifest(
@@ -99,6 +97,7 @@ def build_dispatch_manifest(
         execution_capsule_state=_execution_capsule_state,
         isolated_worker_evidence=_isolated_worker_evidence,
     )
+    capability = capability_profile(selected_kind, isolation_required=isolation_required)
     non_authoring = selected_kind in READ_ONLY_WORK_KINDS
     handoff_prompt = build_handoff_prompt(
         command,
@@ -117,8 +116,9 @@ def build_dispatch_manifest(
         "orchestrator_profile": ORCHESTRATOR_PROFILE,
         "work_profile": profile,
         "work_kind": selected_kind,
-        "authoring_policy": "read-only non-authoring" if non_authoring else "code authoring allowed",
-        "sandbox_mode": sandbox_mode,
+        "authoring_policy": capability["authoring_policy"],
+        "sandbox_mode": capability["sandbox_mode"],
+        "capability_profile": capability,
         "selection_reason": selection_reason,
         "execution_mode": execution_mode,
         "profile_matches_parent": same_profile,

@@ -1,0 +1,60 @@
+from __future__ import annotations
+
+import json
+import tempfile
+import unittest
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from agent_run_registry import active_runs, recover_stale_runs, register_run, resume_run, transition_run
+
+
+class AgentRunRegistryTests(unittest.TestCase):
+    def test_register_and_transition_run_without_content_or_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            evidence = project / ".agentplaybook" / "preflight.json"
+            run = register_run(
+                project,
+                evidence,
+                {"command": "task", "gates": [], "required_docs": []},
+                {"request": "private request text", "request_classified": True},
+            )
+
+            self.assertEqual("running", run["state"])
+            self.assertNotIn("private request text", json.dumps(run))
+            self.assertNotIn(str(project), json.dumps(run))
+            self.assertEqual([run["run_id"]], [item["run_id"] for item in active_runs(project)])
+
+            completed = transition_run(project, evidence, "completed")
+            self.assertEqual("completed", completed["state"])
+            self.assertEqual([], active_runs(project))
+
+    def test_unknown_state_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError):
+                transition_run(Path(directory), Path(directory) / "preflight.json", "unknown")
+
+    def test_stale_run_is_recovered_and_can_resume(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            run = register_run(project, project / "preflight.json", {"command": "task"}, {})
+            registry = project / ".agentplaybook" / "run-registry.json"
+            payload = json.loads(registry.read_text())
+            old = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+            payload["runs"][-1]["updated_at"] = old
+            registry.write_text(json.dumps(payload), encoding="utf-8")
+
+            recovered = recover_stale_runs(project, stale_after_seconds=60)
+            self.assertEqual([run["run_id"]], [item["run_id"] for item in recovered])
+            self.assertEqual("failed", recovered[0]["state"])
+            self.assertEqual("running", resume_run(project, run["run_id"])["state"])
+
+
+if __name__ == "__main__":
+    unittest.main()
