@@ -1006,6 +1006,31 @@ class SetupAgentHooksTests(unittest.TestCase):
         self.assertEqual(0, result.returncode)
         self.assertIn("AgentPlaybook hook skipped", result.stderr)
 
+    def test_stable_launcher_blocks_by_default_when_alias_is_unsupported(self) -> None:
+        # Without the opt-in flag, a misconfigured or misspelled hook alias
+        # must not silently exit 0 - required hooks are gated on exit code,
+        # so a quiet success here would let callers skip the entire gate
+        # system without noticing.
+        with tempfile.TemporaryDirectory() as temp_home:
+            with patch.dict(os.environ, {"HOME": temp_home}):
+                ensure_stable_launcher(ROOT, dry_run=False)
+                launcher = stable_launcher_path()
+                env = os.environ.copy()
+                env.pop("AGENTPLAYBOOK_HOOK_SOFT_FAIL", None)
+
+                result = subprocess.run(
+                    [str(launcher), "totally-bogus-alias"],
+                    cwd=temp_home,
+                    env=env,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("unsupported AgentPlaybook script alias", result.stderr)
+
     def test_stable_launcher_supports_agent_hook_subcommand_aliases(self) -> None:
         with tempfile.TemporaryDirectory() as temp_home:
             with patch.dict(os.environ, {"HOME": temp_home}):

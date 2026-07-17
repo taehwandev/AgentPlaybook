@@ -199,7 +199,9 @@ def _is_agentplaybook_root(path):
 
 def _soft_fail(message):
     print(f"AgentPlaybook hook skipped: {message}", file=sys.stderr)
-    return 0
+    if os.environ.get("AGENTPLAYBOOK_HOOK_SOFT_FAIL") == "1":
+        return 0
+    return 1
 
 if __name__ == "__main__":
     raise SystemExit(main())
