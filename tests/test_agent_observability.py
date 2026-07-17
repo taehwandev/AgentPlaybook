@@ -20,6 +20,10 @@ class AgentObservabilityTests(unittest.TestCase):
             run = register_run(project, project / "preflight.json", {"command": "task"}, {})
             enqueue_task(project, run["run_id"])
             snapshot = status_snapshot(project)
+            self.assertEqual(2, snapshot["api_version"])
+            self.assertTrue(snapshot["snapshot_id"])
+            self.assertTrue(snapshot["captured_at"])
+            self.assertEqual("project-state-lock", snapshot["consistency"])
             self.assertEqual(1, snapshot["active_runs"])
             self.assertEqual({"queued": 1}, snapshot["task_counts"])
             self.assertTrue(snapshot["events"]["run.started"])
@@ -28,4 +32,3 @@ class AgentObservabilityTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

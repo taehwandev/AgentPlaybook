@@ -10,7 +10,7 @@ from agent_execution_capsule_state import atomic_write_json, read_json_object
 from agent_ipc import events_path
 from agent_run_registry import registry_path
 from agent_scheduler import scheduler_path
-from agent_state_lock import state_lock
+from agent_state_lock import project_state_lock, state_lock
 
 
 TERMINAL_STATES = {"completed", "failed", "cancelled"}
@@ -25,11 +25,12 @@ def prune_runtime_state(
     if retention_seconds < 1 or max_records < 1:
         raise ValueError("retention_seconds and max_records must be positive")
     cutoff = datetime.now(timezone.utc) - timedelta(seconds=retention_seconds)
-    return {
-        "runs": _prune_file(registry_path(project), "runs", cutoff, max_records),
-        "tasks": _prune_file(scheduler_path(project), "tasks", cutoff, max_records),
-        "events": _prune_file(events_path(project), "events", cutoff, max_records),
-    }
+    with project_state_lock(project):
+        return {
+            "runs": _prune_file(registry_path(project), "runs", cutoff, max_records),
+            "tasks": _prune_file(scheduler_path(project), "tasks", cutoff, max_records),
+            "events": _prune_file(events_path(project), "events", cutoff, max_records),
+        }
 
 
 def _prune_file(path: Path, key: str, cutoff: datetime, max_records: int) -> int:

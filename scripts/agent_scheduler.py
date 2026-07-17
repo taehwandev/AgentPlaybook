@@ -10,7 +10,7 @@ from typing import Any
 
 from agent_execution_capsule_state import atomic_write_json, read_json_object
 from agent_ipc import emit_event
-from agent_state_lock import state_lock
+from agent_state_lock import project_state_lock, state_lock
 
 
 SCHEMA_VERSION = 1
@@ -55,7 +55,7 @@ def enqueue_task(
         "updated_at": now,
     }
     path = scheduler_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_scheduler(path)
         payload["tasks"].append(task)
         payload["tasks"] = payload["tasks"][-MAX_TASKS:]
@@ -70,7 +70,7 @@ def claim_next(project: Path, *, capacity: int = 1) -> dict[str, Any] | None:
     if capacity < 1:
         raise ValueError("capacity must be positive")
     path = scheduler_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_scheduler(path)
         running = [task for task in payload["tasks"] if task.get("state") == "running"]
         if len(running) >= capacity:
@@ -92,7 +92,7 @@ def claim_task(project: Path, task_id: str, *, capacity: int = 1) -> dict[str, A
     if capacity < 1:
         raise ValueError("capacity must be positive")
     path = scheduler_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_scheduler(path)
         running = [task for task in payload["tasks"] if task.get("state") == "running"]
         if len(running) >= capacity:
@@ -114,7 +114,7 @@ def transition_task(project: Path, task_id: str, state: str) -> dict[str, Any] |
     if state not in TASK_STATES:
         raise ValueError(f"unsupported task state: {state}")
     path = scheduler_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_scheduler(path)
         for task in payload["tasks"]:
             if task.get("task_id") == task_id:
@@ -132,7 +132,7 @@ def retry_task(project: Path, task_id: str) -> dict[str, Any] | None:
     """Requeue a failed task only while its bounded retry budget remains."""
 
     path = scheduler_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_scheduler(path)
         for task in payload["tasks"]:
             if task.get("task_id") != task_id or task.get("state") != "failed":
@@ -158,7 +158,7 @@ def recover_stale_tasks(project: Path, *, stale_after_seconds: int = 3600) -> li
     path = scheduler_path(project)
     recovered: list[dict[str, Any]] = []
     cutoff = datetime.now(timezone.utc) - timedelta(seconds=stale_after_seconds)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_scheduler(path)
         for task in payload["tasks"]:
             if task.get("state") not in {"queued", "running"}:

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_execution_capsule_state import atomic_write_json, read_json_object
-from agent_state_lock import state_lock
+from agent_state_lock import project_state_lock, state_lock
 
 
 SCHEMA_VERSION = 1
@@ -42,7 +42,7 @@ def emit_event(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     path = events_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = read_json_object(path)
         events = payload.get("events") if payload.get("schema_version") == SCHEMA_VERSION else []
         if not isinstance(events, list):
@@ -54,7 +54,7 @@ def emit_event(
 
 def read_events(project: Path, *, event_type: str | None = None) -> list[dict[str, Any]]:
     path = events_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = read_json_object(path)
     events = payload.get("events") if payload.get("schema_version") == SCHEMA_VERSION else []
     if not isinstance(events, list):

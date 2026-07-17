@@ -11,7 +11,7 @@ from typing import Any
 from agent_execution_capsule_state import atomic_write_json, read_json_object
 from agent_route_state import request_fingerprint, route_fingerprint
 from agent_ipc import emit_event
-from agent_state_lock import state_lock
+from agent_state_lock import project_state_lock, state_lock
 
 
 SCHEMA_VERSION = 1
@@ -45,7 +45,7 @@ def register_run(
         "updated_at": now,
     }
     path = registry_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_registry(path)
         payload["runs"].append(run)
         payload["runs"] = payload["runs"][-MAX_RUNS:]
@@ -64,7 +64,7 @@ def transition_run(
     if state not in RUN_STATES:
         raise ValueError(f"unsupported run state: {state}")
     path = registry_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_registry(path)
         candidates = [
             run for run in payload["runs"] if run.get("evidence_name") == evidence_path.name
@@ -81,14 +81,14 @@ def transition_run(
 
 def active_runs(project: Path) -> list[dict[str, Any]]:
     path = registry_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_registry(path)
         return [run for run in payload["runs"] if run.get("state") in {"running", "paused"}]
 
 
 def latest_run_id(project: Path, evidence_path: Path) -> str | None:
     path = registry_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_registry(path)
         matches = [run for run in payload["runs"] if run.get("evidence_name") == evidence_path.name]
         return str(matches[-1]["run_id"]) if matches and matches[-1].get("run_id") else None
@@ -100,7 +100,7 @@ def recover_stale_runs(project: Path, *, stale_after_seconds: int = 3600) -> lis
     if stale_after_seconds < 1:
         raise ValueError("stale_after_seconds must be positive")
     path = registry_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_registry(path)
         cutoff = datetime.now(timezone.utc) - timedelta(seconds=stale_after_seconds)
         recovered: list[dict[str, Any]] = []
@@ -124,7 +124,7 @@ def recover_stale_runs(project: Path, *, stale_after_seconds: int = 3600) -> lis
 
 def resume_run(project: Path, run_id: str) -> dict[str, Any] | None:
     path = registry_path(project)
-    with state_lock(path):
+    with project_state_lock(project), state_lock(path):
         payload = _read_registry(path)
         for run in payload["runs"]:
             if run.get("run_id") == run_id and run.get("state") in {"failed", "paused"}:
