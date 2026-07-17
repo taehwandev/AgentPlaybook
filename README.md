@@ -62,7 +62,7 @@ Website:
 https://agentplaybook.thdev.app/
 ```
 
-Latest release: [AgentPlaybook OS v26.07.6](docs/release-notes-v26.07.6.md)
+Latest release: [AgentPlaybook OS v26.07.6](https://github.com/taehwandev/AgentPlaybook/releases/tag/v26.07.6)
 
 The website includes the current copy-and-paste prompts, application modes, and
 release link. Use it as the human-facing entry point; this README remains the
@@ -77,7 +77,7 @@ release version for every `main` merge. Track every deployed revision instead.
 
 - Release unit: continuous deployment from `main`.
 - Deployment source: GitHub Pages legacy source, `main` branch, `/docs` path.
-- Latest public release: [v26.07.6](https://github.com/taehwandev/AgentPlaybook/blob/main/docs/release-notes-v26.07.6.md).
+- Latest public release: [AgentPlaybook OS v26.07.6](https://github.com/taehwandev/AgentPlaybook/releases/tag/v26.07.6).
   Use a tag or release note only when a maintainer intentionally groups changes
   into a public AgentPlaybook release.
 - Source revision: the exact Git commit SHA deployed by GitHub Pages.
