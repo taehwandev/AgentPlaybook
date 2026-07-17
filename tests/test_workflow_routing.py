@@ -3870,6 +3870,15 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("needs clarification", route_block_reason("product", classification) or "")
         self.assertIn("Grill-Me", route_block_reason("feature", classification) or "")
 
+    def test_scoped_korean_request_does_not_trip_distant_broad_keywords(self) -> None:
+        classification = classify_request(
+            "공식 AI 서버 상태를 메인 앱 단일 조회와 로컬 캐시 IPC로 동기화하고 "
+            "클릭 팝오버에 상태별 다음 행동 안내를 추가해줘"
+        )
+
+        self.assertNotEqual("broad-product", classification["clarity"])
+        self.assertFalse(classification["grill_me"])
+
     def test_underspecified_action_requires_self_judged_triage(self) -> None:
         classification = classify_request("프로필 저장하고 아바타 프리셋도 추가해줘")
 
