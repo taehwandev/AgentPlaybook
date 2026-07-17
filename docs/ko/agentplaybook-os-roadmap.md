@@ -74,6 +74,11 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
 - status와 dispatch manifest는 공통 `api_contract` schema manifest를 사용하고,
   runtime adapter는 capability와 enforcement를 provider-neutral 계약으로
   검증한다.
+- dispatch는 `heartbeat_interval_seconds`가 양수로 지정된 장시간 worker에만
+  heartbeat loop와 worker result/failure 이벤트를 연결한다. 기본 실행은 기존
+  단일 실행 경로와 비용을 유지한다.
+- CLI에서는 `--heartbeat-interval-seconds`로 이 opt-in 루프를 활성화할 수
+  있으며 기본값 `0`은 heartbeat를 비활성화한다.
 - status snapshot에 `api_version`과 생성 시각을 추가해 외부 소비자가 계약을
   식별할 수 있게 했다.
 - status snapshot은 project-state lock 아래에서 registry/scheduler/events를

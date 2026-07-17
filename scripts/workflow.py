@@ -121,6 +121,7 @@ def _add_dispatch_parser(subparsers: argparse._SubParsersAction) -> None:
     dispatch.add_argument("--parent-reasoning-effort", default="")
     dispatch.add_argument("--parent-sandbox-mode", default="")
     dispatch.add_argument("--require-isolation", action="store_true")
+    dispatch.add_argument("--heartbeat-interval-seconds", type=float, default=0)
     dispatch.add_argument("--execute", action="store_true")
 
 
@@ -313,6 +314,7 @@ def print_dispatch(args: argparse.Namespace) -> int:
             parent_reasoning_effort=args.parent_reasoning_effort,
             parent_sandbox_mode=args.parent_sandbox_mode,
             isolation_required=args.require_isolation,
+            heartbeat_interval_seconds=args.heartbeat_interval_seconds,
             rules=rules,
             evidence_path=evidence_path,
             worker_evidence_path=args.worker_evidence,

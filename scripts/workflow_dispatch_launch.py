@@ -5,13 +5,15 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import threading
 import uuid
 from pathlib import Path
 from typing import Callable, Mapping
 
 from agent_gate_evidence import gate_evidence_path_for_preflight
 from agent_run_registry import latest_run_id
-from agent_scheduler import claim_task, claim_next, choose_capacity, enqueue_task, retry_task, transition_task
+from agent_ipc import emit_heartbeat, emit_worker_failure, emit_worker_result
+from agent_scheduler import claim_task, claim_next, choose_capacity, enqueue_task, heartbeat_task, retry_task, transition_task
 from agent_worker_evidence import create_worker_reservation, worker_reservation_matches
 from workflow_dispatch_handoff import execution_policy
 
@@ -52,19 +54,19 @@ def execute_dispatch_manifest(
     )
     project = Path(str(manifest["project"])).resolve()
     scheduler_task = _claim_scheduler_task(manifest, prepared, project)
+    heartbeat_interval = float(manifest.get("heartbeat_interval_seconds") or 0)
     if runner:
-        return _run_scheduled_worker(argv, runner, project, scheduler_task)
+        return _run_scheduled_worker(argv, runner, project, scheduler_task, heartbeat_interval_seconds=heartbeat_interval)
     try:
-        completed = subprocess.run(argv, check=False, env=worker_environment(prepared))
+        return _run_scheduled_worker(
+            argv,
+            lambda command: subprocess.run(command, check=False, env=worker_environment(prepared)).returncode,
+            project,
+            scheduler_task,
+            heartbeat_interval_seconds=heartbeat_interval,
+        )
     except OSError as error:
-        transition_task(project, str(scheduler_task["task_id"]), "failed")
         raise RuntimeError("Unable to start the delegated Codex worker") from error
-    transition_task(
-        project,
-        str(scheduler_task["task_id"]),
-        "completed" if completed.returncode == 0 else "failed",
-    )
-    return completed.returncode
 
 
 def _claim_scheduler_task(
@@ -89,18 +91,85 @@ def _claim_scheduler_task(
 
 
 def _run_scheduled_worker(
-    argv: list[str], runner: Callable[[list[str]], int], project: Path, task: Mapping[str, object]
+    argv: list[str],
+    runner: Callable[[list[str]], int],
+    project: Path,
+    task: Mapping[str, object],
+    *,
+    heartbeat_interval_seconds: float = 0,
 ) -> int:
-    task_id = str(task["task_id"])
+    if heartbeat_interval_seconds < 0:
+        raise ValueError("heartbeat_interval_seconds must be non-negative")
+    current_task = dict(task)
     while True:
+        task_id = str(current_task["task_id"])
+        worker_id = f"worker-{task_id}"
+        stop_heartbeat = threading.Event()
+        heartbeat_thread: threading.Thread | None = None
+        events_enabled = heartbeat_interval_seconds > 0
+        if events_enabled:
+            heartbeat_task(project, task_id)
+            emit_heartbeat(
+                project,
+                run_id=str(current_task["run_id"]),
+                task_id=task_id,
+                worker_id=worker_id,
+                attempt=int(current_task.get("attempt") or 1),
+            )
+
+            def heartbeat_loop() -> None:
+                while not stop_heartbeat.wait(heartbeat_interval_seconds):
+                    if heartbeat_task(project, task_id) is None:
+                        return
+                    emit_heartbeat(
+                        project,
+                        run_id=str(current_task["run_id"]),
+                        task_id=task_id,
+                        worker_id=worker_id,
+                        attempt=int(current_task.get("attempt") or 1),
+                    )
+
+            heartbeat_thread = threading.Thread(target=heartbeat_loop, name=f"agent-heartbeat-{task_id}", daemon=True)
+            heartbeat_thread.start()
         try:
             result = runner(argv)
         except BaseException:
+            stop_heartbeat.set()
+            if heartbeat_thread:
+                heartbeat_thread.join(timeout=max(1.0, heartbeat_interval_seconds))
+            if events_enabled:
+                emit_worker_failure(
+                    project,
+                    run_id=str(current_task["run_id"]),
+                    task_id=task_id,
+                    worker_id=worker_id,
+                    attempt=int(current_task.get("attempt") or 1),
+                )
             transition_task(project, task_id, "failed")
             raise
+        stop_heartbeat.set()
+        if heartbeat_thread:
+            heartbeat_thread.join(timeout=max(1.0, heartbeat_interval_seconds))
         if result == 0:
+            if events_enabled:
+                emit_worker_result(
+                    project,
+                    run_id=str(current_task["run_id"]),
+                    task_id=task_id,
+                    worker_id=worker_id,
+                    result_id=f"result-{uuid.uuid4().hex}",
+                    attempt=int(current_task.get("attempt") or 1),
+                )
             transition_task(project, task_id, "completed")
             return result
+        if events_enabled:
+            emit_worker_failure(
+                project,
+                run_id=str(current_task["run_id"]),
+                task_id=task_id,
+                worker_id=worker_id,
+                attempt=int(current_task.get("attempt") or 1),
+            )
         transition_task(project, task_id, "failed")
         retried = retry_task(project, task_id)
         if retried is None:
@@ -115,6 +184,7 @@ def _run_scheduled_worker(
         )
         if not claimed or claimed.get("task_id") != task_id:
             return result
+        current_task = claimed
 
 
 def prepare_launch_handoff(
