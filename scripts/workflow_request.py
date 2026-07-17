@@ -93,6 +93,14 @@ CLASSIFICATION_RESOLVED_PATTERNS = (
     r"(?:블로커|차단|막힌)\s*(?:질문|사항)?\s*해결",
     r"(?:모호성|불명확성|미정사항)\s*해결",
 )
+# A short approval can be a valid continuation of an already settled discussion.
+# Keep this deliberately narrow: it must contain a referential cue ("then/that/this"
+# or the Korean equivalent) and an explicit action approval. Bare "do it" requests
+# remain vague and continue to require triage.
+FOLLOW_UP_APPROVAL_PATTERNS = (
+    r"^(?:then|so|in that case|that|this)\b.{0,120}\b(?:fix|change|edit|apply|implement|proceed|continue|go ahead)\b",
+    r"^(?:아하\s*)?(?:그럼|그러면|그렇다면|그 부분|그건|이건|이렇게)\s*.{0,120}(?:수정|변경|적용|반영|구현|진행|해줘|해주세요|할게)",
+)
 COMMIT_ACTION_PATTERNS = (
     r"\bcommit(?:ting|s)?\b",
     r"\bgit commit\b",
@@ -394,6 +402,15 @@ def _classification_decision(flags: dict[str, object]) -> tuple[str, bool, str, 
         flags["clarity"] = "clear-scoped"
         flags["effort"] = "standard"
         return "task", False, "work", "The request asks for inspection, review, status, or documentation summary work with an inspectable target."
+    if _matches(FOLLOW_UP_APPROVAL_PATTERNS, lowered, re.IGNORECASE) and not has_risky:
+        flags["clarity"] = "clear-scoped"
+        flags["effort"] = "standard"
+        return (
+            "task",
+            False,
+            "work",
+            "The request is an explicit approval to continue the already-confirmed scope from the preceding discussion.",
+        )
     if asks_drill or has_vague or flags["short_without_target"] or flags["underspecified_action"]:
         flags["clarity"] = "vague-action"
         flags["effort"] = "standard"

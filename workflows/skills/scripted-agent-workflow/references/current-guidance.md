@@ -58,6 +58,16 @@ actionable`, or `blockers resolved`; weak evidence such as `classified` or
 `no blockers` are also insufficient unless they name the resolved scope,
 decision, blocker-question outcome, or remaining separate action.
 
+A short follow-up approval may continue an already settled discussion. The
+classifier recognizes an explicit referential approval such as “그럼 그건
+수정해줘” or “Then apply the agreed change” as `clear-scoped` when it has a
+clear continuation cue and an action verb. A bare “진행해”/“수정해줘” remains
+`vague-action` and must still go through triage. The agent must carry the
+previous scope forward in `--classification-evidence` (for example,
+`clear-scoped continuation; previous scope resolved; user approval confirmed;
+no scope expansion; blockers resolved`); unresolved or open-question markers
+continue to block work routes.
+
 The start hook classifies the request and records the recommended route,
 whether the Grill-Me protocol is needed, response mode, and a short reason. Use
 the matching `<command>` in the start call. If `response_mode:

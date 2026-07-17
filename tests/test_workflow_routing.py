@@ -614,6 +614,8 @@ class WorkflowRoutingTests(unittest.TestCase):
             self.assertEqual(1, len(received))
             self.assertEqual("codex", received[0][0])
             self.assertIn("worker-reservation-token", received[0][-1])
+            scheduler = json.loads((Path(temp_dir) / ".agentplaybook" / "scheduler.json").read_text())
+            self.assertEqual("failed", scheduler["tasks"][-1]["state"])
 
     def test_dispatch_revalidates_capsule_and_mints_worker_token_at_launch(self) -> None:
         reusable = {
@@ -3845,6 +3847,25 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertEqual("task", classification["recommended_route"])
         self.assertFalse(classification["grill_me"])
         self.assertEqual("work", classification["response_mode"])
+
+    def test_follow_up_approval_inherits_confirmed_scope(self) -> None:
+        for request in (
+            "아하 그럼 그건 수정해줘야겠네",
+            "Then apply the agreed change",
+        ):
+            with self.subTest(request=request):
+                classification = classify_request(request)
+                self.assertEqual("clear-scoped", classification["clarity"])
+                self.assertEqual("task", classification["recommended_route"])
+                self.assertFalse(classification["grill_me"])
+                self.assertIsNone(route_block_reason("bugfix", classification))
+
+    def test_bare_follow_up_without_scope_still_requires_triage(self) -> None:
+        classification = classify_request("수정해줘")
+
+        self.assertEqual("vague-action", classification["clarity"])
+        self.assertEqual("triage", classification["recommended_route"])
+        self.assertIsNotNone(route_block_reason("bugfix", classification))
 
     def test_planning_change_doc_omission_request_routes_to_workflow_setup(self) -> None:
         classification = classify_request("기획변경 때 문서 정리가 누락되는 걸 막아줘")
