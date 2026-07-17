@@ -69,6 +69,8 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
   `worker.partial` 이벤트와 opaque worker/result ID를 제공한다.
 - scheduler는 heartbeat, cancellation, partial-result checkpoint를 제공해
   stale worker를 재개할 때 기존 근거를 재사용할 수 있게 한다.
+- context snapshot도 route fingerprint와 required-doc hash뿐 아니라 request
+  fingerprint를 저장·검증해 다른 요청의 context 재사용을 차단한다.
 - status snapshot에 `api_version`과 생성 시각을 추가해 외부 소비자가 계약을
   식별할 수 있게 했다.
 - status snapshot은 project-state lock 아래에서 registry/scheduler/events를

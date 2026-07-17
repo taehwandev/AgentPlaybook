@@ -179,7 +179,12 @@ def _refresh_started_context(args: argparse.Namespace, details: list[str]) -> No
     try:
         evidence_path = preflight_evidence_path(args)
         payload = json.loads(evidence_path.read_text(encoding="utf-8"))
-        refresh_context_snapshot(args.project, args.rules, payload.get("route") or {})
+        refresh_context_snapshot(
+            args.project,
+            args.rules,
+            payload.get("route") or {},
+            payload.get("request_intake") or {},
+        )
         details.append("context snapshot: refreshed")
     except (OSError, ValueError, TypeError, json.JSONDecodeError):
         details.append("context snapshot: unavailable; lifecycle continues")

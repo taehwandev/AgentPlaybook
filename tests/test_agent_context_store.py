@@ -17,9 +17,10 @@ class AgentContextStoreTests(unittest.TestCase):
             project = Path(directory)
             rules = ROOT
             route = {"required_docs": ["AGENTS.md"], "gates": []}
-            snapshot = refresh_context_snapshot(project, rules, route)
+            intake = {"request_classified": True, "request_fingerprint": "opaque"}
+            snapshot = refresh_context_snapshot(project, rules, route, intake)
             self.assertEqual("AGENTS.md", snapshot["required_docs"][0]["path"])
-            self.assertEqual([], validate_context_snapshot(project, rules, route))
+            self.assertEqual([], validate_context_snapshot(project, rules, route, intake))
 
     def test_route_change_invalidates_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -28,7 +29,14 @@ class AgentContextStoreTests(unittest.TestCase):
             failures = validate_context_snapshot(project, ROOT, {"required_docs": [], "gates": []})
             self.assertTrue(failures)
 
+    def test_request_change_invalidates_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            route = {"required_docs": ["AGENTS.md"], "gates": []}
+            refresh_context_snapshot(project, ROOT, route, {"request_classified": True, "request": "one"})
+            failures = validate_context_snapshot(project, ROOT, route, {"request_classified": True, "request": "two"})
+            self.assertIn("request fingerprint", failures[0])
+
 
 if __name__ == "__main__":
     unittest.main()
-
