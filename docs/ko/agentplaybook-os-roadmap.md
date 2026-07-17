@@ -79,6 +79,9 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
 - status와 dispatch manifest는 공통 `api_contract` schema manifest를 사용하고,
   runtime adapter는 capability와 enforcement를 provider-neutral 계약으로
   검증한다.
+- status API가 Codex·Claude·Antigravity를 동일한 runtime adapter catalog로
+  노출한다. 이는 입력·권한·상태 계약의 parity이며, 각 provider의 실제 hook 설치나
+  OS-level sandbox가 연결됐다는 의미는 아니다.
 - dispatch는 `heartbeat_interval_seconds`가 양수로 지정된 장시간 worker에만
   heartbeat loop와 worker result/failure 이벤트를 연결한다. 기본 실행은 기존
   단일 실행 경로와 비용을 유지한다.

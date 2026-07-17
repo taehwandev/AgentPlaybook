@@ -9,6 +9,7 @@ from typing import Any, Mapping
 CONTRACT_VERSION = 1
 RUNTIME_ADAPTER_VERSION = 1
 SAFE_RUNTIME = re.compile(r"^[a-z][a-z0-9_.-]{0,31}$")
+SUPPORTED_RUNTIMES = ("codex", "claude", "antigravity")
 
 
 def api_contract_manifest() -> dict[str, int]:
@@ -38,6 +39,36 @@ def runtime_adapter_contract(
         "capabilities": {str(key): bool(value) for key, value in capabilities.items()},
         "enforcement": enforcement,
     }
+
+
+def runtime_adapter_catalog() -> list[dict[str, Any]]:
+    """Return the shared adapter contract surface for all supported runtimes.
+
+    This is contract parity, not a claim that every provider has identical hook
+    installation or OS-level sandbox behavior.
+    """
+
+    return [
+        runtime_adapter_contract(
+            runtime,
+            capabilities={"read_only": True, "workspace_write": True, "isolated_write": True},
+            enforcement="bridge-contract",
+        ) | {"integration_status": "bridge-contract"}
+        for runtime in SUPPORTED_RUNTIMES
+    ]
+
+
+def validate_runtime_adapter_catalog(catalog: list[Mapping[str, Any]]) -> list[str]:
+    failures: list[str] = []
+    names = {str(contract.get("runtime")) for contract in catalog}
+    for runtime in SUPPORTED_RUNTIMES:
+        if runtime not in names:
+            failures.append(f"runtime adapter missing: {runtime}")
+    for contract in catalog:
+        failures.extend(validate_runtime_adapter_contract(contract))
+        if contract.get("integration_status") not in {"bridge-contract", "connected"}:
+            failures.append(f"runtime adapter status is unsupported: {contract.get('runtime')}")
+    return failures
 
 
 def validate_runtime_adapter_contract(contract: Mapping[str, Any]) -> list[str]:
