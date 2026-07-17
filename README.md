@@ -8,8 +8,8 @@ type: ai-generated
 
 AgentPlaybook OS is a reusable guidance and runtime layer for AI coding agents. It gives
 agents a compact set of operating rules, workflow paths, review criteria,
-platform guidance, and product-pattern checks that can be linked from any
-software project.
+platform guidance, product-pattern checks, and executable lifecycle evidence
+that can be linked from any software project.
 
 Use it when you want repo-local instructions to stay small while still giving an
 agent enough shared engineering discipline to plan, edit, review, test, and
@@ -32,10 +32,13 @@ https://github.com/taehwandev/AgentPlaybook
 
 ## What This Is
 
-- A document library, not a framework or runtime.
+- A provider-neutral agent operating layer: shared guidance plus lifecycle
+  state, routing, evidence, scheduling, and recovery primitives.
 - A source of shared agent instructions, not a replacement for repo-local rules.
 - A selective-loading system: agents should read only the cards relevant to the
   current task.
+- A thin runtime boundary: project rules and product policy remain owned by the
+  target repository, while AgentPlaybook OS owns reusable execution discipline.
 - A public, reusable project. No local machine path, private workspace, product
   name, or personal environment is required.
 
@@ -58,6 +61,12 @@ Website:
 ```text
 https://agentplaybook.thdev.app/
 ```
+
+Latest release: [AgentPlaybook OS v26.07.6](docs/release-notes-v26.07.6.md)
+
+The website includes the current copy-and-paste prompts, application modes, and
+release link. Use it as the human-facing entry point; this README remains the
+portable source for installation and repository integration.
 
 Korean update guide: [docs/ko/update-agentplaybook.md](docs/ko/update-agentplaybook.md)
 
@@ -107,8 +116,9 @@ Use this when AgentPlaybook is already on the machine.
 1. Locate the existing root. Prefer an explicit path from the user, then
    `AGENTPLAYBOOK_HOME`, then common local locations such as
    `~/.agent-playbook`, `~/AgentPlaybook`, or `~/GitHub/AgentPlaybook`.
-2. Verify that the root contains `AGENTS.md`, `index.md`, and
-   `scripts/workflow.py`.
+2. Verify that the root contains `AGENTS.md`, `index.md`, and the lifecycle
+   scripts. The installed launcher is the preferred execution path:
+   `~/.agentplaybook/bin/agentplaybook-hook`.
 3. Point the target repo to that root. Do not clone, vendor, or copy another
    AgentPlaybook checkout.
 
@@ -238,7 +248,7 @@ names the starting primary repo, secondary/source-of-truth repo, selected mode,
 write scope, session model, and cross-repo verification.
 
 ```text
-Shared AgentPlaybook guidance:
+Shared AgentPlaybook OS guidance:
 ${AGENTPLAYBOOK_HOME}/AGENTS.md
 ${AGENTPLAYBOOK_HOME}/index.md
 ${AGENTPLAYBOOK_HOME}/scripts/agent-hook.py
@@ -248,7 +258,7 @@ ${AGENTPLAYBOOK_HOME}/scripts/agent-preflight.py
 ${AGENTPLAYBOOK_HOME}/scripts/agent-finish-check.py
 
 Use repo-local instructions first.
-For multi-step tasks, run ~/.agentplaybook/bin/agentplaybook-hook start once. It performs routing and
+For multi-step tasks, run `~/.agentplaybook/bin/agentplaybook-hook start` once. It performs routing and
 preflight; then read every route required_docs entry directly before work.
 Use the review hook after meaningful edits and the finish hook before final
 report, commit, release, or handoff. Direct workflow.py route,
@@ -333,7 +343,7 @@ instructions.
 Give an AI coding agent this request:
 
 ```text
-Apply AgentPlaybook to this project:
+Apply AgentPlaybook OS to this project:
 https://github.com/taehwandev/AgentPlaybook
 
 If AgentPlaybook already exists locally, link this repo to the existing copy.
@@ -343,7 +353,10 @@ first: "AgentPlaybook already exists locally at <path>. Do you want me to
 download or pin a new copy anyway, or should I reuse the existing root?"
 Inspect the current repo instructions and VibeGuard files first. If either
 already exists, ask me a short application drill before running setup or update.
-Use the selected AgentPlaybook root as the VibeGuard rule source.
+Use the selected AgentPlaybook root as the VibeGuard rule source. For
+multi-step work, run the stable launcher once:
+`~/.agentplaybook/bin/agentplaybook-hook start --request "<USER_REQUEST>"`.
+It owns routing and preflight; read its required documents before editing.
 Update the repo-local agent instructions with a short routing block. Keep
 repo-specific commands, paths, services, product policy, and domain language in
 this repo. In committed repo-local instruction files, use a portable
