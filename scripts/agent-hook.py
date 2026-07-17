@@ -236,7 +236,25 @@ def _summary_lines(result: dict[str, Any]) -> list[str]:
                 "- on-demand reference docs:",
             )):
                 info_lines.append(stripped)
+    if not fail_lines and result.get("returncode") not in (0, None):
+        fail_lines = _fallback_failure_lines(result)
     return info_lines[:8] + fail_lines
+
+
+def _fallback_failure_lines(result: dict[str, Any]) -> list[str]:
+    """Surface a raw error when the failure has no line in the FAIL: format.
+
+    Argument-parsing errors, uncaught exceptions, and other non-`FAIL:`
+    failures were silently dropped here, leaving callers with only
+    "preflight failed" and no way to tell an invalid --command typo apart
+    from an actual classification block.
+    """
+
+    for stream in ("stderr", "stdout"):
+        lines = [line.strip() for line in result.get(stream, "").splitlines() if line.strip()]
+        if lines:
+            return [f"FAIL: {line}" for line in lines[-3:]]
+    return [f"FAIL: process exited with code {result.get('returncode')}"]
 
 
 def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
