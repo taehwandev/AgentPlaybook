@@ -32,7 +32,17 @@ class AgentRetentionTests(unittest.TestCase):
             self.assertEqual(1, removed["runs"])
             self.assertEqual([active["run_id"]], [item["run_id"] for item in remaining])
 
+    def test_max_records_never_discards_active_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            runs = [register_run(project, project / f"preflight-{index}.json", {"command": "task"}, {}) for index in range(3)]
+
+            removed = prune_runtime_state(project, retention_seconds=60, max_records=1)
+            registry = project / ".agentplaybook" / "run-registry.json"
+            remaining = json.loads(registry.read_text())["runs"]
+            self.assertEqual(0, removed["runs"])
+            self.assertEqual({run["run_id"] for run in runs}, {item["run_id"] for item in remaining})
+
 
 if __name__ == "__main__":
     unittest.main()
-

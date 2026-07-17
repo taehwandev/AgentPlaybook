@@ -11,7 +11,7 @@ from typing import Callable, Mapping
 
 from agent_gate_evidence import gate_evidence_path_for_preflight
 from agent_run_registry import latest_run_id
-from agent_scheduler import claim_next, choose_capacity, enqueue_task, retry_task, transition_task
+from agent_scheduler import claim_task, claim_next, choose_capacity, enqueue_task, retry_task, transition_task
 from agent_worker_evidence import create_worker_reservation, worker_reservation_matches
 from workflow_dispatch_handoff import execution_policy
 
@@ -105,8 +105,9 @@ def _run_scheduled_worker(
         retried = retry_task(project, task_id)
         if retried is None:
             return result
-        claimed = claim_next(
+        claimed = claim_task(
             project,
+            task_id,
             capacity=choose_capacity(
                 int(retried.get("independent_slices") or 1),
                 int(retried.get("requested_workers") or 1),

@@ -86,6 +86,30 @@ def claim_next(project: Path, *, capacity: int = 1) -> dict[str, Any] | None:
     return target
 
 
+def claim_task(project: Path, task_id: str, *, capacity: int = 1) -> dict[str, Any] | None:
+    """Claim one specific queued task without allowing another task to win the race."""
+
+    if capacity < 1:
+        raise ValueError("capacity must be positive")
+    path = scheduler_path(project)
+    with state_lock(path):
+        payload = _read_scheduler(path)
+        running = [task for task in payload["tasks"] if task.get("state") == "running"]
+        if len(running) >= capacity:
+            return None
+        for task in payload["tasks"]:
+            if task.get("task_id") != task_id or task.get("state") != "queued":
+                continue
+            task["state"] = "running"
+            task["updated_at"] = datetime.now(timezone.utc).isoformat()
+            _write_scheduler(path, payload)
+            break
+        else:
+            return None
+    _safe_event(project, "task.claimed", run_id=str(task["run_id"]), task_id=task_id, state="running")
+    return task
+
+
 def transition_task(project: Path, task_id: str, state: str) -> dict[str, Any] | None:
     if state not in TASK_STATES:
         raise ValueError(f"unsupported task state: {state}")

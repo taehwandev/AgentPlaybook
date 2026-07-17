@@ -38,8 +38,9 @@ def _prune_file(path: Path, key: str, cutoff: datetime, max_records: int) -> int
         records = payload.get(key)
         if not isinstance(records, list):
             return 0
-        kept: list[dict[str, Any]] = []
-        for record in records:
+        active_indexes: list[int] = []
+        terminal_indexes: list[int] = []
+        for index, record in enumerate(records):
             if not isinstance(record, dict):
                 continue
             if key == "events":
@@ -52,9 +53,14 @@ def _prune_file(path: Path, key: str, cutoff: datetime, max_records: int) -> int
                 old = datetime.fromisoformat(str(timestamp))
             except (TypeError, ValueError):
                 old = datetime.now(timezone.utc)
-            if not terminal or old >= cutoff:
-                kept.append(record)
-        kept = kept[-max_records:]
+            if not terminal:
+                active_indexes.append(index)
+            elif old >= cutoff:
+                terminal_indexes.append(index)
+        # max_records bounds retained terminal history only; active state is never
+        # discarded merely because the history limit was reached.
+        keep_indexes = set(active_indexes + terminal_indexes[-max_records:])
+        kept = [record for index, record in enumerate(records) if index in keep_indexes]
         removed = len(records) - len(kept)
         if removed:
             payload[key] = kept
