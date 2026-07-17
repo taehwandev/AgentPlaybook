@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import sys
@@ -9,7 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_scheduler import claim_next, claim_task, choose_capacity, enqueue_task, retry_task, transition_task
+from agent_scheduler import claim_next, claim_task, choose_capacity, enqueue_task, recover_stale_tasks, retry_task, transition_task
 
 
 class AgentSchedulerTests(unittest.TestCase):
@@ -58,6 +60,24 @@ class AgentSchedulerTests(unittest.TestCase):
             self.assertEqual("queued", retried["state"])
             self.assertEqual(retryable["task_id"], claim_task(project, retryable["task_id"], capacity=1)["task_id"])
             self.assertEqual(other["task_id"], claim_next(project, capacity=2)["task_id"])
+
+    def test_recover_stale_tasks_marks_old_active_tasks_failed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            queued = enqueue_task(project, "run-queued", max_retries=1)
+            running = enqueue_task(project, "run-running", max_retries=1)
+            claim_task(project, running["task_id"])
+            scheduler = project / ".agentplaybook" / "scheduler.json"
+            payload = json.loads(scheduler.read_text())
+            old = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+            for task in payload["tasks"]:
+                task["updated_at"] = old
+            scheduler.write_text(json.dumps(payload), encoding="utf-8")
+
+            recovered = recover_stale_tasks(project, stale_after_seconds=60)
+            self.assertEqual({queued["task_id"], running["task_id"]}, {task["task_id"] for task in recovered})
+            self.assertEqual({"failed"}, {task["state"] for task in recovered})
+            self.assertEqual("queued", retry_task(project, queued["task_id"])["state"])
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from agent_retention import prune_runtime_state
 from agent_run_registry import recover_stale_runs
+from agent_scheduler import recover_stale_tasks, retry_task
 
 
 def main() -> int:
@@ -19,15 +20,25 @@ def main() -> int:
     parser.add_argument("--max-records", type=int, default=100)
     args = parser.parse_args()
     recovered = recover_stale_runs(args.project, stale_after_seconds=args.stale_after_seconds)
+    recovered_tasks = recover_stale_tasks(args.project, stale_after_seconds=args.stale_after_seconds)
+    requeued_tasks = [
+        retry_task(args.project, str(task["task_id"]))
+        for task in recovered_tasks
+    ]
+    requeued_count = sum(task is not None for task in requeued_tasks)
     pruned = prune_runtime_state(
         args.project,
         retention_seconds=args.retention_seconds,
         max_records=args.max_records,
     )
-    print(json.dumps({"recovered_runs": len(recovered), "pruned": pruned}, sort_keys=True))
+    print(json.dumps({
+        "recovered_runs": len(recovered),
+        "recovered_tasks": len(recovered_tasks),
+        "requeued_tasks": requeued_count,
+        "pruned": pruned,
+    }, sort_keys=True))
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

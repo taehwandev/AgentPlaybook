@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -148,6 +148,35 @@ def retry_task(project: Path, task_id: str) -> dict[str, Any] | None:
             return None
     _safe_event(project, "task.requeued", run_id=str(task["run_id"]), task_id=task_id, state="queued")
     return task
+
+
+def recover_stale_tasks(project: Path, *, stale_after_seconds: int = 3600) -> list[dict[str, Any]]:
+    """Mark queued/running tasks stale so maintenance can apply bounded retry."""
+
+    if stale_after_seconds < 1:
+        raise ValueError("stale_after_seconds must be positive")
+    path = scheduler_path(project)
+    recovered: list[dict[str, Any]] = []
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=stale_after_seconds)
+    with state_lock(path):
+        payload = _read_scheduler(path)
+        for task in payload["tasks"]:
+            if task.get("state") not in {"queued", "running"}:
+                continue
+            try:
+                updated = datetime.fromisoformat(str(task.get("updated_at")))
+            except (TypeError, ValueError):
+                continue
+            if updated >= cutoff:
+                continue
+            task["state"] = "failed"
+            task["updated_at"] = datetime.now(timezone.utc).isoformat()
+            recovered.append(task)
+        if recovered:
+            _write_scheduler(path, payload)
+    for task in recovered:
+        _safe_event(project, "task.recovered", run_id=str(task["run_id"]), task_id=str(task["task_id"]), state="failed")
+    return recovered
 
 
 def _read_scheduler(path: Path) -> dict[str, Any]:

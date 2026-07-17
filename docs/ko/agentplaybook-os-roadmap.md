@@ -63,6 +63,8 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
   실행 중이라는 이유로 삭제하지 않는다.
 - bounded retry는 재시도 task를 대상으로 원자적으로 claim해 다른 queued task가
   재시도 슬롯을 가로채지 않도록 한다.
+- maintenance CLI는 오래된 queued/running task를 failed로 복구한 뒤 retry
+  budget이 남아 있는 task만 다시 queued로 전환한다.
 - status snapshot에 `api_version`과 생성 시각을 추가해 외부 소비자가 계약을
   식별할 수 있게 했다.
 - registry·scheduler·event의 read-modify-write 구간에 프로세스 간 lock을
