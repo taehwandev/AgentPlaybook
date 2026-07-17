@@ -4,9 +4,9 @@ status: stable
 type: ai-generated
 ---
 
-# Agent Playbook
+# AgentPlaybook OS
 
-AgentPlaybook is a reusable guidance library for AI coding agents. It gives
+AgentPlaybook OS is a reusable guidance and runtime layer for AI coding agents. It gives
 agents a compact set of operating rules, workflow paths, review criteria,
 platform guidance, and product-pattern checks that can be linked from any
 software project.
