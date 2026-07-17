@@ -14,6 +14,7 @@ class AgentCapabilityPolicyTests(unittest.TestCase):
     def test_analysis_is_read_only_and_non_authoring(self) -> None:
         profile = capability_profile("analysis")
         self.assertEqual("read-only", profile["sandbox_mode"])
+        self.assertEqual("runtime-read-only", profile["enforcement"])
         self.assertEqual("deny", profile["child_process"])
         self.assertEqual([], validate_capability_profile(profile))
 
@@ -21,11 +22,15 @@ class AgentCapabilityPolicyTests(unittest.TestCase):
         profile = capability_profile("feature", isolation_required=True)
         self.assertEqual("workspace-write", profile["sandbox_mode"])
         self.assertEqual("isolated-write", profile["isolation_mode"])
+        self.assertEqual("filesystem-boundary", profile["enforcement"])
         self.assertEqual("isolated-write", profile["filesystem"])
         self.assertEqual([], validate_capability_profile(profile))
 
     def test_invalid_read_only_authoring_profile_is_rejected(self) -> None:
         self.assertTrue(validate_capability_profile({"sandbox_mode": "read-only", "authoring_policy": "code authoring allowed"}))
+
+    def test_missing_enforcement_is_rejected(self) -> None:
+        self.assertTrue(validate_capability_profile({"sandbox_mode": "workspace-write"}))
 
 
 if __name__ == "__main__":

@@ -25,7 +25,7 @@ from workflow_dispatch_profiles import (
     profile_for_work_kind,
     select_work_kind,
 )
-from agent_capability_policy import READ_ONLY_WORK_KINDS, capability_profile
+from agent_capability_policy import READ_ONLY_WORK_KINDS, capability_profile, validate_capability_profile
 from workflow_request import (
     classified_route_block_reason,
     classify_request,
@@ -98,6 +98,9 @@ def build_dispatch_manifest(
         isolated_worker_evidence=_isolated_worker_evidence,
     )
     capability = capability_profile(selected_kind, isolation_required=isolation_required)
+    capability_failures = validate_capability_profile(capability)
+    if capability_failures:
+        raise ValueError("invalid capability profile: " + "; ".join(capability_failures))
     non_authoring = selected_kind in READ_ONLY_WORK_KINDS
     handoff_prompt = build_handoff_prompt(
         command,

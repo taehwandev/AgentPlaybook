@@ -7,6 +7,7 @@ from typing import Any
 
 READ_ONLY_WORK_KINDS = frozenset({"analysis", "repetitive"})
 SANDBOX_MODES = frozenset({"read-only", "workspace-write", "isolated-write"})
+ENFORCEMENT_MODES = frozenset({"runtime-read-only", "runtime-workspace-write", "filesystem-boundary"})
 
 
 def capability_profile(work_kind: str, *, isolation_required: bool = False) -> dict[str, Any]:
@@ -15,6 +16,7 @@ def capability_profile(work_kind: str, *, isolation_required: bool = False) -> d
             "work_kind": work_kind,
             "authoring_policy": "read-only non-authoring",
             "sandbox_mode": "read-only",
+            "enforcement": "runtime-read-only",
             "filesystem": "read-only",
             "network": "deny",
             "child_process": "deny",
@@ -26,6 +28,7 @@ def capability_profile(work_kind: str, *, isolation_required: bool = False) -> d
         # isolation is enforced by explicit filesystem and worker boundaries.
         "sandbox_mode": "workspace-write",
         "isolation_mode": "isolated-write" if isolation_required else "workspace",
+        "enforcement": "filesystem-boundary" if isolation_required else "runtime-workspace-write",
         "filesystem": "isolated-write" if isolation_required else "workspace-write",
         "network": "runtime-policy",
         "child_process": "explicit-isolation-only",
@@ -38,6 +41,9 @@ def validate_capability_profile(profile: dict[str, Any]) -> list[str]:
         failures.append("sandbox_mode must be read-only, workspace-write, or isolated-write")
     if profile.get("sandbox_mode") == "read-only" and profile.get("authoring_policy") != "read-only non-authoring":
         failures.append("read-only sandbox requires non-authoring policy")
+    enforcement = profile.get("enforcement")
+    if enforcement not in ENFORCEMENT_MODES:
+        failures.append("enforcement must identify the runtime or filesystem boundary")
     if profile.get("sandbox_mode") == "isolated-write" and profile.get("filesystem") != "isolated-write":
         failures.append("isolated-write sandbox requires isolated filesystem capability")
     isolation_mode = profile.get("isolation_mode", "workspace")
@@ -45,4 +51,8 @@ def validate_capability_profile(profile: dict[str, Any]) -> list[str]:
         failures.append("isolation_mode must be workspace or isolated-write")
     if isolation_mode == "isolated-write" and profile.get("filesystem") != "isolated-write":
         failures.append("isolated-write isolation requires isolated filesystem capability")
+    if profile.get("sandbox_mode") == "read-only" and enforcement != "runtime-read-only":
+        failures.append("read-only sandbox requires runtime-read-only enforcement")
+    if isolation_mode == "isolated-write" and enforcement != "filesystem-boundary":
+        failures.append("isolated-write isolation requires filesystem-boundary enforcement")
     return failures

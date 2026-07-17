@@ -79,6 +79,9 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
 - capability profile은 runtime `sandbox_mode`와 filesystem 격리 수준을
   `isolation_mode`로 분리해, workspace-write runtime과 isolated-write 경계를
   문서·검증에서 혼동하지 않도록 한다.
+- capability profile에 `enforcement`를 추가해 runtime read-only, runtime
+  workspace-write, filesystem boundary를 구분하고 dispatch에서 검증한다.
+- state lock은 Unix `fcntl`과 Windows `msvcrt` backend를 선택하도록 추상화한다.
 
 운영 환경에 맞춘 실제 보존 기간과 retry 횟수는 maintenance CLI 인자로
 설정하며, 기본값은 보수적인 bounded 값으로 유지한다.
