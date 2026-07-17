@@ -11,7 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_scheduler import claim_next, claim_task, choose_capacity, enqueue_task, recover_stale_tasks, retry_task, transition_task
+from agent_scheduler import cancel_task, claim_next, claim_task, checkpoint_task, choose_capacity, enqueue_task, heartbeat_task, recover_stale_tasks, retry_task, transition_task
 
 
 class AgentSchedulerTests(unittest.TestCase):
@@ -78,6 +78,18 @@ class AgentSchedulerTests(unittest.TestCase):
             self.assertEqual({queued["task_id"], running["task_id"]}, {task["task_id"] for task in recovered})
             self.assertEqual({"failed"}, {task["state"] for task in recovered})
             self.assertEqual("queued", retry_task(project, queued["task_id"])["state"])
+
+    def test_heartbeat_checkpoint_and_cancel_follow_task_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            task = enqueue_task(project, "run-1", max_retries=1)
+            claimed = claim_next(project)
+            heartbeat = heartbeat_task(project, claimed["task_id"])
+            self.assertEqual(claimed["task_id"], heartbeat["task_id"])
+            checkpoint = checkpoint_task(project, task["task_id"], "result-1")
+            self.assertEqual("result-1", checkpoint["partial_result_id"])
+            self.assertEqual("cancelled", cancel_task(project, task["task_id"])["state"])
+            self.assertIsNone(cancel_task(project, task["task_id"]))
 
 
 if __name__ == "__main__":

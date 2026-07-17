@@ -16,6 +16,7 @@ SCHEMA_VERSION = 1
 EVENTS_FILENAME = "events.json"
 MAX_EVENTS = 500
 SAFE_ENUM = re.compile(r"^[a-z][a-z0-9_.-]{0,63}$")
+SAFE_OPAQUE = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
 
 
 def events_path(project: Path) -> Path:
@@ -29,16 +30,27 @@ def emit_event(
     run_id: str | None = None,
     task_id: str | None = None,
     state: str | None = None,
+    worker_id: str | None = None,
+    result_id: str | None = None,
+    attempt: int | None = None,
 ) -> dict[str, Any]:
     for label, value in (("event_type", event_type), ("state", state)):
         if value is not None and not SAFE_ENUM.fullmatch(value):
             raise ValueError(f"{label} must be a safe enum")
+    for label, value in (("worker_id", worker_id), ("result_id", result_id)):
+        if value is not None and not SAFE_OPAQUE.fullmatch(value):
+            raise ValueError(f"{label} must be an opaque identifier")
+    if attempt is not None and (not isinstance(attempt, int) or attempt < 1):
+        raise ValueError("attempt must be a positive integer")
     event = {
         "event_id": uuid.uuid4().hex,
         "event_type": event_type,
         "run_id": run_id,
         "task_id": task_id,
         "state": state,
+        "worker_id": worker_id,
+        "result_id": result_id,
+        "attempt": attempt,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     path = events_path(project)
@@ -50,6 +62,22 @@ def emit_event(
         events.append(event)
         atomic_write_json(path, {"schema_version": SCHEMA_VERSION, "events": events[-MAX_EVENTS:]})
     return event
+
+
+def emit_heartbeat(project: Path, *, run_id: str, task_id: str, worker_id: str, attempt: int = 1) -> dict[str, Any]:
+    return emit_event(project, "worker.heartbeat", run_id=run_id, task_id=task_id, state="running", worker_id=worker_id, attempt=attempt)
+
+
+def emit_worker_result(project: Path, *, run_id: str, task_id: str, worker_id: str, result_id: str, attempt: int = 1) -> dict[str, Any]:
+    return emit_event(project, "worker.result", run_id=run_id, task_id=task_id, state="completed", worker_id=worker_id, result_id=result_id, attempt=attempt)
+
+
+def emit_worker_failure(project: Path, *, run_id: str, task_id: str, worker_id: str, attempt: int = 1) -> dict[str, Any]:
+    return emit_event(project, "worker.failure", run_id=run_id, task_id=task_id, state="failed", worker_id=worker_id, attempt=attempt)
+
+
+def emit_partial_result(project: Path, *, run_id: str, task_id: str, worker_id: str, result_id: str, attempt: int = 1) -> dict[str, Any]:
+    return emit_event(project, "worker.partial", run_id=run_id, task_id=task_id, state="paused", worker_id=worker_id, result_id=result_id, attempt=attempt)
 
 
 def read_events(project: Path, *, event_type: str | None = None) -> list[dict[str, Any]]:

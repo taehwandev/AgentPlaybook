@@ -128,6 +128,65 @@ def transition_task(project: Path, task_id: str, state: str) -> dict[str, Any] |
     return task
 
 
+def heartbeat_task(project: Path, task_id: str) -> dict[str, Any] | None:
+    """Refresh a running task lease without changing its lifecycle state."""
+
+    path = scheduler_path(project)
+    with project_state_lock(project), state_lock(path):
+        payload = _read_scheduler(path)
+        for task in payload["tasks"]:
+            if task.get("task_id") != task_id or task.get("state") != "running":
+                continue
+            task["updated_at"] = datetime.now(timezone.utc).isoformat()
+            _write_scheduler(path, payload)
+            break
+        else:
+            return None
+    _safe_event(project, "task.heartbeat", run_id=str(task["run_id"]), task_id=task_id, state="running")
+    return task
+
+
+def checkpoint_task(project: Path, task_id: str, result_id: str) -> dict[str, Any] | None:
+    """Record an opaque partial-result checkpoint for later retry/resume."""
+
+    if not result_id:
+        raise ValueError("result_id is required")
+    path = scheduler_path(project)
+    with project_state_lock(project), state_lock(path):
+        payload = _read_scheduler(path)
+        for task in payload["tasks"]:
+            if task.get("task_id") != task_id or task.get("state") != "running":
+                continue
+            task["partial_result_id"] = result_id
+            task["partial_updated_at"] = datetime.now(timezone.utc).isoformat()
+            task["updated_at"] = task["partial_updated_at"]
+            _write_scheduler(path, payload)
+            break
+        else:
+            return None
+    _safe_event(project, "worker.partial", run_id=str(task["run_id"]), task_id=task_id, state="paused", result_id=result_id)
+    return task
+
+
+def cancel_task(project: Path, task_id: str) -> dict[str, Any] | None:
+    """Cancel a queued or running task through the standard terminal transition."""
+
+    path = scheduler_path(project)
+    with project_state_lock(project), state_lock(path):
+        payload = _read_scheduler(path)
+        for task in payload["tasks"]:
+            if task.get("task_id") != task_id or task.get("state") not in {"queued", "running"}:
+                continue
+            task["state"] = "cancelled"
+            task["updated_at"] = datetime.now(timezone.utc).isoformat()
+            _write_scheduler(path, payload)
+            break
+        else:
+            return None
+    _safe_event(project, "task.cancelled", run_id=str(task["run_id"]), task_id=task_id, state="cancelled")
+    return task
+
+
 def retry_task(project: Path, task_id: str) -> dict[str, Any] | None:
     """Requeue a failed task only while its bounded retry budget remains."""
 
@@ -194,8 +253,8 @@ def _opaque_project_id(project: Path) -> str:
     return hashlib.sha256(str(project.resolve()).encode("utf-8")).hexdigest()
 
 
-def _safe_event(project: Path, event_type: str, *, run_id: str, task_id: str, state: str) -> None:
+def _safe_event(project: Path, event_type: str, *, run_id: str, task_id: str, state: str, result_id: str | None = None) -> None:
     try:
-        emit_event(project, event_type, run_id=run_id, task_id=task_id, state=state)
+        emit_event(project, event_type, run_id=run_id, task_id=task_id, state=state, result_id=result_id)
     except (OSError, ValueError):
         return

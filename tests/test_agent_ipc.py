@@ -8,7 +8,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_ipc import emit_event, read_events, summarize_events
+from agent_ipc import emit_event, emit_heartbeat, emit_partial_result, emit_worker_failure, emit_worker_result, read_events, summarize_events
 
 
 class AgentIPCTests(unittest.TestCase):
@@ -26,7 +26,18 @@ class AgentIPCTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 emit_event(Path(directory), "Run Started")
 
+    def test_worker_events_are_content_free_and_opaque(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            emit_heartbeat(project, run_id="run-1", task_id="task-1", worker_id="worker-1")
+            emit_worker_result(project, run_id="run-1", task_id="task-1", worker_id="worker-1", result_id="result-1")
+            emit_worker_failure(project, run_id="run-1", task_id="task-1", worker_id="worker-1")
+            emit_partial_result(project, run_id="run-1", task_id="task-1", worker_id="worker-1", result_id="result-1")
+            events = read_events(project)
+            self.assertEqual(4, len(events))
+            self.assertEqual({"worker.heartbeat", "worker.result", "worker.failure", "worker.partial"}, {event["event_type"] for event in events})
+            self.assertNotIn("prompt", str(events))
+
 
 if __name__ == "__main__":
     unittest.main()
-
