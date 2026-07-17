@@ -95,3 +95,26 @@ def validate_api_contract_manifest(manifest: Mapping[str, Any]) -> list[str]:
         for key, value in expected.items()
         if manifest.get(key) != value
     ]
+
+
+def validate_status_snapshot(snapshot: Mapping[str, Any]) -> list[str]:
+    """Validate the stable, content-free fields consumed by external clients."""
+
+    failures: list[str] = []
+    for key in ("api_version", "snapshot_id", "captured_at", "consistency", "api_contract", "task_counts", "events"):
+        if key not in snapshot:
+            failures.append(f"status snapshot field missing: {key}")
+    if snapshot.get("api_version") != 2:
+        failures.append("status snapshot api_version is unsupported")
+    if snapshot.get("consistency") != "project-state-lock":
+        failures.append("status snapshot consistency contract is unsupported")
+    if isinstance(snapshot.get("api_contract"), Mapping):
+        failures.extend(validate_api_contract_manifest(snapshot["api_contract"]))
+    else:
+        failures.append("status snapshot api_contract is missing")
+    adapters = snapshot.get("runtime_adapters")
+    if not isinstance(adapters, list):
+        failures.append("status snapshot runtime_adapters is missing")
+    else:
+        failures.extend(validate_runtime_adapter_catalog(adapters))
+    return failures

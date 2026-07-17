@@ -91,6 +91,8 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
   식별할 수 있게 했다.
 - status snapshot은 project-state lock 아래에서 registry/scheduler/events를
   함께 읽고 `snapshot_id`, `captured_at`, `consistency` 계약을 반환한다.
+- `agent-os-status.py --validate`가 외부 소비 전 필수 필드·schema version·runtime
+  adapter parity를 검증하고 JSON으로 `valid`와 실패 목록을 반환한다.
 - start가 opaque `agent_run_id`를 evidence에 연결하고 finish가 이를 사용해
   transition하므로 같은 evidence 이름을 공유하는 동시 실행도 서로 덮어쓰지
   않는다.

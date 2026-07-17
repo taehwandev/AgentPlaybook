@@ -12,6 +12,7 @@ from agent_os_api import (
     runtime_adapter_contract,
     runtime_adapter_catalog,
     validate_runtime_adapter_catalog,
+    validate_status_snapshot,
     validate_api_contract_manifest,
     validate_runtime_adapter_contract,
 )
@@ -36,6 +37,14 @@ class AgentOSAPITests(unittest.TestCase):
         catalog = runtime_adapter_catalog()
         self.assertEqual({"codex", "claude", "antigravity"}, {item["runtime"] for item in catalog})
         self.assertEqual([], validate_runtime_adapter_catalog(catalog))
+
+    def test_status_snapshot_contract_requires_consistency_and_adapters(self) -> None:
+        from agent_observability import status_snapshot
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual([], validate_status_snapshot(status_snapshot(Path(directory))))
 
 
 if __name__ == "__main__":
