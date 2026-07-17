@@ -69,6 +69,8 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
   `worker.partial` 이벤트와 opaque worker/result ID를 제공한다.
 - scheduler는 heartbeat, cancellation, partial-result checkpoint를 제공해
   stale worker를 재개할 때 기존 근거를 재사용할 수 있게 한다.
+- partial-result 본문은 저장하지 않고 opaque ID만 보존한다. 실패 task의 bounded
+  resume은 `AGENTPLAYBOOK_RESUME_RESULT_ID`로 그 ID를 worker 경계에 전달한다.
 - context snapshot도 route fingerprint와 required-doc hash뿐 아니라 request
   fingerprint를 저장·검증해 다른 요청의 context 재사용을 차단한다.
 - status와 dispatch manifest는 공통 `api_contract` schema manifest를 사용하고,

@@ -13,7 +13,7 @@ from typing import Callable, Mapping
 from agent_gate_evidence import gate_evidence_path_for_preflight
 from agent_run_registry import latest_run_id
 from agent_ipc import emit_heartbeat, emit_worker_failure, emit_worker_result
-from agent_scheduler import claim_task, claim_next, choose_capacity, enqueue_task, heartbeat_task, retry_task, transition_task
+from agent_scheduler import claim_task, claim_next, choose_capacity, enqueue_task, heartbeat_task, retry_task, resume_task, transition_task
 from agent_worker_evidence import create_worker_reservation, worker_reservation_matches
 from workflow_dispatch_handoff import execution_policy
 
@@ -55,15 +55,17 @@ def execute_dispatch_manifest(
     project = Path(str(manifest["project"])).resolve()
     scheduler_task = _claim_scheduler_task(manifest, prepared, project)
     heartbeat_interval = float(manifest.get("heartbeat_interval_seconds") or 0)
+    task_context = {"task": scheduler_task}
     if runner:
         return _run_scheduled_worker(argv, runner, project, scheduler_task, heartbeat_interval_seconds=heartbeat_interval)
     try:
         return _run_scheduled_worker(
             argv,
-            lambda command: subprocess.run(command, check=False, env=worker_environment(prepared)).returncode,
+            lambda command: subprocess.run(command, check=False, env=worker_environment(prepared, task_context["task"])).returncode,
             project,
             scheduler_task,
             heartbeat_interval_seconds=heartbeat_interval,
+            task_context=task_context,
         )
     except OSError as error:
         raise RuntimeError("Unable to start the delegated Codex worker") from error
@@ -97,6 +99,7 @@ def _run_scheduled_worker(
     task: Mapping[str, object],
     *,
     heartbeat_interval_seconds: float = 0,
+    task_context: dict[str, object] | None = None,
 ) -> int:
     if heartbeat_interval_seconds < 0:
         raise ValueError("heartbeat_interval_seconds must be non-negative")
@@ -171,7 +174,7 @@ def _run_scheduled_worker(
                 attempt=int(current_task.get("attempt") or 1),
             )
         transition_task(project, task_id, "failed")
-        retried = retry_task(project, task_id)
+        retried = resume_task(project, task_id) if current_task.get("partial_result_id") else retry_task(project, task_id)
         if retried is None:
             return result
         claimed = claim_task(
@@ -185,6 +188,8 @@ def _run_scheduled_worker(
         if not claimed or claimed.get("task_id") != task_id:
             return result
         current_task = claimed
+        if task_context is not None:
+            task_context["task"] = current_task
 
 
 def prepare_launch_handoff(
@@ -228,7 +233,7 @@ def prepare_launch_handoff(
     return prepared
 
 
-def worker_environment(handoff: Mapping[str, object]) -> dict[str, str]:
+def worker_environment(handoff: Mapping[str, object], task: Mapping[str, object] | None = None) -> dict[str, str]:
     environment = dict(os.environ)
     capsule = handoff.get("execution_capsule")
     if isinstance(capsule, Mapping) and capsule.get("reusable"):
@@ -240,6 +245,8 @@ def worker_environment(handoff: Mapping[str, object]) -> dict[str, str]:
         handoff["worker_reservation_token"]
     )
     environment["AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT"] = "worker-evidence-and-state"
+    if task and task.get("partial_result_id"):
+        environment["AGENTPLAYBOOK_RESUME_RESULT_ID"] = str(task["partial_result_id"])
     return environment
 
 

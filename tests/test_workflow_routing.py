@@ -737,6 +737,18 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertEqual("worker-evidence-and-state", environment["AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT"])
         self.assertNotIn("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY", environment)
 
+    def test_worker_environment_exports_partial_result_resume_token(self) -> None:
+        from workflow_dispatch_launch import worker_environment
+
+        environment = worker_environment(
+            {
+                "worker_preflight_evidence": "/tmp/preflight.json",
+                "worker_reservation_token": "a" * 32,
+            },
+            {"partial_result_id": "result-1"},
+        )
+        self.assertEqual("result-1", environment["AGENTPLAYBOOK_RESUME_RESULT_ID"])
+
     def test_dispatch_stays_inline_when_parent_profile_and_sandbox_match(self) -> None:
         manifest = build_dispatch_manifest(
             "feature",

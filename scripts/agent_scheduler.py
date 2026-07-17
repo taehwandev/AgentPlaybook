@@ -205,7 +205,44 @@ def retry_task(project: Path, task_id: str) -> dict[str, Any] | None:
             break
         else:
             return None
-    _safe_event(project, "task.requeued", run_id=str(task["run_id"]), task_id=task_id, state="queued")
+    _safe_event(
+        project,
+        "task.requeued",
+        run_id=str(task["run_id"]),
+        task_id=task_id,
+        state="queued",
+        result_id=str(task.get("partial_result_id")) if task.get("partial_result_id") else None,
+    )
+    return task
+
+
+def resume_task(project: Path, task_id: str) -> dict[str, Any] | None:
+    """Requeue a failed task and retain its opaque partial-result resume token."""
+
+    path = scheduler_path(project)
+    with project_state_lock(project), state_lock(path):
+        payload = _read_scheduler(path)
+        for task in payload["tasks"]:
+            if task.get("task_id") != task_id or task.get("state") != "failed":
+                continue
+            if not task.get("partial_result_id") or int(task.get("attempt", 1)) >= int(task.get("max_attempts", 1)):
+                return None
+            task["attempt"] = int(task.get("attempt", 1)) + 1
+            task["state"] = "queued"
+            task["resume_requested_at"] = datetime.now(timezone.utc).isoformat()
+            task["updated_at"] = task["resume_requested_at"]
+            _write_scheduler(path, payload)
+            break
+        else:
+            return None
+    _safe_event(
+        project,
+        "task.resumed",
+        run_id=str(task["run_id"]),
+        task_id=task_id,
+        state="queued",
+        result_id=str(task["partial_result_id"]),
+    )
     return task
 
 
