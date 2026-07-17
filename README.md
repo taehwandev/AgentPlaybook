@@ -68,8 +68,9 @@ release version for every `main` merge. Track every deployed revision instead.
 
 - Release unit: continuous deployment from `main`.
 - Deployment source: GitHub Pages legacy source, `main` branch, `/docs` path.
-- Public release version: none by default. Use a tag or release note only when
-  a maintainer intentionally groups changes into a public AgentPlaybook release.
+- Latest public release: [v26.07.6](https://github.com/taehwandev/AgentPlaybook/blob/main/docs/release-notes-v26.07.6.md).
+  Use a tag or release note only when a maintainer intentionally groups changes
+  into a public AgentPlaybook release.
 - Source revision: the exact Git commit SHA deployed by GitHub Pages.
 - Deployment id: the GitHub Pages build id for that Pages build.
 - Artifact: the `/docs` tree at the deployed commit. There is no separate

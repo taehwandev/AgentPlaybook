@@ -252,6 +252,30 @@ h1 {
   max-width: 560px;
 }
 
+.release-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: -20px 0 32px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.release-version {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.release-meta a {
+  color: var(--green-glow);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.release-meta a:hover {
+  text-decoration: underline;
+}
+
 .hero-actions {
   display: flex;
   gap: 16px;
