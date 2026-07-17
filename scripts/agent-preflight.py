@@ -313,13 +313,20 @@ def resolve_evidence_path(args: argparse.Namespace, project: Path) -> Path:
 
 
 def _enforce_worker_environment(args: argparse.Namespace) -> None:
+    enforcement = os.environ.get("AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT", "")
     if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+        if enforcement != "parent-evidence-readonly":
+            raise ValueError("reusable worker is missing parent-evidence-readonly enforcement")
         raise ValueError(
             "this worker received a reusable parent capsule and cannot create or overwrite parent evidence"
         )
     expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
     if not expected:
+        if enforcement and enforcement != "worker-evidence-and-state":
+            raise ValueError("worker capability enforcement scope is unsupported")
         return
+    if enforcement != "worker-evidence-and-state":
+        raise ValueError("isolated worker is missing worker-evidence-and-state enforcement")
     expected_path = Path(expected).expanduser().resolve()
     actual = args.evidence.expanduser().resolve() if args.evidence else None
     if actual != expected_path:

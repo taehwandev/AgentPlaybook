@@ -13,21 +13,7 @@ import json
 import time
 from pathlib import Path
 
-from agent_retention import prune_runtime_state
-from agent_run_registry import recover_stale_runs
-from agent_scheduler import recover_stale_tasks, retry_task
-
-
-def run_once(project: Path, *, stale_after_seconds: int, retention_seconds: int, max_records: int) -> dict[str, object]:
-    recovered_runs = recover_stale_runs(project, stale_after_seconds=stale_after_seconds)
-    recovered_tasks = recover_stale_tasks(project, stale_after_seconds=stale_after_seconds)
-    requeued = [retry_task(project, str(task["task_id"])) for task in recovered_tasks]
-    return {
-        "recovered_runs": len(recovered_runs),
-        "recovered_tasks": len(recovered_tasks),
-        "requeued_tasks": sum(task is not None for task in requeued),
-        "pruned": prune_runtime_state(project, retention_seconds=retention_seconds, max_records=max_records),
-    }
+from agent_os_maintenance import run_maintenance
 
 
 def main() -> int:
@@ -43,7 +29,7 @@ def main() -> int:
         parser.error("max-cycles must be positive and interval-seconds cannot be negative")
     results = []
     for index in range(args.max_cycles):
-        results.append(run_once(
+        results.append(run_maintenance(
             args.project,
             stale_after_seconds=args.stale_after_seconds,
             retention_seconds=args.retention_seconds,

@@ -38,6 +38,7 @@ def enqueue_task(
     priority: int = 0,
     independent_slices: int = 1,
     max_retries: int = 0,
+    partial_result_id: str | None = None,
 ) -> dict[str, Any]:
     if not run_id or not isinstance(run_id, str):
         raise ValueError("run_id is required")
@@ -54,6 +55,8 @@ def enqueue_task(
         "queued_at": now,
         "updated_at": now,
     }
+    if partial_result_id:
+        task["partial_result_id"] = str(partial_result_id)
     path = scheduler_path(project)
     with project_state_lock(project), state_lock(path):
         payload = _read_scheduler(path)

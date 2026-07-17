@@ -2,13 +2,21 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import multiprocessing as mp
 from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_context_store import refresh_context_snapshot, validate_context_snapshot
+from agent_context_store import refresh_and_validate_context_snapshot, refresh_context_snapshot, validate_context_snapshot
+
+
+def _refresh_context_worker(args: tuple[str, str, int]) -> list[str]:
+    project, rules, index = args
+    route = {"required_docs": ["AGENTS.md"], "gates": [], "request_classified": True}
+    intake = {"request_classified": True, "request": f"parallel-{index}"}
+    return refresh_and_validate_context_snapshot(Path(project), Path(rules), route, intake)[1]
 
 
 class AgentContextStoreTests(unittest.TestCase):
@@ -36,6 +44,15 @@ class AgentContextStoreTests(unittest.TestCase):
             refresh_context_snapshot(project, ROOT, route, {"request_classified": True, "request": "one"})
             failures = validate_context_snapshot(project, ROOT, route, {"request_classified": True, "request": "two"})
             self.assertIn("request fingerprint", failures[0])
+
+    def test_parallel_refresh_and_validation_is_atomic(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            (project / ".agentplaybook").mkdir()
+            args = [(str(project), str(ROOT), index) for index in range(12)]
+            with mp.get_context("fork").Pool(4) as pool:
+                failures = pool.map(_refresh_context_worker, args)
+            self.assertEqual([], [failure for result in failures for failure in result])
 
 
 if __name__ == "__main__":

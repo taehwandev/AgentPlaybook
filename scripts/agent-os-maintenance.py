@@ -7,9 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from agent_retention import prune_runtime_state
-from agent_run_registry import recover_stale_runs
-from agent_scheduler import recover_stale_tasks, retry_task
+from agent_os_maintenance import run_maintenance
 
 
 def main() -> int:
@@ -19,24 +17,12 @@ def main() -> int:
     parser.add_argument("--retention-seconds", type=int, default=30 * 24 * 60 * 60)
     parser.add_argument("--max-records", type=int, default=100)
     args = parser.parse_args()
-    recovered = recover_stale_runs(args.project, stale_after_seconds=args.stale_after_seconds)
-    recovered_tasks = recover_stale_tasks(args.project, stale_after_seconds=args.stale_after_seconds)
-    requeued_tasks = [
-        retry_task(args.project, str(task["task_id"]))
-        for task in recovered_tasks
-    ]
-    requeued_count = sum(task is not None for task in requeued_tasks)
-    pruned = prune_runtime_state(
+    print(json.dumps(run_maintenance(
         args.project,
         retention_seconds=args.retention_seconds,
+        stale_after_seconds=args.stale_after_seconds,
         max_records=args.max_records,
-    )
-    print(json.dumps({
-        "recovered_runs": len(recovered),
-        "recovered_tasks": len(recovered_tasks),
-        "requeued_tasks": requeued_count,
-        "pruned": pruned,
-    }, sort_keys=True))
+    ), sort_keys=True))
     return 0
 
 

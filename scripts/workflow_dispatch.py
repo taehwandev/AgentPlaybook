@@ -50,6 +50,7 @@ def build_dispatch_manifest(
     parent_sandbox_mode: str = "",
     isolation_required: bool = False,
     heartbeat_interval_seconds: float = 0,
+    partial_result_id: str = "",
     rules: Path | None = None,
     evidence_path: Path | None = None,
     worker_evidence_path: Path | None = None,
@@ -143,6 +144,7 @@ def build_dispatch_manifest(
         "profile_matches_parent": same_profile,
         "isolation_required": isolation_required,
         "heartbeat_interval_seconds": max(0.0, float(heartbeat_interval_seconds)),
+        "partial_result_id": str(partial_result_id or ""),
         "handoff_state": handoff_state,
         # Kept for programmatic callers. Human-facing output always redacts it:
         # launch revalidates and rebuilds this argv immediately before execution.

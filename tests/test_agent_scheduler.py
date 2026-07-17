@@ -101,6 +101,11 @@ class AgentSchedulerTests(unittest.TestCase):
             self.assertEqual("queued", resumed["state"])
             self.assertEqual("result-1", resumed["partial_result_id"])
 
+    def test_enqueue_accepts_external_partial_result_for_dispatch_resume(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            task = enqueue_task(Path(directory), "run-1", partial_result_id="external-1")
+            self.assertEqual("external-1", task["partial_result_id"])
+
 
 if __name__ == "__main__":
     unittest.main()

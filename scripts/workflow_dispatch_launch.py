@@ -85,6 +85,7 @@ def _claim_scheduler_task(
         priority=int(manifest.get("priority") or 0),
         independent_slices=independent_slices,
         max_retries=max_retries,
+        partial_result_id=str(manifest.get("partial_result_id") or "") or None,
     )
     claimed = claim_next(project, capacity=capacity)
     if not claimed or claimed.get("task_id") != task.get("task_id"):
@@ -245,6 +246,8 @@ def worker_environment(handoff: Mapping[str, object], task: Mapping[str, object]
         handoff["worker_reservation_token"]
     )
     environment["AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT"] = "worker-evidence-and-state"
+    if task and task.get("task_id"):
+        environment["AGENTPLAYBOOK_TASK_ID"] = str(task["task_id"])
     if task and task.get("partial_result_id"):
         environment["AGENTPLAYBOOK_RESUME_RESULT_ID"] = str(task["partial_result_id"])
     return environment

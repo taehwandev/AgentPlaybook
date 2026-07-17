@@ -8,6 +8,7 @@ from typing import Any
 from agent_execution_capsule_docs import current_required_docs, required_doc_failures
 from agent_execution_capsule_state import atomic_write_json, read_json_object
 from agent_route_state import request_fingerprint, route_fingerprint
+from agent_state_lock import project_state_lock, state_lock
 
 
 SCHEMA_VERSION = 2
@@ -33,7 +34,9 @@ def refresh_context_snapshot(
         "request_fingerprint": request_fingerprint(request_intake),
         "required_docs": docs,
     }
-    atomic_write_json(context_snapshot_path(project), snapshot)
+    path = context_snapshot_path(project)
+    with project_state_lock(project), state_lock(path):
+        atomic_write_json(path, snapshot)
     return snapshot
 
 
@@ -43,7 +46,42 @@ def validate_context_snapshot(
     route: dict[str, Any],
     request_intake: dict[str, Any] | None = None,
 ) -> list[str]:
-    snapshot = read_json_object(context_snapshot_path(project))
+    path = context_snapshot_path(project)
+    with project_state_lock(project), state_lock(path):
+        snapshot = read_json_object(path)
+        return _validate_snapshot(snapshot, rules, route, request_intake)
+
+
+def refresh_and_validate_context_snapshot(
+    project: Path,
+    rules: Path,
+    route: dict[str, Any],
+    request_intake: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], list[str]]:
+    """Atomically replace a stale snapshot and validate the new binding."""
+
+    docs = current_required_docs(rules.resolve(), route)
+    if docs is None:
+        raise ValueError("required context documents are unavailable")
+    snapshot = {
+        "schema_version": SCHEMA_VERSION,
+        "route_fingerprint": route_fingerprint(route),
+        "request_fingerprint": request_fingerprint(request_intake),
+        "required_docs": docs,
+    }
+    path = context_snapshot_path(project)
+    with project_state_lock(project), state_lock(path):
+        atomic_write_json(path, snapshot)
+        failures = _validate_snapshot(snapshot, rules, route, request_intake)
+    return snapshot, failures
+
+
+def _validate_snapshot(
+    snapshot: dict[str, Any],
+    rules: Path,
+    route: dict[str, Any],
+    request_intake: dict[str, Any] | None,
+) -> list[str]:
     if snapshot.get("schema_version") != SCHEMA_VERSION:
         return ["context snapshot schema is missing or invalid"]
     if snapshot.get("route_fingerprint") != route_fingerprint(route):

@@ -40,7 +40,7 @@ from agent_review_structure import (
     REVIEW_SOURCE_FILE_LINE_LIMIT,
 )
 from agent_run_registry import register_run, transition_run
-from agent_context_store import refresh_context_snapshot
+from agent_context_store import context_snapshot_path, refresh_and_validate_context_snapshot, validate_context_snapshot
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -78,8 +78,11 @@ def start_hook(args: argparse.Namespace) -> int:
         capsule_detail = _start_capsule_detail(args)
         if capsule_detail:
             details.append(capsule_detail)
-        _register_started_run(args, details)
-        _refresh_started_context(args, details)
+        # Validate and refresh context before registering the run. If context
+        # validation fails, start must not leave an orphaned running record.
+        success = _refresh_started_context(args, details) and success
+        if success:
+            _register_started_run(args, details)
     return finish_with_result(
         "start",
         success,
@@ -175,19 +178,39 @@ def _transition_finished_run(args: argparse.Namespace, success: bool) -> None:
         return
 
 
-def _refresh_started_context(args: argparse.Namespace, details: list[str]) -> None:
+def _refresh_started_context(args: argparse.Namespace, details: list[str]) -> bool:
     try:
         evidence_path = preflight_evidence_path(args)
         payload = json.loads(evidence_path.read_text(encoding="utf-8"))
-        refresh_context_snapshot(
+        snapshot_path = context_snapshot_path(args.project)
+        if snapshot_path.exists():
+            prior_failures = validate_context_snapshot(
+                args.project,
+                args.rules,
+                payload.get("route") or {},
+                payload.get("request_intake") or {},
+            )
+            replaceable = {
+                "context snapshot request fingerprint does not match",
+                "context snapshot route fingerprint does not match",
+            }
+            if prior_failures and set(prior_failures).difference(replaceable):
+                raise ValueError("context snapshot validation failed: " + "; ".join(prior_failures))
+            if prior_failures:
+                details.append("context snapshot: stale request replaced")
+        _, post_failures = refresh_and_validate_context_snapshot(
             args.project,
             args.rules,
             payload.get("route") or {},
             payload.get("request_intake") or {},
         )
+        if post_failures:
+            raise ValueError("context snapshot validation failed after refresh: " + "; ".join(post_failures))
         details.append("context snapshot: refreshed")
+        return True
     except (OSError, ValueError, TypeError, json.JSONDecodeError):
-        details.append("context snapshot: unavailable; lifecycle continues")
+        details.append("context snapshot: validation failed")
+        return False
 
 
 def _summary_lines(result: dict[str, Any]) -> list[str]:
@@ -391,8 +414,6 @@ def main() -> int:
 def _apply_worker_evidence_boundary(args: argparse.Namespace) -> str:
     if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
         return "reusable worker capsule cannot run lifecycle hooks that write parent evidence"
-    if os.environ.get("AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT") == "parent-evidence-readonly":
-        return "parent-evidence-readonly workers cannot run lifecycle hooks"
     expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
     if not expected:
         return ""
