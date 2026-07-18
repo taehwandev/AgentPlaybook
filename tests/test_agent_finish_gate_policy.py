@@ -1,0 +1,1285 @@
+from __future__ import annotations
+
+import json
+import io
+import importlib.util
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from contextlib import redirect_stderr, redirect_stdout
+from types import SimpleNamespace
+from unittest.mock import patch
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from agent_finish_common import requires_retrospective
+from agent_finish_gate_policy import (
+    PLATFORM_SELECTION_GATE,
+    PRD_DRAFT_GATE,
+    REVIEW_READINESS_GATE,
+    VALIDATED_GATES,
+    validate_gate_evidence,
+)
+from agent_finish_check_steps import (
+    check_request_intake,
+    check_required_gates,
+    validate_grill_me_skill_evidence,
+)
+from agent_gate_evidence import (
+    gate_evidence_path_for_preflight,
+    merge_gate_evidence_from_ledger,
+    record_gate_evidence,
+    record_many_gate_evidence,
+    reset_gate_evidence_ledger,
+    synthesize_gate_evidence,
+)
+from agent_worker_evidence import worker_reservation_matches
+from agent_delegation_plan import validate_delegation_plan_evidence
+from agent_global_lessons import (
+    lesson_summary,
+    retrospective_candidate,
+    write_retrospective_candidate,
+)
+from agent_lesson_store import upsert_retrospective_candidate
+from agent_hook_runtime import hook_failure_policy, repair_context_failures
+import agent_skill_hooks
+from agent_preflight_runtime import (
+    AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
+    _claude_spill_warnings,
+)
+from agent_review_hook import review_hook, review_vibeguard_command, workflow_validate_failure_detail
+from agent_review_structure import structure_review
+from agent_vibeguard_cache import cached_vibeguard
+from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
+from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
+from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
+from support.runtime_bridge import (
+    CODEX_DISPATCH_BRIDGE_PHRASE,
+    RUNTIME_BRIDGE_GRAPH_PHRASES,
+    runtime_bridge_block,
+    runtime_bridge_required_phrases,
+)
+from support.stable_launcher import stable_launcher_path
+from workflow_catalog import COMMANDS, CONCERNS, SPILL_ACTION_LABELS
+from workflow_gate_policy import (
+    AGENTIC_RUN_STATE_GATE,
+    AMBIGUITY_GATE,
+    ALIGNMENT_BRIEF_GATE,
+    BOUNDARY_PLAN_GATE,
+    CYCLE_CONTRACT_GATE,
+    DOCUMENTATION_IMPACT_GATE,
+    DOCUMENTATION_GATE,
+    MULTI_AGENT_GATE,
+    PRODUCT_REENTRY_GATE,
+    PRODUCT_REENTRY_COMMANDS,
+    SKILL_FEEDBACK_HOOK,
+    SIDE_EFFECT_AUDIT_GATE,
+    SOURCE_DOCS_GATE,
+    SOURCE_DOCS_COMMANDS,
+    TEST_GATE,
+    ALIGNMENT_BRIEF_COMMANDS,
+    WORK_PRODUCING_COMMANDS,
+)
+from workflow_request import infer_concerns_from_request
+from workflow_request import classify_request
+from workflow_request import classified_route_block_reason
+from workflow_request import route_block_reason
+from workflow_dispatch import (
+    build_dispatch_manifest,
+    execute_dispatch_manifest,
+    print_dispatch_manifest,
+)
+from workflow_dispatch_profiles import profile_for_work_kind, select_work_kind
+from workflow_doc_surfaces import (
+    extract_request_surface_paths,
+    git_status_surface_paths,
+    infer_surface_docs,
+    load_doc_surface_rules,
+    surface_rule_doc_refs,
+)
+from workflow_doc_graph import (
+    clear_doc_graph_cache,
+    expand_doc_matches,
+    graph_required_docs,
+)
+from workflow_parallel_validate import validate_parallel_execution_plan
+from workflow_route import resolve_docs, route_hooks
+from workflow_search import SearchOutcome, search_docs, search_docs_outcome
+from workflow_skill_paths import canonical_doc_path
+from workflow_spill import spill_tool_label, validate_spill_label_contracts
+from workflow import build_parser, print_dispatch
+from workflow_validate import (
+    STRICT_CARD_REQUIRED_HEADINGS,
+    markdown_files_to_validate,
+    removed_cli_option_failures,
+)
+
+
+_PREFLIGHT_SPEC = importlib.util.spec_from_file_location(
+    "agent_preflight_under_test", ROOT / "scripts" / "agent-preflight.py"
+)
+assert _PREFLIGHT_SPEC and _PREFLIGHT_SPEC.loader
+agent_preflight = importlib.util.module_from_spec(_PREFLIGHT_SPEC)
+_PREFLIGHT_SPEC.loader.exec_module(agent_preflight)
+
+_FINISH_CHECK_SPEC = importlib.util.spec_from_file_location(
+    "agent_finish_check_under_test", ROOT / "scripts" / "agent-finish-check.py"
+)
+assert _FINISH_CHECK_SPEC and _FINISH_CHECK_SPEC.loader
+agent_finish_check = importlib.util.module_from_spec(_FINISH_CHECK_SPEC)
+_FINISH_CHECK_SPEC.loader.exec_module(agent_finish_check)
+
+_AGENT_HOOK_SPEC = importlib.util.spec_from_file_location(
+    "agent_hook_under_test", ROOT / "scripts" / "agent-hook.py"
+)
+assert _AGENT_HOOK_SPEC and _AGENT_HOOK_SPEC.loader
+agent_hook = importlib.util.module_from_spec(_AGENT_HOOK_SPEC)
+_AGENT_HOOK_SPEC.loader.exec_module(agent_hook)
+
+
+def route_doc(path: str) -> str:
+    return canonical_doc_path(path)
+
+
+class FinishGatePolicyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+
+    def tearDown(self) -> None:
+        if self._old_state_home is None:
+            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+        else:
+            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+
+    def test_documentation_concern_routes_to_documentation_workflow(self) -> None:
+        self.assertEqual(
+            ("workflows/skills/documentation-update/SKILL.md",),
+            CONCERNS["documentation"],
+        )
+
+    def test_preflight_keeps_resolved_classification_for_short_confirmation(self) -> None:
+        args = SimpleNamespace(
+            command="refactor",
+            request="응",
+            request_classified=True,
+            classification_evidence=(
+                "clear-scoped: implement the confirmed workflow fixes"
+            ),
+            platform=[],
+            concern=[],
+            surface_path=[],
+            project=ROOT,
+        )
+
+        route, error, returncode = agent_preflight.route_payload(args, {})
+
+        self.assertEqual("", error)
+        self.assertEqual(0, returncode)
+        self.assertIsNotNone(route)
+        self.assertEqual("refactor", route["command"])
+
+    def test_analysis_preflight_routes_once_and_defers_capsule_creation(self) -> None:
+        route = resolve_docs("analysis", None, [], request_classified=True)
+        route_result = {
+            "returncode": 0,
+            "stdout": json.dumps(route),
+            "stderr": "",
+        }
+        vibeguard = {"returncode": 0, "overall": {"status": "Ready"}}
+        git_status = {"returncode": 0, "stdout": "", "stderr": ""}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            args = agent_preflight.build_parser(ROOT).parse_args(
+                [
+                    "--command",
+                    "analysis",
+                    "--request",
+                    "Inspect routing only and summarize it.",
+                    "--project",
+                    str(project),
+                    "--rules",
+                    str(ROOT),
+                ]
+            )
+            with patch.object(agent_preflight, "active_runtime_label", return_value="codex"), patch.object(
+                agent_preflight, "run_command", return_value=git_status
+            ), patch.object(agent_preflight, "route_result", return_value=route_result) as routed, patch.object(
+                agent_preflight, "cached_vibeguard", return_value=vibeguard
+            ), patch.object(agent_preflight, "lesson_summary", return_value={"accepted": [], "promoted": [], "candidate_count": 0}), patch.object(
+                agent_preflight, "check_agent_hooks", return_value=([], [])
+            ):
+                self.assertEqual(0, agent_preflight.run_preflight(args, ROOT))
+
+            evidence = json.loads((project / ".agentplaybook" / "preflight.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(1, routed.call_count)
+        self.assertIn("execution_snapshot", evidence)
+        self.assertNotIn("project_git", evidence["execution_snapshot"])
+        self.assertFalse((project / ".agentplaybook" / "execution-capsule.json").exists())
+
+    def test_finish_cli_has_no_gate_override_option(self) -> None:
+        finish_options = {
+            option
+            for action in agent_finish_check.build_parser(ROOT)._actions
+            for option in action.option_strings
+        }
+        wrapper_options = {
+            option
+            for action in agent_hook.build_parser()._actions
+            for option in action.option_strings
+        }
+
+        self.assertNotIn("--gate", finish_options)
+        self.assertNotIn("--gate", wrapper_options)
+
+    def test_finish_legacy_gate_input_returns_migration_error(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "agent-hook.py"),
+                "finish",
+                "--gate",
+                "report=done",
+            ],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(2, result.returncode)
+        self.assertIn("finish no longer accepts --gate", result.stderr)
+        self.assertIn("gate or gate-batch", result.stderr)
+        self.assertNotIn("ambiguous option", result.stderr)
+
+    def test_finish_word_in_other_hook_does_not_trigger_migration_error(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "agent-hook.py"),
+                "start",
+                "--request",
+                "finish",
+                "--gate",
+                "report=done",
+            ],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(2, result.returncode)
+        self.assertIn("unrecognized arguments: --gate report=done", result.stderr)
+        self.assertNotIn("finish no longer accepts --gate", result.stderr)
+
+    def test_finish_final_check_failure_requires_retrospective_lesson(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.environ["AGENTPLAYBOOK_STATE_HOME"] = temp_dir
+
+            retrospective_required = requires_retrospective(
+                missed_gates=[],
+                gate_policy_failures=[],
+                finish_failures=["workflow validate failed"],
+            )
+            result = write_retrospective_candidate(
+                {
+                    "retrospective_required": retrospective_required,
+                    "missed_gates": [],
+                    "gate_signals": [{"gate": "workflow validate", "signal": "FAIL"}],
+                }
+            )
+
+            self.assertTrue(retrospective_required)
+            self.assertTrue(result["created"])
+            lesson_path = Path(temp_dir) / result["relative_path"]
+            lesson = json.loads(lesson_path.read_text(encoding="utf-8"))
+            self.assertEqual("finish_gate_failure", lesson["failure_type"])
+            self.assertEqual("finish_failed_before_completion", lesson["root_cause"])
+            self.assertEqual(
+                "repair_verify_then_resume_failed_checkpoint",
+                lesson["next_action"],
+            )
+
+    def test_source_docs_gate_covers_source_driven_routes_only(self) -> None:
+        for command in sorted(SOURCE_DOCS_COMMANDS):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(SOURCE_DOCS_GATE, route["gates"])
+
+        for command in ("ambiguity", "commit", "git_commit", "retrospective", "test", "triage"):
+            with self.subTest(restored_command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(SOURCE_DOCS_GATE, route["gates"])
+
+    def test_workspace_scope_checkpoint_evidence_is_validated_when_present(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                "workspace scope checkpoint": (
+                    "starting primary repo: app; secondary repo/source of truth: web; "
+                    "mode: primary-led secondary write; verification: web test plus app smoke"
+                )
+            },
+            [],
+        )
+
+        self.assertEqual([], failures)
+
+        failures = validate_gate_evidence(
+            {"workspace scope checkpoint": "primary repo: app; secondary repo: web"},
+            [],
+        )
+
+        self.assertTrue(any("workspace scope checkpoint evidence" in failure for failure in failures))
+
+    def test_finish_evidence_examples_for_doc_impact_and_multi_agent_pass(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "pre-code/pre-edit artifact selection: workflow card and README; "
+                    "impact decision: not applicable; reason: no durable behavior, "
+                    "no workflow policy, no public contract, no operator action, "
+                    "and no acceptance criteria changed, so this does not require "
+                    "creating/updating that artifact"
+                ),
+                MULTI_AGENT_GATE: (
+                    "serial/single-agent decision; concrete reason: small "
+                    "same-file/same-boundary scope with overlapping contract risk, "
+                    "so parallel subagents were not safe; verification: workflow "
+                    "validate plus focused unit tests"
+                ),
+            },
+            [DOCUMENTATION_IMPACT_GATE, MULTI_AGENT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_cycle_contract_evidence_requires_bounded_cycle_details(self) -> None:
+        failures = validate_gate_evidence(
+            {CYCLE_CONTRACT_GATE: "cycle contract completed"},
+            [CYCLE_CONTRACT_GATE],
+        )
+
+        self.assertTrue(any("cycle contract evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                CYCLE_CONTRACT_GATE: (
+                    "cycle_type=workflow_setup; input_scope=router workflow policy; "
+                    "allowed_changes=workflow docs, route gates, finish-check validators, tests; "
+                    "forbidden_changes=unrelated dirty files, external runtime config, deploys; "
+                    "acceptance criteria=routes include a bounded cycle gate; "
+                    "verification=unit tests and workflow validate; "
+                    "stop condition=cycle gate is routed, documented, and validated; "
+                    "checkpoint=handoff for separate review cycle"
+                )
+            },
+            [CYCLE_CONTRACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_prd_and_product_routes_require_alignment_brief(self) -> None:
+        prd_route = resolve_docs("prd", None, [], request_classified=True)
+        product_route = resolve_docs("product", None, [], request_classified=True)
+
+        self.assertIn(PLATFORM_SELECTION_GATE, product_route["gates"])
+        self.assertLess(
+            product_route["gates"].index(PLATFORM_SELECTION_GATE),
+            product_route["gates"].index("PRD"),
+        )
+        self.assertIn(ALIGNMENT_BRIEF_GATE, prd_route["gates"])
+        self.assertLess(
+            prd_route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            prd_route["gates"].index("PRD draft"),
+        )
+        self.assertIn(ALIGNMENT_BRIEF_GATE, product_route["gates"])
+        self.assertLess(
+            product_route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            product_route["gates"].index("PRD"),
+        )
+        self.assertIn(route_doc("workflows/skills/prd-creation/SKILL.md"), prd_route["docs"])
+        self.assertIn(route_doc("workflows/skills/prd-creation/SKILL.md"), product_route["docs"])
+
+    def test_prd_and_spec_routes_get_documentation_enforcement_gates(self) -> None:
+        for command in ("prd", "spec"):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(SOURCE_DOCS_GATE, route["gates"])
+                self.assertIn(DOCUMENTATION_IMPACT_GATE, route["gates"])
+                self.assertIn(DOCUMENTATION_GATE, route["gates"])
+                self.assertIn(PRD_DRAFT_GATE, route["gates"])
+                self.assertLess(
+                    route["gates"].index(SOURCE_DOCS_GATE),
+                    route["gates"].index("PRD draft"),
+                )
+                self.assertLess(
+                    route["gates"].index(DOCUMENTATION_IMPACT_GATE),
+                    route["gates"].index("PRD draft"),
+                )
+                self.assertLess(
+                    route["gates"].index(ALIGNMENT_BRIEF_GATE),
+                    route["gates"].index("PRD draft"),
+                )
+                self.assertLess(
+                    route["gates"].index("PRD draft"),
+                    route["gates"].index(DOCUMENTATION_GATE),
+                )
+                self.assertIn(route_doc("workflows/skills/documentation-update/SKILL.md"), route["docs"])
+
+    def test_docs_route_gets_documentation_enforcement_gates(self) -> None:
+        route = resolve_docs("docs", None, [], request_classified=True)
+
+        self.assertIn(SOURCE_DOCS_GATE, route["gates"])
+        self.assertIn(DOCUMENTATION_IMPACT_GATE, route["gates"])
+        self.assertIn(DOCUMENTATION_GATE, route["gates"])
+        self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index("edit"))
+        self.assertLess(route["gates"].index(DOCUMENTATION_IMPACT_GATE), route["gates"].index("edit"))
+        self.assertIn(route_doc("common/skills/source-driven-development/SKILL.md"), route["docs"])
+
+    def test_prd_draft_evidence_requires_artifact_and_content(self) -> None:
+        failures = validate_gate_evidence(
+            {PRD_DRAFT_GATE: "PRD draft completed"},
+            [PRD_DRAFT_GATE],
+        )
+
+        self.assertTrue(any("PRD draft evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {PRD_DRAFT_GATE: "discussed acceptance criteria and scope in conversation"},
+            [PRD_DRAFT_GATE],
+        )
+
+        self.assertTrue(any("PRD draft evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                PRD_DRAFT_GATE: (
+                    "created docs/prd-login.md; in scope: login screen; "
+                    "acceptance criteria: given valid credentials when submit then navigate home"
+                )
+            },
+            [PRD_DRAFT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_modify_and_analysis_routes_require_alignment_brief(self) -> None:
+        for command in sorted(ALIGNMENT_BRIEF_COMMANDS):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertIn(ALIGNMENT_BRIEF_GATE, route["gates"])
+
+    def test_feature_alignment_runs_before_acceptance_criteria(self) -> None:
+        route = resolve_docs("feature", None, [], request_classified=True)
+
+        self.assertLess(
+            route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            route["gates"].index("PRD/ARD applicability"),
+        )
+        self.assertLess(
+            route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            route["gates"].index("acceptance criteria"),
+        )
+        self.assertIn(route_doc("common/skills/task-intake-effort-routing/SKILL.md"), route["docs"])
+
+    def test_analysis_and_setup_alignment_runs_before_work_gates(self) -> None:
+        planning_route = resolve_docs("planning", None, [], request_classified=True)
+        release_route = resolve_docs("release", None, [], request_classified=True)
+        multi_agent_route = resolve_docs("multi-agent", None, [], request_classified=True)
+
+        self.assertLess(
+            planning_route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            planning_route["gates"].index("sources"),
+        )
+        self.assertLess(
+            release_route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            release_route["gates"].index("package"),
+        )
+        self.assertLess(
+            multi_agent_route["gates"].index(ALIGNMENT_BRIEF_GATE),
+            multi_agent_route["gates"].index("roles"),
+        )
+
+    def test_triage_and_ambiguity_select_required_docs_without_code_work_gates(self) -> None:
+        for command in ("triage", "ambiguity"):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+
+                self.assertTrue(route["required_docs"])
+                self.assertNotIn(TEST_GATE, route["gates"])
+                self.assertNotIn(MULTI_AGENT_GATE, route["gates"])
+
+    def test_docs_review_checks_review_readiness(self) -> None:
+        route = resolve_docs("docs-review", None, [], request_classified=True)
+
+        self.assertIn(REVIEW_READINESS_GATE, route["gates"])
+        self.assertLess(route["gates"].index(REVIEW_READINESS_GATE), route["gates"].index("source review"))
+
+    def test_workflow_setup_selects_required_docs_before_repair(self) -> None:
+        route = resolve_docs("workflow-setup", None, ["structure"], request_classified=True)
+
+        self.assertTrue(route["required_docs"])
+        self.assertIn(SOURCE_DOCS_GATE, route["gates"])
+
+    def test_docs_route_selects_required_docs_without_confirmation_gate(self) -> None:
+        route = resolve_docs("docs", None, ["structure"], request_classified=True)
+
+        self.assertTrue(route["required_docs"])
+        self.assertNotIn("route docs read", route["gates"])
+
+    def test_finish_policy_rejects_empty_gate_phrases(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                AMBIGUITY_GATE: "done",
+                ALIGNMENT_BRIEF_GATE: "done",
+                DOCUMENTATION_IMPACT_GATE: "done",
+                DOCUMENTATION_GATE: "done",
+                SOURCE_DOCS_GATE: "done",
+                PLATFORM_SELECTION_GATE: "done",
+                REVIEW_READINESS_GATE: "done",
+                PRD_DRAFT_GATE: "done",
+                TEST_GATE: "done",
+                BOUNDARY_PLAN_GATE: "done",
+                MULTI_AGENT_GATE: "done",
+                AGENTIC_RUN_STATE_GATE: "done",
+                SIDE_EFFECT_AUDIT_GATE: "done",
+            },
+            [
+                AMBIGUITY_GATE,
+                ALIGNMENT_BRIEF_GATE,
+                DOCUMENTATION_IMPACT_GATE,
+                DOCUMENTATION_GATE,
+                SOURCE_DOCS_GATE,
+                PLATFORM_SELECTION_GATE,
+                REVIEW_READINESS_GATE,
+                PRD_DRAFT_GATE,
+                TEST_GATE,
+                BOUNDARY_PLAN_GATE,
+                MULTI_AGENT_GATE,
+                AGENTIC_RUN_STATE_GATE,
+                SIDE_EFFECT_AUDIT_GATE,
+            ],
+        )
+
+        self.assertEqual(13, len(failures))
+
+    def test_required_gate_skip_evidence_fails_unless_gate_allows_skip(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                BOUNDARY_PLAN_GATE: "skipped because this looked small",
+            },
+            [BOUNDARY_PLAN_GATE],
+        )
+
+        self.assertTrue(any("cannot pass by recording a skip" in failure for failure in failures))
+
+        allowed = validate_gate_evidence(
+            {
+                TEST_GATE: "tests not run because docs-only change has no useful test",
+            },
+            [TEST_GATE],
+        )
+
+        self.assertEqual([], allowed)
+
+    def test_required_gate_skip_guard_ignores_policy_implementation_language(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                BOUNDARY_PLAN_GATE: (
+                    "boundary/scope: finish-check skip validation policy; nearest "
+                    "verification/check: unit tests and workflow validate covered the "
+                    "gate evidence validator"
+                )
+            },
+            [BOUNDARY_PLAN_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+        failures = validate_gate_evidence(
+            {
+                CYCLE_CONTRACT_GATE: (
+                    "cycle_type=workflow_setup; input_scope=gate evidence policy; "
+                    "allowed_changes=finish-check validator tests; "
+                    "forbidden_changes=unrelated behavior; "
+                    "acceptance criteria=required gates fail on real skipped or "
+                    "deferred fixes; verification=unit tests; "
+                    "stop condition=policy language does not count as a gate skip; "
+                    "checkpoint=finish"
+                )
+            },
+            [CYCLE_CONTRACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_required_gate_skip_guard_allows_non_skip_unable_language(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                BOUNDARY_PLAN_GATE: (
+                    "boundary/scope: regression reproduction notes; nearest "
+                    "verification/check: unable to reproduce further edge cases "
+                    "after unit tests and workflow validate"
+                )
+            },
+            [BOUNDARY_PLAN_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_required_gate_skip_guard_allows_scoped_review_caveat(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                SIDE_EFFECT_AUDIT_GATE: (
+                    "side-effect audit checked final diff; scope/risk reviewed: "
+                    "not reviewed by a second person but self-tested with focused "
+                    "unit coverage; result: no side effects found"
+                )
+            },
+            [SIDE_EFFECT_AUDIT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_required_gate_skip_guard_blocks_explicit_not_applicable_required_gate(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                BOUNDARY_PLAN_GATE: (
+                    "not applicable because this change looked small"
+                )
+            },
+            [BOUNDARY_PLAN_GATE],
+        )
+
+        self.assertTrue(any("cannot pass by recording a skip" in failure for failure in failures))
+
+    def test_alignment_evidence_requires_user_visible_checkpoint(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                ALIGNMENT_BRIEF_GATE: (
+                    "same understanding: explicit goal captured; possible differences: uncertain scope; "
+                    "unsupported assumptions: default MVP unless blocker question changes it"
+                )
+            },
+            [ALIGNMENT_BRIEF_GATE],
+        )
+
+        self.assertTrue(any("user-visible checkpoint" in failure for failure in failures))
+
+    def test_alignment_evidence_accepts_choice_question_checkpoint(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                ALIGNMENT_BRIEF_GATE: (
+                    "same understanding: rewrite requested; possible differences: genre and point of view; "
+                    "unsupported assumptions: style cue alone does not choose retrospective mode; "
+                    "choice question presented before edits"
+                )
+            },
+            [ALIGNMENT_BRIEF_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_finish_policy_accepts_specific_evidence(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                AMBIGUITY_GATE: "no blockers; safe assumption recorded",
+                ALIGNMENT_BRIEF_GATE: (
+                    "same understanding: explicit goal captured; possible differences: uncertain scope; "
+                    "unsupported assumptions: default MVP unless blocker question changes it; "
+                    "user-visible checkpoint told the user before edits"
+                ),
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before implementation documentation impact decision: "
+                    "artifact: workflow card; update workflows/README.md because workflow policy changed"
+                ),
+                DOCUMENTATION_GATE: (
+                    "updated workflows/README.md because workflow policy changed; "
+                    "source-of-truth updated for durable agent behavior"
+                ),
+                SOURCE_DOCS_GATE: (
+                    "read every route required_docs entry directly before implementation; "
+                    "searched PRD/spec/ARD source-of-truth docs; none found; "
+                    "applied takeaway: used the user request as source of truth"
+                ),
+                PLATFORM_SELECTION_GATE: (
+                    "selected platform: ios; loaded platforms/ios/skills/ios-architecture/SKILL.md "
+                    "before PRD/ARD architecture work"
+                ),
+                REVIEW_READINESS_GATE: (
+                    "review readiness checked markdown frontmatter status/type counts; "
+                    "human-reviewed-needed review queue found"
+                ),
+                PRD_DRAFT_GATE: (
+                    "created docs/prd-login.md; in scope: login screen with email/password; "
+                    "acceptance criteria: given valid credentials when submit then navigate home"
+                ),
+                TEST_GATE: "unittest tests/test_workflow_routing.py passed",
+                BOUNDARY_PLAN_GATE: "existing workflow gate policy boundary; verification via unittest",
+                MULTI_AGENT_GATE: (
+                    "no subagent split: serial single-agent because small same-file policy change "
+                    "with same-file scope"
+                ),
+                AGENTIC_RUN_STATE_GATE: (
+                    "run state: scoped; next transition: scoped -> acting; "
+                    "evidence: boundary gate and unittest verification command recorded; "
+                    "checkpoint: implementation handoff; blocker status: no blockers"
+                ),
+                SIDE_EFFECT_AUDIT_GATE: "final diff checked; no unexpected generated files or lockfile changes",
+            },
+            [
+                AMBIGUITY_GATE,
+                ALIGNMENT_BRIEF_GATE,
+                DOCUMENTATION_IMPACT_GATE,
+                DOCUMENTATION_GATE,
+                SOURCE_DOCS_GATE,
+                PLATFORM_SELECTION_GATE,
+                REVIEW_READINESS_GATE,
+                PRD_DRAFT_GATE,
+                TEST_GATE,
+                BOUNDARY_PLAN_GATE,
+                MULTI_AGENT_GATE,
+                AGENTIC_RUN_STATE_GATE,
+                SIDE_EFFECT_AUDIT_GATE,
+            ],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_source_docs_evidence_requires_source_artifact_discovery_before_work(self) -> None:
+        failures = validate_gate_evidence(
+            {SOURCE_DOCS_GATE: "checked docs"},
+            [SOURCE_DOCS_GATE],
+        )
+
+        self.assertTrue(any("route required_docs" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "searched source-of-truth docs before implementation; "
+                    "found docs/module/README.md and read it; "
+                    "applied the module boundary to the work"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+        )
+
+        self.assertTrue(any("route required_docs" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "read every route required_docs entry directly before implementation; "
+                    "searched source-of-truth docs and found docs/module/README.md; "
+                    "no task-specific rule was recorded"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+        )
+
+        self.assertTrue(any("task-specific takeaway" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "read the route required_docs manifest directly before implementation; "
+                    "searched source-of-truth docs and found docs/module/README.md; "
+                    "applied takeaway: keep the module boundary unchanged in this work"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_source_docs_structured_fields_synthesize_finish_valid_evidence(self) -> None:
+        evidence, missing = synthesize_gate_evidence(
+            SOURCE_DOCS_GATE,
+            "",
+            {
+                "required_docs": "all 27 route required_docs entries read directly",
+                "source": "AGENTS.md and routed workflow/skill cards",
+                "takeaway": "use one start hook and keep the parent as ledger owner",
+            },
+        )
+
+        self.assertEqual([], missing)
+        self.assertEqual(
+            [],
+            validate_gate_evidence({SOURCE_DOCS_GATE: evidence}, [SOURCE_DOCS_GATE]),
+        )
+
+        _, legacy_missing = synthesize_gate_evidence(
+            SOURCE_DOCS_GATE,
+            "",
+            {"source": "AGENTS.md", "outcome": "applied one-start"},
+        )
+        self.assertEqual(["required_docs", "takeaway"], legacy_missing)
+
+    def test_platform_selection_evidence_requires_platform_or_not_applicable_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {PLATFORM_SELECTION_GATE: "done"},
+            [PLATFORM_SELECTION_GATE],
+        )
+
+        self.assertTrue(any("platform selection evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                PLATFORM_SELECTION_GATE: (
+                    "selected platform: web; loaded platforms/web/skills/web-architecture/SKILL.md "
+                    "before PRD/ARD architecture work"
+                )
+            },
+            [PLATFORM_SELECTION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+        failures = validate_gate_evidence(
+            {
+                PLATFORM_SELECTION_GATE: (
+                    "not applicable because workflow-only docs change has no platform-specific runtime"
+                )
+            },
+            [PLATFORM_SELECTION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_review_readiness_evidence_requires_status_type_queue(self) -> None:
+        failures = validate_gate_evidence(
+            {REVIEW_READINESS_GATE: "checked docs"},
+            [REVIEW_READINESS_GATE],
+        )
+
+        self.assertTrue(any("review readiness evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                REVIEW_READINESS_GATE: (
+                    "review readiness checked markdown frontmatter status/type counts; "
+                    "human-reviewed-needed review queue found under common/ and workflows/"
+                )
+            },
+            [REVIEW_READINESS_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_evidence_requires_target_and_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {DOCUMENTATION_GATE: "updated docs"},
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("documentation decision" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "updated docs/prd.md because acceptance criteria changed; "
+                    "source-of-truth updated for durable behavior"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_impact_evidence_requires_pre_edit_decision(self) -> None:
+        failures = validate_gate_evidence(
+            {DOCUMENTATION_IMPACT_GATE: "will think about docs later"},
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("documentation impact evidence" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: workflow card; "
+                    "update workflows/README.md because workflow policy changed"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_impact_rejects_non_creation_without_no_durable_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "not applicable because new feature changed behavior"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("cannot use not-applicable/no-docs" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "not applicable because answer-only with no durable behavior"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_impact_rejects_no_docs_for_requirements_change(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "not applicable because no public contract, but requirements changed "
+                    "the acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("cannot use not-applicable/no-docs" in failure for failure in failures))
+
+    def test_documentation_impact_allows_unchanged_when_existing_doc_covers_change(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "unchanged docs/product/spec.md; inspected the existing doc and it "
+                    "already covers the revised acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_impact_rejects_unchanged_without_inspection_proof(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "unchanged docs/product/spec.md because it already covers the "
+                    "revised acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("can use unchanged only" in failure for failure in failures))
+
+    def test_documentation_impact_rejects_vague_unchanged_decision(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: feature spec; "
+                    "unchanged because requirements changed"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("can use unchanged only" in failure for failure in failures))
+
+    def test_documentation_gate_rejects_no_docs_for_requirements_change(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "not applicable for docs/product/spec.md because no public contract, "
+                    "but requirements changed the acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("cannot use not-applicable/no-docs" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "unchanged docs/product/spec.md; inspected it and the existing doc "
+                    "already covers the revised acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_gate_rejects_unchanged_without_inspection_proof(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "unchanged docs/product/spec.md because it already covers the "
+                    "revised acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("can use unchanged only" in failure for failure in failures))
+
+    def test_documentation_gate_rejects_unchanged_without_named_doc_path(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "unchanged; inspected the module readme and it already covers "
+                    "the acceptance criteria"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("can use unchanged only" in failure for failure in failures))
+
+    def test_required_documentation_gate_rejects_empty_evidence(self) -> None:
+        failures = validate_gate_evidence(
+            {DOCUMENTATION_GATE: ""},
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(
+            any("required and cannot be empty" in failure for failure in failures)
+        )
+
+    def test_documentation_skip_requires_user_approval_not_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "documentation decision: not applicable; target: module README; "
+                    "reason: answer-only with no durable behavior"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("cannot be skipped" in failure for failure in failures))
+
+    def test_documentation_skipped_phrase_requires_user_approval(self) -> None:
+        failures = validate_gate_evidence(
+            {DOCUMENTATION_GATE: "documentation skipped because the change was trivial"},
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("cannot be skipped" in failure for failure in failures))
+
+    def test_documentation_skip_passes_with_recorded_user_approval(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "documentation decision: not applicable; target: module README; "
+                    "reason: answer-only; asked the user 문서를 스킵할까요 and the user "
+                    "approved skipping the doc"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_skip_does_not_pass_when_user_was_only_asked(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "documentation decision: not applicable; target: module README; "
+                    "reason: answer-only; asked the user whether to skip the doc but "
+                    "no approval was received"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertTrue(any("cannot be skipped" in failure for failure in failures))
+
+    def test_triage_and_plan_routes_get_product_reentry_gate(self) -> None:
+        for command in sorted(PRODUCT_REENTRY_COMMANDS):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+                self.assertIn(PRODUCT_REENTRY_GATE, route["gates"])
+
+    def test_product_reentry_gate_requires_non_empty_evidence(self) -> None:
+        failures = validate_gate_evidence(
+            {PRODUCT_REENTRY_GATE: ""},
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertTrue(
+            any("required and cannot be empty" in failure for failure in failures)
+        )
+
+    def test_product_reentry_gate_allows_no_implementation_proposed(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "recommendation only; no implementation proposed, this triage "
+                    "stayed at status and classification"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_product_reentry_gate_rejects_roadmap_without_prd_coverage(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "proposed an implementation roadmap with three milestones and a "
+                    "task list for the next feature"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertTrue(any("PRD coverage" in failure for failure in failures))
+
+    def test_product_reentry_gate_allows_roadmap_with_prd_coverage(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "proposed implementation roadmap; re-enter product route and map "
+                    "each item to an Accepted PRD link, with an ARD link for module "
+                    "boundary changes, before any implementation task or PR"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_product_reentry_gate_rejects_acceptance_criteria_without_prd(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "proposed an implementation roadmap with acceptance criteria for "
+                    "each milestone"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertTrue(any("PRD coverage" in failure for failure in failures))
+
+    def test_product_reentry_gate_rejects_ard_link_without_prd(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                PRODUCT_REENTRY_GATE: (
+                    "proposed an implementation roadmap with an ARD link for module "
+                    "boundaries"
+                )
+            },
+            [PRODUCT_REENTRY_GATE],
+        )
+
+        self.assertTrue(any("PRD coverage" in failure for failure in failures))
+
+    def test_missing_source_docs_requires_artifact_creation_or_no_durable_reason(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "read every route required_docs entry directly before implementation; "
+                    "searched PRD/spec/ARD source-of-truth docs; none found; "
+                    "applied takeaway: used the user request as source of truth"
+                ),
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: module README; "
+                    "not applicable because new module changed behavior"
+                ),
+            },
+            [SOURCE_DOCS_GATE, DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertTrue(any("when source docs are missing" in failure for failure in failures))
+
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "read every route required_docs entry directly before implementation; "
+                    "searched PRD/spec/ARD source-of-truth docs; none found; "
+                    "applied takeaway: used the user request as source of truth"
+                ),
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: module README; "
+                    "create docs/module/README.md because new module behavior changed"
+                ),
+            },
+            [SOURCE_DOCS_GATE, DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_source_docs_gate_accepts_a_bound_empty_required_manifest(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "before implementation verified route required_docs manifest empty; "
+                    "searched PRD/spec/ARD source-of-truth docs; none found; "
+                    "applied takeaway: used the user request as source of truth"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_source_docs_empty_manifest_claim_cannot_bypass_route_required_docs(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "required_docs": ["AGENTS.md", "common/skills/agent-operating-skill/SKILL.md"],
+            "gates": [SOURCE_DOCS_GATE],
+        }
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "before implementation verified route required_docs manifest empty; "
+                    "searched source-of-truth docs; none found; "
+                    "applied takeaway: use the current route"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+            route=route,
+        )
+
+        self.assertTrue(any("claims the required_docs manifest is empty" in failure for failure in failures))
+
+    def test_source_docs_route_validation_requires_the_actual_manifest_entries(self) -> None:
+        route = {
+            "command": "workflow-setup",
+            "required_docs": ["AGENTS.md", "common/skills/agent-operating-skill/SKILL.md"],
+            "gates": [SOURCE_DOCS_GATE],
+        }
+        failures = validate_gate_evidence(
+            {
+                SOURCE_DOCS_GATE: (
+                    "read every route required_docs entry directly before implementation; "
+                    "AGENTS.md; searched source-of-truth docs; none found; "
+                    "applied takeaway: use the current route"
+                )
+            },
+            [SOURCE_DOCS_GATE],
+            route=route,
+        )
+
+        self.assertTrue(any("missing:" in failure for failure in failures))
+
+
+if __name__ == "__main__":
+    unittest.main()
