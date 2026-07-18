@@ -93,6 +93,40 @@ CLASSIFICATION_RESOLVED_PATTERNS = (
     r"(?:블로커|차단|막힌)\s*(?:질문|사항)?\s*해결",
     r"(?:모호성|불명확성|미정사항)\s*해결",
 )
+# The trigger word alone ("재개", "승인", "진행") is not proof of approval --
+# "재개하면 안 된다" / "재개하지 마" / "진행 불가" attach negation directly to
+# the trigger, but "재개는 승인되지 않았다" negates a DIFFERENT word (승인)
+# in a separate clause about the same topic. A single-position lookahead
+# right after the trigger only catches the first form; this needs a wider,
+# unanchored scan of the text that follows the trigger to also catch the
+# second. A regex-only lookahead can't express "scan forward, not just the
+# next token" without becoming unreadable, so this is a small dedicated
+# function instead of one more tuple entry in CLASSIFICATION_RESOLVED_PATTERNS.
+_NEW_RUN_APPROVAL_TRIGGER_RE = re.compile(
+    r"(?:별도|새)\s*(?:실행|작업|요청).{0,120}?(?:명시적(?:으로)?\s*)?(?:승인|재개|진행)"
+)
+_NEW_RUN_APPROVAL_NEGATION_RE = re.compile(
+    r"(?:을|를|은|는|이|가)?\s*안\s*(?:하|해|함|한다|합니다|되|돼|됨|된다|됩니다|됐)"
+    r"|(?:하|되)지\s*(?:마세요|말아|마|않|못)"
+    r"|(?:해서는|하면|돼서는|되면)\s*안"
+    r"|(?:할|될)\s*수\s*없"
+    r"|\s*못\s*(?:하|한다|합니다|해)"
+    r"|\s*불가\b"
+    r"|이?\s*없"
+)
+
+
+def _has_new_run_approval_signal(text: str) -> bool:
+    for match in _NEW_RUN_APPROVAL_TRIGGER_RE.finditer(text):
+        # A wider window (not just the next token) catches negation displaced
+        # into a separate clause about the same trigger word, e.g. "재개는
+        # 승인되지 않았다" -- the negation attaches to "승인", which follows
+        # "재개" by more than a single adjacent token.
+        tail = text[match.end() : match.end() + 30]
+        if _NEW_RUN_APPROVAL_NEGATION_RE.search(tail):
+            continue
+        return True
+    return False
 # A short approval can be a valid continuation of an already settled discussion.
 # Keep this deliberately narrow: it must contain a referential cue ("then/that/this"
 # or the Korean equivalent) and an explicit action approval. Bare "do it" requests
@@ -107,7 +141,40 @@ COMMIT_ACTION_PATTERNS = (
     r"\bmake a commit\b",
     r"\bcreate a commit\b",
     r"\bcommit message\b",
-    r"\b커밋\b",
+    # Korean particles and verb endings attach directly to nouns, so word
+    # boundaries reject actionable forms such as "커밋하라고". Keep a
+    # left-side guard so "미커밋" does not become a commit action signal, and
+    # a right-side guard so a bare "커밋" inside a comparison ("커밋보다 더
+    # 중요한"), an explicit negation ("커밋하지 마" / "커밋을 하지 마세요" /
+    # "커밋은 하지 마" / "커밋 안 해" / "커밋을 하면 안 돼요"), a passive
+    # negation ("커밋되지 않았어요" / "커밋이 안 됐습니다" / "커밋이 안됐어요"
+    # -- 하다-only "안"/"하지" conjugations missed the passive 되다 family
+    # entirely, so "the commit was NOT made" read as a plain commit mention),
+    # or a metalinguistic reference ("커밋이라고 부른다") is not mistaken for
+    # a commit request either. The negation trigger can follow "커밋" directly
+    # or after a particle (을/를/은/는/이/가), so the deny-list allows an
+    # optional particle before it.
+    r"(?<![가-힣A-Za-z0-9_])커밋"
+    r"(?!보다|\s*말고|이라고"
+    r"|(?:을|를|은|는|이|가)?\s*안\s*(?:하|해|함|한다|합니다|되|돼|됨|된다|됩니다|됐)"
+    r"|(?:을|를|은|는|이|가)?\s*(?:하|되)지\s*(?:마세요|말아|마|않|못)"
+    r"|(?:을|를|은|는|이|가)?\s*(?:해서는|하면|돼서는|되면)\s*안"
+    r")"
+    r"(?:을|를|해|하|하기|으로|까지|부터|만|도)?",
+)
+# The Korean branch above encodes negation as a lookahead right at the word
+# boundary. English negation words are separate tokens that can sit an
+# arbitrary distance before "commit" ("do not directly commit", "should
+# never just commit"), which Python's fixed-width lookbehind can't express,
+# so it is matched forward instead: negation-word (+ a few filler words) +
+# commit. This also covers metalinguistic mentions ("commit is only a
+# term") and future/conditional references ("before committing").
+COMMIT_NEGATION_PATTERNS = (
+    r"\b(?:do not|don't|does not|doesn't|never|won't|will not|should not|"
+    r"shouldn't|must not|mustn't|cannot|can't)\s+(?:\w+\s+){0,2}commit(?:ting|s)?\b",
+    r"\bcommit(?:ting|s)?\s+is\s+(?:only\s+|just\s+|simply\s+)?(?:a\s+|the\s+)?"
+    r"(?:term|word|noun|concept)\b",
+    r"\b(?:before|prior to)\s+commit(?:ting|s)?\b",
 )
 COMMIT_RELEASE_SUBSTEP_PATTERNS = (
     r"\b(first|before|current|pending|staged|working tree|worktree|warning cleanup)\b",
@@ -259,7 +326,7 @@ def _request_flags(normalized: str, lowered: str) -> dict[str, object]:
     has_test_action = _matches(TEST_ACTION_PATTERNS, lowered)
     has_workflow_setup_action = _matches(WORKFLOW_SETUP_ACTION_PATTERNS, lowered)
     has_ui_feature_action = _matches(UI_FEATURE_ACTION_PATTERNS, lowered)
-    has_commit_action = _matches(COMMIT_ACTION_PATTERNS, normalized, re.IGNORECASE)
+    has_commit_action = _has_commit_action(normalized)
     has_release_action = _matches(RELEASE_ACTION_PATTERNS, normalized, re.IGNORECASE)
     release_scope_signal_count = _release_scope_signal_count(normalized)
     has_release_scope = release_scope_signal_count >= 2
@@ -433,6 +500,15 @@ def _matches(patterns: object, text: str, flags: int = 0) -> bool:
     return any(re.search(pattern, text, flags) for pattern in patterns)
 
 
+def _has_commit_action(text: str) -> bool:
+    if not _matches(COMMIT_ACTION_PATTERNS, text, re.IGNORECASE):
+        return False
+    # "do not commit", "commit is only a term", "before committing" all
+    # match COMMIT_ACTION_PATTERNS' bare \bcommit\b, but none of them are a
+    # request or approval to actually commit.
+    return not _matches(COMMIT_NEGATION_PATTERNS, text, re.IGNORECASE)
+
+
 def _release_scope_signal_count(text: str) -> int:
     return sum(1 for patterns in RELEASE_SCOPE_SIGNAL_PATTERNS if _matches(patterns, text, re.IGNORECASE))
 
@@ -554,7 +630,7 @@ def _commit_evidence_allows_work(command: str, evidence: str) -> bool:
     normalized = " ".join(evidence.strip().lower().split())
     if not normalized or _matches(EXPLICIT_UNRESOLVED_PATTERNS, normalized):
         return False
-    return _matches(COMMIT_ACTION_PATTERNS, evidence, re.IGNORECASE)
+    return _has_commit_action(evidence)
 
 
 def _release_evidence_allows_work(command: str, evidence: str) -> bool:
@@ -594,4 +670,6 @@ def classification_evidence_requires_clarification(evidence: str) -> bool:
 
 
 def _has_resolution_signal(normalized: str) -> bool:
-    return _matches(CLASSIFICATION_RESOLVED_PATTERNS, normalized)
+    return _matches(CLASSIFICATION_RESOLVED_PATTERNS, normalized) or _has_new_run_approval_signal(
+        normalized
+    )
