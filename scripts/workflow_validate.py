@@ -9,14 +9,22 @@ from pathlib import Path
 from agent_finish_gate_policy import VALIDATED_GATES
 from workflow_catalog import COMMANDS, CONCERNS, CORE_DOCS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import (
-    ATTEMPT_LIMIT,
     QUESTION_ROUTE_COMMANDS,
-    RETRY_LIMIT,
-    RETRY_SCOPE,
+    REPAIR_CYCLE_LIMIT,
+    REPAIR_POLICY,
+    REPAIR_STOP_CONDITION,
+    RESUME_SCOPE,
     ROOT,
 )
 from workflow_doc_surfaces import load_doc_surface_rules, surface_rule_doc_refs
-from workflow_gate_policy import automatic_gates
+from workflow_gate_policy import (
+    SKILL_CURATE_HOOK,
+    SKILL_FEEDBACK_HOOK,
+    SKILL_MAINTENANCE_HOOK,
+    SKILL_REVIEW_HOOK,
+    WORK_PRODUCING_COMMANDS,
+    automatic_gates,
+)
 from workflow_parallel_validate import validate_parallel_execution_plan
 from workflow_route import REVIEW_HOOK_REQUIRED_COMMANDS, resolve_docs, route_gates
 from workflow_spill import validate_spill_label_contracts
@@ -71,12 +79,14 @@ def validate_route_contracts() -> list[str]:
         if route.get("missing"):
             failures.append(f"{command}: route has missing docs: {', '.join(route['missing'])}")
 
-        if route["attempt_limit"] != ATTEMPT_LIMIT:
-            failures.append(f"{command}: attempt_limit must be {ATTEMPT_LIMIT}")
-        if route["retry_limit"] != RETRY_LIMIT:
-            failures.append(f"{command}: retry_limit must be {RETRY_LIMIT}")
-        if route["retry_scope"] != RETRY_SCOPE:
-            failures.append(f"{command}: retry_scope must be {RETRY_SCOPE}")
+        if route["repair_cycle_limit"] != REPAIR_CYCLE_LIMIT:
+            failures.append(f"{command}: repair_cycle_limit must be {REPAIR_CYCLE_LIMIT}")
+        if route["repair_policy"] != REPAIR_POLICY:
+            failures.append(f"{command}: repair_policy must be {REPAIR_POLICY}")
+        if route["resume_scope"] != RESUME_SCOPE:
+            failures.append(f"{command}: resume_scope must be {RESUME_SCOPE}")
+        if route["stop_condition"] != REPAIR_STOP_CONDITION:
+            failures.append(f"{command}: stop_condition must be {REPAIR_STOP_CONDITION}")
         for failure in validate_parallel_execution_plan(route.get("parallel_execution"), route["gates"]):
             failures.append(f"{command}: {failure}")
 
@@ -97,6 +107,15 @@ def validate_route_contracts() -> list[str]:
             hooks = []
         hook_names = [hook.get("hook") for hook in hooks if isinstance(hook, dict)]
         expected_hook_names = ["start", "review", "finish"]
+        if command in WORK_PRODUCING_COMMANDS:
+            expected_hook_names.extend(
+                [
+                    SKILL_FEEDBACK_HOOK,
+                    SKILL_CURATE_HOOK,
+                    SKILL_REVIEW_HOOK,
+                    SKILL_MAINTENANCE_HOOK,
+                ]
+            )
         if hook_names != expected_hook_names:
             failures.append(f"{command}: route hooks must be {', '.join(expected_hook_names)}")
         hook_required = {
@@ -108,6 +127,20 @@ def validate_route_contracts() -> list[str]:
             failures.append(f"{command}: start hook must be required")
         if hook_required.get("finish") is not True:
             failures.append(f"{command}: finish hook must be required")
+        if command in WORK_PRODUCING_COMMANDS:
+            for hook_name in (
+                SKILL_FEEDBACK_HOOK,
+                SKILL_CURATE_HOOK,
+                SKILL_REVIEW_HOOK,
+                SKILL_MAINTENANCE_HOOK,
+            ):
+                if hook_required.get(hook_name) is not False:
+                    failures.append(f"{command}: {hook_name} hook must be optional")
+            feedback_policy = route.get("skill_feedback") or {}
+            if feedback_policy.get("enabled") is not True or feedback_policy.get("blocking") is not False:
+                failures.append(f"{command}: skill feedback must be enabled and non-blocking")
+        elif (route.get("skill_feedback") or {}).get("enabled") is not False:
+            failures.append(f"{command}: non-work route must not enable skill feedback")
         expected_review_required = command in REVIEW_HOOK_REQUIRED_COMMANDS
         if hook_required.get("review") is not expected_review_required:
             failures.append(

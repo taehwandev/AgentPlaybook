@@ -1050,6 +1050,51 @@ class SetupAgentHooksTests(unittest.TestCase):
         self.assertNotIn("unsupported AgentPlaybook script alias: start", result.stderr)
         self.assertIn("--request-classified", result.stdout)
 
+    def test_stable_launcher_supports_gate_batch_alias(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_home:
+            with patch.dict(os.environ, {"HOME": temp_home}):
+                ensure_stable_launcher(ROOT, dry_run=False)
+                launcher = stable_launcher_path()
+
+                result = subprocess.run(
+                    [str(launcher), "gate-batch", "--help"],
+                    cwd=str(ROOT),
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+
+        self.assertEqual(0, result.returncode)
+        self.assertNotIn("unsupported AgentPlaybook script alias: gate-batch", result.stderr)
+        self.assertIn("--gate-record", result.stdout)
+
+    def test_stable_launcher_supports_optional_skill_feedback_alias(self) -> None:
+        expected = {
+            "skill-feedback": "--skill-feedback-outcome",
+            "skill-curate": "--skill-feedback-outcome",
+            "skill-review": "--skill-review-outcome",
+            "skill-maintenance": "--skill-maintenance-outcome",
+        }
+        for alias, option in expected.items():
+            with self.subTest(alias=alias), tempfile.TemporaryDirectory() as temp_home:
+                with patch.dict(os.environ, {"HOME": temp_home}):
+                    ensure_stable_launcher(ROOT, dry_run=False)
+                    launcher = stable_launcher_path()
+
+                    result = subprocess.run(
+                        [str(launcher), alias, "--help"],
+                        cwd=str(ROOT),
+                        text=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        check=False,
+                    )
+
+            self.assertEqual(0, result.returncode)
+            self.assertNotIn(f"unsupported AgentPlaybook script alias: {alias}", result.stderr)
+            self.assertIn(option, result.stdout)
+
     def test_external_project_claude_settings_are_excluded_locally(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)

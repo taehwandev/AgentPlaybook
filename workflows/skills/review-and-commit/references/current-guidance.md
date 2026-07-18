@@ -28,7 +28,10 @@ Use after implementation, before handing off or committing.
 1. Inspect the final diff, not memory of the work.
 2. Use the Review Hook as the default final code-review gate when it is
    installed and applicable. Do not duplicate a full manual code review only to
-   repeat hook checks.
+   repeat hook checks. When the hook identifies a multi-role runtime package,
+   make the structure evidence explicit with `owner`, `allowed imports`,
+   `forbidden imports`, `callers/tests`, and `verification`; a prose-only
+   boundary summary does not satisfy that contract.
 3. Confirm boundary-plan evidence exists for code work, or record why the
    change had no code boundary.
 4. Confirm affected docs are updated, or record why no docs changed.
@@ -67,8 +70,9 @@ Before handoff or commit, confirm:
   when documentation/code formatting changed
 - If the Review Hook reports workflow validation failure, preserve the
   validator diagnostic in the failure output and reproduce that exact validator
-  before spending the one retry. A generic failure without the invalid path or
-  contract hides the correction scope and must not consume the recovery pass.
+  before selecting and applying the durable repair. A generic failure without
+  the invalid path or contract hides the repair scope and cannot authorize
+  checkpoint resume.
 - staged diff matches the intended commit scope when a commit is being created
 - Commit Readiness Gate evidence is satisfied
 - external-state targets are discovered from repo-local policy before branch

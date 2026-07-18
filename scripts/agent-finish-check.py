@@ -33,6 +33,7 @@ from agent_gate_evidence import (
     merge_gate_evidence_from_ledger,
     record_cli_gate_evidence,
 )
+from agent_repair_ledger import failure_signature, record_failure_checkpoints
 
 
 def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
@@ -118,6 +119,84 @@ def print_result(output_path: Path, required_gates: list[str], overall: str, res
         )
 
 
+def process_failure_learning(
+    *,
+    preflight: dict[str, Any],
+    missed_gates: list[str],
+    gate_policy_failures: list[str],
+    gate_signals: list[dict[str, str]],
+    failures: list[str],
+) -> tuple[bool, dict[str, Any]]:
+    retrospective_required = requires_retrospective(
+        missed_gates,
+        gate_policy_failures,
+        failures,
+    )
+    if retrospective_required:
+        failures.append(
+            "retrospective repair is required before final report, commit, release, or handoff; "
+            "record the correction plan, improve the owning playbook doc, hook, validator, or "
+            "test, verify that repair, then resume the first failed checkpoint. Stop if the same "
+            "failure remains or the repair is unsafe or ambiguous"
+        )
+    lesson = write_retrospective_candidate(
+        {
+            "missed_gates": missed_gates,
+            "gate_signals": gate_signals,
+            "retrospective_required": retrospective_required,
+            "occurrence_id": str(preflight.get("agent_run_id") or ""),
+        }
+    )
+    return retrospective_required, lesson
+
+
+def _report_finish_failures(
+    *,
+    failures: list[str],
+    gate_policy_failures: list[str],
+    required_gates: list[str],
+    missed_gates: list[str],
+    gate_evidence: dict[str, str],
+    evidence_path: Path,
+    preflight: dict[str, Any],
+) -> int:
+    if not failures:
+        return 0
+    try:
+        policy_failed_gates = [
+            gate
+            for gate in required_gates
+            if gate_evidence.get(gate, "").strip()
+            and any(gate.lower() in failure.lower() for failure in gate_policy_failures)
+        ]
+        checkpoint_signatures = {
+            gate: failure_signature([f"missing required gate evidence: {gate}"])
+            for gate in missed_gates
+        }
+        for gate in policy_failed_gates:
+            gate_failures = [
+                failure
+                for failure in gate_policy_failures
+                if gate.lower() in failure.lower()
+            ]
+            checkpoint_signatures[gate] = failure_signature(
+                gate_failures or [f"gate policy failure: {gate}"]
+            )
+        checkpoint_signatures["finish"] = failure_signature(failures)
+        record_failure_checkpoints(
+            evidence_path=evidence_path,
+            preflight=preflight,
+            checkpoints=[*missed_gates, *policy_failed_gates, "finish"],
+            signature=failure_signature(failures),
+            checkpoint_signatures=checkpoint_signatures,
+        )
+    except (OSError, ValueError):
+        pass
+    for failure in failures:
+        print(f"FAIL: {failure}", file=sys.stderr)
+    return 1
+
+
 def main() -> int:
     playbook_root = Path(__file__).resolve().parents[1]
     args = build_parser(playbook_root).parse_args()
@@ -184,24 +263,12 @@ def main() -> int:
         gate_signals,
         failures,
     )
-    finish_failures_before_retrospective = list(failures)
-    retrospective_required = requires_retrospective(
-        missed_gates,
-        gate_policy_failures,
-        finish_failures_before_retrospective,
-    )
-    if retrospective_required:
-        failures.append(
-            "retrospective required before retry, final report, commit, release, or handoff; "
-            "record the immediate correction plan, apply safe scoped fixes, then resume at the "
-            "first missed gate or same failed scope"
-        )
-    retrospective_lesson = write_retrospective_candidate(
-        {
-            "missed_gates": missed_gates,
-            "gate_signals": gate_signals,
-            "retrospective_required": retrospective_required,
-        }
+    retrospective_required, retrospective_lesson = process_failure_learning(
+        preflight=preflight,
+        missed_gates=missed_gates,
+        gate_policy_failures=gate_policy_failures,
+        gate_signals=gate_signals,
+        failures=failures,
     )
 
     result = build_result(
@@ -228,11 +295,15 @@ def main() -> int:
     write_json(output_path, result)
     print_result(output_path, required_gates, overall, result)
 
-    if failures:
-        for failure in failures:
-            print(f"FAIL: {failure}", file=sys.stderr)
-        return 1
-    return 0
+    return _report_finish_failures(
+        failures=failures,
+        gate_policy_failures=gate_policy_failures,
+        required_gates=required_gates,
+        missed_gates=missed_gates,
+        gate_evidence=gate_evidence,
+        evidence_path=evidence_path,
+        preflight=preflight,
+    )
 
 
 def _apply_worker_evidence_boundary(args: argparse.Namespace) -> str:

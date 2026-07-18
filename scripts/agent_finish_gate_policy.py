@@ -190,67 +190,23 @@ def _validate_graphify_readiness(evidence: str) -> list[str]:
     missing = [anchor.rstrip("=") for anchor in required_anchors if anchor not in lower]
     if missing:
         return [
-            "graphify readiness evidence must name successful " + ", ".join(missing)
+            "graphify readiness evidence must contain structured status for " + ", ".join(missing)
         ]
-    negative_values = (
-        "=missing",
-        "=absent",
-        "=failed",
-        "=not found",
-        "=not installed",
-        "=not read",
-        "=not run",
-        "=unavailable",
-        "=stale",
-        "=outdated",
-        "=incomplete",
-        "=dirty",
-        "=invalid",
-        "=error",
-        "=skipped",
-        "=unknown",
-        "=false",
-    )
-    if any(value in lower for value in negative_values):
-        return [
-            "graphify readiness evidence contains an incomplete condition; CLI, read skill "
-            "doc, canonical runtime links, portable Git ownership, project integration, "
-            "fresh input-complete target graph with valid endpoints, and query smoke "
-            "must all succeed"
-        ]
-    positive_requirements = {
-        "cli=": ("resolved", "available"),
-        "skill doc=": ("read",),
-        "runtime links=": ("resolve", "canonical", "symlink"),
-        "git ownership=": ("tracked", "portable", "120000"),
-        "project integration=": ("installed", "present", "configured"),
-        "target graph=": ("fresh", "input", "manifest", "valid", "integrity", "relationship", "connected", "path"),
-        "query smoke=": ("succeeded", "passed"),
-    }
-    weak: list[str] = []
-    anchors = list(positive_requirements)
-    for index, (anchor, signals) in enumerate(positive_requirements.items()):
+    invalid: list[str] = []
+    for index, anchor in enumerate(required_anchors):
         start = lower.find(anchor) + len(anchor)
         later_positions = [
             lower.find(later, start)
-            for later in anchors[index + 1:]
+            for later in required_anchors[index + 1:]
             if lower.find(later, start) >= 0
         ]
         finish = min(later_positions) if later_positions else len(lower)
-        value = lower[start:finish]
-        if anchor == "target graph=":
-            groups = (
-                ("fresh",),
-                ("input", "manifest"),
-                ("valid", "integrity"),
-            )
-            if any(not any(signal in value for signal in group) for group in groups):
-                weak.append(anchor.rstrip("="))
-        elif not any(signal in value for signal in signals):
-            weak.append(anchor.rstrip("="))
-    if weak:
+        value = lower[start:finish].strip(" ;")
+        if value != "success":
+            invalid.append(anchor.rstrip("="))
+    if invalid:
         return [
-            "graphify readiness evidence lacks positive completion proof for "
-            + ", ".join(weak)
+            "graphify readiness structured status must be exactly success for "
+            + ", ".join(invalid)
         ]
     return []

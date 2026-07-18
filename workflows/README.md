@@ -24,11 +24,12 @@ The route output also includes a `Required Hooks` section. Follow it as the
 executable workflow checklist; if a route contains a `review hook` gate, the
 finish check must receive Review Hook evidence for that gate.
 Work-producing routes also carry automatic gates for ambiguity, alignment,
-documentation, tests, and multi-agent split decisions. Treat those gates as
-mandatory evidence, not suggestions. If requirements analysis or modification
-work is involved, provide the compact same/different/assumption alignment brief
-before drafting or editing. If ambiguity can change behavior, scope, risk, or
-verification, ask the blocker question before editing. If code changes,
+documentation, tests, and multi-agent split decisions.
+Treat those gates as mandatory evidence, not suggestions. If requirements
+analysis or modification work is involved, provide the compact
+same/different/assumption alignment brief before drafting or editing. If
+ambiguity can change behavior, scope, risk, or verification, ask the blocker
+question before editing. If code changes,
 add/update/run the nearest useful test or record a specific skipped-test reason.
 If docs are absent but the change creates durable behavior or workflow policy,
 create the docs instead of leaving the gate empty. For code work, use
@@ -88,7 +89,9 @@ A workflow is complete only when:
 
 ## Essential Hooks
 
-Start with only three agent hooks. Do not add separate PRD, ARD, docs freshness,
+Start with only three required lifecycle hooks plus the optional non-blocking
+skill-learning side channel (`skill-feedback`, `skill-curate`, `skill-review`,
+and `skill-maintenance`). Do not add separate PRD, ARD, docs freshness,
 architecture, security, dependency, test, or release hooks unless a repeated
 blocking failure proves that the check cannot live inside one of these three.
 Those concerns belong in route gates, review criteria, or finish evidence first.
@@ -103,21 +106,39 @@ FAIL <hook>
 Additional lines may explain the reason, but callers should gate only on the
 exit code and the first state token. Do not introduce any third hook state.
 
-Failure handling is also binary:
+Failure handling uses the bounded repair-and-resume contract owned by
+`skills/retrospective-learning/SKILL.md`. A required hook or gate `FAIL` starts
+one actionable retrospective, requires a verified improvement to the owning
+AgentPlaybook guidance, hook, validator, or test, and then resumes the original
+task at `first_failed_checkpoint`. A candidate note alone is not recovery. Stop
+when the same failure recurs after repair, the repair is unsafe or ambiguous,
+source ownership is uncertain, or the one repair cycle is exhausted.
 
-- first `FAIL`: run an actionable retrospective for the same hook and failed
-  scope, record the correction plan, apply safe scoped fixes, then use the one
-  allowed retry
-- second `FAIL` for that hook/scope: stop and promote the lesson or hand off the
-  blocker before continuing
+Successful work-producing routes expose separate optional skill-learning hooks.
+`skill-feedback` emits at most one content-free observation for a skill actually
+used by the task and never changes finish status. A later `skill-curate` run
+or the existing bounded maintenance pass queues review after two distinct opaque occurrence
+keys share the exact `skill_id + signal` identity; a separate bounded reviewer
+chooses `no_change` or `staged_patch`. Canonical skill
+writes happen only in later staged maintenance with the normal verification and
+approval policy; `applied` requires a changed linked target and a successful
+allowlisted check, not a free-form claim. Observation, queue, staged, and
+completed state all have explicit caps. Missing storage, tokens, reviewer capacity, or maintenance
+capacity defers the side channel without blocking completed work.
 
 Use the same public states for route gate signals and hook status:
 `🐱🟢 SUCCESS` and `🐱🔴 FAIL`. Do not report any third state.
 
-Hooks are gates, not update engines. A hook must not run formatters, autofix,
-code generation, dependency install/update, migration, broad cleanup, broad
-refactor, VibeGuard `--fix`, or any command whose purpose is to change project
-files. If a hook discovers that a large fix, migration, or rewrite is needed, it
+Required lifecycle hooks are gates, not update engines. The optional
+`skill-feedback` hook may only record allowlisted content-free observation
+metadata. The caller may name only a skill actually used; the hook derives an
+opaque occurrence key from the current preflight run and never stores the raw
+run id. It must not curate, review, stage, or mutate project or skill documents.
+Curation uses exact structured identities and must not treat prose keywords as
+truth. Hooks must not run formatters, autofix, code generation, dependency
+install/update, migration, broad cleanup, broad refactor, VibeGuard `--fix`, or
+any command whose purpose is to change project files. If a hook discovers that
+a large fix, migration, or rewrite is needed, it
 must return `FAIL` with the smallest actionable reason. The agent then starts a
 separate scoped task through the normal route instead of letting the hook apply
 the update.
@@ -173,14 +194,14 @@ the update.
   worktree before and after the hook so scoped reviews cannot hide
   out-of-scope mutations. On `FAIL`, it must explain the exact failing
   check, threshold, affected path or line when available, and recovery action.
-  Run an actionable retrospective, record the correction plan, fix scoped and
-  safe failures outside the hook, then rerun the same hook once with
-  `--retry-attempt 1` and cite or apply that plan; do not finalize with an
+  Follow the canonical repair cycle, improve and verify the owning
+  AgentPlaybook surface, fix scoped and safe failures outside the hook, then
+  resume the review task at `first_failed_checkpoint`; do not finalize with an
   unresolved `FAIL`. It also
   fails by default when the changed path count is too broad for one review pass,
-  so the work must be split before retrying.
+  so the work must be split before the repaired task resumes.
   Use
-  `~/.agentplaybook/bin/agentplaybook-hook review --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
+  `~/.agentplaybook/bin/agentplaybook-hook review --review-outcome <pass|findings> --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
 - `Finish Hook`: run before final report, commit, release, or handoff. It
   verifies the required route gate evidence, final validation, diff hygiene,
   and final VibeGuard state. Prefer executable hook evidence plus one
@@ -206,7 +227,9 @@ the update.
 - `development-cycle.md`: complete the common build/change/verify/side-effect-audit/handoff cycle.
 - `multi-agent-collaboration.md`: split delegated or parallel agent work with explicit roles, gates, and disjoint write scopes.
 - `multi-perspective-review.md`: review non-trivial work through product, UX, architecture, reliability, security, release, and QA lenses.
-- `retrospective-learning.md`: capture repeatable lessons after a task, handoff, incident, or missed signal.
+- `retrospective-learning.md`: repair failed work synchronously, and process
+  successful-task skill observations through separate non-blocking curation,
+  review, staging, and later maintenance.
 - `planning-research.md`: investigate, compare options, and produce an implementation plan or recommendation.
 - `documentation-update.md`: create, review, or restructure docs without duplicating source guidance.
 - `feature-implementation.md`: turn a request into scoped implementation and verification.

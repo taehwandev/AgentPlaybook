@@ -12,10 +12,51 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from agent_review_structure import changed_source_paths, check_file_size, review_source_path
+from agent_review_hook import structure_evidence_failures
 from agent_structure_rules import structure_rule_review
 
 
 class AgentReviewStructureTests(unittest.TestCase):
+    def test_repair_ledger_declares_its_runtime_boundary(self) -> None:
+        source = (ROOT / "scripts" / "agent_repair_ledger.py").read_text(encoding="utf-8")
+
+        for anchor in (
+            "Owner:",
+            "Allowed imports:",
+            "Forbidden imports:",
+            "Callers/tests:",
+            "Verification:",
+        ):
+            with self.subTest(anchor=anchor):
+                self.assertIn(anchor, source)
+
+    def test_new_runtime_boundary_evidence_requires_every_named_contract_field(self) -> None:
+        structure = {
+            "warnings": [],
+            "boundary_note_requirements": [
+                {"package": "src/domain", "reason": "new runtime package/folder"},
+            ],
+        }
+
+        failures = structure_evidence_failures(
+            structure,
+            "owner=domain; callers/tests=app and domain tests",
+        )
+
+        self.assertEqual(1, len(failures))
+        self.assertIn("allowed imports", failures[0])
+        self.assertIn("forbidden imports", failures[0])
+        self.assertIn("verification", failures[0])
+
+        complete = structure_evidence_failures(
+            structure,
+            (
+                "owner=domain; allowed imports=contracts; forbidden imports=ui; "
+                "callers/tests=app and domain tests; verification=focused tests"
+            ),
+        )
+        self.assertEqual([], complete)
+
     def test_pinned_third_party_source_is_outside_human_authored_size_gates(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)

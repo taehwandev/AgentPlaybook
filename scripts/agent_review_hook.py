@@ -12,6 +12,7 @@ from agent_finish_final_checks import record_successful_review_workflow_validati
 from agent_inprocess import run_workflow_validate
 from agent_review_boundary import format_boundary_note_requirements, missing_boundary_note_fields
 from agent_review_structure import structure_review
+from agent_repair_ledger import failure_signature, record_failure_checkpoints
 from agent_vibeguard_cache import cached_vibeguard
 from agent_workspace_policy import is_git_status_review_only, is_writing_workspace, non_git_writing_workspace_note
 
@@ -29,6 +30,7 @@ def review_hook(
 ) -> int:
     checks: dict[str, Any] = {}
     failures: list[str] = []
+    review_outcome = str(getattr(args, "review_outcome", "") or "").strip()
     review_evidence = (args.code_review_evidence or "").strip()
     docs_evidence = (args.docs_freshness_evidence or "").strip()
     structure_evidence = (args.structure_review_evidence or "").strip()
@@ -36,6 +38,7 @@ def review_hook(
     side_effect_evidence = (args.side_effect_audit_evidence or "").strip()
     route_gates = review_route_gates(args.project, args.evidence)
     checks.update(
+        review_outcome=review_outcome,
         code_review_evidence=review_evidence,
         docs_freshness_evidence=docs_evidence,
         structure_review_evidence=structure_evidence,
@@ -43,6 +46,7 @@ def review_hook(
         side_effect_audit_evidence=side_effect_evidence,
         route_gates=route_gates,
     )
+    failures.extend(review_outcome_failures(review_outcome))
     if not review_evidence:
         failures.append("code review evidence is required")
     if not docs_evidence:
@@ -183,13 +187,30 @@ def review_hook(
 
     if not failures:
         record_review_gate(args, checks)
+    else:
+        record_review_failure(args, failures)
 
     details = (
         review_failure_details(failures, structure, review_scope)
         if failures
         else review_success_details(structure, review_scope)
     )
-    return finish_with_result("review", not failures, details, args.output, checks, args.retry_attempt)
+    return finish_with_result("review", not failures, details, args.output, checks, args.repair_cycle)
+
+
+def record_review_failure(args: Any, failures: list[str]) -> None:
+    evidence_path = args.evidence if args.evidence else args.project / ".agentplaybook" / "preflight.json"
+    try:
+        preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
+        record_failure_checkpoints(
+            evidence_path=evidence_path,
+            preflight=preflight,
+            checkpoints=["review"],
+            signature=failure_signature(failures),
+            checkpoint_signatures={"review": failure_signature(failures)},
+        )
+    except (OSError, ValueError):
+        return
 
 
 def workflow_validate_failure_detail(validate: dict[str, Any]) -> str:
@@ -239,6 +260,17 @@ def structure_evidence_failures(structure: dict[str, Any], structure_evidence: s
             f"forbidden imports, callers/tests, and verification. Missing: {', '.join(missing_fields)}"
         )
     return failures
+
+
+def review_outcome_failures(outcome: str) -> list[str]:
+    """Require a structural review decision instead of interpreting prose."""
+
+    normalized = outcome.strip().lower()
+    if normalized == "pass":
+        return []
+    if normalized == "findings":
+        return ["review outcome reports unresolved findings"]
+    return ["review outcome is required and must be pass or findings"]
 
 
 def review_route_gates(project: Path, evidence_path: Path | None) -> list[str]:
@@ -357,9 +389,11 @@ def review_failure_details(
     ]
     details.extend(f"failure detail: {failure}" for failure in failures)
     details.append(
-        "required recovery: run an actionable retrospective for this review failure, record the "
-        "correction plan, fix scoped and safe code/docs issues immediately outside the hook, then "
-        "rerun this same review hook once with --retry-attempt 1 and cite or apply that plan"
+        "required recovery: run an actionable retrospective for this review failure, improve the "
+        "owning playbook doc, hook, validator, or test, and verify that repair outside the hook. "
+        "Create a structural receipt with repair-verify, then verify this checkpoint with "
+        "--repair-cycle 1 plus the same repair target, receipt path, and resume checkpoint "
+        "before resuming the original task"
     )
     details.append("do not finalize with FAIL; ask only when recovery needs a scope decision, destructive action, credential change, external state, or a broader refactor")
     return details

@@ -96,9 +96,25 @@ def parallel_execution_plan(command: str, gates: list[str]) -> dict[str, Any]:
         phases,
         phase_id="closeout",
         mode="serial",
-        gates=_existing(gates, ("commit readiness", "handoff", "report", "recommendation", "open decisions")),
-        tasks=("check required gate evidence", "report verification and residual risk"),
-        constraints=("do not finalize until every required gate has evidence",),
+        gates=_existing(
+            gates,
+            (
+                "commit readiness",
+                "handoff",
+                "report",
+                "recommendation",
+                "open decisions",
+            ),
+        ),
+        tasks=(
+            "optionally record non-blocking feedback for a skill used in the task",
+            "check required gate evidence",
+            "report verification and residual risk",
+        ),
+        constraints=(
+            "do not finalize until every required gate has evidence",
+            "skill feedback storage or review must not change finish status",
+        ),
     )
     return {**_parallel_metadata(lightweight_analysis), "phases": phases}
 

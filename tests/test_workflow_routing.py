@@ -27,6 +27,7 @@ from agent_finish_gate_policy import (
 )
 from agent_finish_check_steps import (
     check_request_intake,
+    check_required_gates,
     validate_grill_me_skill_evidence,
 )
 from agent_gate_evidence import (
@@ -39,8 +40,14 @@ from agent_gate_evidence import (
 )
 from agent_worker_evidence import worker_reservation_matches
 from agent_delegation_plan import validate_delegation_plan_evidence
-from agent_global_lessons import lesson_summary, write_retrospective_candidate
-from agent_hook_runtime import hook_failure_policy
+from agent_global_lessons import (
+    lesson_summary,
+    retrospective_candidate,
+    write_retrospective_candidate,
+)
+from agent_lesson_store import upsert_retrospective_candidate
+from agent_hook_runtime import hook_failure_policy, repair_context_failures
+import agent_skill_hooks
 from agent_preflight_runtime import (
     AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
     _claude_spill_warnings,
@@ -70,6 +77,7 @@ from workflow_gate_policy import (
     MULTI_AGENT_GATE,
     PRODUCT_REENTRY_GATE,
     PRODUCT_REENTRY_COMMANDS,
+    SKILL_FEEDBACK_HOOK,
     SIDE_EFFECT_AUDIT_GATE,
     SOURCE_DOCS_GATE,
     SOURCE_DOCS_COMMANDS,
@@ -114,6 +122,20 @@ _PREFLIGHT_SPEC = importlib.util.spec_from_file_location(
 assert _PREFLIGHT_SPEC and _PREFLIGHT_SPEC.loader
 agent_preflight = importlib.util.module_from_spec(_PREFLIGHT_SPEC)
 _PREFLIGHT_SPEC.loader.exec_module(agent_preflight)
+
+_FINISH_CHECK_SPEC = importlib.util.spec_from_file_location(
+    "agent_finish_check_under_test", ROOT / "scripts" / "agent-finish-check.py"
+)
+assert _FINISH_CHECK_SPEC and _FINISH_CHECK_SPEC.loader
+agent_finish_check = importlib.util.module_from_spec(_FINISH_CHECK_SPEC)
+_FINISH_CHECK_SPEC.loader.exec_module(agent_finish_check)
+
+_AGENT_HOOK_SPEC = importlib.util.spec_from_file_location(
+    "agent_hook_under_test", ROOT / "scripts" / "agent-hook.py"
+)
+assert _AGENT_HOOK_SPEC and _AGENT_HOOK_SPEC.loader
+agent_hook = importlib.util.module_from_spec(_AGENT_HOOK_SPEC)
+_AGENT_HOOK_SPEC.loader.exec_module(agent_hook)
 
 
 def route_doc(path: str) -> str:
@@ -1653,6 +1675,19 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertIsNone(classified_route_block_reason("git_commit", evidence))
 
+    def test_git_commit_route_rejects_english_negated_or_reference_evidence(self) -> None:
+        # Regression (Codex finding): only the Korean negation branch was
+        # guarded; English negation/reference phrases still matched the bare
+        # \bcommit\b pattern and were treated as commit approval.
+        for evidence in (
+            "User said do not commit yet, more review is needed.",
+            "Team lead said never commit this directly to main.",
+            "The user explained that commit is only a term here, no action requested.",
+            "Plan is to review before committing anything.",
+        ):
+            with self.subTest(evidence=evidence):
+                self.assertIsNotNone(classified_route_block_reason("git_commit", evidence))
+
     def test_finish_request_intake_uses_commit_evidence_policy(self) -> None:
         evidence = (
             "User asked to split all uncommitted web code into commits. "
@@ -1766,11 +1801,11 @@ class WorkflowRoutingTests(unittest.TestCase):
             self.assertTrue(result["created"])
             lesson_path = Path(temp_dir) / result["relative_path"]
             lesson = json.loads(lesson_path.read_text(encoding="utf-8"))
-            self.assertEqual("candidate", lesson["promotion_status"])
+            self.assertEqual("repair_required", lesson["promotion_status"])
             self.assertEqual(["side_effect_audit"], lesson["missed_gates"])
             self.assertEqual("safe_slugs_only", lesson["privacy"])
             self.assertEqual(
-                "run_actionable_retrospective_then_retry_same_scope",
+                "repair_verify_then_resume_failed_checkpoint",
                 lesson["next_action"],
             )
             self.assertEqual(
@@ -1778,38 +1813,816 @@ class WorkflowRoutingTests(unittest.TestCase):
                 lesson["required_retrospective_output"],
             )
             self.assertEqual(
-                "second_attempt_cites_retrospective_plan_and_resumes_first_missed_gate",
-                lesson["retry_rule"],
+                "improve_playbook_doc_hook_validator_or_test_before_resume",
+                lesson["repair_rule"],
             )
             self.assertEqual(
-                "cite_or_apply_retrospective_correction_plan",
-                lesson["second_attempt_requirement"],
+                "resume_first_failed_checkpoint_after_verified_improvement",
+                lesson["resume_rule"],
             )
+            self.assertEqual(1, lesson["repair_cycle_limit"])
+            self.assertEqual("repair_required", lesson["promotion_status"])
             for private_key in ("project", "path", "prompt", "command", "diff", "repo", "branch"):
                 self.assertNotIn(private_key, lesson)
 
             summary = lesson_summary()
             self.assertEqual(1, summary["candidate_count"])
 
-    def test_hook_failure_policy_requires_retrospective_before_retry(self) -> None:
-        policy, details = hook_failure_policy(success=False, retry_attempt=0)
+    def test_hook_failure_policy_requires_verified_repair_before_resume(self) -> None:
+        policy, details = hook_failure_policy(success=False, repair_cycle=0)
 
-        self.assertEqual("retrospective_then_retry_once", policy["next_action"])
-        self.assertEqual("actionable_retrospective", policy["recovery_required"])
+        self.assertEqual("retrospective_then_repair_verify_resume", policy["next_action"])
+        self.assertEqual("verified_playbook_improvement", policy["recovery_required"])
         joined_details = " ".join(details)
         self.assertIn("actionable retrospective", joined_details)
-        self.assertIn("immediate correction plan", joined_details)
-        self.assertIn("--retry-attempt 1", joined_details)
-        self.assertIn("cite or apply", joined_details)
+        self.assertIn("AgentPlaybook doc, hook, validator, or test", joined_details)
+        self.assertIn("--repair-cycle 1", joined_details)
+        self.assertIn("--resume-checkpoint", joined_details)
 
-    def test_hook_failure_policy_stops_after_retrospective_retry_fails(self) -> None:
-        policy, details = hook_failure_policy(success=False, retry_attempt=1)
+    def test_hook_failure_policy_stops_after_repair_verification_fails(self) -> None:
+        policy, details = hook_failure_policy(success=False, repair_cycle=1)
 
-        self.assertEqual("stop_after_retrospective_retry_failed", policy["next_action"])
+        self.assertEqual("stop_after_repair_verification_failed", policy["next_action"])
         self.assertEqual("promote_or_handoff_lesson", policy["recovery_required"])
         joined_details = " ".join(details)
-        self.assertIn("retry limit reached", joined_details)
-        self.assertIn("promote the retrospective lesson", joined_details)
+        self.assertIn("failed after one repair cycle", joined_details)
+        self.assertIn("do not resume", joined_details)
+
+    def test_hook_success_after_repair_resumes_failed_checkpoint(self) -> None:
+        policy, details = hook_failure_policy(success=True, repair_cycle=1)
+
+        self.assertEqual("resume_failed_checkpoint", policy["next_action"])
+        self.assertEqual(1, policy["repair_cycle"])
+        self.assertEqual([], details)
+
+    def test_repair_context_rejects_missing_target_evidence_and_checkpoint(self) -> None:
+        # repair_context_failures no longer parses free-text evidence prose
+        # (see agent_repair_verification.py): --repair-evidence must now name
+        # a structural repair receipt file. These are the argument-shape
+        # checks that still apply before any receipt is read.
+        failures = repair_context_failures("", "", "")
+
+        self.assertEqual(3, len(failures))
+        self.assertTrue(any("--repair-target" in failure for failure in failures))
+        self.assertTrue(any("--repair-evidence" in failure for failure in failures))
+        self.assertTrue(any("--resume-checkpoint" in failure for failure in failures))
+
+    def test_repair_context_requires_runtime_state_to_validate_a_receipt(self) -> None:
+        # With target/evidence/checkpoint present but no project/rules/
+        # preflight/evidence_path supplied, there is nothing to validate the
+        # claimed receipt against -- this must fail closed, not pass open.
+        failures = repair_context_failures(
+            "workflows/skills/retrospective-learning/SKILL.md",
+            "/tmp/some-receipt.json",
+            "finish",
+        )
+        self.assertTrue(failures)
+        self.assertTrue(
+            any("requires current project, rules, preflight" in failure for failure in failures)
+        )
+
+    def test_register_repair_attempt_is_race_safe(self) -> None:
+        # Regression: register_repair_attempt() did an unlocked
+        # read-modify-write on the gate-evidence ledger, so concurrent
+        # callers could all read count=0 before any of them wrote count=1,
+        # letting the "1 repair cycle" limit be exceeded. Reproduced with 40
+        # concurrent callers: ~6 were incorrectly allowed before the fix.
+        from concurrent.futures import ThreadPoolExecutor
+
+        from agent_gate_evidence import record_finish_failure_checkpoints, register_repair_attempt
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            record_finish_failure_checkpoints(
+                evidence_path=evidence_path, preflight=preflight, checkpoints=["tests"]
+            )
+
+            def attempt(_: int):
+                return register_repair_attempt(
+                    evidence_path=evidence_path,
+                    preflight=preflight,
+                    checkpoint="tests",
+                    limit=1,
+                )
+
+            with ThreadPoolExecutor(max_workers=20) as pool:
+                results = list(pool.map(attempt, range(40)))
+
+            allowed = [result for result in results if result[0]]
+            self.assertEqual(1, len(allowed))
+
+    def test_repair_cycle_requires_persisted_prior_failure_and_is_bounded(self) -> None:
+        from agent_repair_ledger import record_failure_checkpoints
+        from agent_repair_verification import create_repair_receipt
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            subprocess.run(["git", "init", "-q"], cwd=str(project), check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "--allow-empty", "-m", "init"],
+                cwd=str(project),
+                check=True,
+            )
+            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path.parent.mkdir(parents=True)
+            preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            target = project / "target.py"
+            target.write_text("x = 1\n", encoding="utf-8")
+
+            # No recorded failure yet: a receipt cannot even be generated for
+            # a checkpoint that never failed.
+            no_failure_receipt = create_repair_receipt(
+                project=project,
+                rules=ROOT,
+                evidence_path=evidence_path,
+                preflight=preflight,
+                target="target.py",
+                checkpoint="tests",
+                verification_kind="py_compile",
+            )
+            self.assertFalse(no_failure_receipt["created"])
+            self.assertEqual("checkpoint_not_failed", no_failure_receipt["reason"])
+
+            record_failure_checkpoints(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                checkpoints=["tests", "finish"],
+                signature="sig-a",
+                checkpoint_signatures={"tests": "sig-a", "finish": "sig-a"},
+            )
+
+            receipt = create_repair_receipt(
+                project=project,
+                rules=ROOT,
+                evidence_path=evidence_path,
+                preflight=preflight,
+                target="target.py",
+                checkpoint="tests",
+                verification_kind="py_compile",
+            )
+            self.assertTrue(receipt["created"])
+
+            # First legitimate repair claim against a real failure succeeds.
+            self.assertEqual(
+                [],
+                repair_context_failures(
+                    "target.py",
+                    receipt["receipt_path"],
+                    "tests",
+                    route=preflight["route"],
+                    evidence_path=evidence_path,
+                    preflight=preflight,
+                    project=project,
+                    rules=ROOT,
+                ),
+            )
+
+            # A second claim for the same checkpoint is blocked by the
+            # persisted limit, regardless of --repair-cycle being 0 on this
+            # fresh process invocation.
+            failures = repair_context_failures(
+                "target.py",
+                receipt["receipt_path"],
+                "tests",
+                route=preflight["route"],
+                evidence_path=evidence_path,
+                preflight=preflight,
+                project=project,
+                rules=ROOT,
+            )
+            self.assertTrue(failures)
+            self.assertTrue(any("repair cycle limit" in f for f in failures))
+
+    def test_repair_evidence_must_reference_repair_target(self) -> None:
+        # Regression (Codex finding): --repair-target and --repair-evidence
+        # were validated independently -- an unrelated but positive-sounding
+        # check ("unrelated documentation smoke test passed") satisfied the
+        # evidence requirement for any target at all, consuming the one
+        # repair attempt on a claim that never verified the repaired thing.
+        # This is now structurally impossible: a receipt records the exact
+        # target file it verified, so presenting it for a different target
+        # is rejected by field comparison, not by parsing evidence prose.
+        from agent_repair_ledger import record_failure_checkpoints
+        from agent_repair_verification import create_repair_receipt
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            subprocess.run(["git", "init", "-q"], cwd=str(project), check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "--allow-empty", "-m", "init"],
+                cwd=str(project),
+                check=True,
+            )
+            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path.parent.mkdir(parents=True)
+            preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            record_failure_checkpoints(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                checkpoints=["tests"],
+                signature="sig-a",
+                checkpoint_signatures={"tests": "sig-a"},
+            )
+            actual_target = project / "actual_target.py"
+            actual_target.write_text("x = 1\n", encoding="utf-8")
+            unrelated_target = project / "unrelated_target.py"
+            unrelated_target.write_text("y = 1\n", encoding="utf-8")
+
+            receipt = create_repair_receipt(
+                project=project,
+                rules=ROOT,
+                evidence_path=evidence_path,
+                preflight=preflight,
+                target="actual_target.py",
+                checkpoint="tests",
+                verification_kind="py_compile",
+            )
+            self.assertTrue(receipt["created"])
+
+            # Claiming the unrelated target with a receipt that actually
+            # covers actual_target.py must be rejected.
+            failures = repair_context_failures(
+                "unrelated_target.py",
+                receipt["receipt_path"],
+                "tests",
+                route=preflight["route"],
+                evidence_path=evidence_path,
+                preflight=preflight,
+                project=project,
+                rules=ROOT,
+            )
+            self.assertTrue(failures)
+            self.assertTrue(any("does not match current repair state" in f for f in failures))
+
+    def test_repair_cycle_resets_for_a_genuinely_different_failure(self) -> None:
+        # Regression (Codex finding): the repair-attempt counter was keyed
+        # only by checkpoint name, with no failure signature -- so once a
+        # checkpoint's single repair attempt was consumed for one failure, a
+        # later, completely unrelated failure hitting the SAME checkpoint
+        # name was also blocked, forcing an unnecessary promote-or-handoff.
+        from agent_repair_ledger import record_failure_checkpoints
+        from agent_repair_verification import create_repair_receipt
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            subprocess.run(["git", "init", "-q"], cwd=str(project), check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "--allow-empty", "-m", "init"],
+                cwd=str(project),
+                check=True,
+            )
+            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path.parent.mkdir(parents=True)
+            preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            target = project / "target.py"
+            target.write_text("x = 1\n", encoding="utf-8")
+
+            def _repair_target() -> list[str]:
+                receipt = create_repair_receipt(
+                    project=project,
+                    rules=ROOT,
+                    evidence_path=evidence_path,
+                    preflight=preflight,
+                    target="target.py",
+                    checkpoint="tests",
+                    verification_kind="py_compile",
+                )
+                self.assertTrue(receipt["created"])
+                return repair_context_failures(
+                    "target.py",
+                    receipt["receipt_path"],
+                    "tests",
+                    route=preflight["route"],
+                    evidence_path=evidence_path,
+                    preflight=preflight,
+                    project=project,
+                    rules=ROOT,
+                )
+
+            record_failure_checkpoints(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                checkpoints=["tests"],
+                signature="sig-a",
+                checkpoint_signatures={"tests": "sig-a"},
+            )
+            self.assertEqual([], _repair_target())
+            self.assertTrue(_repair_target())
+
+            # Same checkpoint, but a genuinely different, later failure.
+            record_failure_checkpoints(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                checkpoints=["tests"],
+                signature="sig-b",
+                checkpoint_signatures={"tests": "sig-b"},
+            )
+            self.assertEqual([], _repair_target())
+            self.assertTrue(_repair_target())
+
+    def test_repair_cycle_unrelated_failure_does_not_reset_other_checkpoints(self) -> None:
+        # Regression: record_failure_checkpoints wiped the ENTIRE
+        # repair_attempts map whenever the overall batch failure_signature
+        # (a hash of ALL failures in that run) changed. Since that signature
+        # changes whenever ANY checkpoint's message differs, an unrelated
+        # failure on a different checkpoint reset an already-spent checkpoint
+        # back to "fresh", letting the same original failure recur and get a
+        # second repair attempt it should not have.
+        from agent_repair_ledger import (
+            checkpoint_failure_signature,
+            failure_signature,
+            record_failure_checkpoints,
+            register_repair_attempt,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {
+                "route": {"command": "bugfix", "gates": ["tests", "boundary plan", "handoff"]}
+            }
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+
+            tests_sig = failure_signature(["missing tests evidence"])
+            boundary_sig1 = failure_signature(["missing boundary plan evidence"])
+            sig1 = failure_signature(["missing tests evidence", "missing boundary plan evidence"])
+            record_failure_checkpoints(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                checkpoints=["tests", "boundary plan"],
+                signature=sig1,
+                checkpoint_signatures={
+                    "tests": tests_sig,
+                    "boundary plan": boundary_sig1,
+                },
+            )
+            allowed, _ = register_repair_attempt(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoint="tests", limit=1, failure_signature=tests_sig,
+            )
+            self.assertTrue(allowed)
+
+            # The same tests failure remains in the batch while only the
+            # unrelated boundary-plan failure changes. The overall batch hash
+            # changes, but the tests checkpoint signature must remain stable.
+            boundary_sig2 = failure_signature(
+                ["boundary plan evidence has a different specific issue"]
+            )
+            sig2 = failure_signature(
+                ["missing tests evidence", "boundary plan evidence has a different specific issue"]
+            )
+            record_failure_checkpoints(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                checkpoints=["tests", "boundary plan"],
+                signature=sig2,
+                checkpoint_signatures={
+                    "tests": tests_sig,
+                    "boundary plan": boundary_sig2,
+                },
+            )
+            self.assertEqual(
+                tests_sig,
+                checkpoint_failure_signature(
+                    route=preflight["route"],
+                    evidence_path=evidence_path,
+                    checkpoint="tests",
+                ),
+            )
+            allowed_again, _ = register_repair_attempt(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoint="tests", limit=1, failure_signature=tests_sig,
+            )
+            self.assertFalse(allowed_again)
+
+    def test_repair_cycle_empty_signature_does_not_permanently_lock_checkpoint(self) -> None:
+        # Regression: register_repair_attempt only reset a checkpoint's spent
+        # count when BOTH the prior and incoming failure_signature were
+        # non-empty and differed. A first attempt recorded with an empty
+        # signature (e.g. a call site that could not compute one) stored
+        # failure_signature="" forever, so `prior_signature and ... !=` was
+        # always False once the limit was hit -- locking the checkpoint out
+        # of repair even for a later, genuinely different, real-signature
+        # failure.
+        from agent_repair_ledger import (
+            failure_signature,
+            record_failure_checkpoints,
+            register_repair_attempt,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+
+            record_failure_checkpoints(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoints=["tests"], signature="",
+            )
+            allowed_first, count_first = register_repair_attempt(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoint="tests", limit=1, failure_signature="",
+            )
+            self.assertTrue(allowed_first)
+            self.assertEqual(1, count_first)
+
+            later_sig = failure_signature(["a totally different tests failure"])
+            record_failure_checkpoints(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoints=["tests"], signature=later_sig,
+            )
+            allowed_second, _ = register_repair_attempt(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoint="tests", limit=1, failure_signature=later_sig,
+            )
+            self.assertTrue(allowed_second)
+
+    def test_repair_cycle_repeated_empty_signature_still_respects_bound(self) -> None:
+        # Companion to the empty-signature-permanent-lock fix above: when a
+        # call site can never compute a signature (stays "" every time), we
+        # cannot prove a later failure is different, so the bounded-retry
+        # limit must still apply -- otherwise the fix for the permanent-lock
+        # bug would regress into unlimited retries for any caller that never
+        # passes a real signature (which is exactly what the pre-existing
+        # test_repair_cycle_requires_persisted_prior_failure_and_is_bounded
+        # exercises via the default `failure_signature=""` call sites).
+        from agent_repair_ledger import record_failure_checkpoints, register_repair_attempt
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+
+            record_failure_checkpoints(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoints=["tests"], signature="",
+            )
+            allowed_first, _ = register_repair_attempt(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoint="tests", limit=1, failure_signature="",
+            )
+            self.assertTrue(allowed_first)
+
+            record_failure_checkpoints(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoints=["tests"], signature="",
+            )
+            allowed_second, _ = register_repair_attempt(
+                evidence_path=evidence_path, preflight=preflight,
+                checkpoint="tests", limit=1, failure_signature="",
+            )
+            self.assertFalse(allowed_second)
+
+    def test_repair_ledger_rejects_writes_outside_launcher_issued_worker_evidence(self) -> None:
+        from agent_repair_ledger import record_failure_checkpoints
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            parent_evidence = Path(temp_dir) / "preflight.json"
+            worker_evidence = Path(temp_dir) / "worker-preflight.json"
+            preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
+            parent_evidence.write_text(json.dumps(preflight), encoding="utf-8")
+            worker_evidence.write_text(json.dumps(preflight), encoding="utf-8")
+
+            os.environ["AGENTPLAYBOOK_WORKER_EVIDENCE"] = str(worker_evidence)
+            try:
+                with self.assertRaises(PermissionError):
+                    record_failure_checkpoints(
+                        evidence_path=parent_evidence, preflight=preflight,
+                        checkpoints=["tests"], signature="sig",
+                    )
+            finally:
+                del os.environ["AGENTPLAYBOOK_WORKER_EVIDENCE"]
+
+    def test_finish_records_checkpoint_specific_failure_signatures(self) -> None:
+        from agent_repair_ledger import (
+            checkpoint_failure_signature,
+            register_repair_attempt,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_path = Path(temp_dir) / "preflight.json"
+            preflight = {
+                "route": {
+                    "command": "bugfix",
+                    "gates": ["tests", "boundary plan", "handoff"],
+                }
+            }
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+
+            def report(boundary_failure: str) -> None:
+                with redirect_stderr(io.StringIO()):
+                    result = agent_finish_check._report_finish_failures(
+                        failures=[
+                            "missing required gate evidence: tests",
+                            boundary_failure,
+                        ],
+                        gate_policy_failures=[boundary_failure],
+                        required_gates=["tests", "boundary plan", "handoff"],
+                        missed_gates=["tests"],
+                        gate_evidence={"boundary plan": "recorded boundary evidence"},
+                        evidence_path=evidence_path,
+                        preflight=preflight,
+                    )
+                self.assertEqual(1, result)
+
+            report("boundary plan evidence issue A")
+            tests_signature = checkpoint_failure_signature(
+                route=preflight["route"],
+                evidence_path=evidence_path,
+                checkpoint="tests",
+            )
+            allowed, _ = register_repair_attempt(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                checkpoint="tests",
+                limit=1,
+                failure_signature=tests_signature,
+            )
+            self.assertTrue(allowed)
+
+            report("boundary plan evidence issue B")
+            self.assertEqual(
+                tests_signature,
+                checkpoint_failure_signature(
+                    route=preflight["route"],
+                    evidence_path=evidence_path,
+                    checkpoint="tests",
+                ),
+            )
+            allowed_again, _ = register_repair_attempt(
+                evidence_path=evidence_path,
+                preflight=preflight,
+                checkpoint="tests",
+                limit=1,
+                failure_signature=tests_signature,
+            )
+            self.assertFalse(allowed_again)
+
+    def test_repair_cycle_resolves_worker_isolated_evidence_path(self) -> None:
+        # Regression: agent-hook.py's main() used to resolve
+        # preflight_evidence_path(args) for the repair-cycle check BEFORE
+        # _apply_worker_evidence_boundary() re-pointed args.evidence at the
+        # worker's launcher-issued isolated path. A worker invoking a hook
+        # with --repair-cycle 1 (no explicit --evidence, the normal
+        # launcher-issued pattern) would have its repair claim checked
+        # against the PARENT's repair-checkpoints.json instead of its own,
+        # so checkpoint_has_recorded_failure always missed and every
+        # legitimate worker repair-cycle claim was rejected.
+        from agent_repair_ledger import record_failure_checkpoints
+        from agent_repair_verification import create_repair_receipt
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            subprocess.run(["git", "init", "-q"], cwd=str(project), check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "--allow-empty", "-m", "init"],
+                cwd=str(project),
+                check=True,
+            )
+            worker_evidence = project / "worker" / "preflight.json"
+            worker_evidence.parent.mkdir(parents=True)
+            preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
+            worker_evidence.write_text(json.dumps(preflight), encoding="utf-8")
+            record_failure_checkpoints(
+                evidence_path=worker_evidence,
+                preflight=preflight,
+                checkpoints=["tests"],
+                signature="sig-a",
+                checkpoint_signatures={"tests": "sig-a"},
+            )
+            target = project / "target.py"
+            target.write_text("x = 1\n", encoding="utf-8")
+            receipt = create_repair_receipt(
+                project=project,
+                rules=ROOT,
+                evidence_path=worker_evidence,
+                preflight=preflight,
+                target="target.py",
+                checkpoint="tests",
+                verification_kind="py_compile",
+            )
+            self.assertTrue(receipt["created"])
+
+            argv = [
+                "agent-hook.py",
+                "gate",
+                "--project",
+                str(project),
+                "--rules",
+                str(ROOT),
+                "--gate-name",
+                "tests",
+                "--field",
+                "check=pytest",
+                "--field",
+                "result=passed",
+                "--repair-cycle",
+                "1",
+                "--repair-target",
+                "target.py",
+                "--repair-evidence",
+                receipt["receipt_path"],
+                "--resume-checkpoint",
+                "tests",
+            ]
+            env_patch = {"AGENTPLAYBOOK_WORKER_EVIDENCE": str(worker_evidence)}
+            old_env = {key: os.environ.get(key) for key in env_patch}
+            os.environ.update(env_patch)
+            try:
+                with patch.object(sys, "argv", argv):
+                    exit_code = agent_hook.main()
+            finally:
+                for key, value in old_env.items():
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
+
+            self.assertEqual(0, exit_code)
+
+    def test_start_then_gate_preserves_request_intake_in_ledger(self) -> None:
+        # Regression found via an end-to-end CLI rehearsal (not a unit-level
+        # call): agent-hook.py's start_hook records "request intake" in the
+        # gate-evidence ledger, bound to preflight.json's hash at that
+        # moment. _register_started_run then rewrites preflight.json in
+        # place to add agent_run_id, so the ledger's stored hash goes stale
+        # immediately. The next gate write's self-heal check ("a stale
+        # ledger is not the same as an empty one, so start over") could not
+        # tell that apart from a genuinely new request and silently wiped
+        # every already-recorded entry -- reproduced with real `start` then
+        # `gate` subprocess calls: right after start entries were
+        # ["request intake"], and after exactly one more `gate` call it
+        # became just the new gate, with "request intake" gone.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            subprocess.run(["git", "init", "-q"], cwd=str(project), check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "--allow-empty", "-m", "init"],
+                cwd=str(project),
+                check=True,
+            )
+
+            start_argv = [
+                "agent-hook.py",
+                "start",
+                "--project",
+                str(project),
+                "--rules",
+                str(ROOT),
+                "--command",
+                "bugfix",
+                "--request-classified",
+                "--classification-evidence",
+                "clear-scoped: rehearsal bug reproduced with exact scope; no blockers; scope clarified",
+                "--request",
+                "regression rehearsal",
+            ]
+            with patch.object(sys, "argv", start_argv):
+                start_exit = agent_hook.main()
+            self.assertEqual(0, start_exit)
+
+            ledger_path = project / ".agentplaybook" / "gate-evidence.json"
+            after_start = json.loads(ledger_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                ["request intake"], [entry["gate"] for entry in after_start["entries"]]
+            )
+
+            gate_argv = [
+                "agent-hook.py",
+                "gate",
+                "--project",
+                str(project),
+                "--rules",
+                str(ROOT),
+                "--gate-name",
+                "reproduce",
+                "--gate-evidence",
+                "reproduced the rehearsal fixture failure",
+            ]
+            with patch.object(sys, "argv", gate_argv):
+                gate_exit = agent_hook.main()
+            self.assertEqual(0, gate_exit)
+
+            after_gate = json.loads(ledger_path.read_text(encoding="utf-8"))
+            gates_after = {entry["gate"] for entry in after_gate["entries"]}
+            self.assertIn("request intake", gates_after)
+            self.assertIn("reproduce", gates_after)
+
+    def test_occurrence_keys_evict_by_recency_not_hash_order(self) -> None:
+        # Regression: occurrence_keys were capped with sorted(...)[-20:],
+        # which evicts by hash value rather than recency. A legitimately
+        # repeated occurrence_id could be evicted while a truly stale one
+        # stayed, letting old occurrences be miscounted as new.
+        lesson = retrospective_candidate({"missed_gates": ["tests"], "gate_signals": []})
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for index in range(25):
+                upsert_retrospective_candidate(
+                    root, dict(lesson), occurrence_id=f"bulk-{index}"
+                )
+
+            evicted_replay = upsert_retrospective_candidate(
+                root, dict(lesson), occurrence_id="bulk-0"
+            )
+            recent_replay = upsert_retrospective_candidate(
+                root, dict(lesson), occurrence_id="bulk-24"
+            )
+
+            self.assertFalse(evicted_replay["idempotent"])
+            self.assertTrue(recent_replay["idempotent"])
+
+    def test_lesson_candidate_empty_occurrence_id_does_not_inflate_count(self) -> None:
+        # Regression: a missing agent_run_id (occurrence_id="") used to be
+        # treated as a brand-new occurrence on every call, so a broken run
+        # registry alone could spuriously reach the review threshold.
+        lesson = retrospective_candidate({"missed_gates": ["tests"], "gate_signals": []})
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+
+            results = [
+                upsert_retrospective_candidate(root, dict(lesson), occurrence_id="")
+                for _ in range(5)
+            ]
+
+            self.assertEqual(
+                [1, 1, 1, 1, 1],
+                [result["occurrence_count"] for result in results],
+            )
+
+    def test_lesson_store_survives_concurrent_writers(self) -> None:
+        from concurrent.futures import ThreadPoolExecutor
+
+        lesson = retrospective_candidate({"missed_gates": ["tests"], "gate_signals": []})
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+
+            def call(index: int) -> dict:
+                return upsert_retrospective_candidate(
+                    root, dict(lesson), occurrence_id=f"run-{index}"
+                )
+
+            with ThreadPoolExecutor(max_workers=10) as pool:
+                results = list(pool.map(call, range(30)))
+
+            self.assertTrue(all(result["created"] for result in results))
+            inbox = Path(temp_dir) / "lessons" / "inbox"
+            files = list(inbox.glob("*.json"))
+            self.assertEqual(1, len(files))
+            final = json.loads(files[0].read_text(encoding="utf-8"))
+            self.assertEqual(30, final["occurrence_count"])
+
+    def test_skill_feedback_hook_storage_failure_is_nonblocking(self) -> None:
+        with patch.object(
+            agent_skill_hooks,
+            "record_skill_feedback",
+            return_value=(
+                {"created": False, "reason": "write_failed"},
+                ["skill observation skipped: write_failed; task completion is unchanged"],
+            ),
+        ):
+            result = agent_hook.skill_feedback_hook(
+                SimpleNamespace(
+                    evidence=None,
+                    project=ROOT,
+                    skill_feedback_outcome="observed",
+                    skill_id="retrospective_learning",
+                    feedback_signal="missing_skill_guidance",
+                    feedback_gap="workflow_gap",
+                    promotion_target="workflow_skill",
+                    output=None,
+                )
+            )
+
+        self.assertEqual(0, result)
+
+    def test_policy_invalid_gate_evidence_is_attributable_to_its_gate(self) -> None:
+        # Regression (Codex finding): a gate with non-empty but
+        # content-invalid evidence (e.g. tests="done") is not in
+        # missed_gates (it has evidence), so its failure only landed in the
+        # generic "finish" checkpoint bucket -- a --resume-checkpoint tests
+        # repair claim was rejected as never-recorded, even though "tests"
+        # is precisely what failed. This mirrors the attribution logic
+        # agent-finish-check.py applies before recording failed checkpoints.
+        gate_evidence = {"tests": "done"}
+        required_gates, missed_gates, gate_policy_failures = check_required_gates(
+            {"gates": ["tests", "handoff"]}, gate_evidence, [], [], {}
+        )
+        policy_failed_gates = [
+            gate
+            for gate in required_gates
+            if gate_evidence.get(gate, "").strip()
+            and any(gate.lower() in failure.lower() for failure in gate_policy_failures)
+        ]
+
+        self.assertNotIn("tests", missed_gates)
+        self.assertIn("tests", policy_failed_gates)
+
+    def test_finish_check_does_not_process_successful_task_skill_feedback(self) -> None:
+        self.assertFalse(hasattr(agent_finish_check, "process_finish_learning"))
 
     def test_finish_final_check_failure_requires_retrospective_lesson(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1835,7 +2648,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             self.assertEqual("finish_gate_failure", lesson["failure_type"])
             self.assertEqual("finish_failed_before_completion", lesson["root_cause"])
             self.assertEqual(
-                "run_actionable_retrospective_then_retry_same_scope",
+                "repair_verify_then_resume_failed_checkpoint",
                 lesson["next_action"],
             )
 
@@ -1961,6 +2774,13 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(route_doc("workflows/skills/cycle-contract/SKILL.md"), route["docs"])
         self.assertIn(route_doc("workflows/skills/multi-agent-collaboration/SKILL.md"), route["docs"])
         self.assertIn(route_doc("workflows/skills/development-cycle/SKILL.md"), route["docs"])
+        self.assertIn(route_doc("workflows/skills/retrospective-learning/SKILL.md"), route["docs"])
+        self.assertEqual(1, route["repair_cycle_limit"])
+        self.assertEqual("retrospective_repair_verify_resume", route["repair_policy"])
+        self.assertEqual("first_failed_checkpoint", route["resume_scope"])
+        self.assertEqual("same_failure_after_repair_or_unsafe_repair", route["stop_condition"])
+        for legacy_field in ("attempt_limit", "retry_limit", "retry_scope"):
+            self.assertNotIn(legacy_field, route)
         self.assertIn(route_doc("common/skills/code-conventions/SKILL.md"), route["required_docs"])
         self.assertIn(route_doc("common/skills/llm-coding-discipline/SKILL.md"), route["required_docs"])
         self.assertIn(route_doc("common/skills/agent-editing-safety/SKILL.md"), route["required_docs"])
@@ -1976,6 +2796,24 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(CYCLE_CONTRACT_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index(CYCLE_CONTRACT_GATE))
+        self.assertNotIn("post-task learning", route["gates"])
+        self.assertTrue(route["skill_feedback"]["enabled"])
+        self.assertFalse(route["skill_feedback"]["blocking"])
+        feedback_hooks = [hook for hook in route["hooks"] if hook["hook"] == SKILL_FEEDBACK_HOOK]
+        self.assertEqual(1, len(feedback_hooks))
+        self.assertFalse(feedback_hooks[0]["required"])
+
+    def test_skill_feedback_is_never_a_required_gate_for_work_producing_routes(self) -> None:
+        for command in sorted(WORK_PRODUCING_COMMANDS):
+            with self.subTest(command=command):
+                route = resolve_docs(command, None, [], request_classified=True)
+                self.assertNotIn("post-task learning", route["gates"])
+                self.assertFalse(any(item["gate"] == "post-task learning" for item in route["gate_ledger"]))
+                self.assertTrue(route["skill_feedback"]["enabled"])
+                self.assertFalse(route["skill_feedback"]["blocking"])
+                hooks = [hook for hook in route["hooks"] if hook["hook"] == SKILL_FEEDBACK_HOOK]
+                self.assertEqual(1, len(hooks))
+                self.assertFalse(hooks[0]["required"])
 
     def test_path_surface_promotes_workflow_docs_to_required_docs(self) -> None:
         route = resolve_docs(
@@ -2056,119 +2894,42 @@ class WorkflowRoutingTests(unittest.TestCase):
         )
 
     def test_graphify_readiness_gate_requires_all_structured_fields(self) -> None:
+        success_fields = {
+            "cli": "success",
+            "skill_doc": "success",
+            "runtime_links": "success",
+            "git_ownership": "success",
+            "project_integration": "success",
+            "graph": "success",
+            "query_smoke": "success",
+        }
         evidence, missing = synthesize_gate_evidence(
             "graphify readiness",
-            "",
-            {
-                "cli": "graphify resolved",
-                "skill_doc": ".agentplaybook/skills/graphify/SKILL.md read",
-                "runtime_links": "Codex Claude and AGY links resolve to canonical skill",
-                "git_ownership": "canonical files and runtime symlinks tracked portably",
-                "project_integration": "AGENTS section and Codex hook present",
-                "graph": (
-                    "target graphify-out/graph.json fresh; manifest input coverage complete; "
-                    "integrity valid; AST-only graph indexed"
-                ),
-                "query_smoke": "graphify query passed",
-            },
+            "graph details are recorded outside the status fields",
+            success_fields,
         )
 
         self.assertEqual([], missing)
         self.assertEqual([], validate_gate_evidence({"graphify readiness": evidence}, ["graphify readiness"]))
 
-        failures = validate_gate_evidence(
-            {
-                "graphify readiness": (
-                    "cli=resolved; skill doc=read; runtime links=canonical; "
-                    "git ownership=portable; project integration=installed; "
-                    "target graph=present; query smoke=failed"
-                )
-            },
-            ["graphify readiness"],
-        )
-        self.assertTrue(any("incomplete condition" in failure for failure in failures))
-
-        for graph_state in ("stale", "incomplete"):
-            with self.subTest(graph_state=graph_state):
-                failures = validate_gate_evidence(
-                    {
-                        "graphify readiness": (
-                            "cli=resolved; skill doc=read; runtime links=canonical; "
-                            "git ownership=portable; project integration=installed; "
-                            f"target graph={graph_state}; query smoke=succeeded"
-                        )
-                    },
-                    ["graphify readiness"],
-                )
-                self.assertTrue(
-                    any("incomplete condition" in failure for failure in failures)
-                )
-
-        relationship_quality_only = (
-            "cli=resolved; skill doc=read; runtime links=canonical; "
-            "git ownership=portable; project integration=installed; "
-            "target graph=fresh; manifest input coverage complete; integrity valid; "
-            "relationship coverage disconnected; query smoke=succeeded"
-        )
-        self.assertEqual(
-            [],
-            validate_gate_evidence(
-                {"graphify readiness": relationship_quality_only},
-                ["graphify readiness"],
-            ),
-        )
-
-        for field, value in (
-            ("target graph", "dirty"),
-            ("target graph", "invalid"),
-            ("query smoke", "skipped"),
-            ("git ownership", "unknown"),
-        ):
+        for field, value in (("graph", "fresh and valid"), ("query_smoke", "passed")):
             with self.subTest(field=field, value=value):
-                values = {
-                    "cli": "resolved",
-                    "skill doc": "read",
-                    "runtime links": "resolve to canonical",
-                    "git ownership": "tracked portably",
-                    "project integration": "installed",
-                    "target graph": (
-                        "fresh; manifest input coverage complete; integrity valid; "
-                        "AST-only index"
-                    ),
-                    "query smoke": "passed",
-                }
+                values = dict(success_fields)
                 values[field] = value
-                evidence = "; ".join(f"{key}={item}" for key, item in values.items())
-                failures = validate_gate_evidence(
-                    {"graphify readiness": evidence}, ["graphify readiness"]
-                )
-                self.assertTrue(failures)
+                _, failures = synthesize_gate_evidence("graphify readiness", "", values)
+                self.assertTrue(any("exact success" in failure for failure in failures))
 
         _, missing = synthesize_gate_evidence(
             "graphify readiness",
             "",
-            {
-                "cli": "graphify resolved",
-                "skill_doc": "skill read",
-                "runtime_links": "links resolve to canonical",
-                "git_ownership": "canonical files and symlinks tracked",
-                "project_integration": "hook present",
-                "graph": "graph present",
-            },
+            {key: value for key, value in success_fields.items() if key != "query_smoke"},
         )
         self.assertEqual(["query_smoke"], missing)
 
         _, missing = synthesize_gate_evidence(
             "graphify readiness",
             "",
-            {
-                "cli": "graphify resolved",
-                "skill_doc": "skill read",
-                "runtime_links": "links resolve to canonical",
-                "project_integration": "hook present",
-                "graph": "graph present",
-                "query_smoke": "query passed",
-            },
+            {key: value for key, value in success_fields.items() if key != "git_ownership"},
         )
         self.assertEqual(["git_ownership"], missing)
 
@@ -3201,6 +3962,26 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("2 gate evidence entries recorded", result.stdout)
         self.assertEqual([BOUNDARY_PLAN_GATE, TEST_GATE], [entry["gate"] for entry in ledger["entries"]])
 
+    def test_repair_cycle_cli_requires_target_evidence_and_resume_checkpoint(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "agent-hook.py"),
+                "gate-batch",
+                "--repair-cycle",
+                "1",
+            ],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(2, result.returncode)
+        self.assertIn("--repair-target", result.stderr)
+        self.assertIn("--repair-evidence", result.stderr)
+        self.assertIn("--resume-checkpoint", result.stderr)
+
     def test_vibeguard_cache_reuses_same_git_state_and_invalidates_on_status_change(self) -> None:
         calls: list[list[str]] = []
         state = {"status": ""}
@@ -3471,7 +4252,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             details: list[str],
             output: Path | None,
             payload: dict[str, object],
-            retry_attempt: int,
+            repair_cycle: int,
         ) -> int:
             outputs.append({"name": name, "success": success, "details": details, "payload": payload})
             return 0 if success else 1
@@ -3480,6 +4261,7 @@ class WorkflowRoutingTests(unittest.TestCase):
             project=ROOT,
             rules=ROOT,
             evidence=None,
+            review_outcome="pass",
             code_review_evidence="reviewed scoped change",
             docs_freshness_evidence="docs unchanged because no durable docs impact",
             structure_review_evidence="",
@@ -3491,23 +4273,46 @@ class WorkflowRoutingTests(unittest.TestCase):
             max_source_file_lines=500,
             max_function_lines=120,
             output=None,
-            retry_attempt=0,
+            repair_cycle=0,
         )
 
-        result = review_hook(
-            args,
-            run_command,
-            git_status,
-            lambda _project, _rules: ["vibeguard", "audit", "."],
-            lambda output: "Ready" if "Ready" in output else "unknown",
-            finish_with_result,
-        )
+        with patch("agent_review_hook.record_review_failure"):
+            result = review_hook(
+                args,
+                run_command,
+                git_status,
+                lambda _project, _rules: ["vibeguard", "audit", "."],
+                lambda output: "Ready" if "Ready" in output else "unknown",
+                finish_with_result,
+            )
 
         self.assertEqual(1, result)
         self.assertFalse(outputs[0]["success"])
         self.assertTrue(
             any("outside the review pathspec" in detail for detail in outputs[0]["details"])
         )
+
+    def test_review_failure_records_resumable_checkpoint(self) -> None:
+        from agent_repair_ledger import checkpoint_has_recorded_failure
+        from agent_review_hook import record_review_failure
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path.parent.mkdir(parents=True)
+            preflight = {"route": {"command": "review", "gates": ["review hook"]}}
+            evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+            args = SimpleNamespace(project=project, evidence=evidence_path)
+
+            record_review_failure(args, ["structure review failed"])
+
+            self.assertTrue(
+                checkpoint_has_recorded_failure(
+                    route=preflight["route"],
+                    evidence_path=evidence_path,
+                    checkpoint="review",
+                )
+            )
 
     def test_review_hook_preserves_workflow_validate_diagnostic(self) -> None:
         detail = workflow_validate_failure_detail({
@@ -4279,8 +5084,20 @@ class WorkflowRoutingTests(unittest.TestCase):
         route = resolve_docs("feature", None, ["testing"], request_classified=True)
         review_hook = next(hook for hook in route["hooks"] if hook["hook"] == "review")
 
-        self.assertEqual(["start", "review", "finish"], [hook["hook"] for hook in route["hooks"]])
+        self.assertEqual(
+            [
+                "start",
+                "review",
+                "finish",
+                "skill-feedback",
+                "skill-curate",
+                "skill-review",
+                "skill-maintenance",
+            ],
+            [hook["hook"] for hook in route["hooks"]],
+        )
         self.assertIn("--review-scope working-tree", review_hook["command"])
+        self.assertIn("--review-outcome <pass|findings>", review_hook["command"])
         self.assertIn("[--review-path <task-owned-path>]", review_hook["command"])
         self.assertIn("--boundary-plan-evidence", review_hook["command"])
         self.assertIn("--side-effect-audit-evidence", review_hook["command"])
@@ -4293,6 +5110,7 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("--review-scope working-tree", review_hook["command"])
         self.assertIn("[--review-path <commit-owned-path>]", review_hook["command"])
         self.assertIn("--code-review-evidence", review_hook["command"])
+        self.assertIn("--review-outcome <pass|findings>", review_hook["command"])
         self.assertIn("--docs-freshness-evidence", review_hook["command"])
         self.assertNotIn("--boundary-plan-evidence", review_hook["command"])
         self.assertNotIn("--side-effect-audit-evidence", review_hook["command"])

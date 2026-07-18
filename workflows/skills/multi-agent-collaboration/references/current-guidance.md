@@ -205,8 +205,8 @@ required field names are `mode`, `reason`, `owned_scope`, `forbidden_scope`,
 `contract`, `acceptance`, `integration_owner`, and `verification`. Alias keys
 such as `contract_brief` or `acceptance_checks` do not satisfy the executable
 contract. The same pre-worker record validates the delegation-plan structure so
-schema mistakes are corrected before finish and do not consume the finish
-recovery retry.
+schema mistakes are corrected before finish and do not consume the bounded
+repair cycle.
 
 ## Agent Briefs
 

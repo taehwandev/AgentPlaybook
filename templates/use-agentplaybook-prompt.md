@@ -127,9 +127,11 @@ Rules:
    Gate signal: 🐱🟢 SUCCESS | gate: <gate> | evidence: <evidence> | next: <next gate>
 9. If any required gate was not executed, stop before final report, commit,
    release, or handoff. Roll back only dependent agent-made changes after the
-   missed gate when safe, preserve user-owned changes, return to the first
-   missed gate only, and run the retrospective workflow. The missed gate gets
-   one recovery retry; do not restart the whole route.
+   failed checkpoint when safe, preserve user-owned changes, and run the
+   retrospective workflow. Improve and verify the canonical AgentPlaybook doc,
+   hook, validator, or test before resuming that checkpoint. Allow one repair
+   cycle only; stop if the same failure remains or the repair is unsafe or
+   ambiguous.
 10. When a gate is missed, the retrospective must include `AI mistake`,
    `Proposed fix`, and `Discussion result`. Write the discussion result in the
    user's language for the task.

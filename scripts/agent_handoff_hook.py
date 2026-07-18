@@ -90,7 +90,7 @@ def handoff_hook(args: argparse.Namespace) -> int:
                         "fallback_worker_reservation_token": None,
                     }
                 },
-                args.retry_attempt,
+                args.repair_cycle,
             )
         details.append(
             "execution capsule is not reusable; delegated workers must use the full lifecycle"
@@ -135,7 +135,7 @@ def handoff_hook(args: argparse.Namespace) -> int:
                 "fallback_worker_reservation_token": fallback_reservation_token,
             }
         },
-        args.retry_attempt,
+        args.repair_cycle,
     )
 
 

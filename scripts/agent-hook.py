@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from agent_gate_evidence import resync_gate_evidence_ledger
 from agent_handoff_hook import handoff_hook
 from agent_hook_gate_records import (
     gate_batch_hook,
@@ -28,13 +29,21 @@ from agent_hook_runtime import (
     non_negative_int,
     parse_overall,
     print_status,
-    retry_attempt,
+    repair_cycle,
+    repair_context_failures,
     run_command,
     vibeguard_command,
     write_json,
 )
 from agent_inprocess import run_script_main
 from agent_review_hook import review_hook
+from agent_repair_verification import create_repair_receipt
+from agent_skill_hooks import (
+    skill_curate_hook,
+    skill_feedback_hook,
+    skill_maintenance_hook,
+    skill_review_hook,
+)
 from agent_review_structure import (
     REVIEW_FUNCTION_LINE_LIMIT,
     REVIEW_SOURCE_FILE_LINE_LIMIT,
@@ -89,7 +98,7 @@ def start_hook(args: argparse.Namespace) -> int:
         details,
         args.output,
         {"preflight": result},
-        args.retry_attempt,
+        args.repair_cycle,
     )
 
 
@@ -141,7 +150,7 @@ def finish_hook(args: argparse.Namespace) -> int:
         details,
         args.output,
         {"finish_check": result},
-        args.retry_attempt,
+        args.repair_cycle,
     )
 
 
@@ -159,6 +168,18 @@ def _register_started_run(args: argparse.Namespace, details: list[str]) -> None:
         )
         payload["agent_run_id"] = run["run_id"]
         write_json(evidence_path, payload)
+        # This rewrite changes preflight.json's hash after "request intake"
+        # was already recorded in the gate-evidence ledger against the
+        # pre-mutation content. Without resyncing, the next gate write's
+        # self-heal check sees a stale hash and silently wipes the ledger,
+        # including that "request intake" entry -- reproduced end-to-end:
+        # right after start the entries are ["request intake"], and after
+        # exactly one more `gate` call they become just the new gate, with
+        # "request intake" gone.
+        try:
+            resync_gate_evidence_ledger(evidence_path, payload)
+        except (OSError, ValueError):
+            pass
         details.append("agent run registry: running")
     except (OSError, ValueError, TypeError, json.JSONDecodeError):
         details.append("agent run registry: unavailable; lifecycle continues")
@@ -260,7 +281,19 @@ def _fallback_failure_lines(result: dict[str, Any]) -> list[str]:
 def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "hook",
-        choices=("start", "handoff", "gate", "gate-batch", "review", "finish"),
+        choices=(
+            "start",
+            "handoff",
+            "gate",
+            "gate-batch",
+            "review",
+            "finish",
+            "skill-feedback",
+            "skill-curate",
+            "skill-review",
+            "skill-maintenance",
+            "repair-verify",
+        ),
     )
     parser.add_argument("--project", type=existing_path, default=Path.cwd())
     parser.add_argument("--rules", type=existing_path, default=ROOT)
@@ -275,10 +308,24 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
         help="preflight evidence path; start writes it and finish reads it",
     )
     parser.add_argument(
-        "--retry-attempt",
-        type=retry_attempt,
+        "--repair-cycle",
+        type=repair_cycle,
         default=0,
-        help="0 for the first hook run, 1 for the single allowed retry",
+        help="0 for normal execution, 1 only after a verified playbook repair",
+    )
+    parser.add_argument("--repair-target", default="")
+    parser.add_argument("--repair-evidence", default="")
+    parser.add_argument("--resume-checkpoint", default="")
+    parser.add_argument(
+        "--repair-verification-kind",
+        choices=("py_compile", "unittest", "vibeguard", "workflow_validate"),
+        default="workflow_validate",
+    )
+    parser.add_argument("--repair-test-selector", default="")
+    parser.add_argument(
+        "--repair-receipt-output",
+        type=existing_path,
+        help="optional project-local output path for repair-verify",
     )
 
 
@@ -304,6 +351,12 @@ def _add_start_arguments(parser: argparse.ArgumentParser) -> None:
 def _add_review_arguments(parser: argparse.ArgumentParser) -> None:
     review = parser.add_argument_group("review hook")
     review.add_argument(
+        "--review-outcome",
+        choices=("pass", "findings"),
+        default="",
+        help="structural review decision; findings keeps the review checkpoint failed",
+    )
+    review.add_argument(
         "--code-review-evidence",
         help="short evidence that the exact diff was reviewed against request and rules",
     )
@@ -316,7 +369,8 @@ def _add_review_arguments(parser: argparse.ArgumentParser) -> None:
         help=(
             "short evidence that runtime file/function size, top-level owner count, and "
             "responsibility splits were reviewed; new runtime package boundaries must "
-            "include owner, allowed imports, forbidden imports, callers/tests, and verification"
+            "use explicit labels: owner: ..., allowed imports: ..., forbidden imports: ..., "
+            "callers/tests: ..., verification: ..."
         ),
     )
     review.add_argument(
@@ -365,6 +419,34 @@ def _add_finish_arguments(parser: argparse.ArgumentParser) -> None:
     finish.add_argument("--allow-vibeguard-review")
 
 
+def _add_skill_feedback_arguments(parser: argparse.ArgumentParser) -> None:
+    feedback = parser.add_argument_group("successful-task skill feedback")
+    feedback.add_argument(
+        "--skill-feedback-outcome",
+        choices=("no_change", "observed"),
+        default="no_change",
+    )
+    feedback.add_argument("--skill-id", default="")
+    feedback.add_argument("--feedback-signal", default="")
+    feedback.add_argument("--feedback-candidate-id", default="")
+    feedback.add_argument(
+        "--skill-review-outcome",
+        choices=("no_change", "stage_patch"),
+        default="no_change",
+    )
+    feedback.add_argument("--feedback-gap", default="")
+    feedback.add_argument("--change-type", default="")
+    feedback.add_argument("--promotion-target", default="")
+    feedback.add_argument(
+        "--skill-maintenance-outcome",
+        choices=("applied", "rejected"),
+        default="rejected",
+    )
+    feedback.add_argument("--verification-kind", default="")
+    feedback.add_argument("--maintenance-target", default="")
+    feedback.add_argument("--maintenance-test-selector", default="")
+
+
 def _add_gate_arguments(parser: argparse.ArgumentParser) -> None:
     gate = parser.add_argument_group("gate evidence hook")
     gate.add_argument("--gate-name", help="route gate name to record in the structured ledger")
@@ -391,6 +473,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_start_arguments(parser)
     _add_review_arguments(parser)
     _add_finish_arguments(parser)
+    _add_skill_feedback_arguments(parser)
     _add_gate_arguments(parser)
     return parser
 
@@ -402,6 +485,63 @@ def main() -> int:
     if worker_error:
         print_status(args.hook, False, [worker_error])
         return 2
+    if args.hook == "repair-verify":
+        repair_evidence_path = preflight_evidence_path(args)
+        try:
+            repair_preflight = json.loads(repair_evidence_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            repair_preflight = {}
+        result = create_repair_receipt(
+            project=args.project,
+            rules=args.rules,
+            evidence_path=repair_evidence_path,
+            preflight=repair_preflight,
+            target=args.repair_target,
+            checkpoint=args.resume_checkpoint,
+            verification_kind=args.repair_verification_kind,
+            test_selector=args.repair_test_selector,
+            output_path=args.repair_receipt_output,
+        )
+        success = bool(result.get("created")) and result.get("status") == "SUCCESS"
+        details = [
+            f"repair receipt: {result.get('receipt_path', 'not_created')}",
+            f"verification status: {result.get('status', result.get('reason', 'unknown'))}",
+        ]
+        return finish_with_result(
+            "repair-verify",
+            success,
+            details,
+            args.output,
+            {"repair_verification": result},
+            0,
+        )
+    if args.repair_cycle:
+        # Must run after _apply_worker_evidence_boundary: that call is what
+        # points args.evidence at a worker's launcher-issued isolated
+        # evidence path. Resolving preflight_evidence_path(args) any earlier
+        # would silently read/write the parent's preflight.json instead of
+        # the worker's, so checkpoint_has_recorded_failure would always miss
+        # and every worker repair-cycle claim would be rejected.
+        repair_evidence_path = preflight_evidence_path(args)
+        try:
+            repair_preflight = json.loads(repair_evidence_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            repair_preflight = {}
+        repair_failures = repair_context_failures(
+            args.repair_target,
+            args.repair_evidence,
+            args.resume_checkpoint,
+            route=repair_preflight.get("route") or {},
+            evidence_path=repair_evidence_path,
+            preflight=repair_preflight,
+            project=args.project,
+            rules=args.rules,
+        )
+        if repair_failures:
+            parser.error(
+                "--repair-cycle 1 requires verified repair context: "
+                + "; ".join(repair_failures)
+            )
     if args.hook == "start":
         if args.request_classified and not args.classification_evidence:
             parser.error("start --request-classified requires --classification-evidence")
@@ -426,6 +566,14 @@ def main() -> int:
         return gate_hook(args)
     if args.hook == "gate-batch":
         return gate_batch_hook(args)
+    if args.hook == "skill-feedback":
+        return skill_feedback_hook(args)
+    if args.hook == "skill-curate":
+        return skill_curate_hook(args)
+    if args.hook == "skill-review":
+        return skill_review_hook(args)
+    if args.hook == "skill-maintenance":
+        return skill_maintenance_hook(args)
     return finish_hook(args)
 
 

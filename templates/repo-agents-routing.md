@@ -120,10 +120,11 @@ completed or failed gate or task step. Completion requires every required gate
 to be 🐱🟢 SUCCESS. Use only two cat signal badges in human-visible reports:
 🐱🟢 SUCCESS means executed with evidence, and 🐱🔴 FAIL means blocked, failed,
 missed, or missing evidence and triggers missed-gate recovery: stop
-finalization, roll back only dependent agent-made changes after the missed gate
-when safe, return to the first missed gate only, and run the retrospective
-workflow. The missed gate gets one recovery retry; do not restart the whole
-route. Do not report any third gate state.
+finalization, preserve the first failed checkpoint, roll back only dependent
+agent-made changes when safe, and run the retrospective workflow. Improve and
+verify the owning AgentPlaybook doc, hook, validator, or test before resuming
+that checkpoint. One repair cycle is allowed; stop on the same failure or an
+unsafe or ambiguous repair. Do not report any third gate state.
 When the wrapper scripts are available, keep the existing start evidence,
 run `~/.agentplaybook/bin/agentplaybook-hook review` after the scoped diff is ready, and run
 `~/.agentplaybook/bin/agentplaybook-hook finish` before final report, commit, release, or handoff. Pass

@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from workflow_common import ATTEMPT_LIMIT, RETRY_LIMIT, RETRY_SCOPE
+from workflow_common import (
+    REPAIR_CYCLE_LIMIT,
+    REPAIR_POLICY,
+    REPAIR_STOP_CONDITION,
+    RESUME_SCOPE,
+)
 
 
 def print_markdown(route: dict[str, object]) -> None:
@@ -58,6 +63,8 @@ def print_markdown(route: dict[str, object]) -> None:
     for gate in route["gates"]:
         print(f"- {gate}")
     print()
+    if (route.get("skill_feedback") or {}).get("enabled"):
+        _print_skill_feedback(route["skill_feedback"])
     if route.get("parallel_execution"):
         _print_parallel_execution(route["parallel_execution"])
     if route.get("target_project_graphify"):
@@ -69,9 +76,10 @@ def print_markdown(route: dict[str, object]) -> None:
         print(f"  `{hook['command']}`")
     print()
     print("## Gate Execution Ledger")
-    print(f"Attempt limit: `{ATTEMPT_LIMIT}`")
-    print(f"Recovery retry limit: `{RETRY_LIMIT}`")
-    print(f"Retry scope: `{RETRY_SCOPE}`")
+    print(f"Repair cycle limit: `{REPAIR_CYCLE_LIMIT}`")
+    print(f"Repair policy: `{REPAIR_POLICY}`")
+    print(f"Resume scope: `{RESUME_SCOPE}`")
+    print(f"Stop condition: `{REPAIR_STOP_CONDITION}`")
     print()
     print("Report gates only when they complete or fail:")
     for item in route["gate_ledger"]:
@@ -87,9 +95,10 @@ def print_markdown(route: dict[str, object]) -> None:
     print()
     print("If any required gate is not executed, stop finalization, return to the")
     print("first missed gate only, roll back only dependent agent-made changes when")
-    print("safe, then run an actionable retrospective before the one recovery retry for the missed gate only.")
-    print("The retry must cite or apply the retrospective correction plan;")
-    print("if that retry misses the gate again, promote the lesson or stop for handoff;")
+    print("safe, then run an actionable retrospective and improve the owning playbook doc,")
+    print("hook, validator, or test before verifying the repair and resuming that checkpoint.")
+    print("Only one bounded repair cycle is allowed; if the same failure remains or the")
+    print("repair is unsafe or ambiguous, promote the lesson and stop for handoff;")
     print("do not restart the whole route.")
     if route["notes"]:
         print()
@@ -140,6 +149,20 @@ def _print_parallel_execution(plan: dict[str, object]) -> None:
         print("Parallel notes:")
         for note in plan["notes"]:
             print(f"- {note}")
+    print()
+
+
+def _print_skill_feedback(policy: dict[str, object]) -> None:
+    print("## Successful-Task Skill Learning (Non-Gate)")
+    print(f"- Mode: `{policy['mode']}`")
+    print(f"- Trigger: `{policy['trigger']}`")
+    print(f"- Blocking: `{str(bool(policy['blocking'])).lower()}`")
+    print(f"- Review threshold: `{policy['candidate_threshold']}` distinct occurrences")
+    print(f"- Curation: `{policy['curation']}`")
+    print(f"- Review: `{policy['review']}`")
+    print(f"- Write policy: `{policy['write_policy']}`")
+    print(f"- Maintenance: `{policy['maintenance']}`")
+    print("- Observation, review, or maintenance unavailability never changes finish status.")
     print()
 
 

@@ -20,6 +20,14 @@ from agent_route_state import (
     required_docs_for_route,
     route_fingerprint,
 )
+from agent_repair_ledger import (
+    checkpoint_failure_signature,
+    checkpoint_has_recorded_failure,
+    record_finish_failure_checkpoints,
+    register_repair_attempt,
+    repair_checkpoint_path_for_preflight,
+)
+from agent_state_lock import state_lock
 
 
 GATE_EVIDENCE_FILENAME = "gate-evidence.json"
@@ -67,10 +75,24 @@ MULTI_AGENT_PARALLEL_FIELDS = (
 MULTI_AGENT_SERIAL_MODES = {"serial", "single-agent", "single agent"}
 
 
-def gate_evidence_path_for_preflight(evidence_path: Path) -> Path:
+def _sibling_evidence_path(evidence_path: Path, default_filename: str, suffix: str) -> Path:
+    """Resolve a file that lives next to one preflight evidence file.
+
+    Every per-preflight side-file (gate ledger, repair-checkpoints record,
+    ...) shares this naming rule: the canonical filename when evidence_path
+    is the default "preflight.json", otherwise a name derived from that
+    evidence file's own stem so worker-isolated evidence paths (which are
+    not literally named "preflight.json") still get their own side-file
+    instead of colliding with the parent's.
+    """
+
     if evidence_path.name != "preflight.json":
-        return evidence_path.parent / f"{evidence_path.stem}-gate-evidence.json"
-    return evidence_path.parent / GATE_EVIDENCE_FILENAME
+        return evidence_path.parent / f"{evidence_path.stem}-{suffix}"
+    return evidence_path.parent / default_filename
+
+
+def gate_evidence_path_for_preflight(evidence_path: Path) -> Path:
+    return _sibling_evidence_path(evidence_path, GATE_EVIDENCE_FILENAME, "gate-evidence.json")
 
 
 def parse_field(value: str) -> tuple[str, str]:
@@ -95,8 +117,10 @@ def read_gate_evidence_ledger(path: Path) -> dict[str, Any]:
 
 def reset_gate_evidence_ledger(evidence_path: Path, preflight: dict[str, Any]) -> dict[str, Any]:
     _enforce_worker_evidence_boundary(evidence_path)
-    ledger = _new_ledger(evidence_path, preflight)
-    _write_gate_evidence_ledger(gate_evidence_path_for_preflight(evidence_path), ledger)
+    path = gate_evidence_path_for_preflight(evidence_path)
+    with state_lock(path):
+        ledger = _new_ledger(evidence_path, preflight)
+        _write_gate_evidence_ledger(path, ledger)
     return ledger
 
 
@@ -136,39 +160,40 @@ def record_many_gate_evidence(
         return []
     _enforce_worker_evidence_boundary(evidence_path)
     path = gate_evidence_path_for_preflight(evidence_path)
-    ledger = read_gate_evidence_ledger(path)
-    if not _ledger_matches_preflight(ledger, evidence_path, preflight):
-        ledger = _new_ledger(evidence_path, preflight)
-    entries = [item for item in ledger.get("entries", []) if isinstance(item, dict)]
-    recorded: list[dict[str, Any]] = []
-    for record in records:
-        gate = str(record.get("gate") or "").strip()
-        if not gate:
-            raise ValueError("gate evidence record requires a non-empty gate")
-        status = str(record.get("status") or "SUCCESS").strip()
-        if status not in {"SUCCESS", "FAIL"}:
-            raise ValueError(f"gate evidence record has invalid status: {status}")
-        fields = _canonical_gate_fields(
-            gate,
-            _string_fields(record.get("fields") or {}),
-            preflight,
-        )
-        capsule_binding = _capsule_binding_for_preflight(evidence_path, preflight)
-        if capsule_binding:
-            fields[CAPSULE_BINDING_FIELD] = capsule_binding
-        entry = {
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "gate": gate,
-            "status": status,
-            "source": str(record.get("source") or "manual"),
-            "evidence": str(record.get("evidence") or ""),
-            "fields": dict(sorted(fields.items())),
-        }
-        entries.append(entry)
-        recorded.append(entry)
-    _refresh_ledger_binding(ledger, evidence_path, preflight)
-    ledger["entries"] = entries
-    _write_gate_evidence_ledger(path, ledger)
+    with state_lock(path):
+        ledger = read_gate_evidence_ledger(path)
+        if not _ledger_matches_preflight(ledger, evidence_path, preflight):
+            ledger = _new_ledger(evidence_path, preflight)
+        entries = [item for item in ledger.get("entries", []) if isinstance(item, dict)]
+        recorded: list[dict[str, Any]] = []
+        for record in records:
+            gate = str(record.get("gate") or "").strip()
+            if not gate:
+                raise ValueError("gate evidence record requires a non-empty gate")
+            status = str(record.get("status") or "SUCCESS").strip()
+            if status not in {"SUCCESS", "FAIL"}:
+                raise ValueError(f"gate evidence record has invalid status: {status}")
+            fields = canonical_gate_fields(
+                gate,
+                _string_fields(record.get("fields") or {}),
+                preflight,
+            )
+            capsule_binding = _capsule_binding_for_preflight(evidence_path, preflight)
+            if capsule_binding:
+                fields[CAPSULE_BINDING_FIELD] = capsule_binding
+            entry = {
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "gate": gate,
+                "status": status,
+                "source": str(record.get("source") or "manual"),
+                "evidence": str(record.get("evidence") or ""),
+                "fields": dict(sorted(fields.items())),
+            }
+            entries.append(entry)
+            recorded.append(entry)
+        _refresh_ledger_binding(ledger, evidence_path, preflight)
+        ledger["entries"] = entries
+        _write_gate_evidence_ledger(path, ledger)
     return recorded
 
 
@@ -218,30 +243,63 @@ def bind_gate_evidence_to_capsule(
     if not binding:
         return 0
     path = gate_evidence_path_for_preflight(evidence_path)
-    ledger = read_gate_evidence_ledger(path)
-    if not _ledger_matches_preflight(ledger, evidence_path, preflight):
-        return 0
-    required_gates = {str(gate) for gate in (preflight.get("route") or {}).get("gates", [])}
     changed = 0
-    entries = ledger.get("entries")
-    if not isinstance(entries, list):
-        return 0
-    for entry in entries:
-        if (
-            not isinstance(entry, dict)
-            or entry.get("status") != "SUCCESS"
-            or str(entry.get("gate") or "") not in required_gates
-        ):
-            continue
-        fields = _string_fields(entry.get("fields") or {})
-        if fields.get(CAPSULE_BINDING_FIELD) == binding:
-            continue
-        fields[CAPSULE_BINDING_FIELD] = binding
-        entry["fields"] = dict(sorted(fields.items()))
-        changed += 1
-    if changed:
-        _write_gate_evidence_ledger(path, ledger)
+    with state_lock(path):
+        ledger = read_gate_evidence_ledger(path)
+        if not _ledger_matches_preflight(ledger, evidence_path, preflight):
+            return 0
+        required_gates = {str(gate) for gate in (preflight.get("route") or {}).get("gates", [])}
+        entries = ledger.get("entries")
+        if not isinstance(entries, list):
+            return 0
+        for entry in entries:
+            if (
+                not isinstance(entry, dict)
+                or entry.get("status") != "SUCCESS"
+                or str(entry.get("gate") or "") not in required_gates
+            ):
+                continue
+            fields = _string_fields(entry.get("fields") or {})
+            if fields.get(CAPSULE_BINDING_FIELD) == binding:
+                continue
+            fields[CAPSULE_BINDING_FIELD] = binding
+            entry["fields"] = dict(sorted(fields.items()))
+            changed += 1
+        if changed:
+            _write_gate_evidence_ledger(path, ledger)
     return changed
+
+
+def resync_gate_evidence_ledger(evidence_path: Path, preflight: dict[str, Any]) -> None:
+    """Refresh the ledger's preflight binding after we mutate preflight.json ourselves.
+
+    agent-hook.py's _register_started_run rewrites preflight.json in place to
+    add agent_run_id right after "request intake" was already recorded
+    against the pre-mutation content. Left alone, the ledger's stored
+    preflight_evidence_sha256 goes stale, and the next gate write's self-heal
+    check (record_many_gate_evidence / register_repair_attempt: "a stale
+    ledger for the current preflight is not the same as an empty one") can no
+    longer tell that stale-because-we-just-mutated-it apart from
+    stale-because-this-is-a-genuinely-different-request, and silently wipes
+    every already-recorded entry -- including "request intake" -- on every
+    real task that reaches this point, not just when a new request begins.
+    Call this immediately after any in-place preflight.json mutation whose
+    route/request identity did not actually change.
+    """
+
+    _enforce_worker_evidence_boundary(evidence_path)
+    path = gate_evidence_path_for_preflight(evidence_path)
+    with state_lock(path):
+        ledger = read_gate_evidence_ledger(path)
+        if not ledger or ledger.get("invalid_json"):
+            return
+        # Only resync the binding fields when the route identity itself is
+        # unchanged. If it genuinely differs (a real new request), leave the
+        # mismatch alone so the normal self-heal path replaces the ledger.
+        if ledger.get("route_fingerprint") != route_fingerprint(preflight.get("route") or {}):
+            return
+        _refresh_ledger_binding(ledger, evidence_path, preflight)
+        _write_gate_evidence_ledger(path, ledger)
 
 
 def _enforce_worker_evidence_boundary(evidence_path: Path) -> None:
@@ -389,14 +447,34 @@ def synthesize_gate_evidence(
     if gate == "tests":
         return f"test/check run: {fields['check']}; result: {fields['result']}", []
     if gate == "graphify readiness":
+        invalid = [
+            field
+            for field in FIELD_REQUIREMENTS[gate]
+            if fields[field].strip().lower() != "success"
+        ]
+        if invalid:
+            return "", [
+                "graphify readiness fields must use exact success status: "
+                + ", ".join(invalid)
+            ]
         return (
-            f"graphify readiness: cli={fields['cli']}; installed and read skill doc="
+            f"graphify readiness: cli={fields['cli']}; skill doc="
             f"{fields['skill_doc']}; runtime links={fields['runtime_links']}; "
-            f"git ownership={fields['git_ownership']}; "
-            f"project integration={fields['project_integration']}; "
-            f"target graph={fields['graph']}; query smoke={fields['query_smoke']}",
+            f"git ownership={fields['git_ownership']}; project integration="
+            f"{fields['project_integration']}; target graph={fields['graph']}; "
+            f"query smoke={fields['query_smoke']}",
             [],
         )
+    if not evidence.strip():
+        generic_fields = {
+            key: value
+            for key, value in fields.items()
+            if key != CAPSULE_BINDING_FIELD and value.strip()
+        }
+        if generic_fields:
+            evidence = "; ".join(
+                f"{key}={generic_fields[key]}" for key in sorted(generic_fields)
+            )
     return evidence, []
 
 
@@ -440,6 +518,27 @@ def incomplete_gate_evidence_failures(diagnostics: dict[str, Any]) -> list[str]:
             f"structured gate evidence for {gate} is incomplete: " + ", ".join(str(item) for item in missing)
         )
     return failures
+
+
+def latest_successful_gate_fields(
+    *,
+    route: dict[str, Any],
+    evidence_path: Path,
+    gate: str,
+) -> dict[str, str]:
+    """Return the latest current-route fields for one successful gate."""
+
+    ledger = read_gate_evidence_ledger(gate_evidence_path_for_preflight(evidence_path))
+    if not _ledger_matches_route(ledger, evidence_path, route):
+        return {}
+    for entry in reversed(ledger.get("entries", [])):
+        if (
+            isinstance(entry, dict)
+            and entry.get("status") == "SUCCESS"
+            and str(entry.get("gate") or "") == gate
+        ):
+            return _string_fields(entry.get("fields") or {})
+    return {}
 
 
 def _new_ledger(evidence_path: Path, preflight: dict[str, Any]) -> dict[str, Any]:
@@ -489,7 +588,7 @@ def _refresh_ledger_binding(
     ledger["route_fingerprint"] = route_fingerprint(preflight.get("route") or {})
 
 
-def _canonical_gate_fields(
+def canonical_gate_fields(
     gate: str,
     fields: dict[str, str],
     preflight: dict[str, Any],

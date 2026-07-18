@@ -14,6 +14,7 @@ from agent_delegation_plan import (
 )
 from agent_gate_evidence import (
     bind_gate_evidence_to_capsule,
+    canonical_gate_fields,
     missing_structured_gate_fields,
     parse_field,
     record_gate_evidence,
@@ -21,7 +22,7 @@ from agent_gate_evidence import (
     reset_gate_evidence_ledger,
     synthesize_gate_evidence,
 )
-from agent_finish_gate_policy import MULTI_AGENT_GATE
+from agent_finish_gate_policy import MULTI_AGENT_GATE, validate_gate_evidence
 from agent_hook_runtime import finish_with_result, print_status
 
 
@@ -56,7 +57,7 @@ def gate_hook(args: argparse.Namespace) -> int:
         [f"gate evidence recorded: {entry['gate']}"],
         args.output,
         {"gate_evidence": entry},
-        args.retry_attempt,
+        args.repair_cycle,
     )
 
 
@@ -77,7 +78,7 @@ def gate_batch_hook(args: argparse.Namespace) -> int:
         details,
         args.output,
         {"gate_evidence": entries},
-        args.retry_attempt,
+        args.repair_cycle,
     )
 
 
@@ -220,12 +221,11 @@ def _validate_records_before_write(
             continue
         gate = str(record.get("gate") or "").strip()
         evidence = str(record.get("evidence") or "")
-        fields = {str(key): str(value) for key, value in (record.get("fields") or {}).items()}
-        if gate == "source docs":
-            # The ledger replaces this placeholder with the canonical current
-            # route manifest when it writes the record. Do not make callers
-            # restate that manifest merely to satisfy local field validation.
-            fields.setdefault("required_docs", "bound from current route manifest")
+        fields = canonical_gate_fields(
+            gate,
+            {str(key): str(value) for key, value in (record.get("fields") or {}).items()},
+            preflight,
+        )
         missing = missing_structured_gate_fields(gate, evidence, fields)
         if missing:
             raise ValueError(
@@ -233,22 +233,27 @@ def _validate_records_before_write(
                 + ", ".join(missing)
             )
 
-        if gate == MULTI_AGENT_GATE:
-            synthesized, synthesis_failures = synthesize_gate_evidence(
-                gate,
-                evidence,
-                fields,
+        synthesized, synthesis_failures = synthesize_gate_evidence(
+            gate,
+            evidence,
+            fields,
+        )
+        if synthesis_failures:
+            raise ValueError(
+                f"structured gate record for {gate} is incomplete: "
+                + ", ".join(synthesis_failures)
             )
-            if synthesis_failures:
-                raise ValueError(
-                    f"structured gate record for {gate} is incomplete: "
-                    + ", ".join(synthesis_failures)
-                )
-            gate_evidence[gate] = synthesized or evidence
-        else:
-            gate_evidence[gate] = evidence
+        gate_evidence[gate] = synthesized or evidence
         if gate == MULTI_AGENT_GATE or gate in MULTI_AGENT_ROUTE_GATES:
             validates_delegation_plan = True
+
+    semantic_failures = validate_gate_evidence(
+        gate_evidence,
+        list(gate_evidence),
+        route=route,
+    )
+    if semantic_failures:
+        raise ValueError("; ".join(semantic_failures))
 
     if not validates_delegation_plan:
         return

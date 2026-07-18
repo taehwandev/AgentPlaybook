@@ -120,7 +120,25 @@ SCRIPT_ALIASES = {
     "workflow-dispatch": "workflow_dispatch.py",
     "workflow-dispatch-launch": "workflow_dispatch_launch.py",
 }
-HOOK_ALIASES = {"start", "handoff", "gate", "review", "finish"}
+HOOK_ALIASES = {
+    "start",
+    "handoff",
+    "gate",
+    "gate-batch",
+    "review",
+    "finish",
+    "skill-feedback",
+    "skill-curate",
+    "skill-review",
+    "skill-maintenance",
+    "repair-verify",
+}
+# Calling agent-finish-check.py directly skips agent-hook.py's repair-cycle
+# ceremony (the structural repair receipt checks in
+# main()) entirely -- it is a lower-level fallback for human debugging only,
+# never the normal agent path. Require an explicit opt-in so an agent cannot
+# casually use it to dodge the wrapped `finish` hook's guardrails.
+DIRECT_FINISH_CHECK_ENV = "AGENTPLAYBOOK_ALLOW_DIRECT_FINISH_CHECK"
 
 def main():
     if len(sys.argv) < 2:
@@ -131,6 +149,12 @@ def main():
     if script_alias in HOOK_ALIASES:
         script_name = "agent-hook.py"
         passthrough_args.insert(0, script_alias)
+    elif script_alias == "agent-finish-check" and os.environ.get(DIRECT_FINISH_CHECK_ENV) != "1":
+        return _soft_fail(
+            "direct agent-finish-check is a human-debugging fallback and skips the "
+            "finish hook's repair-cycle checks; run 'agentplaybook-hook finish' instead, "
+            f"or set {DIRECT_FINISH_CHECK_ENV}=1 to use it directly on purpose"
+        )
     else:
         script_name = SCRIPT_ALIASES.get(script_alias)
     if not script_name:

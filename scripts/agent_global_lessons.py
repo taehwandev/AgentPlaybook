@@ -10,6 +10,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_lesson_store import upsert_retrospective_candidate
+from agent_skill_retention import skill_learning_summary
+from workflow_common import (
+    REPAIR_CYCLE_LIMIT,
+    REPAIR_POLICY,
+    REPAIR_STOP_CONDITION,
+    RESUME_SCOPE,
+)
 
 SCHEMA_VERSION = 1
 STATE_HOME_ENV = "AGENTPLAYBOOK_STATE_HOME"
@@ -30,7 +38,8 @@ def lesson_summary(limit: int = 10) -> dict[str, Any]:
         "available": root.exists(),
         "accepted": [],
         "promoted": [],
-        "candidate_count": _count_json_files(root / "lessons" / "inbox"),
+        "candidate_count": _count_unique_lessons(root / "lessons" / "inbox"),
+        "skill_learning": skill_learning_summary(root),
     }
     for status in LESSON_STATUSES:
         summary[status] = _read_lessons(root / "lessons" / status, limit)
@@ -41,25 +50,11 @@ def write_retrospective_candidate(finish_result: dict[str, Any]) -> dict[str, An
     if not finish_result.get("retrospective_required"):
         return {"created": False, "reason": "retrospective_not_required"}
 
-    lesson = retrospective_candidate(finish_result)
-    root = state_home()
-    relative_path = Path("lessons") / "inbox" / f"{lesson['created_at_compact']}-{lesson['lesson_id']}.json"
-    path = root / relative_path
-    try:
-        _atomic_write_json(path, lesson)
-        _update_index(root, relative_path, lesson)
-    except OSError as error:
-        return {
-            "created": False,
-            "reason": "write_failed",
-            "error": error.__class__.__name__,
-        }
-    return {
-        "created": True,
-        "status": lesson["promotion_status"],
-        "lesson_id": lesson["lesson_id"],
-        "relative_path": str(relative_path),
-    }
+    return upsert_retrospective_candidate(
+        state_home(),
+        retrospective_candidate(finish_result),
+        occurrence_id=str(finish_result.get("occurrence_id") or ""),
+    )
 
 
 def retrospective_candidate(finish_result: dict[str, Any]) -> dict[str, Any]:
@@ -73,7 +68,7 @@ def retrospective_candidate(finish_result: dict[str, Any]) -> dict[str, Any]:
         "missed_gates": missed_gates,
         "policy_failure_count": policy_failures,
         "root_cause": root_cause,
-        "next_action": "run_actionable_retrospective_then_retry_same_scope",
+        "next_action": "repair_verify_then_resume_failed_checkpoint",
     }
     lesson_id = hashlib.sha256(json.dumps(seed, sort_keys=True).encode("utf-8")).hexdigest()[:16]
     return {
@@ -87,13 +82,16 @@ def retrospective_candidate(finish_result: dict[str, Any]) -> dict[str, Any]:
         "missed_gates": missed_gates,
         "policy_failure_count": policy_failures,
         "root_cause": root_cause,
-        "next_action": "run_actionable_retrospective_then_retry_same_scope",
+        "next_action": "repair_verify_then_resume_failed_checkpoint",
         "required_retrospective_output": "immediate_correction_plan",
-        "retry_rule": "second_attempt_cites_retrospective_plan_and_resumes_first_missed_gate",
-        "second_attempt_requirement": "cite_or_apply_retrospective_correction_plan",
-        "durable_fix_rule": "apply_safe_scoped_fix_immediately_else_record_follow_up_owner",
+        "repair_rule": "improve_playbook_doc_hook_validator_or_test_before_resume",
+        "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
+        "repair_policy": REPAIR_POLICY,
+        "resume_rule": f"resume_{RESUME_SCOPE}_after_verified_improvement",
+        "stop_rule": REPAIR_STOP_CONDITION,
+        "durable_fix_rule": "apply_safe_scoped_fix_immediately_else_stop_for_owner",
         "promotion_target": "shared_doc_or_hook_or_test",
-        "promotion_status": "candidate",
+        "promotion_status": "repair_required",
         "privacy": "safe_slugs_only",
     }
 
@@ -129,38 +127,6 @@ def _slug(value: str) -> str:
     return normalized or "unknown"
 
 
-def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    tmp.replace(path)
-
-
-def _update_index(root: Path, relative_path: Path, lesson: dict[str, Any]) -> None:
-    path = root / "index.json"
-    try:
-        index = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        index = {"schema_version": SCHEMA_VERSION, "lessons": []}
-
-    entry = {
-        "lesson_id": lesson["lesson_id"],
-        "status": lesson["status"],
-        "failure_type": lesson["failure_type"],
-        "root_cause": lesson["root_cause"],
-        "promotion_status": lesson["promotion_status"],
-        "relative_path": str(relative_path),
-    }
-    lessons = [item for item in index.get("lessons", []) if item.get("lesson_id") != lesson["lesson_id"]]
-    lessons.append(entry)
-    index = {
-        "schema_version": SCHEMA_VERSION,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-        "lessons": lessons[-100:],
-    }
-    _atomic_write_json(path, index)
-
-
 def _read_lessons(path: Path, limit: int) -> list[dict[str, Any]]:
     lessons: list[dict[str, Any]] = []
     if not path.exists():
@@ -182,7 +148,16 @@ def _read_lessons(path: Path, limit: int) -> list[dict[str, Any]]:
     return lessons
 
 
-def _count_json_files(path: Path) -> int:
+def _count_unique_lessons(path: Path) -> int:
     if not path.exists():
         return 0
-    return sum(1 for _ in path.glob("*.json"))
+    lesson_ids: set[str] = set()
+    for lesson_path in path.glob("*.json"):
+        try:
+            lesson = json.loads(lesson_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        lesson_id = str(lesson.get("lesson_id") or "")
+        if lesson_id:
+            lesson_ids.add(lesson_id)
+    return len(lesson_ids)

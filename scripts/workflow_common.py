@@ -9,9 +9,10 @@ from typing import Iterable, TypeVar
 ROOT = Path(__file__).resolve().parents[1]
 QUESTION_ROUTE_COMMANDS = {"triage", "ambiguity"}
 ANSWER_ONLY_CLARITY = "direct-question"
-RETRY_LIMIT = 1
-ATTEMPT_LIMIT = RETRY_LIMIT + 1
-RETRY_SCOPE = "first_missed_gate"
+REPAIR_CYCLE_LIMIT = 1
+REPAIR_POLICY = "retrospective_repair_verify_resume"
+RESUME_SCOPE = "first_failed_checkpoint"
+REPAIR_STOP_CONDITION = "same_failure_after_repair_or_unsafe_repair"
 SIGNAL_DISPLAY = {
     "SUCCESS": "\U0001f431\U0001f7e2 SUCCESS",
     "FAIL": "\U0001f431\U0001f534 FAIL",

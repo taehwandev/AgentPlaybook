@@ -15,15 +15,25 @@ from workflow_catalog import (
 )
 from support.graphify_setup import inspect_target_graphify
 from workflow_common import (
-    ATTEMPT_LIMIT,
-    RETRY_LIMIT,
-    RETRY_SCOPE,
+    REPAIR_CYCLE_LIMIT,
+    REPAIR_POLICY,
+    REPAIR_STOP_CONDITION,
+    RESUME_SCOPE,
     ROOT,
     QUESTION_ROUTE_COMMANDS,
     unique,
 )
 from workflow_doc_graph import expand_doc_matches, graph_required_docs
-from workflow_gate_policy import add_automatic_gates, automatic_docs
+from workflow_gate_policy import (
+    SKILL_CURATE_HOOK,
+    SKILL_FEEDBACK_HOOK,
+    SKILL_MAINTENANCE_HOOK,
+    SKILL_REVIEW_HOOK,
+    WORK_PRODUCING_COMMANDS,
+    add_automatic_gates,
+    automatic_docs,
+    skill_feedback_policy,
+)
 from workflow_doc_surfaces import infer_surface_docs
 from workflow_parallel import parallel_execution_plan
 from workflow_search import SearchOutcome, search_docs_outcome
@@ -247,9 +257,11 @@ def resolve_docs(
         "reference_docs": reference_docs,
         "gates": gates,
         "hooks": route_hooks(command),
-        "attempt_limit": ATTEMPT_LIMIT,
-        "retry_limit": RETRY_LIMIT,
-        "retry_scope": RETRY_SCOPE,
+        "skill_feedback": skill_feedback_policy(command),
+        "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
+        "repair_policy": REPAIR_POLICY,
+        "resume_scope": RESUME_SCOPE,
+        "stop_condition": REPAIR_STOP_CONDITION,
         "parallel_execution": parallel_execution_plan(command, gates),
         "gate_ledger": [
             {
@@ -406,6 +418,63 @@ def route_hooks(command: str) -> list[dict[str, object]]:
         },
         ]
     )
+    if command in WORK_PRODUCING_COMMANDS:
+        hooks.append(
+            {
+                "hook": SKILL_FEEDBACK_HOOK,
+                "required": False,
+                "when": (
+                    "after a successful work-producing task when a skill actually used in the "
+                    "task produced a structured observation"
+                ),
+                "command": (
+                    f"{launcher} {SKILL_FEEDBACK_HOOK} "
+                    "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+                    "--skill-feedback-outcome observed --skill-id <safe_skill_slug> "
+                    "--feedback-signal <safe_signal_slug>"
+                ),
+            }
+        )
+        hooks.extend(
+            [
+                {
+                    "hook": SKILL_CURATE_HOOK,
+                    "required": False,
+                    "when": "later or periodically, when bounded deterministic curation capacity is available",
+                    "command": (
+                        f"{launcher} {SKILL_CURATE_HOOK} "
+                        "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>"
+                    ),
+                },
+                {
+                    "hook": SKILL_REVIEW_HOOK,
+                    "required": False,
+                    "when": "later, when deterministic curation marks a repeated observation review-ready",
+                    "command": (
+                        f"{launcher} {SKILL_REVIEW_HOOK} "
+                        "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+                        "--feedback-candidate-id <opaque_candidate_id> "
+                        "--skill-review-outcome <no_change|stage_patch> "
+                        "[--feedback-gap <safe_gap_slug> --change-type <safe_change_slug> "
+                        "--promotion-target <safe_target_slug>]"
+                    ),
+                },
+                {
+                    "hook": SKILL_MAINTENANCE_HOOK,
+                    "required": False,
+                    "when": "after separate staged skill maintenance has been verified",
+                    "command": (
+                        f"{launcher} {SKILL_MAINTENANCE_HOOK} "
+                        "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+                        "--feedback-candidate-id <opaque_candidate_id> "
+                        "--skill-maintenance-outcome <applied|rejected> "
+                        "[--maintenance-target <changed_skill_path> "
+                        "--verification-kind <py_compile|unittest|vibeguard|workflow_validate> "
+                        "--maintenance-test-selector <safe_unittest_selector>]"
+                    ),
+                },
+            ]
+        )
     return hooks
 
 
@@ -421,6 +490,7 @@ def _review_hook_command(command: str) -> str:
         f"{launcher} review "
         "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
         "--review-scope working-tree "
+        "--review-outcome <pass|findings> "
         "--code-review-evidence \"<evidence>\" "
         "--docs-freshness-evidence \"<evidence>\" "
     )

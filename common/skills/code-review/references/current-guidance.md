@@ -117,17 +117,25 @@ as a read-only gate:
 - Do not let the hook apply documentation updates, code review fixes, or
   structure rewrites. It records whether those decisions were already handled or
   should fail.
+- Pass the structural review outcome separately from prose evidence:
+  `--review-outcome pass` only when no unresolved finding remains, and
+  `--review-outcome findings` whenever any must-fix or unresolved finding
+  remains. The hook must not infer pass/fail from keywords inside the evidence
+  sentence.
 - For code-work routes, the hook must fail when boundary-plan evidence or
   side-effect audit evidence is missing from the route review. These are
   workflow evidence checks, not optional review commentary.
 - If the diff is too broad to review confidently in one pass, fail the hook and
-  split the work before retrying.
+  split the work before the repaired task resumes.
 - For changed development source/style files, apply the default size and
   ownership gates from
   `../../code-structure-ownership/references/current-guidance.md`. Test,
   fixture, mock, spec, generated, config/build, Markdown, MDX, prose
   documentation, and other docs are excluded from those hard gates unless a
   repo-local rule explicitly treats them as runtime source.
+- Check both final file size and per-file added lines before review. A new
+  runtime module can be below the total-size ceiling and still exceed the
+  200-added-line hard gate; split it by ownership before invoking the hook.
 - Enforce purpose-based file, function, package, and module ownership using the
   canonical split criteria in
   `../../code-structure-ownership/references/current-guidance.md`. This review
@@ -138,12 +146,15 @@ as a read-only gate:
 - On `FAIL`, explain the failing check in detail: exact path and line when
   available, observed size, configured threshold, why it blocks approval, and
   the smallest safe next action.
-- Do not stop at a vague failure report. After a first `FAIL`, immediately run
-  an actionable retrospective for the failed review scope, record the correction
-  plan, fix scoped and safe issues outside the hook, then rerun the same hook
-  once with `--retry-attempt 1`. The retry must cite or apply that plan. Ask
-  only when recovery requires a scope decision, destructive action, credential
-  change, external state, or a broader refactor.
+- Do not stop at a vague failure report. Follow the canonical bounded repair
+  cycle in `workflows/skills/retrospective-learning/SKILL.md`: run an actionable
+  retrospective, improve and verify the owning AgentPlaybook guidance, hook,
+  validator, or test, fix scoped and safe issues outside the read-only hook,
+  then resume the review task at `first_failed_checkpoint`. Ask only when
+  recovery requires a scope decision, destructive action, credential change,
+  external state, or a broader refactor. Stop on the same post-repair failure,
+  unsafe or ambiguous repair, uncertain source ownership, or exhausted repair
+  cycle.
 - If the review finds a required fix, report the smallest actionable failure and
   run the normal workflow for that fix. Do not hide the fix inside the hook.
 - If a hook command changes the worktree, treat that as a hook failure.

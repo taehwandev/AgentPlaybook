@@ -30,8 +30,9 @@ Agent, or another coding agent can work with the same operating discipline.
 
 Agentic behavior comes from connecting that manifest to execution: selecting
 the right route, recording run state, deciding whether to work serially or
-delegate to subagents, collecting evidence, recovering from missed gates, and
-updating durable lessons when the same failure repeats. When the runtime
+delegate to subagents, collecting evidence, repairing missed gates before
+resuming, and turning repeated lesson candidates into verified durable
+improvements. When the runtime
 supports subagents or launchers, use the split decision and run-state evidence
 as the delegation contract.
 
@@ -231,10 +232,14 @@ The route output is the command manifest for the agent:
 - `parallel_execution`: use this phase manifest to decide what can run in
   parallel and what must stay serial. It is the executable hint for runtimes
   that otherwise treat the gate list as one ordered chain.
-- `attempt_limit`: original execution plus one retry for the missed gate.
-- `retry_limit`: maximum recovery retries for the missed gate; this should be
-  `1`.
-- `retry_scope`: where recovery resumes; this should be `first_missed_gate`.
+- `repair_cycle_limit`: maximum retrospective-repair cycles for one failed
+  scope; this must be `1`.
+- `repair_policy`: required recovery sequence; this must be
+  `retrospective_repair_verify_resume`.
+- `resume_scope`: checkpoint where repaired work continues; this must be
+  `first_failed_checkpoint`.
+- `stop_condition`: terminal recovery condition; this must be
+  `same_failure_after_repair_or_unsafe_repair`.
 - `notes`: apply these routing hints before choosing commands or edits.
 - `missing`: stop if this is not empty; fix the playbook reference first.
 
@@ -321,6 +326,20 @@ forgets them:
   documentation decision, the affected source-of-truth doc path or doc class,
   and the reason the decision matches the behavior, workflow policy, public
   contract, operator action, or durable acceptance criteria changed.
+- `skill-feedback` (optional hook, not a gate): after successful work, ask one
+  bounded question about a skill actually used in the task. Queue only a
+  reusable content-free candidate. Missing feedback or storage failure cannot
+  fail finish, and a repeated candidate becomes separate bounded
+  skill-maintenance work rather than an immediate document edit. A failed
+  required hook or gate never uses this path; it follows the repair cycle.
+- `gate-batch` validates the complete batch before writing any entry. Structured
+  fields alone are not enough: each record must also satisfy that gate's
+  semantic evidence contract (for example, ambiguity evidence must explicitly
+  resolve blockers, and an alignment brief must name shared understanding,
+  differences, assumptions, and the user-visible checkpoint). After one batch
+  validation failure, correct every reported record before the single retry. If
+  the retry still fails, stop batching that scope, preserve this lesson, and
+  record gates individually so the failing checkpoint is isolated.
 - `tests`: add, update, or run the closest useful test/check for code work. A
   skipped test must include the command skipped, reason, and residual risk.
 - `boundary plan`: before code edits, name the owned boundary, file/module
@@ -333,9 +352,9 @@ forgets them:
 - `agentic run state`: for work-producing or multi-agent routes, record the
   current state, the next transition or resume point, the gate/command
   evidence that justifies that transition, the checkpoint or stop condition,
-  and blocker status. This is the workflow's memory for continuation, retry,
-  review, delegation, and retrospective restart; route output alone is not
-  execution evidence.
+  and blocker status. This is the workflow's memory for continuation,
+  repair-and-resume, review, delegation, and retrospective restart; route
+  output alone is not execution evidence.
 - `cycle contract`: for work-producing routes, state the current cycle type,
   input/source scope, allowed and forbidden changes, acceptance or verification
   method, stop condition, and next cycle/checkpoint before editing. This turns
@@ -437,11 +456,12 @@ shows which parts can overlap safely.
 For every scripted route, maintain a gate ledger while working:
 
 ```text
-Attempt for this gate: 1/2
 - gate: ...
   signal: SUCCESS | FAIL
   status: executed | failed | missed
   evidence: command, file, diff, note, or manual check
+  repair_cycle: unused | 1/1
+  resume_checkpoint: ...
 ```
 
 Do not wait until the final response to reconstruct the ledger from memory.
@@ -464,8 +484,9 @@ next: implementation
 Use these state names unless repo-local workflow defines a stricter model:
 `intake`, `oriented`, `scoped`, `acting`, `verifying`, `reviewing`, `done`,
 `blocked`, and `retrospective`. Update the state only when the transition has
-evidence. After a failed required gate, set the resume point to the first missed
-gate or same failed scope instead of restarting unrelated work.
+evidence. After a failed required gate, set the resume point to
+`first_failed_checkpoint`, complete the verified improvement required by the
+repair cycle, and resume there instead of restarting unrelated work.
 
 Do not use run-state notes to hide missing gate evidence. A run state is valid
 only when the named route gates, commands, checks, or manual observations also
@@ -504,7 +525,8 @@ Before finalizing, compare the route's `gates` with the ledger:
 - Every required gate must be marked `executed` with evidence.
 - Every required gate must be `🐱🟢 SUCCESS` before completion is reported.
 - If the route includes a `review hook` gate, run
-  `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py review ...` and record
+  `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py review --review-outcome <pass|findings> ...`
+  and record
   the hook result as that gate's evidence. Do not replace it with a memory-only
   manual review unless the hook is unavailable and the fallback is reported.
 - If any required gate is missing, do not continue finalization.
@@ -651,10 +673,11 @@ should not become the normal finish path.
 When a one-off manual override is unavoidable, keep the evidence machine-clear
 instead of relying on equivalent prose or alternate key spellings. Use
 `gate`/`gate-batch` for any structured gate because `--gate` supplies only a
-single evidence string. Use the
-Graphify readiness anchors exactly as
-`cli=`, `skill doc=`, `runtime links=`, `git ownership=`,
-`project integration=`, `target graph=`, and `query smoke=`. For `source docs`, say which
+single evidence string. Use the Graphify readiness anchors exactly as `cli=`,
+`skill doc=`, `runtime links=`, `git ownership=`, `project integration=`,
+`target graph=`, and `query smoke=`, with every value exactly `success`; keep
+descriptive facts in separate gate evidence rather than keyword-parsing the
+status. For `source docs`, say which
 source-of-truth class was searched and opened before implementation and how it
 affected the decision. For `documentation`, include the literal decision
 (`updated`, `created`, `unchanged`, or `not applicable`), the doc path or class,
@@ -676,12 +699,12 @@ the ledger. Parallel multi-agent validation returns the base and parallel-only
 missing fields together, rejects alias keys, and validates the structured
 delegation plan before worker execution. Existing incomplete ledgers remain a
 finish failure, but finish reports their full missing-field set at once so the
-single recovery attempt does not uncover a second hidden layer.
+single repair cycle does not uncover a second hidden layer.
 
 A later complete record for the same gate is a valid correction for a legacy
 incomplete ledger entry. Once merge selects that complete replacement, it must
 clear the older missing-field diagnostic; obsolete omissions must not consume
-the recovery retry after the gate has actually been corrected.
+the repair cycle after the gate has actually been corrected.
 
 Structured evidence synthesis preserves the original evidence note alongside
 the canonical fields for `source docs`, `documentation impact`, and
@@ -735,29 +758,33 @@ VibeGuard output remains a blocker.
 
 If the agent missed any required gate:
 
-1. Stop the current attempt before final report, commit, release, or handoff.
+1. Stop finalization before final report, commit, release, or handoff.
 2. Identify the exact gate that was skipped and what work happened after it.
-3. Resume at the first missed gate only; do not restart the whole route.
-4. Roll back only dependent agent-made changes after the missed gate when safe.
+3. Preserve `first_failed_checkpoint` as the resume point; do not restart the
+   whole route.
+4. Roll back only dependent agent-made changes after that checkpoint when safe.
    Preserve pre-existing user changes and ask before destructive cleanup.
-5. If finish-check sets `retrospective_required` or the hook/gate returns the
-   first `FAIL`, run `workflows/skills/retrospective-learning/SKILL.md`, inspect the
-   generated global lesson candidate when available, record the immediate
-   correction plan, and apply safe scoped fixes before retrying.
-   For finish-check evidence failures, the correction plan must copy the
-   validator's required evidence fields into the next gate evidence; a summary
-   that sounds complete but omits those fields is another missed gate.
-6. Re-execute the missed gate one time. The retry evidence must cite or apply
-   the retrospective correction plan, then refresh any downstream gate evidence
-   that depended on work after the missed gate.
-7. If the same missed-gate scope fails again after retrospective restart, stop
-   and promote the lesson to shared docs, tests, workflow validation, or hooks
-   before continuing.
+5. If finish-check sets `retrospective_required` or the hook/gate returns
+   `FAIL`, run the canonical
+   `workflows/skills/retrospective-learning/SKILL.md` repair cycle. Improve the
+   owning AgentPlaybook guidance, hook, validator, or test and verify that
+   improvement. A lesson candidate or correction-plan note alone is
+   insufficient. For finish-check evidence failures, the improvement must make
+   the validator's required evidence fields clear and testable.
+6. Resume the original task at `first_failed_checkpoint`, cite the verified
+   improvement, and refresh downstream evidence that depended on the failed
+   scope. This is continuation after repair, not an unchanged retry.
+7. Stop if the same failure signature recurs, the repair is unsafe or
+   ambiguous, canonical source ownership is uncertain, verification fails, or
+   the single repair cycle would be exceeded.
 
-The missed gate gets one recovery retry: original execution plus one recovery
-pass. The retrospective happens before that recovery pass. If that recovery pass
-misses the gate again, stop and report the blocker, the missed gate, the
-rollback status, and the retrospective summary.
+The route enforces `repair_cycle_limit=1`,
+`repair_policy=retrospective_repair_verify_resume`,
+`resume_scope=first_failed_checkpoint`, and
+`stop_condition=same_failure_after_repair_or_unsafe_repair`. The complete
+failure-repair decision rules remain owned by the retrospective workflow.
+Successful-task candidate deduplication is a separate non-blocking policy in the
+same skill bundle.
 
 ## Command Profiles
 
@@ -782,7 +809,9 @@ The current script exposes these stable command profiles:
   first, stop on findings, then record commit readiness for the staged diff.
 - `multi-agent`: delegated or parallel agent work with explicit write scopes.
 - `release`: packaging, deployment, migration, or rollback-sensitive work.
-- `retrospective`: capture a reusable lesson after a task or incident.
+- `retrospective`: apply the canonical failure-repair workflow after a failed
+  required hook or gate, or run a separately scoped skill-maintenance review for
+  queued successful-task feedback.
 
 ## Agent Consumption Rule
 

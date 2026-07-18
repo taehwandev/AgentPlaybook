@@ -728,10 +728,12 @@ Automation may proceed without another question only when all of these are true:
 If any condition fails, the runtime should stop at a decision point instead of
 continuing under an "auto" label.
 
-If a required route gate was missed, the runtime must stop finalization, roll
-back only dependent agent-made changes after the missed gate when safe, return
-to the first missed gate only, and run the retrospective workflow. The missed
-gate gets one recovery retry; the whole route is not restarted.
+If a required route gate fails, the runtime must stop finalization, preserve the
+first failed checkpoint, roll back only dependent agent-made changes when safe,
+and run the canonical retrospective workflow. It must improve and verify the
+owning AgentPlaybook document, hook, validator, or test before resuming that
+checkpoint. One repair cycle is allowed; the same failure signature or an
+unsafe or ambiguous repair stops the run.
 
 Human-visible signals are checked inside the workflow:
 

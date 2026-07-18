@@ -279,9 +279,12 @@ all of `index.md` when the concern is narrow or the document name is unknown.
 Then load only the matched documents relevant to the task.
 
 The route output contains `request_classification`, `docs`, `required_docs`,
-`reference_docs`, `gates`, `gate_ledger`, `attempt_limit`, `retry_limit`,
-`retry_scope`, `notes`, and `missing`. Read `required_docs` in order before
-editing or reviewing. Treat `docs` as the full candidate manifest and
+`reference_docs`, `gates`, `gate_ledger`, `skill_feedback`, `repair_cycle_limit`,
+`repair_policy`, `resume_scope`, `stop_condition`, `notes`, and `missing`.
+The recovery contract is `1`, `retrospective_repair_verify_resume`,
+`first_failed_checkpoint`, and
+`same_failure_after_repair_or_unsafe_repair`. Read `required_docs` in order
+before editing or reviewing. Treat `docs` as the full candidate manifest and
 `reference_docs` as lazy, on-demand context; open a reference only when the
 current task touches that concern, platform, gate, or verification path. Follow
 the gates as the task checklist, and stop if `missing` is not empty. Public gate
@@ -290,14 +293,16 @@ and hook signals must use only
 reports or machine-readable hook status. Completion requires every required
 gate to be `🐱🟢 SUCCESS`. If a
 required gate fails or lacks evidence, report `🐱🔴 FAIL`, follow missed-gate
-recovery, and do not finalize. On the first `FAIL`, run an actionable
-retrospective for that hook or gate scope, record the immediate correction
-plan, apply safe scoped fixes, and then use the one allowed retry for that same
-scope. The retry must cite or apply the retrospective correction plan. On the
-second `FAIL` for that scope, stop and promote the lesson to shared docs, tests,
-workflow validation, or hooks, or hand off the blocker before continuing. See
-`workflows/skills/scripted-agent-workflow/SKILL.md` for the full consumption
-rules.
+recovery, and do not finalize. On a required hook or gate `FAIL`, run the
+actionable retrospective, improve the canonical AgentPlaybook guidance, hook,
+validator, or test, verify that improvement, and then resume the original task
+at `first_failed_checkpoint`. A note or queued candidate alone is not recovery.
+Use one repair cycle only. Stop when the same failure signature recurs after
+repair, the repair is unsafe or ambiguous, canonical source ownership is
+uncertain, or verification fails. See
+`workflows/skills/retrospective-learning/SKILL.md` for the canonical decision
+rules and `workflows/skills/scripted-agent-workflow/SKILL.md` for route
+consumption.
 
 Consume the route's `parallel_execution.delegation_policy` as an execution
 contract, not a suggestion. When the runtime exposes subagents or parallel
@@ -424,6 +429,21 @@ updatable gate contract and the exception process are the source of truth in
 than self-judging, and load that card in Grill-Me or self-review to check the
 current work before completion.
 
+After a successful work-producing task, ask one bounded question about the
+skills actually used: would changing one of them materially improve a future
+agent's decision or verification? This is `skill feedback`, not a required
+finish gate. If there is no reusable gap, stop without creating a ceremonial
+record. If there is one, the optional `skill-feedback` hook records only a
+content-free observation for a skill actually used; it does not let the task
+agent declare a patch candidate. Deterministic curation queues review only after
+the same structured signal recurs in distinct opaque runs. A separate bounded
+reviewer chooses `no_change` or `staged_patch`, and canonical guidance changes
+only during later verified maintenance. Missing storage, tokens, reviewers, or
+maintenance capacity never changes a successful finish result. Default review
+to one capable agent and use additional reviewers only when impact and available
+budget justify them. The detailed decision and privacy rules are owned by
+`workflows/skills/retrospective-learning/SKILL.md`.
+
 Before final report, commit, release, or handoff, run the finish hook and pass
 evidence for every required route gate:
 
@@ -474,12 +494,16 @@ concrete evidence. Do not claim wrapper evidence exists unless the wrapper was
 actually run.
 
 When `agent-finish-check.py` marks `retrospective_required`, run the
-retrospective workflow before retrying or reporting completion, record the
-immediate correction plan, apply safe scoped fixes, then resume at the first
-missed gate or same failed scope. The resumed attempt must cite or apply that
-plan. Repeated or high-risk lessons should be promoted from
-`~/.agentplaybook/lessons/inbox/` into shared docs, tests, workflow validation,
-or hooks.
+canonical retrospective repair cycle before reporting completion. Improve and
+verify the owning AgentPlaybook guidance, hook, validator, or test, apply safe
+scoped fixes, then resume at `first_failed_checkpoint`. Stop instead of
+continuing when the same failure recurs after repair, the repair is unsafe or
+ambiguous, source ownership is uncertain, verification fails, or the single
+repair cycle is exhausted.
+
+Do not merge this failure path with successful-task skill feedback. Required
+hook or gate failure remains blocking and must use the repair-and-resume
+contract; skill feedback remains a non-blocking future-maintenance signal.
 
 VibeGuard `Needs review` is not completion unless the agent explicitly reports
 the review state and passes `--allow-vibeguard-review "<reason>"`. `🐱🔴 FAIL`,

@@ -1,0 +1,88 @@
+---
+keyflow_id: sys_retrospective_failure_repair
+status: stable
+type: human-reviewed-needed
+---
+
+# Required Hook Or Gate Failure Repair
+
+Use only when a required hook, gate, or finish check fails. This flow is
+blocking because the current task does not yet satisfy its execution contract.
+
+## Repair And Resume
+
+1. Stop finalization and preserve the original task checkpoint.
+2. Record the observed failure, earliest failed checkpoint, and stable failure
+   signature used to identify recurrence.
+3. Separate facts, assumptions, missed signals, and unknowns. Name the root
+   cause as a missing rule, unclear ownership, weak verification, stale docs,
+   missing platform guidance, ambiguous decision, or execution error.
+4. Select the canonical AgentPlaybook owner. Improve at least one durable
+   enforcement surface: owning guidance, hook, validator, or focused test. A
+   note or queued lesson alone is not a repair.
+5. Verify the repair with the closest allowlisted documentation, workflow,
+   hook, validator, or test check. Generate a structural repair receipt that
+   binds the actual changed target hash, current preflight and route, recorded
+   failure signature, checkpoint, verification kind, and zero exit status.
+   Natural-language claims are not repair evidence. Stop if the receipt cannot
+   be generated or validated.
+6. Apply any safe task-local dependent fix, then resume the original task at
+   `first_failed_checkpoint`. Do not replay the same action unchanged and do not
+   restart unrelated earlier work.
+7. Re-run the failed scope once. Stop if the same failure signature remains.
+
+## Executable Contract
+
+```text
+repair_cycle_limit: 1
+repair_policy: retrospective_repair_verify_resume
+resume_scope: first_failed_checkpoint
+stop_condition: same_failure_after_repair_or_unsafe_repair
+```
+
+This is one repair-and-resume cycle, not a generic retry budget.
+
+Generate the receipt first, then resume with its project-local path:
+
+```text
+agentplaybook-hook repair-verify \
+  --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> \
+  --repair-target <changed_file> \
+  --resume-checkpoint <recorded_failed_checkpoint> \
+  --repair-verification-kind <workflow_validate|unittest|py_compile|vibeguard>
+
+agentplaybook-hook <failed_hook> \
+  --repair-cycle 1 \
+  --repair-target <same_changed_file> \
+  --repair-evidence <project_local_receipt_path> \
+  --resume-checkpoint <same_recorded_failed_checkpoint> ...
+```
+
+The verifier accepts only a changed file under the project or playbook rules
+root and fixed verification kinds. A receipt becomes invalid when its target,
+preflight, route, failure signature, checkpoint, or result changes.
+
+## Output
+
+```text
+Failure repair:
+- trigger:
+- earliest failed checkpoint:
+- failure signature:
+- root cause:
+- canonical owner:
+- durable repair:
+- focused verification:
+- resume checkpoint:
+- repair cycle: 1/1
+- stop condition:
+```
+
+## Stop If
+
+- The repair needs product, security, release, data, or external-state authority
+  that the current task does not grant.
+- Canonical ownership is uncertain.
+- The repair is unsafe, ambiguous, too broad, or cannot be verified.
+- The same failure recurs after the verified repair.
+- The single repair cycle is exhausted.

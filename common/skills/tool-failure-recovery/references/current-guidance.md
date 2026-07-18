@@ -61,15 +61,17 @@ Hook failure:
 - Treat a hook `FAIL` as an active recovery task, not a handoff summary.
 - Read every failure detail and classify it as safe scoped fix, scope decision,
   environment blocker, external-state risk, or broader refactor.
-- Run an actionable retrospective for the first failed hook scope and record
-  the immediate correction plan.
-- Fix safe scoped issues immediately outside the hook, preserving the hook as a
-  read-only checker.
-- Rerun the same hook once with `--retry-attempt 1` after the retrospective and
-  fix. The retry evidence must cite or apply the correction plan.
+- Follow the canonical bounded repair cycle in
+  `workflows/skills/retrospective-learning/SKILL.md`: run an actionable
+  retrospective, improve and verify the owning AgentPlaybook guidance, hook,
+  validator, or test, then resume the original task at
+  `first_failed_checkpoint`.
+- Keep the hook read-only. Apply safe scoped fixes outside it only after the
+  durable AgentPlaybook improvement is verified.
 - If recovery requires destructive action, credentials, external state, or a
-  broader refactor, ask before acting. If the retry fails again for the same
-  scope, stop and promote the lesson or hand off the blocker before continuing.
+  broader refactor, ask before acting. Stop when the same failure signature
+  recurs after repair, the repair is unsafe or ambiguous, source ownership is
+  uncertain, or the single repair cycle would be exceeded.
 
 Lint or formatting failure:
 
@@ -100,7 +102,7 @@ When flakiness is suspected:
 - Rerun the smallest failing test or command once to confirm the pattern.
 - Check whether the failure depends on time, random order, parallel execution,
   network, filesystem state, cache, or shared external state.
-- Do not mark the work verified just because one retry passed.
+- Do not mark the work verified just because a repeated command happened to pass.
 - Stabilize the test or isolate the nondeterministic boundary when it is in
   scope.
 - If stabilization is out of scope, report the flaky signal, rerun count,

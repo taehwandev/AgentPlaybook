@@ -11,9 +11,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent_repair_ledger import (
+    checkpoint_failure_signature,
+    checkpoint_has_recorded_failure,
+    register_repair_attempt,
+)
+from agent_repair_receipt_validation import validate_repair_receipt
+from workflow_common import (
+    REPAIR_CYCLE_LIMIT,
+    REPAIR_POLICY,
+    REPAIR_STOP_CONDITION,
+    RESUME_SCOPE,
+)
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
-HOOK_RETRY_LIMIT = 1
 REVIEW_CHANGED_PATH_LIMIT = 25
 
 
@@ -92,9 +103,9 @@ def finish_with_result(
     details: list[str],
     output: Path | None,
     payload: dict[str, Any],
-    retry_attempt: int,
+    repair_cycle: int,
 ) -> int:
-    policy, policy_details = hook_failure_policy(success, retry_attempt)
+    policy, policy_details = hook_failure_policy(success, repair_cycle)
     details = [*details, *policy_details]
     evidence = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -110,33 +121,38 @@ def finish_with_result(
     return 0 if success else 1
 
 
-def hook_failure_policy(success: bool, retry_attempt: int) -> tuple[dict[str, Any], list[str]]:
+def hook_failure_policy(success: bool, repair_cycle: int) -> tuple[dict[str, Any], list[str]]:
     if success:
+        next_action = "resume_failed_checkpoint" if repair_cycle else "continue"
         return {
-            "retry_attempt": retry_attempt,
-            "retry_limit": HOOK_RETRY_LIMIT,
-            "next_action": "continue",
+            "repair_cycle": repair_cycle,
+            "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
+            "next_action": next_action,
         }, []
-    if retry_attempt < HOOK_RETRY_LIMIT:
+    if repair_cycle < REPAIR_CYCLE_LIMIT:
         return {
-            "retry_attempt": retry_attempt,
-            "retry_limit": HOOK_RETRY_LIMIT,
-            "next_action": "retrospective_then_retry_once",
-            "recovery_required": "actionable_retrospective",
+            "repair_cycle": repair_cycle,
+            "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
+            "repair_policy": REPAIR_POLICY,
+            "next_action": "retrospective_then_repair_verify_resume",
+            "recovery_required": "verified_playbook_improvement",
+            "resume_scope": RESUME_SCOPE,
         }, [
             "recovery request: diagnose every failure, run an actionable retrospective for this "
-            "failed scope, record the immediate correction plan, apply scoped and safe fixes "
-            "outside the hook, then rerun this hook once with --retry-attempt 1 and cite or "
-            "apply that plan",
+            "failed scope, improve the owning AgentPlaybook doc, hook, validator, or test, and "
+            "verify that repair outside the hook. Create a structural receipt with the "
+            "repair-verify hook, then pass its path with --repair-cycle 1, --repair-target, "
+            "--repair-evidence, and --resume-checkpoint before resuming the original task",
         ]
     return {
-        "retry_attempt": retry_attempt,
-        "retry_limit": HOOK_RETRY_LIMIT,
-        "next_action": "stop_after_retrospective_retry_failed",
+        "repair_cycle": repair_cycle,
+        "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
+        "next_action": "stop_after_repair_verification_failed",
         "recovery_required": "promote_or_handoff_lesson",
+        "stop_condition": REPAIR_STOP_CONDITION,
     }, [
-        "stop request: retry limit reached after the recovery attempt; promote the retrospective "
-        "lesson or hand off the blocker before continuing",
+        "stop request: the same checkpoint failed after one repair cycle; promote the lesson "
+        "or hand off the blocker and do not resume the original task",
     ]
 
 
@@ -144,11 +160,92 @@ def existing_path(value: str) -> Path:
     return Path(value).resolve()
 
 
-def retry_attempt(value: str) -> int:
-    attempt = int(value)
-    if attempt < 0 or attempt > HOOK_RETRY_LIMIT:
-        raise argparse.ArgumentTypeError(f"retry attempt must be 0 or {HOOK_RETRY_LIMIT}")
-    return attempt
+def repair_cycle(value: str) -> int:
+    cycle = int(value)
+    if cycle < 0 or cycle > REPAIR_CYCLE_LIMIT:
+        raise argparse.ArgumentTypeError(
+            f"repair cycle must be 0 or {REPAIR_CYCLE_LIMIT}"
+        )
+    return cycle
+
+
+def repair_context_failures(
+    target: str,
+    evidence: str,
+    checkpoint: str,
+    *,
+    route: dict[str, Any] | None = None,
+    evidence_path: Path | None = None,
+    preflight: dict[str, Any] | None = None,
+    project: Path | None = None,
+    rules: Path | None = None,
+) -> list[str]:
+    failures: list[str] = []
+    checkpoint_text = checkpoint.strip()
+    if not target.strip():
+        failures.append("--repair-target must name the changed repair file")
+    if not evidence.strip():
+        failures.append("--repair-evidence must name a structural repair receipt")
+    if not checkpoint_text:
+        failures.append("--resume-checkpoint must name the failed checkpoint to resume")
+    if failures:
+        return failures
+    if evidence_path is None or preflight is None or project is None or rules is None:
+        return [
+            "repair verification requires current project, rules, preflight, and failure ledger state"
+        ]
+    try:
+        checkpoint_failed = checkpoint_has_recorded_failure(
+            route=route or preflight.get("route") or {},
+            evidence_path=evidence_path,
+            checkpoint=checkpoint_text,
+        )
+    except OSError:
+        checkpoint_failed = False
+    if not checkpoint_failed:
+        failures.append(
+            f"--resume-checkpoint {checkpoint_text!r} has no recorded finish-check failure "
+            "for the current preflight/route; repair only the checkpoint that actually failed"
+        )
+        return failures
+    failures.extend(
+        validate_repair_receipt(
+            project=project,
+            rules=rules,
+            evidence_path=evidence_path,
+            preflight=preflight,
+            target=target,
+            checkpoint=checkpoint_text,
+            receipt_path=Path(evidence).expanduser(),
+        )
+    )
+    if failures:
+        return failures
+    try:
+        failure_signature = checkpoint_failure_signature(
+            route=route or preflight.get("route") or {},
+            evidence_path=evidence_path,
+            checkpoint=checkpoint_text,
+        )
+    except OSError:
+        failure_signature = ""
+    try:
+        allowed, _count = register_repair_attempt(
+            evidence_path=evidence_path,
+            preflight=preflight,
+            checkpoint=checkpoint_text,
+            limit=REPAIR_CYCLE_LIMIT,
+            failure_signature=failure_signature,
+        )
+    except PermissionError as error:
+        failures.append(str(error))
+        return failures
+    if not allowed:
+        failures.append(
+            f"repair cycle limit ({REPAIR_CYCLE_LIMIT}) already used for checkpoint "
+            f"{checkpoint_text!r}; promote the lesson or hand off instead of repairing again"
+        )
+    return failures
 
 
 def non_negative_int(value: str) -> int:

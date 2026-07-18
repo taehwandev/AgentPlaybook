@@ -273,5 +273,10 @@ Graphify routes include a `graphify readiness` gate. Record these fields:
 - `query_smoke`: the scoped query command and successful result; for a repo with
   local knowledge docs, include one representative doc/workflow-to-code path.
 
+Each ledger field is a structural status and must be exactly `success`. Put the
+paths, commands, graph counts, and query result in the gate's separate evidence
+text. Do not encode completion by searching descriptive field values for words
+such as `resolved`, `read`, `fresh`, or `passed`.
+
 Presence of a graph alone is insufficient. Likewise, installation output alone
 does not prove that the graph was built or queryable.

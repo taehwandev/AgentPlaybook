@@ -615,18 +615,28 @@ endpoints, CORS origins, asset hosts, and CDN origins.
 
 If the workflow router cannot run, the agent must stop and report the blocker or
 ask whether to continue with an `index.md` fallback. The route output contains
-`docs`, `gates`, `gate_ledger`, `attempt_limit`, `retry_limit`,
-`retry_scope`, `notes`, and `missing`. Agents should read the listed docs in
-order, use gates as the task checklist, mark each completed or failed gate with
+`docs`, `gates`, `gate_ledger`, `repair_cycle_limit`, `repair_policy`,
+`resume_scope`, `stop_condition`, `notes`, and `missing`. The recovery values
+are `1`, `retrospective_repair_verify_resume`, `first_failed_checkpoint`, and
+`same_failure_after_repair_or_unsafe_repair`. Agents should read the listed docs
+in order, use gates as the task checklist, mark each completed or failed gate with
 evidence while working, and show a short gate signal after each completed or
 failed gate or task step. Stop if any document is listed under `missing`.
 Completion requires every required gate to be `🐱🟢 SUCCESS`. `🐱🔴 FAIL` means
 blocked, failed, missed, or missing evidence and triggers missed-gate recovery:
-stop finalization, return to the first missed gate only, roll back dependent
-agent-made changes when safe, run an actionable retrospective, record the
-correction plan, and apply safe scoped fixes before the one recovery retry. The
-retry must cite or apply that plan; the whole route is not restarted. Do not
-report any third gate state.
+stop finalization, preserve `first_failed_checkpoint`, run an actionable
+retrospective, improve and verify the owning AgentPlaybook guidance, hook,
+validator, or test, apply safe scoped fixes, and resume the original task at
+that checkpoint. Stop on the same post-repair failure, unsafe or ambiguous
+repair, uncertain source ownership, or an exhausted single repair cycle. Do
+not report any third gate state. After a successful work-producing task, the
+agent may separately record best-effort feedback for a skill it actually used.
+That feedback is not a gate and records only a content-free observation. A
+deterministic curator queues repeated distinct observations for a separate
+bounded reviewer, which may choose `no_change` or stage a patch for later
+verified maintenance. Absence, storage failure, token limits, or reviewer
+unavailability do not affect completion, and no step auto-edits canonical
+guidance.
 
 ## Executable Evidence Gate
 
@@ -821,7 +831,8 @@ This is the core design: small cards, loaded only when relevant.
   effort.
 - Discover the repo stack before choosing package managers, framework APIs, or
   project commands.
-- Diagnose command failures from stdout/stderr before retrying or changing code.
+- Diagnose command failures from stdout/stderr before changing code or deciding
+  whether a changed condition justifies another execution.
 - Start most coding work from `common/skills/agent-operating-skill/SKILL.md`.
 - Use `workflows/skills/agent-task-lifecycle/SKILL.md` for multi-step agent work of any kind.
 - Use `workflows/skills/request-triage/SKILL.md` and

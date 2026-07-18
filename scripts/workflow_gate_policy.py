@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from agent_skill_learning import DEFAULT_REVIEW_THRESHOLD
+
 
 WORK_PRODUCING_COMMANDS = {
     "build",
@@ -70,6 +72,10 @@ SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 AGENTIC_RUN_STATE_GATE = "agentic run state"
 SOURCE_DOCS_GATE = "source docs"
 PRODUCT_REENTRY_GATE = "product route re-entry"
+SKILL_FEEDBACK_HOOK = "skill-feedback"
+SKILL_CURATE_HOOK = "skill-curate"
+SKILL_REVIEW_HOOK = "skill-review"
+SKILL_MAINTENANCE_HOOK = "skill-maintenance"
 
 # Triage/plan routes classify and recommend but do not run the product PRD/ARD
 # gates. When their output expands into an implementation roadmap, nothing used
@@ -139,6 +145,8 @@ def automatic_docs(command: str) -> list[str]:
         docs.append("workflows/skills/documentation-update/SKILL.md")
     if CYCLE_CONTRACT_GATE in gates:
         docs.append("workflows/skills/cycle-contract/SKILL.md")
+    if command in WORK_PRODUCING_COMMANDS:
+        docs.append("workflows/skills/retrospective-learning/SKILL.md")
     if PRODUCT_REENTRY_GATE in gates:
         docs.append("common/skills/product-spec-to-implementation/SKILL.md")
     if SOURCE_DOCS_GATE in gates:
@@ -288,3 +296,22 @@ def _insert_before_any(gates: list[str], gate: str, anchors: tuple[str, ...]) ->
             gates.insert(gates.index(anchor), gate)
             return
     gates.append(gate)
+
+
+def skill_feedback_policy(command: str) -> dict[str, object]:
+    """Describe successful-task skill learning without turning it into a gate."""
+
+    enabled = command in WORK_PRODUCING_COMMANDS
+    return {
+        "enabled": enabled,
+        "mode": "observe_curate_review_stage_maintain",
+        "trigger": "after_successful_work_producing_task",
+        "blocking": False,
+        "record_only_when": "actually_used_skill_and_structured_observation",
+        "candidate_threshold": DEFAULT_REVIEW_THRESHOLD,
+        "curation": "deterministic_distinct_occurrence_threshold",
+        "review": "separate_bounded_reviewer_no_change_or_staged_patch",
+        "write_policy": "staged_before_separate_verified_maintenance",
+        "maintenance": "separate_bounded_skill_maintenance_never_finish_gate",
+        "review_policy": "single_agent_default_optional_multi_agent_for_high_impact",
+    }
