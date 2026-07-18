@@ -11,7 +11,14 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from agent_review_structure import changed_source_paths, check_file_size, review_source_path
+from agent_review_structure import (
+    REVIEW_TEST_ADDED_LINE_LIMIT,
+    REVIEW_TEST_FILE_LINE_LIMIT,
+    changed_source_paths,
+    check_file_size,
+    review_source_path,
+    structure_review,
+)
 from agent_review_hook import structure_evidence_failures
 from agent_structure_rules import structure_rule_review
 
@@ -254,6 +261,116 @@ class AgentReviewStructureTests(unittest.TestCase):
             )
 
         self.assertTrue(any("allowed_new_paths" in failure for failure in result["failures"]))
+
+    def test_new_oversized_test_file_fails_against_the_wider_test_budget(self) -> None:
+        # Regression: test_exempt_path files used to skip check_file_size
+        # entirely, so a single test file could grow to thousands of lines
+        # with no gate ever flagging it (a real one reached 6,484 lines).
+        # Tests get a wider budget than production files, not an unbounded one.
+        result = {"failures": [], "warnings": []}
+
+        check_file_size(
+            Path("tests/test_something.py"),
+            ["x"] * (REVIEW_TEST_FILE_LINE_LIMIT + 1),
+            REVIEW_TEST_FILE_LINE_LIMIT,
+            {"status": "A", "additions": REVIEW_TEST_FILE_LINE_LIMIT + 1},
+            result,
+            max_added_lines=REVIEW_TEST_ADDED_LINE_LIMIT,
+        )
+
+        self.assertTrue(
+            any(f"new-file hard limit is {REVIEW_TEST_FILE_LINE_LIMIT}" in failure for failure in result["failures"])
+        )
+
+    def test_test_file_budget_is_wider_than_the_source_file_budget(self) -> None:
+        # A file just over the 500-line source limit must not fail as a test
+        # file -- that is exactly the wider-budget-not-unbounded distinction.
+        result = {"failures": [], "warnings": []}
+
+        check_file_size(
+            Path("tests/test_something.py"),
+            ["x"] * 501,
+            REVIEW_TEST_FILE_LINE_LIMIT,
+            {"status": "A", "additions": 501},
+            result,
+            max_added_lines=REVIEW_TEST_ADDED_LINE_LIMIT,
+        )
+
+        self.assertEqual([], result["failures"])
+
+    def test_structure_review_flags_a_new_oversized_test_file(self) -> None:
+        oversized_lines = "\n".join(f"    value_{index} = {index}" for index in range(REVIEW_TEST_FILE_LINE_LIMIT))
+        test_text = "def test_example():\n" + oversized_lines + "\n"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            (project / "tests").mkdir()
+            source = project / "tests" / "test_oversized.py"
+            source.write_text(test_text, encoding="utf-8")
+
+            def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+                if command[:3] == ["git", "rev-parse", "--verify"]:
+                    stdout = "abc\n"
+                elif command[:3] == ["git", "diff", "--name-status"]:
+                    stdout = "A\ttests/test_oversized.py\n"
+                elif command[:3] == ["git", "diff", "--numstat"]:
+                    line_count = len(test_text.splitlines())
+                    stdout = f"{line_count}\t0\ttests/test_oversized.py\n"
+                elif command[:2] == ["git", "ls-files"]:
+                    stdout = ""
+                else:
+                    stdout = ""
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": stdout,
+                    "stderr": "",
+                }
+
+            result = structure_review(project, 500, 120, run_command)
+
+        self.assertIn("tests/test_oversized.py", result["test_exempt_paths"])
+        self.assertTrue(
+            any("tests/test_oversized.py is a new development source" in failure for failure in result["failures"])
+        )
+
+    def test_structure_review_does_not_run_oversized_block_check_on_test_files(self) -> None:
+        # Tests remain exempt from the per-block/function span check -- a long
+        # setup or scenario method is a normal test shape, unlike a long
+        # production function.
+        oversized_lines = "\n".join(f"    value_{index} = {index}" for index in range(200))
+        test_text = "def test_example():\n" + oversized_lines + "\n"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            (project / "tests").mkdir()
+            source = project / "tests" / "test_long_block.py"
+            source.write_text(test_text, encoding="utf-8")
+
+            def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+                if command[:3] == ["git", "rev-parse", "--verify"]:
+                    stdout = "abc\n"
+                elif command[:3] == ["git", "diff", "--name-status"]:
+                    stdout = "A\ttests/test_long_block.py\n"
+                elif command[:3] == ["git", "diff", "--numstat"]:
+                    line_count = len(test_text.splitlines())
+                    stdout = f"{line_count}\t0\ttests/test_long_block.py\n"
+                elif command[:2] == ["git", "ls-files"]:
+                    stdout = ""
+                else:
+                    stdout = ""
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": stdout,
+                    "stderr": "",
+                }
+
+            result = structure_review(project, 500, 120, run_command)
+
+        self.assertFalse(any("block `test_example` spans" in failure for failure in result["failures"]))
 
 
 if __name__ == "__main__":

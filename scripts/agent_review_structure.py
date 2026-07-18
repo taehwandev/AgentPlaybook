@@ -19,6 +19,17 @@ REVIEW_SOURCE_FILE_LINE_LIMIT = 500
 REVIEW_FILE_REVIEW_WARNING_LIMIT = 300
 REVIEW_ADDED_LINE_LIMIT = 200
 REVIEW_FUNCTION_LINE_LIMIT = 120
+# Test files legitimately run longer than production files (setup, fixtures,
+# one scenario per case), so they get a wider budget instead of the source
+# limit -- but an unbounded exemption is how a single test file grows to
+# thousands of lines with no gate ever flagging it. See
+# common/skills/testing/references/current-guidance.md#test-file-organization.
+REVIEW_TEST_FILE_LINE_LIMIT_MULTIPLIER = 3
+REVIEW_TEST_FILE_LINE_LIMIT = REVIEW_SOURCE_FILE_LINE_LIMIT * REVIEW_TEST_FILE_LINE_LIMIT_MULTIPLIER
+REVIEW_TEST_FILE_REVIEW_WARNING_LIMIT = (
+    REVIEW_FILE_REVIEW_WARNING_LIMIT * REVIEW_TEST_FILE_LINE_LIMIT_MULTIPLIER
+)
+REVIEW_TEST_ADDED_LINE_LIMIT = REVIEW_ADDED_LINE_LIMIT * REVIEW_TEST_FILE_LINE_LIMIT_MULTIPLIER
 REVIEW_SOURCE_EXTENSIONS = {
     ".c",
     ".cc",
@@ -53,8 +64,10 @@ REVIEW_SOURCE_EXTENSIONS = {
 REVIEW_STYLE_EXTENSIONS = {".css", ".scss", ".sass"}
 STRUCTURE_REVIEW_SCOPE_NOTE = (
     "checks only changed files in the development-file extension allowlist; tests, "
-    "fixtures, mocks, specs, generated or pinned third-party files, config/build files, Markdown, MDX, "
-    "and prose docs are excluded from runtime hard gates"
+    "fixtures, mocks, and specs use a wider file-size budget instead of the source limit "
+    "(see REVIEW_TEST_FILE_LINE_LIMIT) but are not exempt from it; generated or pinned "
+    "third-party files, config/build files, Markdown, MDX, and prose docs are excluded "
+    "from runtime hard gates; test files are exempt only from the oversized-block check"
 )
 REVIEW_SKIP_PARTS = {
     ".agentplaybook",
@@ -124,6 +137,9 @@ def structure_review(
         "max_block_lines": max_block_lines,
         "max_added_lines": REVIEW_ADDED_LINE_LIMIT,
         "review_warning_file_lines": REVIEW_FILE_REVIEW_WARNING_LIMIT,
+        "test_max_file_lines": REVIEW_TEST_FILE_LINE_LIMIT,
+        "test_max_added_lines": REVIEW_TEST_ADDED_LINE_LIMIT,
+        "test_review_warning_file_lines": REVIEW_TEST_FILE_REVIEW_WARNING_LIMIT,
         "scope": STRUCTURE_REVIEW_SCOPE_NOTE,
         "warnings": [],
         "failures": list(discovery["command_errors"]),
@@ -132,11 +148,12 @@ def structure_review(
     }
 
     for relative in paths:
-        if test_exempt_path(relative):
+        is_test_path = test_exempt_path(relative)
+        if is_test_path:
             result["test_exempt_paths"].append(str(relative))
-            continue
+        else:
+            result["strict_checked_paths"].append(str(relative))
 
-        result["strict_checked_paths"].append(str(relative))
         absolute = project / relative
         try:
             lines = absolute.read_text(encoding="utf-8").splitlines()
@@ -145,6 +162,21 @@ def structure_review(
             continue
 
         metadata = discovery["path_metadata"].get(str(relative), {})
+        if is_test_path:
+            # Tests are exempt only from the oversized-block check below (a
+            # single long scenario/setup method is a normal test shape), not
+            # from a file-size ceiling -- see REVIEW_TEST_FILE_LINE_LIMIT.
+            check_file_size(
+                relative,
+                lines,
+                REVIEW_TEST_FILE_LINE_LIMIT,
+                metadata,
+                result,
+                max_added_lines=REVIEW_TEST_ADDED_LINE_LIMIT,
+                review_warning_file_lines=REVIEW_TEST_FILE_REVIEW_WARNING_LIMIT,
+            )
+            continue
+
         check_file_size(relative, lines, max_file_lines, metadata, result)
         block_failures, block_warnings = large_block_findings(
             project,
@@ -362,6 +394,9 @@ def check_file_size(
     max_file_lines: int,
     metadata: dict[str, Any],
     result: dict[str, Any],
+    *,
+    max_added_lines: int = REVIEW_ADDED_LINE_LIMIT,
+    review_warning_file_lines: int = REVIEW_FILE_REVIEW_WARNING_LIMIT,
 ) -> None:
     line_count = len(lines)
     status = metadata.get("status", "")
@@ -374,10 +409,10 @@ def check_file_size(
             f"{path} is a new development source/style file with {line_count} lines; "
             f"new-file hard limit is {max_file_lines}; split by responsibility before approval"
         )
-    if added_lines > REVIEW_ADDED_LINE_LIMIT:
+    if added_lines > max_added_lines:
         result["failures"].append(
             f"{path} adds {added_lines} lines in one development source/style file; "
-            f"per-file addition limit is {REVIEW_ADDED_LINE_LIMIT}; split the change before approval"
+            f"per-file addition limit is {max_added_lines}; split the change before approval"
         )
     if status != "A" and line_count > max_file_lines and added_lines > 0:
         result["warnings"].append(
@@ -385,10 +420,10 @@ def check_file_size(
             "structure-review evidence is required and the new responsibility should be extracted "
             "when it expands the public owner surface"
         )
-    elif line_count > REVIEW_FILE_REVIEW_WARNING_LIMIT:
+    elif line_count > review_warning_file_lines:
         result["warnings"].append(
             f"{path} is a changed development source/style file with {line_count} lines; "
-            f"review-pressure limit is {REVIEW_FILE_REVIEW_WARNING_LIMIT}; "
+            f"review-pressure limit is {review_warning_file_lines}; "
             "structure-review evidence is required before approving more behavior"
         )
 

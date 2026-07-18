@@ -118,6 +118,47 @@ theme, font scale, and the relevant screen or window sizes. Use screenshots or
 previews only when they prove the changed visual contract; pair them with
 focused assertions for behavior.
 
+## Test File Organization
+
+Choosing what to test is not enough; a repo also needs a rule for **where a
+test lives**, or coverage keeps landing in whichever file was already open.
+Without this rule a single file can grow to thousands of lines -- at that size
+the file stops being a safety net and becomes its own maintenance risk: harder
+to navigate, harder to review a diff against, and more likely to produce merge
+conflicts between unrelated changes.
+
+- **Mirror the source module.** The primary placement rule is structural, not
+  judgment-based: `scripts/agent_repair_ledger.py` -> `tests/test_agent_repair_ledger.py`.
+  This is the only rule that requires no scenario/type classification and
+  therefore never becomes ambiguous.
+- **Split scenario or type inside one file, not across files.** Group a
+  module's success/error/boundary cases or unit/integration variants into
+  separate test classes within the mirrored file (for example
+  `RepairLedgerBoundedAttemptTests`, `RepairLedgerConcurrencyTests`), not into
+  separate files. Splitting by scenario/type instead of by module scatters one
+  module's behavior across many files and makes "where is this test" and
+  "where should this new test go" ambiguous again.
+- **Cross-module flows are the one exception.** An end-to-end or CLI rehearsal
+  that exercises several modules together does not belong to any single
+  mirror file; name it for the flow, e.g. `test_<flow>_end_to_end.py`.
+- **When no mirror file exists yet, create one.** Do not append a new test to
+  the nearest large file just because it already has related-looking tests.
+  If `tests/test_<module>.py` does not exist, create it.
+- **Size budget: about 3x the production file limit.** A test file's file-size
+  ceiling is three times the production source-file limit (currently 500
+  lines, so ~1,500 lines for tests) -- wide enough for setup/fixtures/one
+  scenario per case, not unbounded. `agent_review_structure.py`
+  (`REVIEW_TEST_FILE_LINE_LIMIT`) enforces this in the review hook; when a
+  mirrored test file would cross it, split by scenario/type into test classes
+  first, and only split into additional files if a single module's own test
+  surface is large enough to need it.
+- **Migrating an existing oversized file is safe to do in one pass.** Unlike a
+  production refactor, a test-file split is self-verifying: after moving tests
+  into their mirrored files, the full existing suite passing with the same
+  test count proves the split preserved behavior. Prefer one bounded split
+  over incremental extraction that leaves the file oversized for a long
+  transition period.
+
 ## Do Not
 
 - Do not replace a missing high-risk test with a formatter, typecheck, or
