@@ -50,6 +50,7 @@ from agent_review_structure import (
 )
 from agent_run_registry import register_run, transition_run
 from agent_context_store import context_snapshot_path, refresh_and_validate_context_snapshot, validate_context_snapshot
+from workflow_catalog import CONCERNS, PLATFORM_CONCERNS
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -338,7 +339,12 @@ def _add_start_arguments(parser: argparse.ArgumentParser) -> None:
     )
     start.add_argument("--classification-evidence", default="")
     start.add_argument("--platform", action="append", default=[])
-    start.add_argument("--concern", action="append", default=[])
+    start.add_argument(
+        "--concern",
+        action="append",
+        choices=sorted(set(CONCERNS) | {key[1] for key in PLATFORM_CONCERNS}),
+        default=[],
+    )
     start.add_argument(
         "--worker-reservation-token",
         default="",

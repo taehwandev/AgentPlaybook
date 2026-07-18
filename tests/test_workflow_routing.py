@@ -171,6 +171,12 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("definition-of-done", CONCERNS)
         self.assertIn("common/skills/definition-of-done/SKILL.md", CONCERNS["definition-of-done"])
 
+    def test_documentation_concern_routes_to_documentation_workflow(self) -> None:
+        self.assertEqual(
+            ("workflows/skills/documentation-update/SKILL.md",),
+            CONCERNS["documentation"],
+        )
+
     def test_workflow_validate_ignores_generated_markdown_caches(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -1724,6 +1730,25 @@ class WorkflowRoutingTests(unittest.TestCase):
 
         self.assertEqual(2, result.returncode)
         self.assertIn("invalid choice", result.stderr)
+
+    def test_hook_rejects_invalid_concern_before_start_repair_policy(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "agent-hook.py"),
+                "start",
+                "--concern",
+                "not-a-real-concern",
+            ],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(2, result.returncode)
+        self.assertIn("invalid choice", result.stderr)
+        self.assertNotIn("recovery request", result.stdout + result.stderr)
 
     def test_git_commit_route_accepts_commit_classification_evidence(self) -> None:
         evidence = (

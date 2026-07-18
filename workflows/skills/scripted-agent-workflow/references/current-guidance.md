@@ -88,107 +88,11 @@ Discover the supported values from the script itself:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
 ```
 
-Current command profiles:
-
-- `ambiguity`
-- `bugfix`
-- `docs`
-- `docs-review`
-- `feature`
-- `multi-agent`
-- `planning`
-- `prd`
-- `product`
-- `refactor`
-- `release`
-- `retrospective`
-- `review`
-- `task`
-- `triage`
-- `workflow-setup`
-
-Current platform values:
-
-- `android`
-- `application`
-- `ios`
-- `server`
-- `web`
-
-Current concern values:
-
-- `accessibility`
-- `aeo`
-- `ai-mode`
-- `ai-overviews`
-- `ai-search`
-- `ai-search-optimization`
-- `answer-engine`
-- `answer-engine-optimization`
-- `api`
-- `asset`
-- `assets`
-- `auth`
-- `background`
-- `billing`
-- `cache`
-- `canonical`
-- `channel`
-- `component`
-- `component-api`
-- `compose`
-- `copy`
-- `defensive`
-- `dependency`
-- `desktop`
-- `discovery`
-- `effort`
-- `error`
-- `errors`
-- `generated`
-- `failure`
-- `generated`
-- `generative-ai`
-- `generative-ai-search`
-- `geo`
-- `intake`
-- `invite`
-- `interaction`
-- `local-tools`
-- `llms`
-- `llms-txt`
-- `metering`
-- `module`
-- `observability`
-- `open-graph`
-- `persistence`
-- `platform`
-- `prose`
-- `react`
-- `release`
-- `reusability`
-- `robots`
-- `security`
-- `seo`
-- `sitemap`
-- `stack`
-- `state`
-- `structure`
-- `structured-data`
-- `swiftui`
-- `telemetry`
-- `ui`
-- `uikit`
-- `usage`
-- `verification`
-- `voice`
-- `widget`
-- `wiki`
-- `worktree`
-- `writing`
-
-Use `--concern` more than once when a task crosses risk areas. Use
-`--format json` when another tool should parse the route.
+Treat the executable `list` output as the only current command, platform, and
+concern catalog. Do not maintain a second exhaustive prose list here; it drifts
+when routing gains or removes values. Use `--concern` more than once when a task
+crosses risk areas, and use `--format json` when another tool should parse the
+route.
 
 The router also infers the canonical `seo` concern from explicit public
 discovery keywords in `--request`, such as SEO, AI search, AEO, GEO, AI

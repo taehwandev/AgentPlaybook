@@ -61,6 +61,7 @@ CONCERNS: Dict[str, Tuple[str, ...]] = {
     "currency": ("common/skills/accessibility-i18n/SKILL.md",),
     "display-value": ("common/skills/accessibility-i18n/SKILL.md",),
     "display-values": ("common/skills/accessibility-i18n/SKILL.md",),
+    "documentation": ("workflows/skills/documentation-update/SKILL.md",),
     "writing": ("common/skills/human-authored-writing/SKILL.md", "common/skills/writing-workspace/SKILL.md"),
     "prose": ("common/skills/human-authored-writing/SKILL.md", "common/skills/writing-workspace/SKILL.md"),
     "voice": ("common/skills/human-authored-writing/SKILL.md",),
