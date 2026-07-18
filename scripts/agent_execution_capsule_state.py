@@ -9,12 +9,17 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from agent_worktree_fingerprint import git_output, worktree_fingerprint
+from agent_worktree_fingerprint import (
+    capture_worktree_state,
+    git_output,
+    worktree_signature,
+)
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 PREFLIGHT_SNAPSHOT_SCHEMA_VERSION = 1
 CAPSULE_FILENAME = "execution-capsule.json"
+MAX_GIT_STATE_ATTEMPTS = 2
 REUSE_POLICY = {
     "condition": "ready_and_valid",
     "gate_effect": "none",
@@ -62,12 +67,31 @@ def contained_doc_path(rules: Path, relative: str) -> Path:
     return candidate
 
 
-def git_state(path: Path) -> dict[str, str]:
-    head = git_output(path, "rev-parse", "--verify", "HEAD").strip()
-    return {
-        "head": head,
-        "worktree_fingerprint": worktree_fingerprint(path),
-    }
+def git_state(
+    path: Path,
+    recorded: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """Capture Git state, reusing a strong fingerprint only while safely current."""
+
+    for _attempt in range(MAX_GIT_STATE_ATTEMPTS):
+        head = git_output(path, "rev-parse", "--verify", "HEAD").strip()
+        if (
+            _is_reusable_git_state(recorded)
+            and recorded["head"] == head
+            and recorded["worktree_signature"] == worktree_signature(path)
+        ):
+            if git_output(path, "rev-parse", "--verify", "HEAD").strip() == head:
+                return dict(recorded)
+            continue
+
+        snapshot = capture_worktree_state(path)
+        if git_output(path, "rev-parse", "--verify", "HEAD").strip() == head:
+            return {
+                "head": head,
+                "worktree_fingerprint": snapshot.fingerprint,
+                "worktree_signature": snapshot.signature,
+            }
+    raise RuntimeError("git HEAD changed during execution-capsule state capture")
 
 
 def git_repository_root(path: Path) -> Path:
@@ -81,17 +105,35 @@ def git_repository_root(path: Path) -> Path:
     return Path(git_output(path, "rev-parse", "--show-toplevel").strip()).resolve()
 
 
-def git_states_for_paths(project: Path, rules: Path) -> tuple[dict[str, str], dict[str, str]]:
+def git_states_for_paths(
+    project: Path,
+    rules: Path,
+    *,
+    project_record: dict[str, str] | None = None,
+    rules_record: dict[str, str] | None = None,
+) -> tuple[dict[str, str], dict[str, str]]:
     """Capture project/rules state, hashing a shared repository only once."""
 
     project = project.resolve()
     rules = rules.resolve()
     project_root = git_repository_root(project)
     rules_root = git_repository_root(rules)
-    project_state = git_state(project)
     if project_root == rules_root:
-        return project_state, project_state
-    return project_state, git_state(rules)
+        shared_record = project_record if project_record == rules_record else None
+        shared_state = git_state(project, shared_record)
+        return shared_state, shared_state
+    return git_state(project, project_record), git_state(rules, rules_record)
+
+
+def _is_reusable_git_state(value: Any) -> bool:
+    return (
+        isinstance(value, dict)
+        and set(value) == {"head", "worktree_fingerprint", "worktree_signature"}
+        and isinstance(value.get("head"), str)
+        and bool(value["head"])
+        and is_sha256(value.get("worktree_fingerprint"))
+        and is_sha256(value.get("worktree_signature"))
+    )
 
 
 def sha256_file(path: Path) -> str:

@@ -62,6 +62,16 @@ The parent owns the capsule lifecycle:
    evidence path and its single-use claim token. Never guess that cached state
    is close enough or overwrite parent evidence during fallback.
 
+Worktree reuse keeps the strong content fingerprint authoritative. A capsule or
+review validation record may avoid recomputing that fingerprint only when Git `HEAD` and
+a content-free invalidation signature of the current dirty paths, staged object
+identities, and filesystem metadata still match the prior strong snapshot. The
+signature is a cache filter, not an identity proof: any mismatch requires a new
+strong capture. Strong capture has bounded untracked-file count and byte limits;
+when the worktree exceeds them, capsule reuse fails closed with
+`reusable=false` and the worker follows the normal lifecycle instead of waiting
+on an unbounded scan.
+
 Reuse is an execution optimization, not a gate exemption. The parent remains
 the sole owner of the gate ledger, integration review, and final verification.
 Workers receive bounded write scopes, return scoped evidence, and must not

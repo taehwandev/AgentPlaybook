@@ -123,7 +123,11 @@ class ExecutionCapsuleTests(unittest.TestCase):
         self.assertIn("execution capsule request fingerprint does not match", failures)
 
     def test_shared_git_repository_state_is_fingerprinted_once(self) -> None:
-        state = {"head": "a" * 40, "worktree_fingerprint": "b" * 64}
+        state = {
+            "head": "a" * 40,
+            "worktree_fingerprint": "b" * 64,
+            "worktree_signature": "c" * 64,
+        }
         with patch("agent_execution_capsule_state.git_repository_root", return_value=self.project), patch(
             "agent_execution_capsule_state.git_state", return_value=state
         ) as capture:
@@ -145,7 +149,50 @@ class ExecutionCapsuleTests(unittest.TestCase):
             )
 
         self.assertEqual([], failures)
-        capture.assert_called_once_with(self.project.resolve(), self.rules.resolve())
+        capture.assert_called_once_with(
+            self.project.resolve(),
+            self.rules.resolve(),
+            project_record=capsule["project_git"],
+            rules_record=capsule["rules_git"],
+        )
+
+    def test_unchanged_capsule_validation_skips_repeated_strong_capture(self) -> None:
+        capsule = refresh_execution_capsule(
+            self.project, self.rules, self.evidence_path, self.route
+        )
+
+        with patch(
+            "agent_execution_capsule_state.capture_worktree_state",
+            side_effect=AssertionError("unchanged capsule must reuse its strong fingerprint"),
+        ):
+            failures = validate_execution_capsule(
+                capsule,
+                self.project,
+                self.rules,
+                self.evidence_path,
+                self.route,
+            )
+
+        self.assertEqual([], failures)
+
+    def test_oversized_untracked_change_invalidates_capsule_without_crashing(self) -> None:
+        capsule = refresh_execution_capsule(
+            self.project, self.rules, self.evidence_path, self.route
+        )
+        (self.project / "large-local.bin").write_bytes(b"1234")
+
+        with patch("agent_worktree_fingerprint.MAX_UNTRACKED_BYTES", 3):
+            failures = validate_execution_capsule(
+                capsule,
+                self.project,
+                self.rules,
+                self.evidence_path,
+                self.route,
+            )
+
+        self.assertIn(
+            "execution capsule worktree exceeds bounded fingerprint limits", failures
+        )
 
     def test_serial_preflight_snapshot_preserves_source_docs_without_a_capsule(self) -> None:
         self.route = {**self.route, "gates": ["source docs"]}
@@ -294,7 +341,11 @@ class ExecutionCapsuleTests(unittest.TestCase):
             {"returncode": 0},
         )
 
-        reused = reusable_review_workflow_validation(self.project, self.rules)
+        with patch(
+            "agent_execution_capsule_state.capture_worktree_state",
+            side_effect=AssertionError("finish must not repeat the review strong scan"),
+        ):
+            reused = reusable_review_workflow_validation(self.project, self.rules)
         self.assertIsNotNone(reused)
         self.assertTrue(reused["reused"])
 

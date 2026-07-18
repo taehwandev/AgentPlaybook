@@ -1,4 +1,4 @@
-"""Streaming Git worktree fingerprints for execution-capsule bindings."""
+"""Bounded Git worktree fingerprints for execution-capsule bindings."""
 
 from __future__ import annotations
 
@@ -6,8 +6,29 @@ import hashlib
 import os
 import stat
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
+
+from agent_worktree_scan import (
+    UntrackedBudget,
+    WorktreeFingerprintLimitExceeded,
+    hash_component,
+    hash_file_component,
+    hash_git_component,
+    visit_git_null_records,
+)
+
+
+MAX_UNTRACKED_FILES = 5_000
+MAX_UNTRACKED_BYTES = 256 * 1024 * 1024
+MAX_CAPTURE_ATTEMPTS = 2
+
+
+@dataclass(frozen=True)
+class WorktreeSnapshot:
+    fingerprint: str
+    signature: str
 
 
 def git_output(path: Path, *args: str) -> str:
@@ -25,121 +46,189 @@ def git_output(path: Path, *args: str) -> str:
     return completed.stdout.decode("utf-8")
 
 
+def capture_worktree_state(path: Path) -> WorktreeSnapshot:
+    """Capture the authoritative fingerprint and its cheap invalidation signature."""
+
+    for _attempt in range(MAX_CAPTURE_ATTEMPTS):
+        snapshot = _capture_worktree_state_once(path)
+        if snapshot.signature == worktree_signature(path):
+            return snapshot
+    raise RuntimeError("worktree changed during execution-capsule fingerprint capture")
+
+
+def _capture_worktree_state_once(path: Path) -> WorktreeSnapshot:
+    """Capture one bounded snapshot; the public wrapper verifies its stability."""
+
+    fingerprint = hashlib.sha256()
+    signature = hashlib.sha256()
+    budget = _new_budget()
+    _capture_status(path, fingerprint, signature, budget)
+    hash_git_component(
+        fingerprint,
+        b"staged",
+        path,
+        "diff",
+        "--cached",
+        "--binary",
+        "--no-ext-diff",
+        "--no-textconv",
+    )
+    hash_git_component(
+        fingerprint,
+        b"unstaged",
+        path,
+        "diff",
+        "--binary",
+        "--no-ext-diff",
+        "--no-textconv",
+    )
+    return WorktreeSnapshot(
+        fingerprint=fingerprint.hexdigest(),
+        signature=signature.hexdigest(),
+    )
+
+
 def worktree_fingerprint(path: Path) -> str:
     """Hash tracked and untracked state without persisting paths or contents."""
 
-    digest = hashlib.sha256()
-    components = (
-        (b"status", ("status", "--porcelain=v2", "-z", "--untracked-files=all")),
-        (b"staged", ("diff", "--cached", "--binary", "--no-ext-diff", "--no-textconv")),
-        (b"unstaged", ("diff", "--binary", "--no-ext-diff", "--no-textconv")),
-    )
-    for label, command in components:
-        _hash_git_component(digest, label, path, *command)
+    return capture_worktree_state(path).fingerprint
 
-    for relative_bytes in _git_null_records(
-        path, "ls-files", "--others", "--exclude-standard", "-z"
-    ):
+
+def worktree_signature(path: Path) -> str:
+    """Return a content-free invalidation filter for a prior strong fingerprint.
+
+    The signature is never an identity proof on its own. Callers may reuse a
+    previously captured strong fingerprint only while this signature and HEAD
+    both match that prior record.
+    """
+
+    signature = hashlib.sha256()
+    _capture_status(
+        path,
+        fingerprint=None,
+        signature=signature,
+        budget=_new_budget(),
+    )
+    return signature.hexdigest()
+
+
+def _capture_status(
+    path: Path,
+    fingerprint: Any | None,
+    signature: Any,
+    budget: UntrackedBudget,
+) -> None:
+    expecting_original_path = False
+
+    def visit(record: bytes) -> None:
+        nonlocal expecting_original_path
+        hash_component(signature, b"status-record", record)
+        if fingerprint is not None:
+            hash_component(fingerprint, b"status-record", record)
+        if expecting_original_path:
+            expecting_original_path = False
+            return
+
+        kind, relative_bytes, renamed = _status_path(record)
+        expecting_original_path = renamed
+        if relative_bytes is None:
+            return
+        if kind in {b"1", b"2"} and _dirty_submodule(record):
+            raise RuntimeError(
+                "dirty submodule state cannot be bound to an execution capsule"
+            )
         candidate = path / Path(os.fsdecode(relative_bytes))
-        _hash_component(digest, b"untracked-path", relative_bytes)
         try:
             metadata = candidate.lstat()
         except FileNotFoundError:
-            # A file can vanish after `git ls-files` emitted its snapshot.
-            # Hash the race instead of crashing or reusing stale state.
-            _hash_component(digest, b"untracked-raced", relative_bytes)
-            continue
-        _hash_component(
-            digest,
+            hash_component(signature, b"worktree-raced", relative_bytes)
+            if fingerprint is not None and kind == b"?":
+                hash_component(fingerprint, b"untracked-raced", relative_bytes)
+            return
+        _hash_metadata(signature, relative_bytes, metadata)
+        if kind != b"?":
+            return
+
+        budget.add_file(metadata.st_size)
+        if fingerprint is None:
+            return
+        hash_component(fingerprint, b"untracked-path", relative_bytes)
+        hash_component(
+            fingerprint,
             b"untracked-mode",
             str(stat.S_IMODE(metadata.st_mode)).encode("ascii"),
         )
         if stat.S_ISLNK(metadata.st_mode):
-            _hash_component(
-                digest,
-                b"untracked-content",
-                os.fsencode(os.readlink(candidate)),
-            )
+            try:
+                payload = os.fsencode(os.readlink(candidate))
+            except FileNotFoundError:
+                hash_component(fingerprint, b"untracked-raced", relative_bytes)
+                return
+            budget.add_read_bytes(len(payload))
+            hash_component(fingerprint, b"untracked-content", payload)
         elif stat.S_ISREG(metadata.st_mode):
-            _hash_file_component(digest, b"untracked-content", candidate)
+            try:
+                hash_file_component(
+                    fingerprint,
+                    b"untracked-content",
+                    candidate,
+                    budget,
+                )
+            except FileNotFoundError:
+                hash_component(fingerprint, b"untracked-raced", relative_bytes)
         else:
-            _hash_component(
-                digest,
+            hash_component(
+                fingerprint,
                 b"untracked-content",
                 str(metadata.st_mode).encode("ascii"),
             )
-    return digest.hexdigest()
+
+    visit_git_null_records(
+        path,
+        ("status", "--porcelain=v2", "-z", "--untracked-files=all"),
+        visit,
+    )
 
 
-def _hash_git_component(
-    digest: Any,
-    label: bytes,
-    path: Path,
-    *args: str,
-) -> None:
-    with subprocess.Popen(
-        ["git", *args],
-        cwd=path,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-    ) as process:
-        assert process.stdout is not None
-        nested = hashlib.sha256()
-        size = 0
-        while chunk := process.stdout.read(1024 * 1024):
-            nested.update(chunk)
-            size += len(chunk)
-        if process.wait() != 0:
-            raise RuntimeError(
-                f"cannot capture git state for execution capsule: git {args[0]} failed"
-            )
-    _hash_stream_digest(digest, label, size, nested.digest())
+def _status_path(record: bytes) -> tuple[bytes, bytes | None, bool]:
+    """Extract a porcelain-v2 path without decoding or retaining it."""
+
+    kind = record[:1]
+    if kind == b"?":
+        return kind, record[2:], False
+    if kind == b"1":
+        fields = record.split(b" ", 8)
+        return kind, fields[8] if len(fields) == 9 else None, False
+    if kind == b"2":
+        fields = record.split(b" ", 9)
+        return kind, fields[9] if len(fields) == 10 else None, True
+    if kind == b"u":
+        fields = record.split(b" ", 10)
+        return kind, fields[10] if len(fields) == 11 else None, False
+    return kind, None, False
 
 
-def _git_null_records(path: Path, *args: str) -> Iterator[bytes]:
-    with subprocess.Popen(
-        ["git", *args],
-        cwd=path,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-    ) as process:
-        assert process.stdout is not None
-        buffer = b""
-        while chunk := process.stdout.read(64 * 1024):
-            buffer += chunk
-            records = buffer.split(b"\0")
-            buffer = records.pop()
-            yield from (record for record in records if record)
-        if buffer:
-            yield buffer
-        if process.wait() != 0:
-            raise RuntimeError(
-                f"cannot capture git state for execution capsule: git {args[0]} failed"
-            )
+def _dirty_submodule(record: bytes) -> bool:
+    fields = record.split(b" ", 3)
+    return len(fields) >= 3 and fields[2].startswith(b"S") and fields[2] != b"S..."
 
 
-def _hash_file_component(digest: Any, label: bytes, path: Path) -> None:
-    nested = hashlib.sha256()
-    size = 0
-    with path.open("rb") as stream:
-        while chunk := stream.read(1024 * 1024):
-            nested.update(chunk)
-            size += len(chunk)
-    _hash_stream_digest(digest, label, size, nested.digest())
+def _new_budget() -> UntrackedBudget:
+    return UntrackedBudget(MAX_UNTRACKED_FILES, MAX_UNTRACKED_BYTES)
 
 
-def _hash_stream_digest(
-    digest: Any,
-    label: bytes,
-    size: int,
-    content_digest: bytes,
-) -> None:
-    _hash_component(digest, label + b"-size", str(size).encode("ascii"))
-    _hash_component(digest, label + b"-sha256", content_digest)
-
-
-def _hash_component(digest: Any, label: bytes, payload: bytes) -> None:
-    digest.update(len(label).to_bytes(4, "big"))
-    digest.update(label)
-    digest.update(len(payload).to_bytes(8, "big"))
-    digest.update(payload)
+def _hash_metadata(digest: Any, relative_bytes: bytes, metadata: os.stat_result) -> None:
+    hash_component(digest, b"worktree-path", relative_bytes)
+    values = (
+        metadata.st_mode,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+        metadata.st_dev,
+        metadata.st_ino,
+    )
+    hash_component(
+        digest,
+        b"worktree-metadata",
+        b"\0".join(str(value).encode("ascii") for value in values),
+    )

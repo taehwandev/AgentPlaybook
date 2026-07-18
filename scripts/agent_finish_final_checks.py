@@ -17,7 +17,7 @@ from agent_vibeguard_cache import cached_vibeguard
 from agent_workspace_policy import is_writing_workspace, non_git_writing_workspace_note
 
 
-REVIEW_VALIDATION_SCHEMA_VERSION = 1
+REVIEW_VALIDATION_SCHEMA_VERSION = 2
 REVIEW_VALIDATION_FILENAME = "review-workflow-validation.json"
 
 
@@ -138,7 +138,12 @@ def reusable_review_workflow_validation(project: Path, rules: Path) -> dict[str,
     try:
         if not evidence_path.is_file() or file_hash_record(evidence_path) != record["preflight_evidence"]:
             return None
-        project_git, rules_git = git_states_for_paths(project, rules)
+        project_git, rules_git = git_states_for_paths(
+            project,
+            rules,
+            project_record=record["project_git"],
+            rules_record=record["rules_git"],
+        )
     except (OSError, RuntimeError):
         return None
     if project_git != record["project_git"] or rules_git != record["rules_git"]:
@@ -179,6 +184,10 @@ def _valid_review_validation_record(record: dict[str, Any]) -> bool:
         return False
     for key in ("project_git", "rules_git"):
         value = record.get(key)
-        if not isinstance(value, dict) or set(value) != {"head", "worktree_fingerprint"}:
+        if not isinstance(value, dict) or set(value) != {
+            "head",
+            "worktree_fingerprint",
+            "worktree_signature",
+        }:
             return False
     return record.get("workflow_validate") == {"returncode": 0}

@@ -22,6 +22,7 @@ from agent_execution_capsule_state import (
 from agent_execution_capsule_docs import required_doc_failures
 from agent_gate_evidence import gate_evidence_path_for_preflight
 from agent_route_state import request_fingerprint, route_fingerprint
+from agent_worktree_fingerprint import WorktreeFingerprintLimitExceeded
 
 
 _TOP_LEVEL_FIELDS = {
@@ -30,7 +31,7 @@ _TOP_LEVEL_FIELDS = {
     "project_git", "rules_git", "gate_ledger", "reuse_policy",
 }
 _FILE_HASH_FIELDS = {"filename", "sha256"}
-_GIT_FIELDS = {"head", "worktree_fingerprint"}
+_GIT_FIELDS = {"head", "worktree_fingerprint", "worktree_signature"}
 _DOC_FIELDS = {"path", "size_bytes", "sha256"}
 
 
@@ -62,7 +63,14 @@ def validate_execution_capsule(
         failures.extend(required_doc_failures(capsule["required_docs"], rules, route))
 
     try:
-        project_git, rules_git = git_states_for_paths(project, rules)
+        project_git, rules_git = git_states_for_paths(
+            project,
+            rules,
+            project_record=capsule["project_git"],
+            rules_record=capsule["rules_git"],
+        )
+    except WorktreeFingerprintLimitExceeded:
+        failures.append("execution capsule worktree exceeds bounded fingerprint limits")
     except (OSError, RuntimeError):
         failures.append("execution capsule project/rules git state is unavailable")
     else:
@@ -212,7 +220,8 @@ def _is_file_hash(value: Any) -> bool:
 def _is_git(value: Any) -> bool:
     return (isinstance(value, dict) and set(value) == _GIT_FIELDS
             and isinstance(value.get("head"), str) and bool(value["head"])
-            and is_sha256(value.get("worktree_fingerprint")))
+            and is_sha256(value.get("worktree_fingerprint"))
+            and is_sha256(value.get("worktree_signature")))
 
 
 def _is_doc(value: Any) -> bool:
