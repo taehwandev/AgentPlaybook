@@ -244,6 +244,13 @@ forgets them:
   validation failure, correct every reported record before the single retry. If
   the retry still fails, stop batching that scope, preserve this lesson, and
   record gates individually so the failing checkpoint is isolated.
+  Before submitting a batch, use these complete evidence shapes for the two
+  common semantic gates: `ambiguity check` must say whether blockers are absent
+  or resolved and identify any safe assumptions; `alignment brief` must state
+  the shared understanding, possible differences, unsupported assumptions or
+  unknowns, and that the user-visible checkpoint occurred before edits. A
+  merely affirmative phrase such as `scope is clear` or `alignment shared` is
+  not complete evidence.
 - `tests`: add, update, or run the closest useful test/check for code work. A
   skipped test must include the command skipped, reason, and residual risk.
 - `boundary plan`: before code edits, name the owned boundary, file/module
