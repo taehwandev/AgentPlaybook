@@ -105,6 +105,8 @@ REVIEW_HOOK_REQUIRED_COMMANDS = {
     "workflow-setup",
 }
 
+LIGHTWEIGHT_SURFACE_REFERENCE_COMMANDS = {"commit", "git_commit"}
+
 
 def resolve_docs(
     command: str,
@@ -193,9 +195,14 @@ def resolve_docs(
             "Read `required_docs` before work; treat `reference_docs` as on-demand context only when the current task touches that concern."
         )
     if surface_matches:
-        notes.append(
-            "Promoted required docs from request intent or touched path surfaces using `workflow-doc-surfaces.json`."
-        )
+        if command in LIGHTWEIGHT_SURFACE_REFERENCE_COMMANDS:
+            notes.append(
+                "Kept docs inferred only from dirty-path surfaces in `reference_docs` for the lightweight commit route; explicit concerns can still promote required guidance."
+            )
+        else:
+            notes.append(
+                "Promoted required docs from request intent or touched path surfaces using `workflow-doc-surfaces.json`."
+            )
     if search_seed_docs:
         notes.append(
             "Wikimap supplied natural-language seed documents to the router; seeds remain reference candidates unless an explicit route rule or required relation promotes them."
@@ -359,7 +366,13 @@ def route_required_docs(
         if platform:
             docs.extend(PLATFORM_CONCERNS.get((platform, concern), ()))
 
-    docs.extend(surface_docs or [])
+    # A local commit request reviews work that has already been implemented.
+    # Keep dirty-path guidance discoverable in reference_docs, but do not turn
+    # every touched code/test/doc surface back into mandatory implementation
+    # reading.  Explicit concerns remain required above and can still escalate
+    # a risky commit deliberately.
+    if command not in LIGHTWEIGHT_SURFACE_REFERENCE_COMMANDS:
+        docs.extend(surface_docs or [])
     return unique(canonical_doc_path(doc) for doc in docs)
 
 

@@ -14,6 +14,28 @@ Do not route a clear commit request through the general `task`, `review`, or
 `triage` routes. The commit route exists to avoid running implementation gates
 after the code work is already done.
 
+## Lightweight Execution Contract
+
+An explicit local commit request is a bounded review-and-record operation, not
+a second implementation lifecycle:
+
+- keep the mandatory reading set to the repo instructions, the operating skill,
+  this commit card, and the review-and-commit workflow;
+- keep documents inferred only from dirty paths in `reference_docs`; load one
+  when the request names that risk, repo policy requires it, or the Review Hook
+  finds a concrete surface-specific concern;
+- reuse current review, test, and safety evidence only while it is bound to the
+  unchanged staged or worktree state it covered;
+- run one start, one lightweight review, the staged-diff/readiness checks, and
+  one read-only finish; do not rerun the full implementation route or full test
+  suite solely because the user asked to commit; and
+- if the diff needs a fix, its verification is stale, or a high-risk surface is
+  unresolved, stop the commit route and open the matching work route. Do not
+  hide implementation inside commit preparation.
+
+This is a scope reduction, not a safety exemption. The final diff, evidence
+freshness, secrets boundary, repo-local rules, and commit readiness still apply.
+
 ## Read
 
 - Repo-local commit, branch, signing, and generated-file rules.

@@ -1631,6 +1631,60 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn(route_doc("common/skills/code-review/SKILL.md"), route["reference_docs"])
         self.assertIn(route_doc("common/skills/worktree-hygiene/SKILL.md"), route["reference_docs"])
 
+    def test_commit_dirty_surfaces_stay_reference_only(self) -> None:
+        surface_paths = [
+            "scripts/agent_preflight_runtime.py",
+            "tests/test_agent_preflight_runtime.py",
+            "docs/skills/agent-runtime-integration/references/current-guidance.md",
+        ]
+
+        route = resolve_docs(
+            "git_commit",
+            None,
+            [],
+            request_classified=True,
+            request_text="현재 변경사항을 분리해서 커밋해줘",
+            surface_paths=surface_paths,
+            project_root=ROOT,
+        )
+
+        self.assertEqual(
+            [
+                route_doc("AGENTS.md"),
+                route_doc("common/skills/agent-operating-skill/SKILL.md"),
+                route_doc("workflows/skills/review-and-commit/SKILL.md"),
+                route_doc("common/skills/commit-workflow/SKILL.md"),
+            ],
+            route["required_docs"],
+        )
+        self.assertIn(
+            route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"),
+            route["reference_docs"],
+        )
+        self.assertIn(
+            route_doc("common/skills/testing/SKILL.md"),
+            route["reference_docs"],
+        )
+        self.assertTrue(
+            any("dirty-path surfaces" in note for note in route["notes"])
+        )
+
+    def test_commit_explicit_concern_still_escalates_required_docs(self) -> None:
+        route = resolve_docs(
+            "git_commit",
+            None,
+            ["testing"],
+            request_classified=True,
+            request_text="검증 위험까지 확인하고 커밋해줘",
+            surface_paths=["scripts/agent_preflight_runtime.py"],
+            project_root=ROOT,
+        )
+
+        self.assertIn(
+            route_doc("common/skills/testing/SKILL.md"),
+            route["required_docs"],
+        )
+
     def test_branch_strategy_routes_for_branch_naming(self) -> None:
         concerns = infer_concerns_from_request(
             "Use git username/work-unit/description for branch names"

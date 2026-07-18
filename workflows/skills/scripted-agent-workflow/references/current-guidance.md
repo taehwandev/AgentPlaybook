@@ -688,6 +688,12 @@ and the durable-contract reason. Add or improve structured ledger fields when
 the same semantic evidence repeatedly fails manual parsing; do not keep
 retrying paraphrases.
 
+For explicit `commit` or `git_commit` routes, dirty-path surface documents stay
+in `reference_docs` by default. The commit workflow's small required set and
+freshness checks are sufficient unless an explicit concern, repo-local policy,
+or review finding escalates a surface. This prevents an already-implemented
+diff from reopening the full implementation reading and verification lifecycle.
+
 For structured `gate-batch` records, use the field names consumed by the
 ledger synthesizer. Parallel `multi-agent split decision` records require
 `mode`, `reason`, `owned_scope`, `forbidden_scope`, `contract`, `acceptance`,
