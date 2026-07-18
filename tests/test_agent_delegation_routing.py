@@ -274,7 +274,6 @@ class DelegationEvidenceTests(unittest.TestCase):
             merged, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                cli_gate_evidence={},
             )
 
             self.assertEqual(1, len(entries))
@@ -372,7 +371,6 @@ class DelegationEvidenceTests(unittest.TestCase):
             merged, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                cli_gate_evidence={},
             )
 
             self.assertIn(MULTI_AGENT_GATE, merged)

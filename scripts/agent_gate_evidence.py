@@ -197,35 +197,6 @@ def record_many_gate_evidence(
     return recorded
 
 
-def record_cli_gate_evidence(
-    *,
-    evidence_path: Path,
-    preflight: dict[str, Any],
-    cli_gate_evidence: dict[str, str],
-) -> list[dict[str, Any]]:
-    """Persist finish CLI fallback evidence before it participates in validation.
-
-    A direct ``--gate`` value is compatibility input, not an in-memory
-    override.  Writing it through the same ledger path gives it the current
-    execution-capsule fingerprint and keeps every required gate subject to the
-    same binding check.
-    """
-
-    records = [
-        {
-            "gate": gate,
-            "evidence": evidence,
-            "source": "finish cli fallback",
-        }
-        for gate, evidence in cli_gate_evidence.items()
-    ]
-    return record_many_gate_evidence(
-        evidence_path=evidence_path,
-        preflight=preflight,
-        records=records,
-    )
-
-
 def bind_gate_evidence_to_capsule(
     *,
     evidence_path: Path,
@@ -314,7 +285,6 @@ def merge_gate_evidence_from_ledger(
     *,
     route: dict[str, Any],
     evidence_path: Path,
-    cli_gate_evidence: dict[str, str],
 ) -> tuple[dict[str, str], dict[str, Any]]:
     path = gate_evidence_path_for_preflight(evidence_path)
     ledger = read_gate_evidence_ledger(path)
@@ -322,14 +292,12 @@ def merge_gate_evidence_from_ledger(
         "path": str(path),
         "used": False,
         "warnings": [],
+        "failed_gates": {},
+        "invalid_statuses": {},
         "missing_fields": {},
         "sources": {},
         "capsule_bindings": {},
     }
-    if cli_gate_evidence:
-        diagnostics["warnings"].append(
-            "CLI gate evidence must be persisted before ledger merge"
-        )
     if not ledger:
         return {}, diagnostics
     if ledger.get("invalid_json"):
@@ -342,19 +310,52 @@ def merge_gate_evidence_from_ledger(
     merged: dict[str, str] = {}
     required_gates = {str(gate) for gate in (route.get("gates") or [])}
     for entry in ledger.get("entries", []):
-        if not isinstance(entry, dict) or entry.get("status") != "SUCCESS":
+        if not isinstance(entry, dict):
             continue
         gate = str(entry.get("gate") or "")
         if gate not in required_gates:
             continue
+        status = str(entry.get("status") or "")
+        if status == "FAIL":
+            # Ledger order is authoritative.  A later structural failure must
+            # invalidate every earlier success for the same checkpoint until a
+            # gate hook records a later SUCCESS after repair.
+            merged.pop(gate, None)
+            diagnostics["failed_gates"][gate] = {
+                "evidence": str(entry.get("evidence") or ""),
+                "source": str(entry.get("source") or "ledger"),
+            }
+            diagnostics["sources"].pop(gate, None)
+            diagnostics["capsule_bindings"].pop(gate, None)
+            diagnostics["missing_fields"].pop(gate, None)
+            diagnostics["invalid_statuses"].pop(gate, None)
+            continue
+        if status != "SUCCESS":
+            # A corrupt or hand-edited latest record must fail closed instead of
+            # allowing an older success to remain authoritative.
+            merged.pop(gate, None)
+            diagnostics["failed_gates"].pop(gate, None)
+            diagnostics["sources"].pop(gate, None)
+            diagnostics["capsule_bindings"].pop(gate, None)
+            diagnostics["missing_fields"].pop(gate, None)
+            diagnostics["invalid_statuses"][gate] = status or "<missing>"
+            continue
+        # Every later record is authoritative for its checkpoint.  Clear the
+        # prior synthesized success before validating this one so an incomplete
+        # or empty SUCCESS cannot silently fall back to older evidence.
+        merged.pop(gate, None)
+        diagnostics["failed_gates"].pop(gate, None)
+        diagnostics["sources"].pop(gate, None)
+        diagnostics["capsule_bindings"].pop(gate, None)
+        diagnostics["missing_fields"].pop(gate, None)
+        diagnostics["invalid_statuses"].pop(gate, None)
         evidence, missing = synthesize_gate_evidence(
             gate,
             str(entry.get("evidence") or ""),
             _string_fields(entry.get("fields") or {}),
         )
         if missing:
-            if gate not in merged:
-                diagnostics["missing_fields"][gate] = missing
+            diagnostics["missing_fields"][gate] = missing
             continue
         if evidence:
             merged[gate] = evidence
@@ -508,6 +509,19 @@ def incomplete_gate_evidence_failures(diagnostics: dict[str, Any]) -> list[str]:
     """Expose legacy ledger omissions as complete, actionable finish failures."""
 
     failures: list[str] = []
+    invalid_statuses = diagnostics.get("invalid_statuses") or {}
+    if isinstance(invalid_statuses, dict):
+        for gate, status in invalid_statuses.items():
+            failures.append(
+                f"structured gate evidence for {gate} has invalid status: {status}"
+            )
+    failed_gates = diagnostics.get("failed_gates") or {}
+    if isinstance(failed_gates, dict):
+        for gate in failed_gates:
+            failures.append(
+                f"structured gate evidence for {gate} is FAIL; record a later "
+                "SUCCESS through the gate or gate-batch hook only after repair"
+            )
     missing_fields = diagnostics.get("missing_fields") or {}
     if not isinstance(missing_fields, dict):
         return failures
@@ -532,12 +546,11 @@ def latest_successful_gate_fields(
     if not _ledger_matches_route(ledger, evidence_path, route):
         return {}
     for entry in reversed(ledger.get("entries", [])):
-        if (
-            isinstance(entry, dict)
-            and entry.get("status") == "SUCCESS"
-            and str(entry.get("gate") or "") == gate
-        ):
-            return _string_fields(entry.get("fields") or {})
+        if not isinstance(entry, dict) or str(entry.get("gate") or "") != gate:
+            continue
+        if entry.get("status") != "SUCCESS":
+            return {}
+        return _string_fields(entry.get("fields") or {})
     return {}
 
 

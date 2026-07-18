@@ -113,7 +113,11 @@ from workflow_search import SearchOutcome, search_docs, search_docs_outcome
 from workflow_skill_paths import canonical_doc_path
 from workflow_spill import spill_tool_label, validate_spill_label_contracts
 from workflow import build_parser, print_dispatch
-from workflow_validate import STRICT_CARD_REQUIRED_HEADINGS, markdown_files_to_validate
+from workflow_validate import (
+    STRICT_CARD_REQUIRED_HEADINGS,
+    markdown_files_to_validate,
+    removed_cli_option_failures,
+)
 
 
 _PREFLIGHT_SPEC = importlib.util.spec_from_file_location(
@@ -2624,6 +2628,78 @@ class WorkflowRoutingTests(unittest.TestCase):
     def test_finish_check_does_not_process_successful_task_skill_feedback(self) -> None:
         self.assertFalse(hasattr(agent_finish_check, "process_finish_learning"))
 
+    def test_finish_cli_has_no_gate_override_option(self) -> None:
+        finish_options = {
+            option
+            for action in agent_finish_check.build_parser(ROOT)._actions
+            for option in action.option_strings
+        }
+        wrapper_options = {
+            option
+            for action in agent_hook.build_parser()._actions
+            for option in action.option_strings
+        }
+
+        self.assertNotIn("--gate", finish_options)
+        self.assertNotIn("--gate", wrapper_options)
+
+    def test_finish_legacy_gate_input_returns_migration_error(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "agent-hook.py"),
+                "finish",
+                "--gate",
+                "report=done",
+            ],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(2, result.returncode)
+        self.assertIn("finish no longer accepts --gate", result.stderr)
+        self.assertIn("gate or gate-batch", result.stderr)
+        self.assertNotIn("ambiguous option", result.stderr)
+
+    def test_finish_word_in_other_hook_does_not_trigger_migration_error(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "agent-hook.py"),
+                "start",
+                "--request",
+                "finish",
+                "--gate",
+                "report=done",
+            ],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(2, result.returncode)
+        self.assertIn("unrecognized arguments: --gate report=done", result.stderr)
+        self.assertNotIn("finish no longer accepts --gate", result.stderr)
+
+    def test_workflow_validate_rejects_removed_gate_option_in_markdown(self) -> None:
+        self.assertEqual(
+            ["guide.md:2: removed CLI option --gate; use gate or gate-batch"],
+            removed_cli_option_failures(
+                Path("guide.md"),
+                "finish is read-only\nfinish --gate report=done\n",
+            ),
+        )
+        self.assertEqual(
+            [],
+            removed_cli_option_failures(
+                Path("guide.md"),
+                "gate-batch --gate-record '{...}'\ngate --gate-name report\n",
+            ),
+        )
+
     def test_finish_final_check_failure_requires_retrospective_lesson(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             os.environ["AGENTPLAYBOOK_STATE_HOME"] = temp_dir
@@ -3706,7 +3782,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                cli_gate_evidence={},
             )
 
             self.assertTrue(gate_evidence_path_for_preflight(evidence_path).exists())
@@ -3744,7 +3819,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                cli_gate_evidence={},
             )
 
         self.assertFalse(diagnostics["used"])
@@ -3792,7 +3866,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                cli_gate_evidence={},
             )
 
         self.assertTrue(diagnostics["used"])
@@ -3832,7 +3905,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                cli_gate_evidence={},
             )
 
         self.assertNotIn(CYCLE_CONTRACT_GATE, gate_evidence)
@@ -3875,7 +3947,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=route,
                 evidence_path=evidence_path,
-                cli_gate_evidence={},
             )
 
         self.assertEqual(2, len(entries))
@@ -4462,7 +4533,6 @@ class WorkflowRoutingTests(unittest.TestCase):
             gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
                 route=stale_preflight["route"],
                 evidence_path=evidence_path,
-                cli_gate_evidence={},
             )
 
         self.assertEqual({}, gate_evidence)
@@ -5114,6 +5184,9 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIn("--docs-freshness-evidence", review_hook["command"])
         self.assertNotIn("--boundary-plan-evidence", review_hook["command"])
         self.assertNotIn("--side-effect-audit-evidence", review_hook["command"])
+
+        finish_hook = next(hook for hook in route["hooks"] if hook["hook"] == "finish")
+        self.assertNotIn("--gate", finish_hook["command"])
 
     def test_triage_and_ambiguity_select_required_docs_without_code_work_gates(self) -> None:
         for command in ("triage", "ambiguity"):

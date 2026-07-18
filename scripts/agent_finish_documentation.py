@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,40 @@ def documented_required_doc_updates(
         if target in required_docs:
             updates.add(target)
     return updates
+
+
+def required_doc_target_failures(*, target: str, route: dict[str, Any]) -> list[str]:
+    """Reject a combined documentation target that embeds a required-doc path.
+
+    Required-document snapshot exceptions are exact-path capabilities.  A
+    documentation record may describe other artifacts freely, but once it
+    names a routed required doc it must dedicate one record to that exact path.
+    This keeps the exception finite and prevents a late, opaque finish failure.
+    """
+
+    normalized = target.strip()
+    required_docs = set(required_docs_for_route(route))
+    if not normalized or normalized in required_docs:
+        return []
+    embedded = sorted(
+        path for path in required_docs if _contains_standalone_path(normalized, path)
+    )
+    if not embedded:
+        return []
+    return [
+        "documentation target embeds route required_docs but is not one exact "
+        "route-relative path: "
+        + ", ".join(embedded)
+        + "; record one documentation SUCCESS entry per required doc"
+    ]
+
+
+def _contains_standalone_path(value: str, path: str) -> bool:
+    """Return whether ``path`` appears as one complete path token in ``value``."""
+
+    path_character = r"[\w./\\-]"
+    pattern = rf"(?<!{path_character}){re.escape(path)}(?!{path_character})"
+    return re.search(pattern, value) is not None
 
 
 def _ledger_matches_route(ledger: dict[str, Any], evidence_path: Path, route: dict[str, Any]) -> bool:

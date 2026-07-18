@@ -149,9 +149,9 @@ Rules:
     `$HOME`, `${HOME}`, `~`, or a relative path in the executable command. When
     available, run:
     ~/.agentplaybook/bin/agentplaybook-hook finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
-    Use explicit `--gate "<gate>=<evidence>"` only as a one-off compatibility
-    input: finish records it in the bound ledger before validation. Use
-    `agent-hook.py gate` or `gate-batch` for structured gate fields.
+    Record manual gate facts first with `agent-hook.py gate` or `gate-batch`.
+    Finish is read-only: it accepts no inline gate evidence and never mutates
+    the ledger while validating completion.
     Missing wrapper evidence or missing route gate evidence is non-compliant.
     If `--request-classified` is used, include `--classification-evidence`.
     Work routes require resolved-scope evidence such as `clear-scoped`,

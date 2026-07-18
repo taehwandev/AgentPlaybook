@@ -609,7 +609,7 @@ prefixes must not. For Codex escalation, request only
 `["python3", "/absolute/path/to/AgentPlaybook/scripts/agent-hook.py"]` as the
 saved `prefix_rule`; for Claude and AGY, allow only the equivalent absolute
 wrapper command plus the runtime's trailing argument wildcard. Never save
-`--project`, `--request`, `--gate`, `$HOME`, `$(pwd)`, or user text in the
+`--project`, `--request`, `--gate-record`, `$HOME`, `$(pwd)`, or user text in the
 permission prefix.
 
 `agent-hook.py start` runs the preflight logic in-process and writes the same
@@ -634,6 +634,9 @@ exact route-relative path as `target`. Finish preserves the original capsule
 snapshot and permits only that declared path to differ; an undeclared required
 document change still fails the source-doc binding instead of creating a
 finish/handoff deadlock.
+When more than one routed required doc changes, record one `documentation`
+`SUCCESS` entry per exact path. Do not combine required-doc paths in one
+`target` string; the gate hook rejects that shape before finish.
 
 Before final report, commit, release, or handoff:
 
@@ -641,15 +644,17 @@ Before final report, commit, release, or handoff:
 python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
 ```
 
-Do not wait until finish to write all gate evidence by hand. The default path
-is a structured gate ledger at
+Do not wait until finish to write all gate evidence by hand. The only gate-state
+writers are the `gate` and `gate-batch` hooks, which require an explicit
+`SUCCESS` or `FAIL` status. The default path is a structured gate ledger at
 `<TARGET_REPO>/.agentplaybook/gate-evidence.json`, bound to the current
 preflight evidence hash, route fingerprint, and stable execution-capsule
 fingerprint (the preflight, route, and required-document snapshot). Custom preflight evidence files
 use `<preflight-stem>-gate-evidence.json` so parallel jobs do not overwrite one
-another's ledger. `agent-hook.py finish` writes any explicit
-`--gate "<gate>=<evidence>"` compatibility input into that same ledger before
-validation; it never applies an unbound in-memory override.
+another's ledger. `agent-hook.py finish` is read-only: it accepts no inline gate
+evidence and never infers state from prose or mutates the ledger while it
+validates completion. Removed inline input receives a migration error directing
+the caller to `gate` or `gate-batch` first.
 
 The `start` and `review` hooks record their own successful gate evidence in the
 ledger. For gates that only the active agent can prove, batch
@@ -662,18 +667,16 @@ python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py gate-batch --project <TARGET_
 Use this ledger to capture what happened, not to craft magic validator prose.
 Finish rejects a required ledger record whose capsule fingerprint does not
 match the current validated capsule. This applies to every required gate, not
-only `source docs`; a direct `--gate` fallback is persisted and checked through
-the same path, but should remain exceptional.
+only `source docs`. Ledger order is authoritative per checkpoint: a later
+`FAIL` invalidates an earlier `SUCCESS`, and only a later verified `SUCCESS`
+restores that gate. A later incomplete `SUCCESS` cannot fall back to an older
+complete record.
 If a structured entry is missing required fields, finish-check should fail and
 the recovery is to complete or record the missing gate fact, not to add a vague
-sentence. Use `agent-hook.py gate` only for a single immediate gate. Manual
-`--gate` arguments are acceptable for one-off fallback or override, but they
-should not become the normal finish path.
-
-When a one-off manual override is unavoidable, keep the evidence machine-clear
-instead of relying on equivalent prose or alternate key spellings. Use
-`gate`/`gate-batch` for any structured gate because `--gate` supplies only a
-single evidence string. Use the Graphify readiness anchors exactly as `cli=`,
+sentence. Use `agent-hook.py gate` for a single immediate gate and
+`agent-hook.py gate-batch` for a bounded set. Keep the evidence machine-clear
+instead of relying on equivalent prose or alternate key spellings. Use the
+Graphify readiness anchors exactly as `cli=`,
 `skill doc=`, `runtime links=`, `git ownership=`, `project integration=`,
 `target graph=`, and `query smoke=`, with every value exactly `success`; keep
 descriptive facts in separate gate evidence rather than keyword-parsing the

@@ -23,7 +23,6 @@ from agent_finish_check_steps import (
 from agent_finish_common import (
     add_gate_signal,
     display_signal,
-    parse_gate,
     requires_retrospective,
     write_json,
 )
@@ -31,7 +30,6 @@ from agent_finish_final_checks import run_final_checks
 from agent_gate_evidence import (
     incomplete_gate_evidence_failures,
     merge_gate_evidence_from_ledger,
-    record_cli_gate_evidence,
 )
 from agent_repair_ledger import failure_signature, record_failure_checkpoints
 
@@ -44,7 +42,6 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
     parser.add_argument("--rules", type=Path, default=playbook_root)
     parser.add_argument("--evidence", type=Path)
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--gate", action="append", default=[], type=parse_gate)
     parser.add_argument(
         "--allow-vibeguard-review",
         help="required reason when final VibeGuard is not Ready",
@@ -208,21 +205,10 @@ def main() -> int:
     failures: list[str] = []
     preflight = read_preflight(evidence_path, failures)
     route = preflight.get("route") or {}
-    cli_gate_evidence = dict(args.gate)
-    if cli_gate_evidence and preflight:
-        try:
-            record_cli_gate_evidence(
-                evidence_path=evidence_path,
-                preflight=preflight,
-                cli_gate_evidence=cli_gate_evidence,
-            )
-        except (OSError, ValueError) as error:
-            failures.append(f"finish CLI gate evidence could not be recorded: {error}")
     delegation_plan = read_delegation_plan(project)
     gate_evidence, gate_evidence_ledger = merge_gate_evidence_from_ledger(
         route=route,
         evidence_path=evidence_path,
-        cli_gate_evidence={},
     )
     failures.extend(incomplete_gate_evidence_failures(gate_evidence_ledger))
     gate_signals: list[dict[str, str]] = []

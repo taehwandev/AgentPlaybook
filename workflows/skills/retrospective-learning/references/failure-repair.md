@@ -31,6 +31,11 @@ blocking because the current task does not yet satisfy its execution contract.
    restart unrelated earlier work.
 7. Re-run the failed scope once. Stop if the same failure signature remains.
 
+If the failure signature reports that a required guidance document changed
+because a temporary instruction edit was reverted, keep the canonical restored
+document and regenerate the start/preflight capsule before resuming. Never
+reintroduce stale temporary guidance merely to match an earlier capsule hash.
+
 ## Executable Contract
 
 ```text

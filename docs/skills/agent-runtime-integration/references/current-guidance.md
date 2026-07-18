@@ -346,13 +346,13 @@ Do not silently broaden from one repo to another because investigation found a
 related file. If the secondary change is more than a small bounded contract,
 route, bridge, config, or docs update, prefer `multi-session`.
 
-When wrapper finish evidence is available and a secondary repo was written, add
-one of these gates to the finish check:
+When wrapper finish evidence is available and a secondary repo was written,
+record one of these checkpoints through the gate hook before finish:
 
 ```text
---gate "workspace scope checkpoint=<checkpoint evidence>"
---gate "scope expansion checkpoint=<checkpoint evidence>"
---gate "cross-repo scope checkpoint=<checkpoint evidence>"
+agent-hook.py gate --gate-name "workspace scope checkpoint" --status SUCCESS --gate-evidence "<checkpoint evidence>"
+agent-hook.py gate --gate-name "scope expansion checkpoint" --status SUCCESS --gate-evidence "<checkpoint evidence>"
+agent-hook.py gate --gate-name "cross-repo scope checkpoint" --status SUCCESS --gate-evidence "<checkpoint evidence>"
 ```
 
 The finish-check policy validates that the evidence names the starting primary
@@ -531,11 +531,11 @@ Codex:
   resolved absolute paths only. Agents should invoke these wrappers as direct
   argv commands, not through `$HOME`, `${HOME}`, `~`, relative paths, or shell
   `-lc` strings; once the absolute script path is a separate argv item, long
-  trailing workflow arguments such as repeated `--gate` values are
+  trailing workflow arguments such as repeated `--gate-record` values are
   suffix-matched by the runtime policy and should not prompt again.
 - When a Codex tool call needs escalation, request the persistent permission
   with `prefix_rule=["python3", "/absolute/path/to/AgentPlaybook/scripts/<name>.py"]`.
-  Do not include changing arguments such as `--project`, `--request`, `--gate`,
+  Do not include changing arguments such as `--project`, `--request`, `--gate-record`,
   `$(pwd)`, or user-provided text in the saved prefix.
 - `setup-agent-hooks.py` should leave only absolute, parameter-free
   AgentPlaybook script prefix rules in the managed Codex block and remove stale

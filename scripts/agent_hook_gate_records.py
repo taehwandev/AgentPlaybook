@@ -23,6 +23,7 @@ from agent_gate_evidence import (
     synthesize_gate_evidence,
 )
 from agent_finish_gate_policy import MULTI_AGENT_GATE, validate_gate_evidence
+from agent_finish_documentation import required_doc_target_failures
 from agent_hook_runtime import finish_with_result, print_status
 
 
@@ -232,6 +233,14 @@ def _validate_records_before_write(
                 f"structured gate record for {gate} missing required fields: "
                 + ", ".join(missing)
             )
+
+        if gate == "documentation" and fields.get("decision", "").strip().lower() == "updated":
+            target_failures = required_doc_target_failures(
+                target=fields.get("target", ""),
+                route=route,
+            )
+            if target_failures:
+                raise ValueError("; ".join(target_failures))
 
         synthesized, synthesis_failures = synthesize_gate_evidence(
             gate,

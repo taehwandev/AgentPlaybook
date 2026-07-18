@@ -367,7 +367,7 @@ options) will fail prefix matching and trigger repeated prompts.
 For Codex `exec_command` escalations, set `prefix_rule` to only the executable
 and resolved wrapper path, such as
 `["/Users/USER/.agentplaybook/bin/agentplaybook-hook"]`; never
-include `--project`, `--request`, `--gate`, `$(pwd)`, `$HOME`, or other runtime
+include `--project`, `--request`, `--gate-record`, `$(pwd)`, `$HOME`, or other runtime
 arguments in the saved prefix. AGY (Antigravity) permission allowlists must follow the same
 shape with only an absolute wrapper command plus a trailing argument wildcard.
 Specifically, for any command, AGY requires registering three concurrent entries
@@ -444,12 +444,17 @@ to one capable agent and use additional reviewers only when impact and available
 budget justify them. The detailed decision and privacy rules are owned by
 `workflows/skills/retrospective-learning/SKILL.md`.
 
-Before final report, commit, release, or handoff, run the finish hook and pass
-evidence for every required route gate:
+Before final report, commit, release, or handoff, record every remaining route
+gate with explicit structured status, then run the read-only finish hook:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
+~/.agentplaybook/bin/agentplaybook-hook gate-batch --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"orient","status":"SUCCESS","evidence":"<evidence>"},{"gate":"scope","status":"SUCCESS","evidence":"<evidence>"},{"gate":"act","status":"SUCCESS","evidence":"<evidence>"},{"gate":"verify","status":"SUCCESS","evidence":"<evidence>"},{"gate":"report","status":"SUCCESS","evidence":"<evidence>"}]'
+~/.agentplaybook/bin/agentplaybook-hook finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
 ```
+
+`finish` must not create or override gate evidence. A later structured `FAIL`
+for a gate invalidates an earlier `SUCCESS` until a later verified `SUCCESS` is
+recorded through `gate` or `gate-batch`.
 
 Call `agent-finish-check.py` directly only as a lower-level diagnostic or
 compatibility fallback when the finish hook is unavailable.

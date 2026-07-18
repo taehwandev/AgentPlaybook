@@ -183,10 +183,11 @@ in the executable command.
 Read every route `required_docs` entry directly after start and before editing
 or reviewing. Use the route's review hook after meaningful edits.
 
-Before final report, commit, release, or handoff, run finish check with evidence
-for every required route gate:
+Before final report, commit, release, or handoff, record any remaining manual
+gate evidence, then run the read-only finish check:
 
-~/.agentplaybook/bin/agentplaybook-hook finish --project . --rules <AGENTPLAYBOOK_ROOT> --gate "request intake=<evidence>" --gate "orient=<evidence>" --gate "scope=<evidence>" --gate "act=<evidence>" --gate "verify=<evidence>" --gate "report=<evidence>"
+~/.agentplaybook/bin/agentplaybook-hook gate-batch --project . --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"<gate>","status":"SUCCESS","evidence":"<evidence>"}]'
+~/.agentplaybook/bin/agentplaybook-hook finish --project . --rules <AGENTPLAYBOOK_ROOT>
 
 Call `workflow.py route`, `agent-preflight.py`, or `agent-finish-check.py`
 directly only as lower-level diagnostic or compatibility fallbacks when the

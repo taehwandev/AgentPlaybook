@@ -53,19 +53,22 @@ preflight를 함께 수행하므로 성공 뒤에 `workflow.py route`나
 
 start가 만든 route의 `required_docs`를 수정이나 검토 전에 직접 읽습니다.
 의미 있는 수정 뒤에는 `agent-hook.py review` review hook을 실행하고,
-마무리 전에는 finish hook을 실행합니다:
+남은 gate를 명시적 구조 상태로 기록한 다음 마무리 전에는 읽기 전용 finish
+hook을 실행합니다:
 
 ```bash
-~/.agentplaybook/bin/agentplaybook-hook finish \
+~/.agentplaybook/bin/agentplaybook-hook gate-batch \
   --project . \
   --rules "${AGENTPLAYBOOK_HOME}" \
-  --gate "request intake=<근거>" \
-  --gate "orient=<근거>" \
-  --gate "scope=<근거>" \
-  --gate "act=<근거>" \
-  --gate "verify=<근거>" \
-  --gate "report=<근거>"
+  --gate-record '[{"gate":"orient","status":"SUCCESS","evidence":"<근거>"},{"gate":"scope","status":"SUCCESS","evidence":"<근거>"},{"gate":"act","status":"SUCCESS","evidence":"<근거>"},{"gate":"verify","status":"SUCCESS","evidence":"<근거>"},{"gate":"report","status":"SUCCESS","evidence":"<근거>"}]'
+
+~/.agentplaybook/bin/agentplaybook-hook finish \
+  --project . \
+  --rules "${AGENTPLAYBOOK_HOME}"
 ```
+
+`finish`는 gate ledger를 쓰거나 덮어쓰지 않습니다. gate 상태 수정은
+`gate`/`gate-batch`로만 기록하며, 각 gate의 가장 최신 구조 상태가 기준입니다.
 
 `workflow.py route`, `agent-preflight.py`, `agent-finish-check.py` 직접 호출은
 hook이 unavailable인 경우의 하위(lower-level) 진단 또는 호환성 fallback일 뿐이며 같은

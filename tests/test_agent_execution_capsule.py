@@ -38,9 +38,10 @@ from agent_finish_final_checks import (
 from agent_finish_check_steps import route_gate_capsule_binding_failures
 from agent_gate_evidence import (
     gate_evidence_path_for_preflight,
+    incomplete_gate_evidence_failures,
+    latest_successful_gate_fields,
     merge_gate_evidence_from_ledger,
     bind_gate_evidence_to_capsule,
-    record_cli_gate_evidence,
     record_gate_evidence,
 )
 from agent_route_state import preflight_evidence_sha256, route_fingerprint
@@ -456,7 +457,6 @@ class ExecutionCapsuleTests(unittest.TestCase):
         gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
             route=self.route,
             evidence_path=self.evidence_path,
-            cli_gate_evidence={},
         )
 
         self.assertEqual(
@@ -547,7 +547,6 @@ class ExecutionCapsuleTests(unittest.TestCase):
         gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
             route=self.route,
             evidence_path=self.evidence_path,
-            cli_gate_evidence={},
         )
 
         self.assertEqual(
@@ -573,7 +572,6 @@ class ExecutionCapsuleTests(unittest.TestCase):
         gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
             route=self.route,
             evidence_path=self.evidence_path,
-            cli_gate_evidence={},
         )
 
         failures = route_gate_capsule_binding_failures(
@@ -606,51 +604,136 @@ class ExecutionCapsuleTests(unittest.TestCase):
             failures,
         )
 
-    def test_ledger_merge_never_applies_an_unpersisted_cli_override(self) -> None:
-        merged, diagnostics = merge_gate_evidence_from_ledger(
-            route=self.route,
-            evidence_path=self.evidence_path,
-            cli_gate_evidence={"verify": "unpersisted fallback"},
-        )
+    def test_ledger_merge_has_no_cli_override_input(self) -> None:
+        with self.assertRaises(TypeError):
+            merge_gate_evidence_from_ledger(
+                route=self.route,
+                evidence_path=self.evidence_path,
+                cli_gate_evidence={"verify": "unpersisted fallback"},
+            )
 
-        self.assertEqual({}, merged)
-        self.assertIn(
-            "CLI gate evidence must be persisted before ledger merge",
-            diagnostics["warnings"],
-        )
-
-    def test_cli_fallback_is_persisted_with_the_capsule_binding(self) -> None:
-        capsule = refresh_execution_capsule(
-            self.project, self.rules, self.evidence_path, self.route
-        )
+    def test_latest_failed_gate_invalidates_an_earlier_success(self) -> None:
         preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
-
-        record_cli_gate_evidence(
+        record_gate_evidence(
             evidence_path=self.evidence_path,
             preflight=preflight,
-            cli_gate_evidence={"verify": "focused check passed"},
+            gate="verify",
+            status="SUCCESS",
+            evidence="focused check passed",
+        )
+        record_gate_evidence(
+            evidence_path=self.evidence_path,
+            preflight=preflight,
+            gate="verify",
+            status="FAIL",
+            evidence="focused check exposed a regression",
         )
         gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
             route=self.route,
             evidence_path=self.evidence_path,
-            cli_gate_evidence={},
         )
 
-        self.assertEqual("finish cli fallback", diagnostics["sources"]["verify"])
+        self.assertNotIn("verify", gate_evidence)
         self.assertEqual(
-            execution_capsule_binding_fingerprint(capsule),
-            diagnostics["capsule_bindings"]["verify"],
+            "focused check exposed a regression",
+            diagnostics["failed_gates"]["verify"]["evidence"],
         )
         self.assertEqual(
-            [],
-            route_gate_capsule_binding_failures(
-                self.route,
-                self.project,
-                self.rules,
-                self.evidence_path,
-                gate_evidence,
-                diagnostics,
+            {},
+            latest_successful_gate_fields(
+                route=self.route,
+                evidence_path=self.evidence_path,
+                gate="verify",
             ),
+        )
+
+    def test_later_success_restores_a_failed_gate(self) -> None:
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        for status, evidence in (
+            ("SUCCESS", "initial check passed"),
+            ("FAIL", "regression found"),
+            ("SUCCESS", "repaired check passed"),
+        ):
+            record_gate_evidence(
+                evidence_path=self.evidence_path,
+                preflight=preflight,
+                gate="verify",
+                status=status,
+                evidence=evidence,
+            )
+
+        gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+            route=self.route,
+            evidence_path=self.evidence_path,
+        )
+
+        self.assertEqual("repaired check passed", gate_evidence["verify"])
+        self.assertNotIn("verify", diagnostics["failed_gates"])
+
+    def test_later_incomplete_success_cannot_reuse_older_complete_fields(self) -> None:
+        self.route = {**self.route, "gates": ["tests"]}
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        preflight["route"] = self.route
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self._write_ledger()
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        record_gate_evidence(
+            evidence_path=self.evidence_path,
+            preflight=preflight,
+            gate="tests",
+            fields={"check": "focused tests", "result": "PASS"},
+        )
+        record_gate_evidence(
+            evidence_path=self.evidence_path,
+            preflight=preflight,
+            gate="tests",
+            fields={"check": "changed but incomplete test run"},
+        )
+
+        gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+            route=self.route,
+            evidence_path=self.evidence_path,
+        )
+
+        self.assertNotIn("tests", gate_evidence)
+        self.assertEqual(["result"], diagnostics["missing_fields"]["tests"])
+        self.assertIn(
+            "structured gate evidence for tests is incomplete: result",
+            incomplete_gate_evidence_failures(diagnostics),
+        )
+
+    def test_malformed_latest_status_fails_closed_over_older_success(self) -> None:
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        record_gate_evidence(
+            evidence_path=self.evidence_path,
+            preflight=preflight,
+            gate="verify",
+            status="SUCCESS",
+            evidence="initial verification passed",
+        )
+        ledger_path = gate_evidence_path_for_preflight(self.evidence_path)
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+        ledger["entries"].append(
+            {
+                "gate": "verify",
+                "status": "UNKNOWN",
+                "source": "malformed external state",
+                "evidence": "must not preserve the older success",
+                "fields": {},
+            }
+        )
+        ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+
+        gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
+            route=self.route,
+            evidence_path=self.evidence_path,
+        )
+
+        self.assertNotIn("verify", gate_evidence)
+        self.assertEqual("UNKNOWN", diagnostics["invalid_statuses"]["verify"])
+        self.assertIn(
+            "structured gate evidence for verify has invalid status: UNKNOWN",
+            incomplete_gate_evidence_failures(diagnostics),
         )
 
     def test_sync_after_preflight_gate_binding_keeps_capsule_reusable(self) -> None:
@@ -718,7 +801,6 @@ class ExecutionCapsuleTests(unittest.TestCase):
         gate_evidence, diagnostics = merge_gate_evidence_from_ledger(
             route=self.route,
             evidence_path=self.evidence_path,
-            cli_gate_evidence={},
         )
 
         self.assertEqual(

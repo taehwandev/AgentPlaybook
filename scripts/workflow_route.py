@@ -412,8 +412,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
             "when": "before final report, commit, release, or handoff",
             "command": (
                 f"{launcher} finish "
-                "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
-                "[--gate \"<gate>=<evidence override>\"]"
+                "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>"
             ),
         },
         ]

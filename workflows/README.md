@@ -204,9 +204,9 @@ the update.
   `~/.agentplaybook/bin/agentplaybook-hook review --review-outcome <pass|findings> --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
 - `Finish Hook`: run before final report, commit, release, or handoff. It
   verifies the required route gate evidence, final validation, diff hygiene,
-  and final VibeGuard state. Prefer executable hook evidence plus one
-  `agent-hook.py gate-batch` call for manual gates; use repeated
-  `--gate "<gate>=<evidence>"` only as a compatibility fallback. If a custom
+  and final VibeGuard state. Record manual gate facts first with
+  `agent-hook.py gate` or one `agent-hook.py gate-batch` call; finish is
+  read-only and accepts no inline gate evidence. If a custom
   preflight evidence path is used, its gate ledger is
   `<preflight-stem>-gate-evidence.json`; the default preflight keeps using
   `.agentplaybook/gate-evidence.json`. If

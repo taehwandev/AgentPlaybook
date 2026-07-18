@@ -661,20 +661,24 @@ preflight:
 ```
 
 Read every route `required_docs` entry directly after start and before work. Run
-the review hook after meaningful edits. Before final report, commit, release, or
-handoff:
+the review hook after meaningful edits. Record any remaining route gates with
+explicit structured status, then run the read-only finish hook before final
+report, commit, release, or handoff:
 
 ```bash
-~/.agentplaybook/bin/agentplaybook-hook finish \
+~/.agentplaybook/bin/agentplaybook-hook gate-batch \
   --project . \
   --rules "${AGENTPLAYBOOK_HOME}" \
-  --gate "request intake=<route/classification evidence>" \
-  --gate "orient=<instructions and required-doc route>" \
-  --gate "scope=<scope decision evidence>" \
-  --gate "act=<diff or changed files evidence>" \
-  --gate "verify=<commands and results>" \
-  --gate "report=<final report prepared>"
+  --gate-record '[{"gate":"orient","status":"SUCCESS","evidence":"<instructions and required-doc route>"},{"gate":"scope","status":"SUCCESS","evidence":"<scope decision>"},{"gate":"act","status":"SUCCESS","evidence":"<diff or changed files>"},{"gate":"verify","status":"SUCCESS","evidence":"<commands and results>"},{"gate":"report","status":"SUCCESS","evidence":"<final report prepared>"}]'
+
+~/.agentplaybook/bin/agentplaybook-hook finish \
+  --project . \
+  --rules "${AGENTPLAYBOOK_HOME}"
 ```
+
+`finish` never writes or overrides the gate ledger. Record corrections through
+`gate` or `gate-batch`; the latest structured status for each gate is
+authoritative.
 
 Direct `workflow.py route`, `agent-preflight.py`, and `agent-finish-check.py`
 calls remain available only as lower-level diagnostic or compatibility

@@ -134,8 +134,6 @@ def finish_hook(args: argparse.Namespace) -> int:
     ]
     if args.evidence:
         command.extend(["--evidence", str(args.evidence)])
-    for gate in args.gate:
-        command.extend(["--gate", gate])
     if args.allow_vibeguard_review:
         command.extend(["--allow-vibeguard-review", args.allow_vibeguard_review])
 
@@ -415,7 +413,6 @@ def _add_review_arguments(parser: argparse.ArgumentParser) -> None:
 
 def _add_finish_arguments(parser: argparse.ArgumentParser) -> None:
     finish = parser.add_argument_group("finish hook")
-    finish.add_argument("--gate", action="append", default=[])
     finish.add_argument("--allow-vibeguard-review")
 
 
@@ -468,7 +465,10 @@ def _add_gate_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run essential AgentPlaybook hooks.")
+    parser = argparse.ArgumentParser(
+        description="Run essential AgentPlaybook hooks.",
+        allow_abbrev=False,
+    )
     _add_common_arguments(parser)
     _add_start_arguments(parser)
     _add_review_arguments(parser)
@@ -478,9 +478,22 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _parse_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
+    argv = sys.argv[1:]
+    if argv and argv[0] == "finish" and any(
+        argument == "--gate" or argument.startswith("--gate=")
+        for argument in argv
+    ):
+        parser.error(
+            "finish no longer accepts --gate; record gate evidence first with "
+            "the gate or gate-batch hook, then run finish"
+        )
+    return parser.parse_args(argv)
+
+
 def main() -> int:
     parser = build_parser()
-    args = parser.parse_args()
+    args = _parse_args(parser)
     worker_error = _apply_worker_evidence_boundary(args)
     if worker_error:
         print_status(args.hook, False, [worker_error])

@@ -31,6 +31,7 @@ from workflow_spill import validate_spill_label_contracts
 
 
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+REMOVED_GATE_OPTION_RE = re.compile(r"--gate(?![-\w])")
 FRONTMATTER_REQUIRED_KEYS = ("keyflow_id:", "status:", "type:")
 STRICT_CARD_MARKER = "agentplaybook_card_contract: strict"
 STRICT_CARD_REQUIRED_HEADINGS = (
@@ -68,6 +69,14 @@ PROFILE_VALIDATED_GATES = {
     "docs-review": {"review readiness"},
     "product": {"platform selection"},
 }
+
+
+def removed_cli_option_failures(relative: Path, text: str) -> list[str]:
+    return [
+        f"{relative}:{line_number}: removed CLI option --gate; use gate or gate-batch"
+        for line_number, line in enumerate(text.splitlines(), start=1)
+        if REMOVED_GATE_OPTION_RE.search(line)
+    ]
 
 
 def validate_route_contracts() -> list[str]:
@@ -198,10 +207,12 @@ def validate() -> int:
     bad_frontmatter: list[str] = []
     bad_links: list[str] = []
     bad_card_quality: list[str] = []
+    bad_removed_cli_options: list[str] = []
 
     for path in markdown_files:
         relative = path.relative_to(ROOT)
         text = path.read_text(encoding="utf-8")
+        bad_removed_cli_options.extend(removed_cli_option_failures(relative, text))
         if not text.startswith("---\n"):
             bad_frontmatter.append(f"{relative}: missing frontmatter")
             continue
@@ -256,8 +267,20 @@ def validate() -> int:
         print("Invalid strict card anatomy:", file=sys.stderr)
         for item in bad_card_quality:
             print(f"- {item}", file=sys.stderr)
+    if bad_removed_cli_options:
+        print("Removed workflow CLI options in Markdown:", file=sys.stderr)
+        for item in bad_removed_cli_options:
+            print(f"- {item}", file=sys.stderr)
 
-    if missing or bad_frontmatter or bad_links or bad_route_contracts or bad_surface_refs or bad_card_quality:
+    if (
+        missing
+        or bad_frontmatter
+        or bad_links
+        or bad_route_contracts
+        or bad_surface_refs
+        or bad_card_quality
+        or bad_removed_cli_options
+    ):
         return 1
 
     print(

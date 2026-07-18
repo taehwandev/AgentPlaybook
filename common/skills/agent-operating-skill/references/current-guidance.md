@@ -185,8 +185,9 @@ Before finishing:
   when a scripted route was used. Treat missing fields as missing work or
   missing evidence to complete, not as a prompt to write vague pass-through
   wording at finish. For gates with structured field requirements, ledger
-  evidence must provide those fields; use explicit finish `--gate` overrides
-  only as a compatibility fallback for one-off manual evidence.
+  evidence must provide those fields. Record one-off manual evidence through
+  `gate` or `gate-batch` before finish; finish is a read-only validator and
+  accepts no inline gate state.
 - Confirm alignment evidence names the user-visible checkpoint, not only an
   internal note reconstructed after the work.
 - Confirm documentation evidence names the decision, affected source-of-truth

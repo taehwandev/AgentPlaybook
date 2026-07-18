@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import re
 import shutil
@@ -71,17 +70,6 @@ def parse_overall(output: str) -> dict[str, str]:
             status = value or "unknown"
         return {"status": status, "line": line}
     return {"status": "unknown", "line": ""}
-
-
-def parse_gate(value: str) -> tuple[str, str]:
-    if "=" not in value:
-        raise argparse.ArgumentTypeError("gate evidence must use '<gate>=<evidence>'")
-    gate, evidence = value.split("=", 1)
-    gate = gate.strip()
-    evidence = evidence.strip()
-    if not gate or not evidence:
-        raise argparse.ArgumentTypeError("gate and evidence must both be non-empty")
-    return gate, evidence
 
 
 def add_gate_signal(
