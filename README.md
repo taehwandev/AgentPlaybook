@@ -935,3 +935,16 @@ type: ai-generated
   the target repo, not in this shared library.
 - When adding a public-facing page, keep agent source guidance in English and
   localize only the distribution copy.
+
+## Local Hook Testing
+
+To verify that AgentPlaybook hooks (`agent-hook.py`, `agent-finish-check.py`)
+and search tools function correctly in an E2E sandbox environment:
+
+```bash
+python3 scripts/run_smoke_checks.py
+```
+
+This runs E2E workflow checks (preflight initialization, constraint
+verification, gate ledger merges, and workflow search) in a temporary git
+repository sandbox.
