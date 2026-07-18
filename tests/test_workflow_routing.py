@@ -5182,6 +5182,22 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertNotIn("request intake", missed_gates)
         self.assertFalse(any("does not prove work can start" in failure for failure in failures))
 
+    def test_clarified_request_with_no_unresolved_behavior_blocker_allows_work(self) -> None:
+        self.assertIsNone(
+            classified_route_block_reason(
+                "feature",
+                "user clarified the desired interaction explicitly; "
+                "no unresolved behavior blocker remains",
+            )
+        )
+
+        self.assertIsNotNone(
+            classified_route_block_reason(
+                "feature",
+                "an unresolved behavior blocker remains",
+            )
+        )
+
     def test_question_resolution_route_allows_unresolved_classification_evidence(self) -> None:
         gate_signals: list[dict[str, str]] = []
         missed_gates: list[str] = []
