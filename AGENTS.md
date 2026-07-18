@@ -185,6 +185,12 @@ succeeds:
 ~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
+`--command` accepts a workflow route, not a stage label. For implementation work,
+use the closest route such as `bugfix`, `feature`, `build`, or `task`; `implement`
+is an execution-stage label and is not a valid route command. When uncertain,
+confirm the current route choices with `agentplaybook-hook workflow list` before
+running the hook.
+
 Use the start output as the route, document, and gate manifest, then execute the
 task with the target repo's local commands. Read every route `required_docs`
 entry directly before work. Direct `workflow.py route` and `agent-preflight.py`
