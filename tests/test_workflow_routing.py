@@ -2761,16 +2761,30 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertNotIn("python3 scripts/", entries)
         self.assertNotIn("python scripts/", entries)
 
-    def test_setup_permissions_use_absolute_agentplaybook_paths_for_agy(self) -> None:
-        entries = "\n".join(agy_permission_entries(ROOT / "scripts", spill_available=False))
+    def test_setup_permissions_use_stable_launcher_for_agy(self) -> None:
+        # Regression: agy_permission_entries used to enumerate every *.py file
+        # under the repo (scripts/ and tests/ alike) with 81 path/env/
+        # interpreter/suffix variants each -- a real ~/.gemini/config/
+        # config.json grew to 17,547 allow entries this way, and each
+        # startup preflight check paid for scanning that bloat. AGY should
+        # follow the same absolute-wrapper-only rule as Claude: only the
+        # stable launcher gets a permission entry.
+        entry_list = agy_permission_entries(ROOT / "scripts", spill_available=False)
+        entries = "\n".join(entry_list)
 
-        self.assertIn(str(ROOT / "scripts" / "agent-hook.py"), entries)
+        self.assertIn(str(stable_launcher_path()), entries)
+        self.assertIn("agentplaybook-hook", entries)
+        self.assertNotIn(str(ROOT / "scripts" / "agent-hook.py"), entries)
         self.assertNotIn("$HOME", entries)
         self.assertNotIn("${HOME}", entries)
         self.assertNotIn("$AGENTPLAYBOOK_HOME", entries)
         self.assertNotIn("~/", entries)
         self.assertNotIn("python3 scripts/", entries)
         self.assertNotIn("python scripts/", entries)
+        # Entry count must not scale with the number of *.py files in the
+        # repo -- that per-file combinatorial growth is exactly what grew a
+        # real AGY config to 17,547 entries.
+        self.assertLess(len(entry_list), 100)
 
     def test_agy_runtime_bridge_requires_project_discovery_entry(self) -> None:
         required = [

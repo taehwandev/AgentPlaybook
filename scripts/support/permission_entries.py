@@ -48,9 +48,8 @@ def claude_project_permission_entries(scripts_dir: Path, *, spill_available: boo
 
 def agy_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -> list[str]:
     entries: list[str] = []
-    for script in _agentplaybook_python_scripts(scripts_dir):
-        for command in _python_entrypoint_commands(script, "antigravity", include_spill_env=spill_available):
-            _add_permission_command_entries(entries, "command", command)
+    for command in _stable_launcher_commands("antigravity", include_spill_env=spill_available):
+        _add_permission_command_entries(entries, "command", command)
     if spill_available:
         for command in _spill_helper_permission_commands("antigravity"):
             _add_permission_command_entries(entries, "command", command)

@@ -191,7 +191,16 @@ def _missing_allow_entries(config: dict[str, Any], entries: list[str]) -> list[s
     allow = permissions.get("allow")
     if not isinstance(allow, list):
         return entries
-    return [entry for entry in entries if entry not in allow]
+    # Some runtime config files (e.g. an AGY config with tens of thousands of
+    # accumulated allow entries) make a per-entry `in` scan over the raw list
+    # O(len(entries) * len(allow)); a real one measured ~0.16s per call from
+    # this alone. Hashing once first drops it to a negligible O(len(allow) +
+    # len(entries)).
+    # Runtime configuration is an external JSON boundary.  Ignore malformed
+    # elements instead of letting one object/list make every preflight crash;
+    # only string entries can satisfy a string permission requirement.
+    allow_set = {item for item in allow if isinstance(item, str)}
+    return [entry for entry in entries if entry not in allow_set]
 
 
 def _missing_text_entries(text: str, entries: list[str]) -> list[str]:
