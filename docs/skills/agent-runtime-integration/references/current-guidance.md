@@ -434,12 +434,12 @@ short and point to:
 
 For committed repo-local instruction files, keep the root reference portable.
 Use `${TAO_HOME}` when each machine can set the variable, or a
-repo-relative pinned path such as `.agents/tao-agent-os` when the playbook is
+repo-relative pinned path such as `.agents/tao-agent-os` when Tao Agent OS is
 kept with the target repo. Do not commit personal absolute paths such as
 `/Users/.../tao-agent-os`; keep them in shell environment setup, one-shot
 prompts, or uncommitted user-level runtime bridges only.
 
-Do not paste the full playbook into runtime-specific files.
+Do not paste the full Tao Agent OS library into runtime-specific files.
 
 For Graphify specifically, follow
 `docs/skills/graphify-project-integration/SKILL.md`: the canonical project
@@ -531,7 +531,7 @@ Codex:
 - Start Codex with the selected target repo as the primary workspace:
   `codex -C <TARGET_REPO>`.
 - Add `--add-dir <TAO_ROOT>` only when the task must include the
-  shared playbook root in the session workspace, such as maintaining
+  shared Tao Agent OS root in the session workspace, such as maintaining
   Tao Agent OS itself or editing shared runtime bridge files.
 - Do not expect `AGENTS.md` or `.codex/rules` to change sandbox roots; they
   control behavior and permission matching, not the runtime's workspace root.
@@ -555,7 +555,7 @@ Codex:
   Tao Agent OS rules that were saved with `$HOME`, `${HOME}`, `~`, relative
   script paths, shell `-lc`, or command-specific arguments.
 - Keep Codex-specific commands or sandbox notes in the target repo, not in the
-  shared playbook.
+  shared Tao Agent OS.
 
 Claude:
 

@@ -84,7 +84,7 @@ def retrospective_candidate(finish_result: dict[str, Any]) -> dict[str, Any]:
         "root_cause": root_cause,
         "next_action": "repair_verify_then_resume_failed_checkpoint",
         "required_retrospective_output": "immediate_correction_plan",
-        "repair_rule": "improve_playbook_doc_hook_validator_or_test_before_resume",
+        "repair_rule": "improve_tao_doc_hook_validator_or_test_before_resume",
         "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
         "repair_policy": REPAIR_POLICY,
         "resume_rule": f"resume_{RESUME_SCOPE}_after_verified_improvement",

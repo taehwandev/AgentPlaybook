@@ -145,7 +145,7 @@ The route output is the command manifest for the agent:
 - `stop_condition`: terminal recovery condition; this must be
   `same_failure_after_repair_or_unsafe_repair`.
 - `notes`: apply these routing hints before choosing commands or edits.
-- `missing`: stop if this is not empty; fix the playbook reference first.
+- `missing`: stop if this is not empty; fix the Tao Agent OS reference first.
 
 Markdown output is optimized for direct agent reading. JSON output exposes the
 same fields for wrappers, launchers, or CI checks.

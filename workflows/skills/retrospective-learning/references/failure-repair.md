@@ -63,7 +63,7 @@ tao-hook <failed_hook> \
   --resume-checkpoint <same_recorded_failed_checkpoint> ...
 ```
 
-The verifier accepts only a changed file under the project or playbook rules
+The verifier accepts only a changed file under the project or Tao Agent OS rules
 root and fixed verification kinds. A receipt becomes invalid when its target,
 preflight, route, failure signature, checkpoint, or result changes.
 

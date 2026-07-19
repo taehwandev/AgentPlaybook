@@ -98,10 +98,10 @@ def parse_overall(output: str) -> dict[str, str]:
     return {"status": "unknown", "line": ""}
 
 
-def route_command(args: argparse.Namespace, playbook_root: Path) -> list[str]:
+def route_command(args: argparse.Namespace, tao_root: Path) -> list[str]:
     command = [
         "python3",
-        str(playbook_root / "scripts" / "workflow.py"),
+        str(tao_root / "scripts" / "workflow.py"),
         "route",
         args.command,
         "--format",
@@ -126,11 +126,11 @@ def route_command(args: argparse.Namespace, playbook_root: Path) -> list[str]:
 
 def route_result(
     args: argparse.Namespace,
-    playbook_root: Path,
+    tao_root: Path,
     project: Path,
     git_status: dict[str, Any],
 ) -> dict[str, Any]:
-    command = route_command(args, playbook_root)
+    command = route_command(args, tao_root)
     try:
         route, error, returncode = route_payload(args, git_status)
     except Exception as error:
@@ -225,7 +225,7 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     atomic_write_json(path, payload)
 
 
-def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
+def build_parser(tao_root: Path) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run route, git status, and VibeGuard before agent work."
     )
@@ -260,7 +260,7 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
         default=[],
     )
     parser.add_argument("--project", type=Path, default=Path.cwd())
-    parser.add_argument("--rules", type=Path, default=playbook_root)
+    parser.add_argument("--rules", type=Path, default=tao_root)
     parser.add_argument("--evidence", type=Path)
     parser.add_argument(
         "--worker-reservation-token",
@@ -347,7 +347,7 @@ def request_intake(args: argparse.Namespace) -> dict[str, Any]:
 
 def write_early_bridge_failure(
     args: argparse.Namespace,
-    playbook_root: Path,
+    tao_root: Path,
     project: Path,
     rules: Path,
     evidence_path: Path,
@@ -355,7 +355,7 @@ def write_early_bridge_failure(
 ) -> int:
     evidence = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "playbook_root": str(playbook_root),
+        "tao_root": str(tao_root),
         "project": str(project),
         "rules": str(rules),
         "request_intake": request_intake(args),
@@ -412,18 +412,18 @@ def collect_failures(
     return failures
 
 
-def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
+def run_preflight(args: argparse.Namespace, tao_root: Path) -> int:
     project = args.project.resolve()
     rules = args.rules.resolve()
     evidence_path = resolve_evidence_path(args, project)
 
     early_bridge_failure = ""
     if active_runtime_label() == "antigravity":
-        early_bridge_failure = agy_runtime_bridge_issue(playbook_root)
+        early_bridge_failure = agy_runtime_bridge_issue(tao_root)
     if early_bridge_failure:
         return write_early_bridge_failure(
             args,
-            playbook_root,
+            tao_root,
             project,
             rules,
             evidence_path,
@@ -434,7 +434,7 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
     if is_git_status_review_only(project, git_status):
         git_status["review_only"] = True
         git_status["review_note"] = non_git_writing_workspace_note(project)
-    route_result_payload = route_result(args, playbook_root, project, git_status)
+    route_result_payload = route_result(args, tao_root, project, git_status)
     route_payload, route_parse_error = parse_route_payload(route_result_payload)
     vibeguard = cached_vibeguard(
         project=project,
@@ -448,7 +448,7 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
 
     write_json(evidence_path, {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "playbook_root": str(playbook_root),
+        "tao_root": str(tao_root),
         "project": str(project),
         "rules": str(rules),
         "request_intake": request_intake(args),
@@ -460,7 +460,7 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
         "global_lessons": global_lessons,
         "runtime_session": runtime_session(),
     })
-    hook_warnings, hook_failures = check_agent_hooks(playbook_root)
+    hook_warnings, hook_failures = check_agent_hooks(tao_root)
     failures = collect_failures(
         route_result_payload,
         route_payload,
@@ -509,8 +509,8 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
 
 def main() -> int:
     write_spill_label("analysis", "classify")
-    playbook_root = Path(__file__).resolve().parents[1]
-    parser = build_parser(playbook_root)
+    tao_root = Path(__file__).resolve().parents[1]
+    parser = build_parser(tao_root)
     args = parser.parse_args()
     if args.request_classified and not args.classification_evidence:
         parser.error(
@@ -520,7 +520,7 @@ def main() -> int:
     if not args.request and not args.request_classified:
         parser.error("preflight requires --request or --request-classified")
     try:
-        return run_preflight(args, playbook_root)
+        return run_preflight(args, tao_root)
     except ValueError as error:
         print(f"FAIL: {error}", file=sys.stderr)
         return 2

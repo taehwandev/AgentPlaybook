@@ -10,7 +10,7 @@ Use when an AI coding agent receives the Tao Agent OS repository link or a
 request to apply Tao Agent OS to a target project.
 
 The goal is to connect the target repo to one reusable Tao Agent OS install. Do
-not copy the full playbook into the target repo.
+not copy the full Tao Agent OS library into the target repo.
 
 ## Pasteable User Request
 

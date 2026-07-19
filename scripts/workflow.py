@@ -77,7 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
     classify.add_argument("request", help="User request text to classify.")
     classify.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
-    query = subparsers.add_parser("query", help="Search playbook docs by keyword relevance.")
+    query = subparsers.add_parser("query", help="Search Tao Agent OS docs by keyword relevance.")
     query.add_argument("terms", nargs="+", help="Search terms (space-separated keywords).")
     query.add_argument(
         "--max",

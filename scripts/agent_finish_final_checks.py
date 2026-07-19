@@ -22,14 +22,14 @@ REVIEW_VALIDATION_FILENAME = "review-workflow-validation.json"
 
 
 def run_final_checks(
-    playbook_root: Path,
+    tao_root: Path,
     project: Path,
     rules: Path,
     allow_vibeguard_review: str | None,
     gate_signals: list[dict[str, str]],
     failures: list[str],
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], str]:
-    validate = reusable_review_workflow_validation(project, rules) or run_workflow_validate(playbook_root)
+    validate = reusable_review_workflow_validation(project, rules) or run_workflow_validate(tao_root)
     diff_check = (
         {
             "command": ["git", "diff", "--check"],

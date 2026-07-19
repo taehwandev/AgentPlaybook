@@ -170,7 +170,7 @@ def _runtime_launch_guidance(selected: ProjectCandidate, runtime: str) -> dict[s
         "tao_root": str(ROOT),
         "policy": (
             "Start the runtime with the selected target project as the primary workspace. "
-            "Add Tao Agent OS as an extra workspace only when the task may read, run, or edit shared playbook files."
+            "Add Tao Agent OS as an extra workspace only when the task may read, run, or edit shared Tao Agent OS files."
         ),
         "notes": [
             "Repo instruction files choose behavior; runtime launch options choose filesystem scope.",

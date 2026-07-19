@@ -28,18 +28,18 @@ AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
 AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = runtime_bridge_required_phrases("Antigravity", "AGENTS.md")
 
 
-def check_agent_hooks(playbook_root: Path) -> tuple[list[str], list[str]]:
+def check_agent_hooks(tao_root: Path) -> tuple[list[str], list[str]]:
     """Return warning and failure strings for missing runtime registrations."""
     warnings: list[str] = []
     failures: list[str] = []
     spill_available = has_spill_setup_helper()
 
-    warnings.extend(_codex_warnings(playbook_root))
-    warnings.extend(_claude_warnings(playbook_root, spill_available=spill_available))
-    agy_warnings = _agy_warnings(playbook_root, spill_available=spill_available)
+    warnings.extend(_codex_warnings(tao_root))
+    warnings.extend(_claude_warnings(tao_root, spill_available=spill_available))
+    agy_warnings = _agy_warnings(tao_root, spill_available=spill_available)
     warnings.extend(agy_warnings)
 
-    agy_bridge_issue = agy_runtime_bridge_issue(playbook_root)
+    agy_bridge_issue = agy_runtime_bridge_issue(tao_root)
     if agy_bridge_issue and active_runtime_label() == "antigravity":
         failures.append(agy_bridge_issue)
     elif agy_bridge_issue and agy_warnings:
@@ -58,31 +58,31 @@ def active_runtime_label() -> str:
     return ""
 
 
-def agy_runtime_bridge_issue(playbook_root: Path) -> str:
+def agy_runtime_bridge_issue(tao_root: Path) -> str:
     try:
         text = AGY_RUNTIME_BRIDGE_PATH.read_text()
     except OSError:
         return (
             "AGY runtime bridge is missing required fail-closed instructions at "
-            f"{AGY_RUNTIME_BRIDGE_PATH}. Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+            f"{AGY_RUNTIME_BRIDGE_PATH}. Run: python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
         )
     missing = [phrase for phrase in AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES if phrase not in text]
     if not missing:
         return ""
     return (
         "AGY runtime bridge is missing required fail-closed instructions at "
-        f"{AGY_RUNTIME_BRIDGE_PATH}. Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+        f"{AGY_RUNTIME_BRIDGE_PATH}. Run: python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
     )
 
 
-def _codex_warnings(playbook_root: Path) -> list[str]:
+def _codex_warnings(tao_root: Path) -> list[str]:
     target = Path.home() / ".codex" / "rules" / "default.rules"
     if not target.exists():
         return []
     try:
         missing_permissions = _missing_text_entries(
             target.read_text(),
-            codex_prefix_rule_entries(playbook_root / "scripts"),
+            codex_prefix_rule_entries(tao_root / "scripts"),
         )
     except OSError:
         return []
@@ -90,11 +90,11 @@ def _codex_warnings(playbook_root: Path) -> list[str]:
         return []
     return [
         "Codex Tao Agent OS Python prefix rules are missing. "
-        f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+        f"Run: python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
     ]
 
 
-def _claude_warnings(playbook_root: Path, *, spill_available: bool) -> list[str]:
+def _claude_warnings(tao_root: Path, *, spill_available: bool) -> list[str]:
     target = Path.home() / ".claude" / "settings.json"
     if not target.exists():
         return []
@@ -104,24 +104,24 @@ def _claude_warnings(playbook_root: Path, *, spill_available: bool) -> list[str]
         return []
 
     warnings: list[str] = []
-    launcher_issue = stable_launcher_issue(playbook_root)
+    launcher_issue = stable_launcher_issue(tao_root)
     if launcher_issue:
         warnings.append(launcher_issue)
     if spill_available:
-        warnings.extend(_claude_spill_warnings(config, playbook_root))
+        warnings.extend(_claude_spill_warnings(config, tao_root))
     missing_permissions = _missing_allow_entries(
         config,
-        claude_permission_entries(playbook_root / "scripts", spill_available=spill_available),
+        claude_permission_entries(tao_root / "scripts", spill_available=spill_available),
     )
     if missing_permissions:
         warnings.append(
             "Claude Code Tao Agent OS Python permissions are missing. "
-            f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+            f"Run: python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
         )
     return warnings
 
 
-def _claude_spill_warnings(config: dict[str, Any], playbook_root: Path) -> list[str]:
+def _claude_spill_warnings(config: dict[str, Any], tao_root: Path) -> list[str]:
     warnings: list[str] = []
     groups = config.get("hooks", {}).get("UserPromptSubmit", [])
     managed_commands = [
@@ -138,29 +138,29 @@ def _claude_spill_warnings(config: dict[str, Any], playbook_root: Path) -> list[
     if not managed_commands:
         warnings.append(
             "Claude Code UserPromptSubmit Spill workflow label hook is missing. "
-            f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+            f"Run: python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
         )
     elif not has_classification_evidence:
         warnings.append(
             "Claude Code UserPromptSubmit Spill workflow label hook is missing "
             "--classification-evidence. Run: "
-            f"python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+            f"python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
         )
     spill_tool = config.get("env", {}).get("SPILL_AI_TOOL", "")
     if spill_tool != "claude":
         warnings.append(
             "env.SPILL_AI_TOOL is not set to 'claude' in ~/.claude/settings.json. "
-            f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+            f"Run: python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
         )
     return warnings
 
 
-def _agy_warnings(playbook_root: Path, *, spill_available: bool) -> list[str]:
+def _agy_warnings(tao_root: Path, *, spill_available: bool) -> list[str]:
     targets = [
         Path.home() / ".gemini" / "config" / "config.json",
         Path.home() / ".gemini" / "antigravity-cli" / "settings.json",
     ]
-    entries = agy_permission_entries(playbook_root / "scripts", spill_available=spill_available)
+    entries = agy_permission_entries(tao_root / "scripts", spill_available=spill_available)
     configs: list[dict[str, Any]] = []
     for target in targets:
         config = _read_json_object(target)
@@ -169,7 +169,7 @@ def _agy_warnings(playbook_root: Path, *, spill_available: bool) -> list[str]:
     if configs and not any(not _missing_allow_entries(config, entries) for config in configs):
         return [
             "AGY Tao Agent OS Python permissions are missing from AGY config. "
-            f"Run: python3 {playbook_root / 'scripts' / 'setup-agent-hooks.py'}"
+            f"Run: python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
         ]
     return []
 

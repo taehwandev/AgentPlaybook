@@ -95,7 +95,7 @@ def print_markdown(route: dict[str, object]) -> None:
     print()
     print("If any required gate is not executed, stop finalization, return to the")
     print("first missed gate only, roll back only dependent agent-made changes when")
-    print("safe, then run an actionable retrospective and improve the owning playbook doc,")
+    print("safe, then run an actionable retrospective and improve the owning Tao Agent OS doc,")
     print("hook, validator, or test before verifying the repair and resuming that checkpoint.")
     print("Only one bounded repair cycle is allowed; if the same failure remains or the")
     print("repair is unsafe or ambiguous, promote the lesson and stop for handoff;")

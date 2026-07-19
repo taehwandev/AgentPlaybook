@@ -821,7 +821,7 @@
       "reason": "Agent instruction changes affect startup behavior, route discipline, and editing safety."
     },
     {
-      "name": "playbook_docs",
+      "name": "tao_docs",
       "patterns": [
         "README.md",
         "index.md",
@@ -837,7 +837,7 @@
         "common/skills/source-driven-development/SKILL.md",
         "common/skills/human-authored-writing/SKILL.md"
       ],
-      "reason": "Shared playbook documentation changes need documentation update, source-driven, and writing guidance."
+      "reason": "Shared Tao Agent OS documentation changes need documentation update, source-driven, and writing guidance."
     }
   ]
 }

@@ -47,7 +47,7 @@ def claude_permission_entries(scripts_dir: Path, *, spill_available: bool = True
     if spill_available:
         for command in _spill_helper_permission_commands("claude"):
             _add_permission_command_entries(entries, "Bash", command)
-    for command in _common_playbook_tool_commands():
+    for command in _common_tao_tool_commands():
         _add_permission_command_entries(entries, "Bash", command)
     return entries
 
@@ -70,7 +70,7 @@ def claude_project_permission_entries(scripts_dir: Path, *, spill_available: boo
     entries: list[str] = []
     for subcommand in ("log", "status", "diff", "show", "branch"):
         entries.append(f"Bash(git -C * {subcommand} *)")
-    for command in _common_playbook_tool_commands():
+    for command in _common_tao_tool_commands():
         _add_permission_command_entries(entries, "Bash", command)
     return entries
 
@@ -82,7 +82,7 @@ def agy_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -
     if spill_available:
         for command in _spill_helper_permission_commands("antigravity"):
             _add_permission_command_entries(entries, "command", command)
-    for command in _common_playbook_tool_commands():
+    for command in _common_tao_tool_commands():
         _add_permission_command_entries(entries, "command", command)
     return entries
 
@@ -295,7 +295,7 @@ def _dedupe(values: list[str]) -> list[str]:
     return result
 
 
-def _common_playbook_tool_commands() -> list[str]:
+def _common_tao_tool_commands() -> list[str]:
     return [
         "vibeguard",
         "npx --yes @taehwandev/vibeguard",

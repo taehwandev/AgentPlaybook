@@ -37,7 +37,7 @@ using shared Tao Agent OS guidance.
 When starting or relaunching a runtime, make the selected target project the
 primary workspace. For Codex, use `codex -C <TARGET_REPO>`; add
 `--add-dir <TAO_ROOT>` only when the current task must include the
-shared playbook root in the session workspace. Instruction files define agent
+shared Tao Agent OS root in the session workspace. Instruction files define agent
 behavior; runtime launch roots define filesystem scope and prevent repeated
 permission prompts.
 
@@ -226,7 +226,7 @@ The workflow router also promotes required docs from
 specific work surface. This is the root-level document routing map for common
 agent tasks such as workflow script changes, request classifier work, tests,
 skill cards, agent instruction files, UI-capable platform work, and shared
-playbook docs. Request-intent rules may match the route command, selected
+Tao Agent OS docs. Request-intent rules may match the route command, selected
 platform, request text, and reusable document sets; for example screen, list,
 favorites, or explicit framework choices on Android, Application, Flutter, iOS,
 KMP, Swift, and Web promote the matching UI, state, structure, review, visual
@@ -669,7 +669,7 @@ deployment, or credentials:
 12. If execution evidence is available, run `vibeguard evidence .` before the final response and do not claim tests or audits ran unless they were observed.
 13. Keep secrets server-side. Do not expose provider keys, database URLs, signing secrets, service-role keys, or webhook secrets to client code.
 14. If the user pastes a secret in chat, treat it as exposed. Do not repeat it, put it in commands/logs/files/GitHub secrets/deployment settings/servers, or continue with deployment using that value. Guide the user to rotate it and enter a new value only through a local provider UI or secret-store prompt.
-15. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
+15. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external agent-guidance bundles or rule libraries unless the user explicitly asks for that separate setup.
 16. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the `vibeguard:start` and `vibeguard:end` markers.
 
 Refresh this managed block only when `vibeguard audit .` reports stale guardrails, or manually with `vibeguard update .` / `npx --yes @taehwandev/vibeguard@latest update .`.
