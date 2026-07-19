@@ -3,6 +3,34 @@
 from __future__ import annotations
 
 
+def _has_concrete_serial_reason(text: str) -> bool:
+    return any(
+        phrase in text
+        for phrase in (
+            "small",
+            "작은 작업",
+            "single-file",
+            "same-file",
+            "same file",
+            "단일 파일",
+            "같은 파일",
+            "contract",
+            "계약",
+            "unstable",
+            "overlap",
+            "겹침",
+            "중복",
+            "dirty worktree",
+            "dirty working tree",
+            "migration",
+            "dependency",
+            "release",
+            "not applicable",
+            "not safe",
+        )
+    )
+
+
 def validate_multi_agent(evidence: str) -> list[str]:
     text = evidence.lower()
     if not text:
@@ -42,30 +70,7 @@ def validate_multi_agent(evidence: str) -> list[str]:
             "워커",
         )
     )
-    has_serial_reason = any(
-        phrase in text
-        for phrase in (
-            "small",
-            "작은 작업",
-            "single-file",
-            "same file",
-            "단일 파일",
-            "같은 파일",
-            "contract",
-            "계약",
-            "unstable",
-            "overlap",
-            "겹침",
-            "중복",
-            "dirty worktree",
-            "dirty working tree",
-            "migration",
-            "dependency",
-            "release",
-            "not applicable",
-            "not safe",
-        )
-    )
+    has_serial_reason = _has_concrete_serial_reason(text)
     if serial and has_serial_reason:
         return []
     has_owned = any(phrase in text for phrase in ("owned", "owner", "scope", "소유 범위", "담당 범위"))
