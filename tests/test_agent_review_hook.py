@@ -52,7 +52,12 @@ from agent_preflight_runtime import (
     AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES as PREFLIGHT_AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES,
     _claude_spill_warnings,
 )
-from agent_review_hook import review_hook, review_vibeguard_command, workflow_validate_failure_detail
+from agent_review_hook import (
+    review_hook,
+    review_vibeguard_command,
+    vibeguard_review_failure,
+    workflow_validate_failure_detail,
+)
 from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
@@ -335,6 +340,20 @@ class ReviewHookTests(unittest.TestCase):
             command(ROOT, ROOT),
         )
 
+    def test_vibeguard_review_accepts_explicit_review_reason(self) -> None:
+        self.assertEqual(
+            "",
+            vibeguard_review_failure(
+                "Needs review",
+                ROOT,
+                "Guardrail refresh requires explicit user approval; blocking gates are ready.",
+            ),
+        )
+        self.assertEqual(
+            "VibeGuard overall is Needs review",
+            vibeguard_review_failure("Needs review", ROOT, ""),
+        )
+
     def test_structure_review_warns_for_preexisting_oversized_block_without_growth(self) -> None:
         base_lines = ["def run_import():"]
         base_lines.extend(f"    value_{index} = {index}" for index in range(125))
@@ -380,11 +399,11 @@ class ReviewHookTests(unittest.TestCase):
             [
                 "start",
                 "review",
-                "finish",
                 "skill-feedback",
                 "skill-curate",
                 "skill-review",
                 "skill-maintenance",
+                "finish",
             ],
             [hook["hook"] for hook in route["hooks"]],
         )
