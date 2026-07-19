@@ -36,7 +36,7 @@ def validate_repair_receipt(
 ) -> list[str]:
     try:
         resolved_receipt = receipt_path.resolve()
-        resolved_receipt.relative_to((project / ".agentplaybook").resolve())
+        resolved_receipt.relative_to((project / ".tao").resolve())
         payload = json.loads(resolved_receipt.read_text(encoding="utf-8"))
     except (OSError, ValueError, json.JSONDecodeError):
         return ["--repair-evidence must name a project-local structural repair receipt"]

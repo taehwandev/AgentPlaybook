@@ -273,10 +273,10 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
 def resolve_evidence_path(args: argparse.Namespace, project: Path) -> Path:
     _enforce_worker_environment(args)
     if not args.evidence:
-        return project / ".agentplaybook" / "preflight.json"
+        return project / ".tao" / "preflight.json"
     requested = args.evidence.expanduser().absolute()
-    worker_root = project / ".agentplaybook" / "workers"
-    lexical_worker_root = args.project.expanduser().absolute() / ".agentplaybook" / "workers"
+    worker_root = project / ".tao" / "workers"
+    lexical_worker_root = args.project.expanduser().absolute() / ".tao" / "workers"
     try:
         try:
             relative = requested.relative_to(worker_root)
@@ -314,14 +314,14 @@ def resolve_evidence_path(args: argparse.Namespace, project: Path) -> Path:
 
 
 def _enforce_worker_environment(args: argparse.Namespace) -> None:
-    enforcement = os.environ.get("AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT", "")
-    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+    enforcement = os.environ.get("TAO_CAPABILITY_ENFORCEMENT", "")
+    if os.environ.get("TAO_PARENT_EVIDENCE_READONLY") == "1":
         if enforcement != "parent-evidence-readonly":
             raise ValueError("reusable worker is missing parent-evidence-readonly enforcement")
         raise ValueError(
             "this worker received a reusable parent capsule and cannot create or overwrite parent evidence"
         )
-    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    expected = os.environ.get("TAO_WORKER_EVIDENCE")
     if not expected:
         if enforcement and enforcement != "worker-evidence-and-state":
             raise ValueError("worker capability enforcement scope is unsupported")
@@ -332,7 +332,7 @@ def _enforce_worker_environment(args: argparse.Namespace) -> None:
     actual = args.evidence.expanduser().resolve() if args.evidence else None
     if actual != expected_path:
         raise ValueError("worker start must use the launcher-issued isolated evidence path")
-    expected_token = os.environ.get("AGENTPLAYBOOK_WORKER_RESERVATION_TOKEN", "")
+    expected_token = os.environ.get("TAO_WORKER_RESERVATION_TOKEN", "")
     if not expected_token or args.worker_reservation_token != expected_token:
         raise ValueError("worker start must use the launcher-issued single-use reservation token")
 

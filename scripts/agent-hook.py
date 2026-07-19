@@ -186,7 +186,7 @@ def _register_started_run(args: argparse.Namespace, details: list[str]) -> None:
 
 def _transition_finished_run(args: argparse.Namespace, success: bool) -> None:
     try:
-        evidence_path = args.evidence or args.project / ".agentplaybook" / "preflight.json"
+        evidence_path = args.evidence or args.project / ".tao" / "preflight.json"
         payload = json.loads(evidence_path.read_text(encoding="utf-8"))
         transition_run(
             args.project,
@@ -597,9 +597,9 @@ def main() -> int:
 
 
 def _apply_worker_evidence_boundary(args: argparse.Namespace) -> str:
-    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+    if os.environ.get("TAO_PARENT_EVIDENCE_READONLY") == "1":
         return "reusable worker capsule cannot run lifecycle hooks that write parent evidence"
-    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    expected = os.environ.get("TAO_WORKER_EVIDENCE")
     if not expected:
         return ""
     expected_path = Path(expected).expanduser().resolve()

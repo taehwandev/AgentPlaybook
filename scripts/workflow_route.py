@@ -407,7 +407,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
             "when": "before edits, reviews, commits, or completion reports",
             "command": (
                 f"{launcher} start "
-                "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+                "--project <TARGET_REPO> --rules <TAO_ROOT> "
                 f"--command {command} --request \"<USER_REQUEST>\""
             ),
         },
@@ -431,7 +431,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
                 ),
                 "command": (
                     f"{launcher} {SKILL_FEEDBACK_HOOK} "
-                    "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+                    "--project <TARGET_REPO> --rules <TAO_ROOT> "
                     "--skill-feedback-outcome observed --skill-id <safe_skill_slug> "
                     "--feedback-signal <safe_signal_slug>"
                 ),
@@ -445,7 +445,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
                     "when": "later or periodically, when bounded deterministic curation capacity is available",
                     "command": (
                         f"{launcher} {SKILL_CURATE_HOOK} "
-                        "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>"
+                        "--project <TARGET_REPO> --rules <TAO_ROOT>"
                     ),
                 },
                 {
@@ -454,7 +454,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
                     "when": "later, when deterministic curation marks a repeated observation review-ready",
                     "command": (
                         f"{launcher} {SKILL_REVIEW_HOOK} "
-                        "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+                        "--project <TARGET_REPO> --rules <TAO_ROOT> "
                         "--feedback-candidate-id <opaque_candidate_id> "
                         "--skill-review-outcome <no_change|stage_patch> "
                         "[--feedback-gap <safe_gap_slug> --change-type <safe_change_slug> "
@@ -467,7 +467,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
                     "when": "after separate staged skill maintenance has been verified",
                     "command": (
                         f"{launcher} {SKILL_MAINTENANCE_HOOK} "
-                        "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+                        "--project <TARGET_REPO> --rules <TAO_ROOT> "
                         "--feedback-candidate-id <opaque_candidate_id> "
                         "--skill-maintenance-outcome <applied|rejected> "
                         "[--maintenance-target <changed_skill_path> "
@@ -484,7 +484,7 @@ def route_hooks(command: str) -> list[dict[str, object]]:
             "when": "after retrospective check and before final report, commit, release, or handoff",
             "command": (
                 f"{launcher} finish "
-                "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>"
+                "--project <TARGET_REPO> --rules <TAO_ROOT>"
             ),
         }
     )
@@ -501,7 +501,7 @@ def _review_hook_command(command: str) -> str:
     launcher = str(stable_launcher_path())
     base = (
         f"{launcher} review "
-        "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> "
+        "--project <TARGET_REPO> --rules <TAO_ROOT> "
         "--review-scope working-tree "
         "--review-outcome <pass|findings> "
         "--code-review-evidence \"<evidence>\" "

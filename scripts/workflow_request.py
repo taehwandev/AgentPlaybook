@@ -558,7 +558,7 @@ def print_classification(result: dict[str, object]) -> None:
             print("- Include PRD -> ARD -> implementation first; if work proceeds, run the `product` route.")
         print("- Do not start a workflow route, edit files, or run project-specific work unless a separate action remains.")
     elif result["question_drill"]:
-        print("- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route triage --request \"<request text>\"`.")
+        print("- Run `python3 <TAO_ROOT>/scripts/workflow.py route triage --request \"<request text>\"`.")
         print("- Use the Grill-Me `/grilling` protocol after checking available local context.")
         print(
             "- Start the user-visible clarification with `Grill-Me protocol /grilling session`, "
@@ -568,7 +568,7 @@ def print_classification(result: dict[str, object]) -> None:
         print("- Record finish evidence as `grill-me if needed=</grilling session/output evidence>`.")
     else:
         print(
-            f"- Run `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route {result['recommended_route']} "
+            f"- Run `python3 <TAO_ROOT>/scripts/workflow.py route {result['recommended_route']} "
             "--request \"<request text>\"` with matching platform/concerns when needed."
         )
         print("- Inspect the named target or smallest relevant local context first.")

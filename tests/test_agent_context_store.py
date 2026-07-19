@@ -48,7 +48,7 @@ class AgentContextStoreTests(unittest.TestCase):
     def test_parallel_refresh_and_validation_is_atomic(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
-            (project / ".agentplaybook").mkdir()
+            (project / ".tao").mkdir()
             args = [(str(project), str(ROOT), index) for index in range(12)]
             with mp.get_context("fork").Pool(4) as pool:
                 failures = pool.map(_refresh_context_worker, args)

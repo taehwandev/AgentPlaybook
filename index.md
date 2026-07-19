@@ -56,7 +56,7 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   sections: `common/skills/agent-skill-card-anatomy/SKILL.md`
 - Tao Agent OS skill bundle migration, `SKILL.md` plus `references/`
   structure, and duplicate source-of-truth cleanup:
-  `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md`
+  `docs/skills/tao-skill-bundle-migration/SKILL.md`
 - Architecture choice/change: `common/skills/architecture-selection/SKILL.md`
 - Architecture design: `common/skills/architecture-design/SKILL.md`
 - Source-driven framework, SDK, platform, API, and external-doc decisions:
@@ -202,13 +202,13 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 ## Workflow
 
 - Workflow script command list:
-  `<AGENTPLAYBOOK_LAUNCHER> workflow list`
+  `<TAO_LAUNCHER> workflow list`
 - Lifecycle aliases supported by the workflow router: `spec`, `plan`, `build`,
   `test`, `review`, `webperf`, `code-simplify`, and `ship`. These aliases map
   to Tao Agent OS routes and must not replace the router with a second active
   command framework.
 - Canonical lifecycle start (once per task):
-  `<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>"`
+  `<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command <command> --request "<USER_REQUEST>"`
 - After start succeeds, open every route `required_docs` entry directly. Run
   the review hook after meaningful changes and the finish hook before final
   report, commit, release, or handoff.
@@ -238,7 +238,7 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 ## Loading Rule
 
 For any multi-step agent task, start with `workflows/skills/agent-task-lifecycle/SKILL.md`.
-Run `<AGENTPLAYBOOK_LAUNCHER> start` once to classify, route, audit, and create the
+Run `<TAO_LAUNCHER> start` once to classify, route, audit, and create the
 parent evidence. Open every route `required_docs` entry directly before work,
 keep the route gate ledger current, run the review hook after meaningful
 changes, and run the finish hook before final report, commit, release, or
@@ -264,7 +264,7 @@ For PRD-only work, use `workflows/skills/prd-creation/SKILL.md` and select the
 PRD command at the canonical start:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 For product or feature work that needs PRD -> ARD -> implementation ->
@@ -272,7 +272,7 @@ verification gates, use `workflows/skills/product-architecture-delivery/SKILL.md
 the product command at the canonical start:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Use this `product` route, not the lower-level `feature` route, when the request
@@ -297,7 +297,7 @@ knowledge-base, source-grounded/living/generated docs, runbook, onboarding,
 durable architecture, or operational docs that humans and agents will read, also
 use `common/skills/llm-wiki-documentation/SKILL.md`.
 For documentation review, use
-`<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki`
+`<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki`
 or manually combine `workflows/skills/review-and-commit/SKILL.md`,
 `workflows/skills/documentation-update/SKILL.md`, and `common/skills/llm-wiki-documentation/SKILL.md`.
 For planning, research, comparison, or recommendations before implementation,

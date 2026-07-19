@@ -121,7 +121,7 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
     def test_invalid_handoff_reserves_isolated_worker_paths(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence = project / ".tao" / "preflight.json"
             output = project / "handoff.json"
             result = subprocess.run(
                 [
@@ -147,14 +147,14 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
             capsule = payload["execution_capsule"]
             worker_preflight = Path(capsule["fallback_worker_preflight_evidence"])
             worker_ledger = Path(capsule["fallback_worker_gate_ledger"])
-            worker_root = project.resolve() / ".agentplaybook" / "workers"
+            worker_root = project.resolve() / ".tao" / "workers"
 
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertFalse(capsule["reusable"])
             self.assertTrue(worker_preflight.is_relative_to(worker_root))
             self.assertTrue(worker_ledger.is_relative_to(worker_root))
             self.assertNotEqual(evidence, worker_preflight)
-            self.assertNotEqual(project / ".agentplaybook" / "gate-evidence.json", worker_ledger)
+            self.assertNotEqual(project / ".tao" / "gate-evidence.json", worker_ledger)
             self.assertEqual("preflight.json", worker_preflight.name)
             self.assertEqual("gate-evidence.json", worker_ledger.name)
             self.assertRegex(capsule["fallback_worker_reservation_token"], r"^[0-9a-f]{32}$")
@@ -172,7 +172,7 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
     def test_handoff_reserved_worker_path_is_consumed_without_second_reservation(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence = project / ".tao" / "preflight.json"
             output = project / "handoff.json"
             result = subprocess.run(
                 [
@@ -247,7 +247,7 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
             root = Path(temp_dir)
             project = root / "project"
             outside = root / "outside"
-            evidence_root = project / ".agentplaybook"
+            evidence_root = project / ".tao"
             evidence_root.mkdir(parents=True)
             outside.mkdir()
             (evidence_root / "workers").symlink_to(outside, target_is_directory=True)
@@ -285,7 +285,7 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             project = root / "project"
-            worker_root = project / ".agentplaybook" / "workers"
+            worker_root = project / ".tao" / "workers"
             outside = root / "outside"
             worker_root.mkdir(parents=True)
             outside.mkdir()
@@ -321,7 +321,7 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
     def test_worker_preflight_requires_and_consumes_single_use_reservation_token(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            worker = project / ".agentplaybook" / "workers" / "worker-id"
+            worker = project / ".tao" / "workers" / "worker-id"
             worker.mkdir(parents=True)
             evidence = worker / "preflight.json"
             without_token = subprocess.run(
@@ -379,7 +379,7 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             project = root / "project"
-            worker_root = project / ".agentplaybook" / "workers"
+            worker_root = project / ".tao" / "workers"
             outside = root / "outside"
             worker_root.mkdir(parents=True)
             outside.mkdir()

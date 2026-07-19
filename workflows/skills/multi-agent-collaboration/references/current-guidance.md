@@ -158,7 +158,7 @@ When work is actually delegated or run in parallel, write a structured local
 plan before workers start:
 
 ```text
-<TARGET_REPO>/.agentplaybook/agent-delegation-plan.json
+<TARGET_REPO>/.tao/agent-delegation-plan.json
 ```
 
 Use this schema:

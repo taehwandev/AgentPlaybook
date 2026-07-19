@@ -21,7 +21,7 @@ MAX_RUNS = 100
 
 
 def registry_path(project: Path) -> Path:
-    return project.resolve() / ".agentplaybook" / REGISTRY_FILENAME
+    return project.resolve() / ".tao" / REGISTRY_FILENAME
 
 
 def register_run(

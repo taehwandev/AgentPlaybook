@@ -5,10 +5,20 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-RUNTIME_BRIDGE_BEGIN = "<!-- agentplaybook-runtime-bridge:start -->"
-RUNTIME_BRIDGE_END = "<!-- agentplaybook-runtime-bridge:end -->"
+RUNTIME_BRIDGE_BEGIN = "<!-- tao-runtime-bridge:start -->"
+RUNTIME_BRIDGE_END = "<!-- tao-runtime-bridge:end -->"
 LEGACY_RUNTIME_BRIDGE_BEGIN = "<!-- BEGIN MANAGED RUNTIME BRIDGE -->"
 LEGACY_RUNTIME_BRIDGE_END = "<!-- END MANAGED RUNTIME BRIDGE -->"
+# A managed block is identified by its marker, so renaming the marker orphans
+# every block written under the old one: setup stops recognizing it and appends
+# a second block beside it. Match the marker shape rather than a list of past
+# names, so a block from any earlier naming is removed without this file having
+# to carry that naming forward.
+SUPERSEDED_RUNTIME_BRIDGE_PATTERN = re.compile(
+    r"<!-- (?P<name>[a-z0-9-]+)-runtime-bridge:start -->[\s\S]*?"
+    r"<!-- (?P=name)-runtime-bridge:end -->\n?",
+    re.MULTILINE,
+)
 CODEX_DISPATCH_BRIDGE_PHRASE = (
     "For a bounded Codex leaf, use workflow.py dispatch --execute only when isolation is explicitly "
     "required. A matching parent profile or unavailable parent profile information both stay in the "
@@ -161,6 +171,16 @@ def merge_runtime_bridge(
     legacy_present = bool(legacy_pattern.search(text))
     if legacy_present:
         text = legacy_pattern.sub("", text)
+
+    def _drop_superseded(match: re.Match[str]) -> str:
+        # Keep the block that matches the marker in use; drop the rest.
+        return match.group(0) if match.group(0).startswith(RUNTIME_BRIDGE_BEGIN) else ""
+
+    superseded_text = SUPERSEDED_RUNTIME_BRIDGE_PATTERN.sub(_drop_superseded, text)
+    superseded_present = superseded_text != text
+    if superseded_present:
+        text = superseded_text
+    legacy_present = legacy_present or superseded_present
     pattern = re.compile(
         re.escape(RUNTIME_BRIDGE_BEGIN)
         + r"[\s\S]*?"

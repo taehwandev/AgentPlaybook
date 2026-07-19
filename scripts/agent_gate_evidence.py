@@ -283,9 +283,9 @@ def resync_gate_evidence_ledger(evidence_path: Path, preflight: dict[str, Any]) 
 
 
 def _enforce_worker_evidence_boundary(evidence_path: Path) -> None:
-    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+    if os.environ.get("TAO_PARENT_EVIDENCE_READONLY") == "1":
         raise PermissionError("reusable worker capsule cannot write parent gate evidence")
-    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    expected = os.environ.get("TAO_WORKER_EVIDENCE")
     if expected and evidence_path.resolve() != Path(expected).expanduser().resolve():
         raise PermissionError("worker may write only its launcher-issued gate evidence")
 

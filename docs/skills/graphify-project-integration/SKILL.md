@@ -2,7 +2,7 @@
 keyflow_id: sys_docs_graphify_project_integration_skill
 status: review
 type: human-reviewed-needed
-agentplaybook_card_contract: strict
+tao_card_contract: strict
 requires_docs:
   - docs/skills/agent-bootstrap/SKILL.md
   - common/skills/llm-wiki-documentation/SKILL.md
@@ -26,7 +26,7 @@ project's graph, canonical skill, and runtime links are ready.
 
 - `references/current-guidance.md` for the install/readiness procedure.
 - The target project's canonical
-  `.agentplaybook/skills/graphify/SKILL.md` before building, updating, or
+  `.tao/skills/graphify/SKILL.md` before building, updating, or
   querying that project's graph. Runtime skill paths are links to this one
   source, not separate documents to maintain or read independently.
 
@@ -52,7 +52,7 @@ tracked runtime skill path is one repo-relative mode `120000` entry, and no
 tracked `SKILL.md` or `references/` descendants remain below runtime paths.
 Preserving legacy project knowledge as graph input is only a migration safety
 measure; equivalent shared content across runtime directories must still be
-collapsed into one `.agentplaybook` owner.
+collapsed into one `.tao` owner.
 
 ## Process
 
@@ -62,7 +62,7 @@ collapsed into one `.agentplaybook` owner.
 2. Run the target setup flow; Graphify integration is included by default for
    an explicit `--target`.
 3. Open and read the one canonical
-   `.agentplaybook/skills/graphify/SKILL.md`. Verify that `.codex`, `.claude`,
+   `.tao/skills/graphify/SKILL.md`. Verify that `.codex`, `.claude`,
    and `.agents` runtime skill paths are repo-relative links to it. Remove
    duplicate Graphify explanation sections from `AGENTS.md` and `CLAUDE.md`;
    rules or hook files do not substitute for the canonical skill document.
@@ -78,7 +78,7 @@ collapsed into one `.agentplaybook` owner.
 | Rationalization | Required response |
 | --- | --- |
 | "The shared Tao Agent OS graph is enough." | Build and verify the target repository's own graph. |
-| "The rule file mentions Graphify." | Read the canonical `.agentplaybook` `SKILL.md`; a rule or hook is only integration wiring. |
+| "The rule file mentions Graphify." | Read the canonical `.tao` `SKILL.md`; a rule or hook is only integration wiring. |
 | "Each runtime needs its own copy." | Keep runtime mechanics in wiring and resolve all shared skill content to the one canonical bundle. |
 | "There is no graph, so I will use grep." | Install/repair Graphify or report the readiness gate failure; do not silently bypass it. |
 | "Setup can generate the graph automatically." | Keep installation deterministic; graph generation runs through the skill because it may require model/provider and cost decisions. |
@@ -88,7 +88,7 @@ collapsed into one `.agentplaybook` owner.
 - `graphify-out/graph.json` comes from another repository.
 - A setup command reports success while the runtime skill or graph is missing.
 - Codex, Claude, or AGY contains a copied Graphify bundle instead of a
-  repo-relative link to `.agentplaybook/skills/graphify`.
+  repo-relative link to `.tao/skills/graphify`.
 - `AGENTS.md` or `CLAUDE.md` restates Graphify operational guidance already
   owned by the canonical skill.
 - A codebase answer proceeds without Graphify even though the project opted in.
@@ -115,7 +115,7 @@ collapsed into one `.agentplaybook` owner.
 ## Verification
 
 - CLI: `graphify` resolves locally.
-- Skill doc: `.agentplaybook/skills/graphify/SKILL.md` exists and was read.
+- Skill doc: `.tao/skills/graphify/SKILL.md` exists and was read.
 - Runtime links: every enabled runtime skill directory is a repo-relative link
   that resolves to the canonical Graphify directory.
 - Git ownership: `git ls-files -s` shows no runtime skill descendants and mode

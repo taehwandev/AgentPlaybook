@@ -101,11 +101,11 @@ def create_repair_receipt(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     destination = output_path or (
-        project / ".agentplaybook" / "repair-verification" / f"{receipt_id}.json"
+        project / ".tao" / "repair-verification" / f"{receipt_id}.json"
     )
     try:
         destination = destination.resolve()
-        destination.relative_to((project / ".agentplaybook").resolve())
+        destination.relative_to((project / ".tao").resolve())
         atomic_write_json(destination, payload)
     except (OSError, ValueError):
         return {"created": False, "reason": "receipt_write_failed"}

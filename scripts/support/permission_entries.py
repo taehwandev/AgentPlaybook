@@ -58,7 +58,7 @@ def claude_legacy_permission_entries(scripts_dir: Path) -> list[str]:
         _add_permission_command_entries(entries, "Bash", command)
     for command in _obsolete_spill_helper_permission_commands("claude"):
         _add_permission_command_entries(entries, "Bash", command)
-    for script in _legacy_agentplaybook_python_scripts(scripts_dir):
+    for script in _legacy_tao_python_scripts(scripts_dir):
         for command in _python_entrypoint_commands(script, "claude", scripts_dir.parent, include_legacy=True):
             _add_permission_command_entries(entries, "Bash", command)
     return entries
@@ -93,7 +93,7 @@ def agy_legacy_permission_entries(scripts_dir: Path) -> list[str]:
         _add_permission_command_entries(entries, "command", command)
     for command in _obsolete_spill_helper_permission_commands("antigravity"):
         _add_permission_command_entries(entries, "command", command)
-    for script in _legacy_agentplaybook_python_scripts(scripts_dir):
+    for script in _legacy_tao_python_scripts(scripts_dir):
         for command in _python_entrypoint_commands(script, "antigravity", scripts_dir.parent, include_legacy=True):
             entries.append(f"command({command})")
             entries.append(f"command({command}:*)")
@@ -107,7 +107,7 @@ def agy_legacy_permission_entries(scripts_dir: Path) -> list[str]:
 
 def codex_prefix_rule_entries(scripts_dir: Path) -> list[str]:
     entries = [_codex_prefix_rule([str(stable_launcher_path())])]
-    for script in _agentplaybook_python_scripts(scripts_dir):
+    for script in _tao_python_scripts(scripts_dir):
         path = str(script.resolve())
         entries.append(_codex_prefix_rule(["python3", path]))
         entries.append(_codex_prefix_rule(["python", path]))
@@ -118,7 +118,7 @@ def codex_prefix_rule_entries(scripts_dir: Path) -> list[str]:
 def codex_legacy_prefix_rule_entries(scripts_dir: Path) -> list[str]:
     """Exact legacy rules setup may remove outside its managed block."""
     entries: list[str] = []
-    for script in _legacy_agentplaybook_python_scripts(scripts_dir):
+    for script in _legacy_tao_python_scripts(scripts_dir):
         path = str(script.resolve())
         entries.append(_codex_prefix_rule(["python3", path]))
         entries.append(_codex_prefix_rule(["python", path]))
@@ -126,11 +126,11 @@ def codex_legacy_prefix_rule_entries(scripts_dir: Path) -> list[str]:
     return entries
 
 
-def _agentplaybook_python_scripts(scripts_dir: Path) -> list[Path]:
+def _tao_python_scripts(scripts_dir: Path) -> list[Path]:
     return [scripts_dir / name for name in EXECUTABLE_ENTRYPOINTS]
 
 
-def _legacy_agentplaybook_python_scripts(scripts_dir: Path) -> list[Path]:
+def _legacy_tao_python_scripts(scripts_dir: Path) -> list[Path]:
     """All paths emitted by the former recursive permission generator."""
     project_root = scripts_dir.parent
     exclude_dirs = {".git", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache", ".wikimap"}
@@ -178,7 +178,7 @@ def _obsolete_stable_launcher_commands(tool: str) -> list[str]:
         "",
         f"SPILL_AI_TOOL={tool} ",
         f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
-        f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL={tool} ",
+        f"TAO_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL={tool} ",
     )
     for path in _obsolete_stable_launcher_path_variants():
         for prefix in env_prefixes:
@@ -193,7 +193,7 @@ def _stable_launcher_commands(tool: str, *, include_spill_env: bool = True) -> l
         env_prefixes += (
             f"SPILL_AI_TOOL={tool} ",
             f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
-            f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL={tool} ",
+            f"TAO_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL={tool} ",
         )
     for path in _stable_launcher_path_variants():
         for prefix in env_prefixes:
@@ -256,15 +256,15 @@ def _legacy_entrypoint_path_variants(script: Path, project_root: Path | None = N
             f"${{HOME}}/{suffix}",
             _double_quote(f"${{HOME}}/{suffix}"),
         ]
-    # Add $AGENTPLAYBOOK_HOME variants for the scripts/ relative path.
-    # AGENTPLAYBOOK_HOME points to the Tao Agent OS root, so the relative
+    # Add $TAO_HOME variants for the scripts/ relative path.
+    # TAO_HOME points to the Tao Agent OS root, so the relative
     # path from root is scripts/<name> — not the same suffix as from HOME.
     ap_rel = f"scripts/{script.name}"
     variants += [
-        f"$AGENTPLAYBOOK_HOME/{ap_rel}",
-        _double_quote(f"$AGENTPLAYBOOK_HOME/{ap_rel}"),
-        f"${{AGENTPLAYBOOK_HOME}}/{ap_rel}",
-        _double_quote(f"${{AGENTPLAYBOOK_HOME}}/{ap_rel}"),
+        f"$TAO_HOME/{ap_rel}",
+        _double_quote(f"$TAO_HOME/{ap_rel}"),
+        f"${{TAO_HOME}}/{ap_rel}",
+        _double_quote(f"${{TAO_HOME}}/{ap_rel}"),
     ]
     return _dedupe(variants)
 

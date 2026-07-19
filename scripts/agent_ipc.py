@@ -20,7 +20,7 @@ SAFE_OPAQUE = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
 
 
 def events_path(project: Path) -> Path:
-    return project.resolve() / ".agentplaybook" / EVENTS_FILENAME
+    return project.resolve() / ".tao" / EVENTS_FILENAME
 
 
 def emit_event(

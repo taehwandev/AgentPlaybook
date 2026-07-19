@@ -163,7 +163,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 policy.parent.mkdir(parents=True, exist_ok=True)
                 policy.write_text("# policy\n", encoding="utf-8")
             subprocess.run(
-                ["git", "add", ".agentplaybook", ".codex", *map(str, TRACKING_POLICY_PATHS)],
+                ["git", "add", ".tao", ".codex", *map(str, TRACKING_POLICY_PATHS)],
                 cwd=project,
                 check=True,
             )
@@ -171,7 +171,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 child.unlink()
             runtime_skill.rmdir()
             runtime_skill.symlink_to(
-                "../../.agentplaybook/skills/graphify", target_is_directory=True
+                "../../.tao/skills/graphify", target_is_directory=True
             )
 
             before = inspect_graphify_git_tracking(project, ["codex"])
@@ -202,7 +202,7 @@ class SetupAgentHooksTests(unittest.TestCase):
             )
 
             subprocess.run(
-                ["git", "add", "-A", ".agentplaybook", ".codex"],
+                ["git", "add", "-A", ".tao", ".codex"],
                 cwd=project,
                 check=True,
             )
@@ -227,11 +227,11 @@ class SetupAgentHooksTests(unittest.TestCase):
             dirty = inspect_graphify_git_tracking(project, ["codex"])
             self.assertFalse(dirty["commit_ready"])
             self.assertEqual(
-                [".agentplaybook/skills/graphify/SKILL.md"],
+                [".tao/skills/graphify/SKILL.md"],
                 dirty["unstaged_commit_assets"],
             )
             subprocess.run(
-                ["git", "add", ".agentplaybook/skills/graphify/SKILL.md"],
+                ["git", "add", ".tao/skills/graphify/SKILL.md"],
                 cwd=project,
                 check=True,
             )
@@ -305,8 +305,8 @@ class SetupAgentHooksTests(unittest.TestCase):
             subprocess.run(["git", "add", "src/main.py"], cwd=project, check=True)
             subprocess.run(
                 [
-                    "git", "-c", "user.name=AgentPlaybook", "-c",
-                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "source",
+                    "git", "-c", "user.name=Tao Agent OS", "-c",
+                    "user.email=tao@example.invalid", "commit", "-qm", "source",
                 ],
                 cwd=project,
                 check=True,
@@ -323,7 +323,7 @@ class SetupAgentHooksTests(unittest.TestCase):
             canonical.write_text("# graphify\n", encoding="utf-8")
             skill_link = project / PLATFORM_SKILL_DIRS["codex"]
             skill_link.parent.mkdir(parents=True)
-            skill_link.symlink_to("../../.agentplaybook/skills/graphify", target_is_directory=True)
+            skill_link.symlink_to("../../.tao/skills/graphify", target_is_directory=True)
             hooks = project / ".codex" / "hooks.json"
             hooks.write_text('{"graphify": true}', encoding="utf-8")
             agents = project / "AGENTS.md"
@@ -367,8 +367,8 @@ class SetupAgentHooksTests(unittest.TestCase):
             subprocess.run(["git", "add", "-A"], cwd=project, check=True)
             subprocess.run(
                 [
-                    "git", "-c", "user.name=AgentPlaybook", "-c",
-                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "integration",
+                    "git", "-c", "user.name=Tao Agent OS", "-c",
+                    "user.email=tao@example.invalid", "commit", "-qm", "integration",
                 ],
                 cwd=project,
                 check=True,
@@ -427,9 +427,9 @@ class SetupAgentHooksTests(unittest.TestCase):
                 guide.parent.mkdir(parents=True)
                 guide.write_text("# Project guide\n", encoding="utf-8")
             managed = (
-                "# agentplaybook-graphify-inputs:start\n"
-                ".agentplaybook/\n.agents/\n.claude/\n.codex/\ngraphify-out/\n"
-                "# agentplaybook-graphify-inputs:end\n"
+                "# tao-graphify-inputs:start\n"
+                ".tao/\n.agents/\n.claude/\n.codex/\ngraphify-out/\n"
+                "# tao-graphify-inputs:end\n"
             )
             (project / ".graphifyignore").write_text(managed, encoding="utf-8")
             manifest = project / "graphify-out" / "manifest.json"
@@ -534,10 +534,10 @@ class SetupAgentHooksTests(unittest.TestCase):
             policy = project / ".graphifyignore"
             policy.write_text(
                 "# keep\n.claude/\n.codex/**\n"
-                "# agentplaybook-graphify-inputs:start\n.agents/\n"
-                "# agentplaybook-graphify-inputs:end\n"
-                "# agentplaybook-graphify-inputs:start\n.codex/\n"
-                "# agentplaybook-graphify-inputs:end\n",
+                "# tao-graphify-inputs:start\n.agents/\n"
+                "# tao-graphify-inputs:end\n"
+                "# tao-graphify-inputs:start\n.codex/\n"
+                "# tao-graphify-inputs:end\n",
                 encoding="utf-8",
             )
             root_ignore = project / ".gitignore"
@@ -550,8 +550,8 @@ class SetupAgentHooksTests(unittest.TestCase):
             content = policy.read_text(encoding="utf-8")
             root_content = root_ignore.read_text(encoding="utf-8")
 
-        self.assertEqual(1, content.count("# agentplaybook-graphify-inputs:start"))
-        self.assertEqual(1, content.count("# agentplaybook-graphify-inputs:end"))
+        self.assertEqual(1, content.count("# tao-graphify-inputs:start"))
+        self.assertEqual(1, content.count("# tao-graphify-inputs:end"))
         self.assertIn("# keep", content)
         self.assertNotIn("\n.agents/\n", content)
         self.assertNotIn("\n.codex/\n", content)
@@ -580,8 +580,8 @@ class SetupAgentHooksTests(unittest.TestCase):
             )
             subprocess.run(
                 [
-                    "git", "-c", "user.name=AgentPlaybook", "-c",
-                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "initial",
+                    "git", "-c", "user.name=Tao Agent OS", "-c",
+                    "user.email=tao@example.invalid", "commit", "-qm", "initial",
                 ],
                 cwd=project,
                 check=True,
@@ -618,7 +618,7 @@ class SetupAgentHooksTests(unittest.TestCase):
             adapter = project / ".codex" / "hooks.json"
             adapter.parent.mkdir()
             adapter.write_text('{"graphify": true}', encoding="utf-8")
-            nested_evidence = project / "scripts" / ".agentplaybook" / "preflight.json"
+            nested_evidence = project / "scripts" / ".tao" / "preflight.json"
             nested_evidence.parent.mkdir(parents=True)
             nested_evidence.write_text('{"runtime": true}', encoding="utf-8")
 
@@ -654,8 +654,8 @@ class SetupAgentHooksTests(unittest.TestCase):
             )
             subprocess.run(
                 [
-                    "git", "-c", "user.name=AgentPlaybook", "-c",
-                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "initial",
+                    "git", "-c", "user.name=Tao Agent OS", "-c",
+                    "user.email=tao@example.invalid", "commit", "-qm", "initial",
                 ],
                 cwd=project,
                 check=True,
@@ -706,8 +706,8 @@ class SetupAgentHooksTests(unittest.TestCase):
             subprocess.run(["git", "add", "src/main.py"], cwd=project, check=True)
             subprocess.run(
                 [
-                    "git", "-c", "user.name=AgentPlaybook", "-c",
-                    "user.email=agentplaybook@example.invalid", "commit", "-qm", "change",
+                    "git", "-c", "user.name=Tao Agent OS", "-c",
+                    "user.email=tao@example.invalid", "commit", "-qm", "change",
                 ],
                 cwd=project,
                 check=True,
@@ -936,7 +936,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 self.assertTrue(link.is_symlink())
                 self.assertTrue(link.resolve().is_file())
                 self.assertIn(
-                    str((project / ".agentplaybook/skills/graphify/runtime/antigravity").resolve()),
+                    str((project / ".tao/skills/graphify/runtime/antigravity").resolve()),
                     str(link.resolve()),
                 )
 
@@ -1004,7 +1004,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 self.assertTrue(os.access(launcher, os.X_OK))
                 self.assertEqual(f"{ROOT.resolve()}\n", pointer.read_text())
                 self.assertIn("scripts/workflow.py", launcher.read_text())
-                self.assertIn('Path.home() / "git" / "AgentPlaybook"', launcher.read_text())
+                self.assertIn('Path.home() / "git" / "tao-agent-os"', launcher.read_text())
                 self.assertIn('"execution-capsule": "agent_execution_capsule.py"', launcher.read_text())
                 self.assertIn('"agent-os-status": "agent-os-status.py"', launcher.read_text())
                 self.assertIn('"agent-os-watchdog": "agent-os-watchdog.py"', launcher.read_text())
@@ -1045,10 +1045,10 @@ class SetupAgentHooksTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_home:
             with patch.dict(os.environ, {"HOME": temp_home}):
                 ensure_stable_launcher(ROOT, dry_run=False)
-                stable_root_pointer_path().write_text("/missing/AgentPlaybook\n")
+                stable_root_pointer_path().write_text("/missing/tao-agent-os\n")
                 launcher = stable_launcher_path()
                 env = os.environ.copy()
-                env["AGENTPLAYBOOK_HOOK_SOFT_FAIL"] = "1"
+                env["TAO_HOOK_SOFT_FAIL"] = "1"
 
                 result = subprocess.run(
                     [str(launcher), "workflow", "validate"],
@@ -1073,7 +1073,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 ensure_stable_launcher(ROOT, dry_run=False)
                 launcher = stable_launcher_path()
                 env = os.environ.copy()
-                env.pop("AGENTPLAYBOOK_HOOK_SOFT_FAIL", None)
+                env.pop("TAO_HOOK_SOFT_FAIL", None)
 
                 result = subprocess.run(
                     [str(launcher), "totally-bogus-alias"],
@@ -1265,7 +1265,7 @@ class SetupAgentHooksTests(unittest.TestCase):
             )
             self.assertEqual("installed", status)
             self.assertEqual("ok", second_status)
-            self.assertIn("# agentplaybook-hooks:begin", text)
+            self.assertIn("# tao-hooks:begin", text)
             self.assertIn(str(ROOT / "scripts" / "agent-preflight.py"), text)
             self.assertNotIn(generated_legacy, text)
             self.assertIn(custom_same_script, text)
@@ -1276,9 +1276,9 @@ class SetupAgentHooksTests(unittest.TestCase):
     def test_permission_merge_removes_only_exact_generated_entries_and_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir) / "settings.json"
-            generated_legacy = "command(python3 ~/AgentPlaybook/scripts/agent-hook.py)"
+            generated_legacy = "command(python3 ~/tao-agent-os/scripts/agent-hook.py)"
             custom_same_script = (
-                "command(python3 ~/AgentPlaybook/scripts/agent-hook.py custom-action)"
+                "command(python3 ~/tao-agent-os/scripts/agent-hook.py custom-action)"
             )
             spill_custom = (
                 "command(node ~/Library/Application\\ Support/Spill/adapters/setup/"

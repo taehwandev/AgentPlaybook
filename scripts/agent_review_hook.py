@@ -172,7 +172,7 @@ def record_review_workflow_validation(
     if validate["returncode"] != 0:
         failures.append(workflow_validate_failure_detail(validate))
         return
-    evidence_path = args.evidence if args.evidence else args.project / ".agentplaybook" / "preflight.json"
+    evidence_path = args.evidence if args.evidence else args.project / ".tao" / "preflight.json"
     record_successful_review_workflow_validation(
         args.project,
         args.rules,
@@ -265,7 +265,7 @@ def record_review_worktree_stability(
 
 
 def record_review_failure(args: Any, failures: list[str]) -> None:
-    evidence_path = args.evidence if args.evidence else args.project / ".agentplaybook" / "preflight.json"
+    evidence_path = args.evidence if args.evidence else args.project / ".tao" / "preflight.json"
     try:
         preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
         record_failure_checkpoints(
@@ -288,7 +288,7 @@ def workflow_validate_failure_detail(validate: dict[str, Any]) -> str:
 
 
 def record_review_gate(args: Any, checks: dict[str, Any]) -> None:
-    evidence_path = args.evidence if args.evidence else args.project / ".agentplaybook" / "preflight.json"
+    evidence_path = args.evidence if args.evidence else args.project / ".tao" / "preflight.json"
     try:
         preflight = json.loads(evidence_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -340,7 +340,7 @@ def review_outcome_failures(outcome: str) -> list[str]:
 
 
 def review_route_gates(project: Path, evidence_path: Path | None) -> list[str]:
-    path = evidence_path if evidence_path else project / ".agentplaybook" / "preflight.json"
+    path = evidence_path if evidence_path else project / ".tao" / "preflight.json"
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):

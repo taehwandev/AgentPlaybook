@@ -140,25 +140,76 @@ class RuntimeExecutionCapsuleBridgeTests(unittest.TestCase):
             self.assertNotIn("legacy direct workflow.py", updated)
             self.assertEqual(1, updated.count(RUNTIME_BRIDGE_BEGIN))
 
+    def test_managed_bridge_replaces_block_written_under_a_superseded_marker(self) -> None:
+        # Renaming the marker used to orphan the previous block: the search
+        # missed it and appended a second bridge beside it, leaving the runtime
+        # reading two conflicting sets of instructions.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "CLAUDE.md"
+            current = runtime_bridge_block(ROOT, "Claude", "CLAUDE.md")
+            target.write_text(
+                "# user-owned before\n\n"
+                "<!-- oldname-runtime-bridge:start -->\n"
+                "## Oldname Runtime Bridge\n"
+                "- instructions written under the previous marker\n"
+                "<!-- oldname-runtime-bridge:end -->\n\n"
+                "# user-owned after\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(
+                "installed",
+                merge_runtime_bridge(
+                    target,
+                    dry_run=False,
+                    block=current,
+                    required_phrases=runtime_bridge_required_phrases("Claude", "CLAUDE.md"),
+                ),
+            )
+
+            updated = target.read_text(encoding="utf-8")
+            self.assertIn("# user-owned before", updated)
+            self.assertIn("# user-owned after", updated)
+            self.assertNotIn("oldname-runtime-bridge", updated)
+            self.assertNotIn("instructions written under the previous marker", updated)
+            self.assertEqual(1, updated.count(RUNTIME_BRIDGE_BEGIN))
+
+    def test_managed_bridge_keeps_current_block_untouched_when_already_correct(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "CLAUDE.md"
+            current = runtime_bridge_block(ROOT, "Claude", "CLAUDE.md")
+            target.write_text(f"# user-owned\n\n{current}", encoding="utf-8")
+
+            self.assertEqual(
+                "ok",
+                merge_runtime_bridge(
+                    target,
+                    dry_run=False,
+                    block=current,
+                    required_phrases=runtime_bridge_required_phrases("Claude", "CLAUDE.md"),
+                ),
+            )
+            self.assertEqual(1, target.read_text(encoding="utf-8").count(RUNTIME_BRIDGE_BEGIN))
+
     def test_templates_use_one_start_and_direct_required_docs(self) -> None:
         repo_template = (ROOT / "templates" / "repo-agents-routing.md").read_text()
-        prompt_template = (ROOT / "templates" / "use-agentplaybook-prompt.md").read_text()
+        prompt_template = (ROOT / "templates" / "use-tao-prompt.md").read_text()
         normalized_repo_template = " ".join(repo_template.split())
 
-        self.assertIn("run `<AGENTPLAYBOOK_LAUNCHER> start` once", repo_template)
+        self.assertIn("run `<TAO_LAUNCHER> start` once", repo_template)
         self.assertIn("read the route's `required_docs`", normalized_repo_template)
-        self.assertIn("<AGENTPLAYBOOK_LAUNCHER> handoff", repo_template)
-        self.assertEqual(1, repo_template.count("<AGENTPLAYBOOK_LAUNCHER> start"))
+        self.assertIn("<TAO_LAUNCHER> handoff", repo_template)
+        self.assertEqual(1, repo_template.count("<TAO_LAUNCHER> start"))
 
-        self.assertIn("<AGENTPLAYBOOK_LAUNCHER> start", prompt_template)
+        self.assertIn("<TAO_LAUNCHER> start", prompt_template)
         self.assertIn("Read every `required_docs` entry", prompt_template)
-        self.assertIn("<AGENTPLAYBOOK_LAUNCHER> handoff", prompt_template)
+        self.assertIn("<TAO_LAUNCHER> handoff", prompt_template)
         self.assertNotIn("scripts/workflow.py list", prompt_template)
         self.assertNotIn("scripts/workflow.py classify", prompt_template)
         self.assertNotIn("scripts/agent-preflight.py --project", prompt_template)
         self.assertNotIn("scripts/agent-finish-check.py --project", prompt_template)
-        self.assertIn("<AGENTPLAYBOOK_LAUNCHER> finish", prompt_template)
-        self.assertNotIn("read <AGENTPLAYBOOK_ROOT>/AGENTS.md and <AGENTPLAYBOOK_ROOT>/index.md", prompt_template)
+        self.assertIn("<TAO_LAUNCHER> finish", prompt_template)
+        self.assertNotIn("read <TAO_ROOT>/AGENTS.md and <TAO_ROOT>/index.md", prompt_template)
         for template in (repo_template, prompt_template):
             self.assertNotIn("docs-read", template.lower())
             self.assertNotIn("receipt", template.lower())
@@ -171,9 +222,9 @@ class RuntimeExecutionCapsuleBridgeTests(unittest.TestCase):
             "common/skills/agent-operating-skill/references/current-guidance.md",
             "workflows/skills/agent-task-lifecycle/references/current-guidance.md",
             "workflows/skills/scripted-agent-workflow/references/current-guidance.md",
-            "templates/apply-agentplaybook-request.md",
+            "templates/apply-tao-request.md",
             "docs/index.html",
-            "docs/ko/update-agentplaybook.md",
+            "docs/ko/update-tao.md",
             "index.md",
             "docs/skills/agent-bootstrap/references/current-guidance.md",
             "common/skills/task-intake-effort-routing/references/current-guidance.md",
@@ -198,8 +249,8 @@ class RuntimeExecutionCapsuleBridgeTests(unittest.TestCase):
                 # copy-pasteable bypasses the resolved-absolute permission
                 # entries; human-facing pages keep the literal command.
                 self.assertTrue(
-                    "agentplaybook-hook start" in normalized
-                    or "<agentplaybook_launcher> start" in normalized,
+                    "tao-hook start" in normalized
+                    or "<tao_launcher> start" in normalized,
                     f"{relative} does not name the canonical start lifecycle",
                 )
                 self.assertIn("required_docs", normalized)

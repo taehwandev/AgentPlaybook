@@ -44,8 +44,8 @@ def _reason(out: str) -> str:
 
 def _opt_in_project(base: Path) -> Path:
     project = base / "proj"
-    (project / ".agentplaybook").mkdir(parents=True)
-    (project / "AGENTS.md").write_text("uses agentplaybook-hook\n", encoding="utf-8")
+    (project / ".tao").mkdir(parents=True)
+    (project / "AGENTS.md").write_text("uses tao-hook\n", encoding="utf-8")
     return project
 
 
@@ -54,13 +54,13 @@ def _write_preflight(project: Path, session_id: str | None = None) -> None:
     payload: dict = {}
     if session_id is not None:
         payload["runtime_session"] = {"runtime": "claude", "session_id": session_id}
-    (project / ".agentplaybook" / "preflight.json").write_text(
+    (project / ".tao" / "preflight.json").write_text(
         json.dumps(payload), encoding="utf-8"
     )
 
 
 def _age_preflight(project: Path, seconds: float) -> None:
-    preflight = project / ".agentplaybook" / "preflight.json"
+    preflight = project / ".tao" / "preflight.json"
     stamp = time.time() - seconds
     os.utime(preflight, (stamp, stamp))
 
@@ -76,7 +76,7 @@ class ClaudePreToolGateTests(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertEqual("", out)
 
-    def test_edit_outside_agentplaybook_project_is_allowed(self) -> None:
+    def test_edit_outside_tao_project_is_allowed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             code, out = _decide(
                 {"tool_name": "Edit", "cwd": tmp, "session_id": "s"}
@@ -169,7 +169,7 @@ class ClaudePreToolGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             project = _opt_in_project(Path(tmp))
 
-            with patch.dict("os.environ", {"AGENTPLAYBOOK_CLAUDE_GATE": "0"}):
+            with patch.dict("os.environ", {"TAO_CLAUDE_GATE": "0"}):
                 code, out = _decide(
                     {"tool_name": "Write", "cwd": str(project), "session_id": "s1"}
                 )
@@ -201,7 +201,7 @@ class ClaudePreToolGateTests(unittest.TestCase):
         # write it can fabricate it, which is how the first bypass happened.
         with tempfile.TemporaryDirectory() as tmp:
             project = _opt_in_project(Path(tmp))
-            state = project / ".agentplaybook"
+            state = project / ".tao"
             before = sorted(p.name for p in state.rglob("*"))
 
             _decide({"tool_name": "Write", "cwd": str(project), "session_id": "sX"})
@@ -243,7 +243,7 @@ class ClaudePreToolGateTests(unittest.TestCase):
 
             reason = json.loads(out)["hookSpecificOutput"]["permissionDecisionReason"]
             self.assertIn(str(gate.stable_launcher_path()), reason)
-            self.assertNotIn("~/.agentplaybook", reason)
+            self.assertNotIn("~/.tao", reason)
 
     def test_malformed_stdin_fails_open(self) -> None:
         with patch_stdin("not json{{"):
@@ -301,7 +301,7 @@ class ClaudePreToolGateTests(unittest.TestCase):
             _write_preflight(project)
             for index in range(5):
                 self._write_new_source(project, "sp", f"src/file{index}.py")
-            ack = project / ".agentplaybook" / "claude-pretool-gate" / "sp.sprawl-ack"
+            ack = project / ".tao" / "claude-pretool-gate" / "sp.sprawl-ack"
             ack.parent.mkdir(parents=True, exist_ok=True)
             ack.write_text("each file owns a distinct platform adapter\n", encoding="utf-8")
             code, out = self._write_new_source(project, "sp", "src/file5.py")
@@ -334,8 +334,8 @@ class ClaudePreToolGateTests(unittest.TestCase):
     def test_new_file_budget_can_be_disabled_with_zero(self) -> None:
         import os as _os
 
-        previous = _os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET")
-        _os.environ["AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET"] = "0"
+        previous = _os.environ.get("TAO_CLAUDE_GATE_NEW_FILE_BUDGET")
+        _os.environ["TAO_CLAUDE_GATE_NEW_FILE_BUDGET"] = "0"
         try:
             with tempfile.TemporaryDirectory() as tmp:
                 project = _opt_in_project(Path(tmp))
@@ -345,16 +345,16 @@ class ClaudePreToolGateTests(unittest.TestCase):
                     self.assertEqual("", out)
         finally:
             if previous is None:
-                _os.environ.pop("AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET", None)
+                _os.environ.pop("TAO_CLAUDE_GATE_NEW_FILE_BUDGET", None)
             else:
-                _os.environ["AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET"] = previous
+                _os.environ["TAO_CLAUDE_GATE_NEW_FILE_BUDGET"] = previous
 
 
 class ClaudePreToolGateSetupTests(unittest.TestCase):
     def test_merge_installs_pre_tool_use_group(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "settings.json"
-            command = f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 launcher {_PRETOOL_GATE_ALIAS}"
+            command = f"TAO_HOOK_SOFT_FAIL=1 launcher {_PRETOOL_GATE_ALIAS}"
             status = _merge_claude_pre_tool_gate(target, command, dry_run=False)
             self.assertEqual("installed", status)
             config = read_json(target)
@@ -365,7 +365,7 @@ class ClaudePreToolGateSetupTests(unittest.TestCase):
     def test_merge_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "settings.json"
-            command = f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 launcher {_PRETOOL_GATE_ALIAS}"
+            command = f"TAO_HOOK_SOFT_FAIL=1 launcher {_PRETOOL_GATE_ALIAS}"
             _merge_claude_pre_tool_gate(target, command, dry_run=False)
             status = _merge_claude_pre_tool_gate(target, command, dry_run=False)
             self.assertEqual("ok", status)

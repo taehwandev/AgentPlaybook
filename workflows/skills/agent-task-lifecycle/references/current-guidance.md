@@ -62,7 +62,7 @@ memory.
 4. Risk scan: mark touched surfaces such as secrets, external state, auth,
    billing, data, release, generated files, dependencies, local tools, runtime
    bridges, or usage metering evidence.
-5. Start: for multi-step tasks, run `<AGENTPLAYBOOK_LAUNCHER> start ... --request
+5. Start: for multi-step tasks, run `<TAO_LAUNCHER> start ... --request
    "<USER_REQUEST>"` once before manually choosing workflow cards. It performs
    routing and preflight; do not separately repeat workflow list, classify,
    route, or preflight after it succeeds. Direct `workflow.py route` and
@@ -84,7 +84,7 @@ memory.
    work-producing routes and before delegating work to subagents or parallel
    sessions.
 9. Global lessons: when preflight includes accepted or promoted lessons from
-   `~/.agentplaybook/`, check whether any apply to the current task before
+   `~/.tao/`, check whether any apply to the current task before
    editing or reviewing.
 10. Alignment brief: before requirements analysis or modification work, record
    the shared understanding, possible mismatches, and unsupported assumptions or
@@ -148,7 +148,7 @@ When a finish gate requires evidence, record the actual decision. At minimum:
 21. Retrospective check: before finish on every route, inspect the skills
     actually used and record the structured result. If a reusable gap exists,
     record or defer one optional content-free skill observation.
-22. Finish: run `<AGENTPLAYBOOK_LAUNCHER> finish` before final report, handoff,
+22. Finish: run `<TAO_LAUNCHER> finish` before final report, handoff,
     commit, or release. Use `agent-finish-check.py` directly only as a
     lower-level diagnostic or compatibility fallback when the finish hook is
     unavailable.

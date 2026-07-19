@@ -77,7 +77,7 @@ STRUCTURE_REVIEW_SCOPE_NOTE = (
     "from runtime hard gates; test files are exempt only from the oversized-block check"
 )
 REVIEW_SKIP_PARTS = {
-    ".agentplaybook",
+    ".tao",
     ".git",
     ".next",
     "DerivedData",

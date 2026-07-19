@@ -47,7 +47,7 @@ SERIAL_SIGNALS = (
 
 
 def delegation_plan_path(project: Path) -> Path:
-    return project / ".agentplaybook" / DELEGATION_PLAN_FILENAME
+    return project / ".tao" / DELEGATION_PLAN_FILENAME
 
 
 def read_delegation_plan(project: Path) -> dict[str, Any]:
@@ -92,7 +92,7 @@ def validate_delegation_plan_structure(plan: dict[str, Any]) -> list[str]:
     if not plan:
         return [
             "parallel or multi-agent evidence requires structured "
-            ".agentplaybook/agent-delegation-plan.json"
+            ".tao/agent-delegation-plan.json"
         ]
     if plan.get("invalid_json"):
         return ["agent delegation plan is not valid JSON"]

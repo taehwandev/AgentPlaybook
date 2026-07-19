@@ -20,7 +20,7 @@ MAX_TASKS = 200
 
 
 def scheduler_path(project: Path) -> Path:
-    return project.resolve() / ".agentplaybook" / SCHEDULER_FILENAME
+    return project.resolve() / ".tao" / SCHEDULER_FILENAME
 
 
 def choose_capacity(independent_slices: int, requested_workers: int = 1) -> int:

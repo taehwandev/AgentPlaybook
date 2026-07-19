@@ -29,7 +29,7 @@ class AgentRepairVerificationTests(unittest.TestCase):
 
     def _prepared_repair(self, project: Path) -> tuple[Path, dict]:
         _init_repo(project)
-        evidence_path = project / ".agentplaybook" / "preflight.json"
+        evidence_path = project / ".tao" / "preflight.json"
         evidence_path.parent.mkdir(parents=True)
         preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
         evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
@@ -196,7 +196,7 @@ class AgentRepairVerificationTests(unittest.TestCase):
                 )
             )
 
-    def test_receipt_path_outside_agentplaybook_dir_is_rejected(self) -> None:
+    def test_receipt_path_outside_tao_dir_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
             evidence_path, preflight = self._prepared_repair(project)

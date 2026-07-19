@@ -36,7 +36,7 @@ class AgentSkillRetentionTests(unittest.TestCase):
                     skill_id="verification_policy",
                     signal="missing_structured_evidence",
                 )
-            with patch.dict("os.environ", {"AGENTPLAYBOOK_STATE_HOME": str(state_home)}):
+            with patch.dict("os.environ", {"TAO_STATE_HOME": str(state_home)}):
                 result = run_maintenance(project)
 
             self.assertEqual(1, result["skill_curation"]["ready_count"])

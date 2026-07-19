@@ -184,7 +184,7 @@ def fail_if_setup_incomplete(args: argparse.Namespace, results: list[dict]) -> N
     if any(result["tool"] == "graphify" for result in missing):
         print(
             "\nTarget setup is incomplete. Install/repair the canonical Graphify skill and "
-            "runtime links, then read .agentplaybook/skills/graphify/SKILL.md, build the graph "
+            "runtime links, then read .tao/skills/graphify/SKILL.md, build the graph "
             "from the target root, and rerun --check.",
             file=sys.stderr,
         )
@@ -225,7 +225,7 @@ def _has_agy() -> bool:
 
 
 def _spill_setup_helper_path() -> Path:
-    override = os.environ.get("AGENTPLAYBOOK_SPILL_HELPER_PATH", "")
+    override = os.environ.get("TAO_SPILL_HELPER_PATH", "")
     return Path(override) if override else DEFAULT_SPILL_SETUP_HELPER
 
 
@@ -258,7 +258,7 @@ def configure_codex(dry_run: bool, *, root: Path) -> list[dict]:
         },
         {
             "tool": "codex",
-            "hook": "rules.AgentPlaybookPython",
+            "hook": "rules.TaoAgentOSPython",
             "status": rules_status,
             "path": str(rules_target),
         },

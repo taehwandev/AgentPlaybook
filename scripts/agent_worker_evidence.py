@@ -10,8 +10,8 @@ from pathlib import Path
 from agent_gate_evidence import gate_evidence_path_for_preflight
 
 
-RESERVATION_FILENAME = ".agentplaybook-reservation"
-CLAIMED_FILENAME = ".agentplaybook-reservation-claimed"
+RESERVATION_FILENAME = ".tao-reservation"
+CLAIMED_FILENAME = ".tao-reservation-claimed"
 
 
 def _check_no_symlink(path: Path) -> None:
@@ -88,8 +88,8 @@ def isolated_worker_evidence(
 
     lexical_project = (lexical_project or project).expanduser().absolute()
     project = project.resolve()
-    worker_root = project / ".agentplaybook" / "workers"
-    lexical_worker_root = lexical_project / ".agentplaybook" / "workers"
+    worker_root = project / ".tao" / "workers"
+    lexical_worker_root = lexical_project / ".tao" / "workers"
     if worker_root.resolve() != worker_root:
         raise ValueError(
             "Fallback worker evidence root must not resolve through a symlink."
@@ -108,7 +108,7 @@ def isolated_worker_evidence(
         selected.relative_to(project)
     except ValueError as error:
         raise ValueError(
-            "Fallback worker evidence must stay under <project>/.agentplaybook/workers/."
+            "Fallback worker evidence must stay under <project>/.tao/workers/."
         ) from error
     if len(relative.parts) != 2 or relative.parts[-1] != "preflight.json":
         raise ValueError(

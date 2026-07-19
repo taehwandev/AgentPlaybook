@@ -39,7 +39,7 @@ serial/small-scope reason.
 Discover available scripted commands with:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> workflow list
+<TAO_LAUNCHER> workflow list
 ```
 
 ## Lifecycle Aliases
@@ -166,7 +166,7 @@ the update.
   records which routed required documents were read and the task-specific
   takeaway that was applied. Graphify remains responsible for target-project
   code and relationship analysis.
-  Use `<AGENTPLAYBOOK_LAUNCHER> start --command <command> --request "<request>"`.
+  Use `<TAO_LAUNCHER> start --command <command> --request "<request>"`.
 - `Required Documents`: after Start Hook, read the route's `required_docs`
   directly before edits or review. Keep `reference_docs` for on-demand context.
   There is no separate confirmation hook or receipt artifact. When the route
@@ -205,7 +205,7 @@ the update.
   fails by default when the changed path count is too broad for one review pass,
   so the work must be split before the repaired task resumes.
   Use
-  `<AGENTPLAYBOOK_LAUNCHER> review --review-outcome <pass|findings> --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
+  `<TAO_LAUNCHER> review --review-outcome <pass|findings> --code-review-evidence "<evidence>" --docs-freshness-evidence "<evidence>" --structure-review-evidence "<evidence when size or split pressure exists>"`.
 - `Finish Hook`: run before final report, commit, release, or handoff. It
   verifies the required route gate evidence, final validation, diff hygiene,
   and final VibeGuard state. Record manual gate facts first with
@@ -213,7 +213,7 @@ the update.
   read-only and accepts no inline gate evidence. If a custom
   preflight evidence path is used, its gate ledger is
   `<preflight-stem>-gate-evidence.json`; the default preflight keeps using
-  `.agentplaybook/gate-evidence.json`. If
+  `.tao/gate-evidence.json`. If
   `review hook` is one of those gates, missing Review Hook evidence is a
   workflow failure. It also validates automatic gate evidence for ambiguity,
   alignment, documentation, tests, and multi-agent split decisions; vague
@@ -249,4 +249,4 @@ the update.
 Workflow files should reference cards instead of copying them. If workflow text
 starts repeating a common rule, move the rule into `common/` and link it here.
 If a workflow becomes a stable repeated command, add or update the matching
-profile in `scripts/workflow.py` and run `<AGENTPLAYBOOK_LAUNCHER> workflow validate`.
+profile in `scripts/workflow.py` and run `<TAO_LAUNCHER> workflow validate`.

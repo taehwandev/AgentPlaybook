@@ -261,7 +261,7 @@ def print_dispatch(args: argparse.Namespace) -> int:
     evidence_path = (
         args.evidence.expanduser().resolve()
         if args.evidence
-        else project / ".agentplaybook" / "preflight.json"
+        else project / ".tao" / "preflight.json"
     )
     parent_identity_matches = _preflight_identity_matches(
         evidence_path,
@@ -280,7 +280,7 @@ def print_dispatch(args: argparse.Namespace) -> int:
         rules=rules,
     )
     if not parent_identity_matches:
-        evidence_path = project / ".agentplaybook" / "preflight.json"
+        evidence_path = project / ".tao" / "preflight.json"
     route = parent_route
     if route is None:
         inferred_concerns = infer_concerns_from_request(args.request)

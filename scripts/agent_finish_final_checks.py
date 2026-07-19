@@ -134,7 +134,7 @@ def reusable_review_workflow_validation(project: Path, rules: Path) -> dict[str,
     record = read_json_object(review_validation_path(project))
     if not _valid_review_validation_record(record):
         return None
-    evidence_path = project / ".agentplaybook" / record["preflight_evidence"]["filename"]
+    evidence_path = project / ".tao" / record["preflight_evidence"]["filename"]
     try:
         if not evidence_path.is_file() or file_hash_record(evidence_path) != record["preflight_evidence"]:
             return None
@@ -160,7 +160,7 @@ def reusable_review_workflow_validation(project: Path, rules: Path) -> dict[str,
 
 
 def review_validation_path(project: Path) -> Path:
-    return project.resolve() / ".agentplaybook" / REVIEW_VALIDATION_FILENAME
+    return project.resolve() / ".tao" / REVIEW_VALIDATION_FILENAME
 
 
 def _valid_review_validation_record(record: dict[str, Any]) -> bool:

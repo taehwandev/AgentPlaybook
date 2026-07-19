@@ -150,13 +150,13 @@ def route_doc(path: str) -> str:
 
 class WorkflowCatalogTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_required_hook_commands_use_stable_launcher(self) -> None:
         hooks = route_hooks("task")

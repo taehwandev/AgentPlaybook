@@ -1,5 +1,5 @@
 ---
-keyflow_id: sys_agentplaybook_source_of_truth_ownership
+keyflow_id: sys_tao_source_of_truth_ownership
 status: review
 type: human-reviewed-needed
 ---
@@ -54,11 +54,11 @@ or configuration files outside that link may own unavoidable runtime wiring.
 For repo-local skills, prefer this shape:
 
 ```text
-.agentplaybook/skills/<skill>/   # one canonical, commit-worthy source
+.tao/skills/<skill>/   # one canonical, commit-worthy source
 .<runtime>/skills/<skill>        # repo-relative link or thin runtime adapter
 ```
 
-The `.agentplaybook` directory may also contain local workflow evidence, but
+The `.tao` directory may also contain local workflow evidence, but
 that evidence is not part of the canonical skill and must remain ignored. Use
 an allowlist tracking policy so `skills/<skill>/**` is portable while
 preflight, gate, review, cache, and receipt files stay local.
@@ -152,7 +152,7 @@ require updating several narrative copies.
 
 When a request names folder structure, `SKILL.md`, `references/`, skill bundles,
 source-of-truth cleanup, duplicated guidance, or misplaced docs, routing should
-load `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md` before edits.
+load `docs/skills/tao-skill-bundle-migration/SKILL.md` before edits.
 
 ## Stop If
 

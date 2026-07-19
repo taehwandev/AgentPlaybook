@@ -1,5 +1,5 @@
 ---
-keyflow_id: docs_ko_agentplaybook_os_roadmap
+keyflow_id: docs_ko_tao_os_roadmap
 status: draft
 type: planning
 ---
@@ -23,7 +23,7 @@ Tao Agent OS은 에이전트에게 작업 방법을 알려주는 플레이북을
 ## 첫 수직 슬라이스 구현 상태
 
 Agent Kernel의 최소 실행 registry를 추가했다. 각 start hook은 로컬
-`.agentplaybook/run-registry.json`에 실행을 `running`으로 등록하고, finish
+`.tao/run-registry.json`에 실행을 `running`으로 등록하고, finish
 hook은 같은 preflight evidence에 연결된 최신 실행을 `completed` 또는
 `failed`로 전환한다. registry에는 요청 원문이나 로컬 파일 경로를 저장하지
 않고 opaque project/run ID, route/request fingerprint, 상태와 시각만 남긴다.
@@ -74,7 +74,7 @@ worker 종료 코드에 따라 completed/failed로 전환한다. 실제 runtime 
   stale worker를 재개할 때 기존 근거를 재사용할 수 있게 한다.
 - partial-result 본문은 저장하지 않고 opaque ID만 보존한다. dispatch 호출자가
   `partial_result_id`를 제공하면 실패 task의 bounded resume이 활성화되고,
-  `AGENTPLAYBOOK_RESUME_RESULT_ID`와 `AGENTPLAYBOOK_TASK_ID`로 worker 경계에 전달된다.
+  `TAO_RESUME_RESULT_ID`와 `TAO_TASK_ID`로 worker 경계에 전달된다.
 - context snapshot은 start 시 기존 snapshot을 request/route fingerprint로 검증하고,
   현재 요청으로 새 snapshot을 작성한 뒤 다시 검증한다. 이 read/write/re-validate
   구간은 project-state와 context 파일 lock으로 원자화한다.

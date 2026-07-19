@@ -210,7 +210,7 @@ def record_session_finished(project: Path, session: dict[str, Any]) -> None:
     safe = "".join(ch for ch in str(session_id) if ch.isalnum() or ch in "-_")
     if not safe:
         return
-    marker = project / ".agentplaybook" / "claude-pretool-gate" / f"{safe}.finished"
+    marker = project / ".tao" / "claude-pretool-gate" / f"{safe}.finished"
     try:
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text("", encoding="utf-8")
@@ -324,9 +324,9 @@ def main() -> int:
 
 
 def _apply_worker_evidence_boundary(args: argparse.Namespace) -> str:
-    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+    if os.environ.get("TAO_PARENT_EVIDENCE_READONLY") == "1":
         return "reusable worker capsule cannot run a finish check against parent evidence"
-    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    expected = os.environ.get("TAO_WORKER_EVIDENCE")
     if not expected:
         return ""
     expected_path = Path(expected).expanduser().resolve()

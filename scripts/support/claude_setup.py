@@ -17,8 +17,12 @@ from support.runtime_bridge import (
 )
 from support.setup_config_files import merge_permissions_allow, quote, read_json, write_json
 
+# Identify the managed hook by the command it runs, not by the launcher's
+# filename. Keying on the launcher name means a renamed launcher stops matching
+# the entry installed under the old name, so the stale hook survives and the
+# runtime ends up invoking both.
 _BASELINE_COMMAND_RE = re.compile(
-    r"(?:workflow\.py.*route|agentplaybook-hook.*workflow.*route).*triage.*--request-classified"
+    r"(?:workflow\.py.*route|workflow\s+route).*triage.*--request-classified"
 )
 _CLASSIFICATION_EVIDENCE = (
     "Claude UserPromptSubmit hook records safe request-intake evidence for "
@@ -39,7 +43,7 @@ def configure_claude(
 ) -> list[dict]:
     target = Path.home() / ".claude" / "settings.json"
     baseline_cmd = (
-        f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude {quote(str(launcher_path))}"
+        f"TAO_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude {quote(str(launcher_path))}"
         " workflow"
         " route triage --request-classified"
         f" --classification-evidence {quote(_CLASSIFICATION_EVIDENCE)}"
@@ -67,13 +71,13 @@ def configure_claude(
     results.append({"tool": "claude", "hook": "UserPromptSubmit_spill_bridge", "status": status, "path": str(target)})
 
     gate_cmd = (
-        f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 {quote(str(launcher_path))} {_PRETOOL_GATE_ALIAS}"
+        f"TAO_HOOK_SOFT_FAIL=1 {quote(str(launcher_path))} {_PRETOOL_GATE_ALIAS}"
     )
     status = _merge_claude_pre_tool_gate(target, gate_cmd, dry_run)
     results.append({"tool": "claude", "hook": "PreToolUse_workflow_gate", "status": status, "path": str(target)})
 
     stop_cmd = (
-        f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 {quote(str(launcher_path))} {_STOP_GATE_ALIAS}"
+        f"TAO_HOOK_SOFT_FAIL=1 {quote(str(launcher_path))} {_STOP_GATE_ALIAS}"
     )
     status = _merge_claude_stop_gate(target, stop_cmd, dry_run)
     results.append({"tool": "claude", "hook": "Stop_finish_gate", "status": status, "path": str(target)})
@@ -87,7 +91,7 @@ def configure_claude(
         dry_run,
         cleanup_entries=cleanup_entries,
     )
-    results.append({"tool": "claude", "hook": "permissions.AgentPlaybookPython", "status": status, "path": str(target)})
+    results.append({"tool": "claude", "hook": "permissions.TaoAgentOSPython", "status": status, "path": str(target)})
 
     status = _set_claude_env(target, dry_run) if spill_available else _remove_claude_env(target, dry_run)
     results.append({"tool": "claude", "hook": "env.SPILL_AI_TOOL", "status": status, "path": str(target)})
@@ -103,7 +107,11 @@ def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) 
     if not isinstance(groups, list):
         groups = []
 
-    has_managed_command = False
+    # Scan every entry before deciding. Returning as soon as the current command
+    # turns up would leave a managed entry installed under an earlier launcher
+    # name in place beside it, and the runtime would run both.
+    has_current_command = False
+    has_stale_managed_command = False
     for group in groups:
         if not isinstance(group, dict):
             continue
@@ -112,12 +120,15 @@ def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) 
                 continue
             hook_command = hook.get("command", "")
             if hook_command == command and group.get("matcher") == ".*":
-                return "ok"
+                has_current_command = True
+                continue
             if _is_managed_claude_spill_bridge_command(hook_command):
-                has_managed_command = True
+                has_stale_managed_command = True
 
+    if has_current_command and not has_stale_managed_command:
+        return "ok"
     if dry_run:
-        return "would_update" if has_managed_command else "missing"
+        return "would_update" if has_current_command or has_stale_managed_command else "missing"
 
     cleaned = _remove_managed_hook_objects(
         groups,
@@ -151,7 +162,8 @@ def _merge_claude_stop_gate(target: Path, command: str, dry_run: bool) -> str:
     if not isinstance(groups, list):
         groups = []
 
-    has_managed_command = False
+    has_current_command = False
+    has_stale_managed_command = False
     for group in groups:
         if not isinstance(group, dict):
             continue
@@ -160,12 +172,15 @@ def _merge_claude_stop_gate(target: Path, command: str, dry_run: bool) -> str:
                 continue
             hook_command = hook.get("command", "")
             if hook_command == command:
-                return "ok"
+                has_current_command = True
+                continue
             if _is_managed_claude_stop_gate_command(hook_command):
-                has_managed_command = True
+                has_stale_managed_command = True
 
+    if has_current_command and not has_stale_managed_command:
+        return "ok"
     if dry_run:
-        return "would_update" if has_managed_command else "missing"
+        return "would_update" if has_current_command or has_stale_managed_command else "missing"
 
     cleaned = _remove_managed_hook_objects(groups, _is_managed_claude_stop_gate_command)
     cleaned.append({
@@ -187,7 +202,8 @@ def _merge_claude_pre_tool_gate(target: Path, command: str, dry_run: bool) -> st
     if not isinstance(groups, list):
         groups = []
 
-    has_managed_command = False
+    has_current_command = False
+    has_stale_managed_command = False
     for group in groups:
         if not isinstance(group, dict):
             continue
@@ -196,12 +212,15 @@ def _merge_claude_pre_tool_gate(target: Path, command: str, dry_run: bool) -> st
                 continue
             hook_command = hook.get("command", "")
             if hook_command == command and group.get("matcher") == _PRETOOL_GATE_MATCHER:
-                return "ok"
+                has_current_command = True
+                continue
             if _is_managed_claude_pre_tool_gate_command(hook_command):
-                has_managed_command = True
+                has_stale_managed_command = True
 
+    if has_current_command and not has_stale_managed_command:
+        return "ok"
     if dry_run:
-        return "would_update" if has_managed_command else "missing"
+        return "would_update" if has_current_command or has_stale_managed_command else "missing"
 
     cleaned = _remove_managed_hook_objects(
         groups,

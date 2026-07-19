@@ -2,7 +2,7 @@
 keyflow_id: sys_web_deployment_versioning
 status: stable
 type: human-reviewed-needed
-agentplaybook_card_contract: strict
+tao_card_contract: strict
 ---
 
 # Web Deployment Versioning

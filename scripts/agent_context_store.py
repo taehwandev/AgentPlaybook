@@ -16,7 +16,7 @@ CONTEXT_FILENAME = "context-snapshot.json"
 
 
 def context_snapshot_path(project: Path) -> Path:
-    return project.resolve() / ".agentplaybook" / CONTEXT_FILENAME
+    return project.resolve() / ".tao" / CONTEXT_FILENAME
 
 
 def refresh_context_snapshot(

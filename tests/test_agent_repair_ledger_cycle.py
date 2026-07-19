@@ -148,13 +148,13 @@ def route_doc(path: str) -> str:
 
 class RepairLedgerCycleTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_hook_rejects_invalid_concern_before_start_repair_policy(self) -> None:
         result = subprocess.run(
@@ -272,7 +272,7 @@ class RepairLedgerCycleTests(unittest.TestCase):
                 cwd=str(project),
                 check=True,
             )
-            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path = project / ".tao" / "preflight.json"
             evidence_path.parent.mkdir(parents=True)
             preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
             evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
@@ -363,7 +363,7 @@ class RepairLedgerCycleTests(unittest.TestCase):
                 cwd=str(project),
                 check=True,
             )
-            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path = project / ".tao" / "preflight.json"
             evidence_path.parent.mkdir(parents=True)
             preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
             evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
@@ -422,7 +422,7 @@ class RepairLedgerCycleTests(unittest.TestCase):
                 cwd=str(project),
                 check=True,
             )
-            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path = project / ".tao" / "preflight.json"
             evidence_path.parent.mkdir(parents=True)
             preflight = {"route": {"command": "bugfix", "gates": ["tests", "handoff"]}}
             evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
@@ -634,7 +634,7 @@ class RepairLedgerCycleTests(unittest.TestCase):
             parent_evidence.write_text(json.dumps(preflight), encoding="utf-8")
             worker_evidence.write_text(json.dumps(preflight), encoding="utf-8")
 
-            os.environ["AGENTPLAYBOOK_WORKER_EVIDENCE"] = str(worker_evidence)
+            os.environ["TAO_WORKER_EVIDENCE"] = str(worker_evidence)
             try:
                 with self.assertRaises(PermissionError):
                     record_failure_checkpoints(
@@ -642,7 +642,7 @@ class RepairLedgerCycleTests(unittest.TestCase):
                         checkpoints=["tests"], signature="sig",
                     )
             finally:
-                del os.environ["AGENTPLAYBOOK_WORKER_EVIDENCE"]
+                del os.environ["TAO_WORKER_EVIDENCE"]
 
     def test_finish_records_checkpoint_specific_failure_signatures(self) -> None:
         from agent_repair_ledger import (
@@ -776,7 +776,7 @@ class RepairLedgerCycleTests(unittest.TestCase):
                 "--resume-checkpoint",
                 "tests",
             ]
-            env_patch = {"AGENTPLAYBOOK_WORKER_EVIDENCE": str(worker_evidence)}
+            env_patch = {"TAO_WORKER_EVIDENCE": str(worker_evidence)}
             old_env = {key: os.environ.get(key) for key in env_patch}
             os.environ.update(env_patch)
             try:
@@ -832,7 +832,7 @@ class RepairLedgerCycleTests(unittest.TestCase):
                 start_exit = agent_hook.main()
             self.assertEqual(0, start_exit)
 
-            ledger_path = project / ".agentplaybook" / "gate-evidence.json"
+            ledger_path = project / ".tao" / "gate-evidence.json"
             after_start = json.loads(ledger_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 ["request intake"], [entry["gate"] for entry in after_start["entries"]]

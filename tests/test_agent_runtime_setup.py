@@ -159,19 +159,19 @@ def route_doc(path: str) -> str:
 
 class RuntimeSetupTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_claude_user_prompt_hook_requires_classification_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "settings.json"
             old_command = (
-                "SPILL_AI_TOOL=claude python3 '/tmp/AgentPlaybook/scripts/workflow.py' "
+                "SPILL_AI_TOOL=claude python3 '/tmp/tao-agent-os/scripts/workflow.py' "
                 "route triage --request-classified"
             )
             target.write_text(json.dumps({
@@ -185,7 +185,7 @@ class RuntimeSetupTests(unittest.TestCase):
                 }
             }))
             new_command = (
-                f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude '{stable_launcher_path()}' workflow "
+                f"TAO_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude '{stable_launcher_path()}' workflow "
                 "route triage --request-classified --classification-evidence "
                 f"'{_CLASSIFICATION_EVIDENCE}'"
             )
@@ -206,17 +206,17 @@ class RuntimeSetupTests(unittest.TestCase):
         cases = (
             (
                 "UserPromptSubmit",
-                "SPILL_AI_TOOL=claude agentplaybook-hook workflow route triage "
+                "SPILL_AI_TOOL=claude tao-hook workflow route triage "
                 "--request-classified --classification-evidence safe",
-                "SPILL_AI_TOOL=claude agentplaybook-hook workflow route triage "
+                "SPILL_AI_TOOL=claude tao-hook workflow route triage "
                 "--request-classified --classification-evidence safe",
                 _merge_claude_user_prompt_submit,
                 ".*",
             ),
             (
                 "PreToolUse",
-                "agentplaybook-hook claude-pretool-gate",
-                "agentplaybook-hook claude-pretool-gate",
+                "tao-hook claude-pretool-gate",
+                "tao-hook claude-pretool-gate",
                 _merge_claude_pre_tool_gate,
                 "Edit|Write|MultiEdit|NotebookEdit",
             ),
@@ -258,7 +258,7 @@ class RuntimeSetupTests(unittest.TestCase):
                             {
                                 "command": (
                                     "SPILL_AI_TOOL=claude python3 "
-                                    "'/tmp/AgentPlaybook/scripts/workflow.py' "
+                                    "'/tmp/tao-agent-os/scripts/workflow.py' "
                                     "route triage --request-classified"
                                 )
                             }
@@ -269,7 +269,7 @@ class RuntimeSetupTests(unittest.TestCase):
             "env": {"SPILL_AI_TOOL": "claude"},
         }
 
-        warnings = _claude_spill_warnings(config, Path("/tmp/AgentPlaybook"))
+        warnings = _claude_spill_warnings(config, Path("/tmp/tao-agent-os"))
 
         self.assertTrue(any("--classification-evidence" in warning for warning in warnings))
 
@@ -296,7 +296,7 @@ class RuntimeSetupTests(unittest.TestCase):
         self.assertEqual(55, len(entry_list))
         self.assertNotIn("$HOME", entries)
         self.assertNotIn("${HOME}", entries)
-        self.assertNotIn("$AGENTPLAYBOOK_HOME", entries)
+        self.assertNotIn("$TAO_HOME", entries)
         self.assertNotIn("~/", entries)
         self.assertNotIn('", "scripts/', entries)
         self.assertNotIn("--project", entries)
@@ -307,7 +307,7 @@ class RuntimeSetupTests(unittest.TestCase):
         entries = "\n".join(entry_list)
 
         self.assertIn(str(stable_launcher_path()), entries)
-        self.assertIn("agentplaybook-hook", entries)
+        self.assertIn("tao-hook", entries)
         self.assertNotIn(str(ROOT / "scripts"), entries)
         self.assertNotIn("$defaults", entry_list)
         self.assertNotIn("$HOME", entries)
@@ -350,7 +350,7 @@ class RuntimeSetupTests(unittest.TestCase):
         entries = "\n".join(entry_list)
 
         self.assertIn(str(stable_launcher_path()), entries)
-        self.assertIn("agentplaybook-hook", entries)
+        self.assertIn("tao-hook", entries)
         self.assertNotIn(str(ROOT / "scripts"), entries)
         self.assertNotIn("$HOME", entries)
         self.assertNotIn("${HOME}", entries)
@@ -406,11 +406,94 @@ class RuntimeSetupTests(unittest.TestCase):
 
         self.assertEqual("codex", label)
 
-    def test_spill_tool_label_allows_explicit_agentplaybook_override(self) -> None:
-        label = spill_tool_label({"AGENTPLAYBOOK_AI_TOOL": "agy", "CODEX_SANDBOX": "seatbelt"})
+    def test_spill_tool_label_allows_explicit_tao_override(self) -> None:
+        label = spill_tool_label({"TAO_AI_TOOL": "agy", "CODEX_SANDBOX": "seatbelt"})
 
         self.assertEqual("antigravity", label)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SupersededManagedBlockTests(unittest.TestCase):
+    """A renamed marker must migrate the old block, not duplicate beside it."""
+
+    def test_write_managed_block_replaces_block_under_a_superseded_marker(self) -> None:
+        from support.graphify_tracking import write_managed_block
+
+        block = (
+            "# tao-project-assets:start\n"
+            ".tao/\n"
+            "# tao-project-assets:end"
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / ".gitignore"
+            path.write_text(
+                "node_modules/\n\n"
+                "# oldname-project-assets:start\n"
+                ".oldname/\n"
+                "# oldname-project-assets:end\n\n"
+                "dist/\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual("installed", write_managed_block(path, block))
+
+            updated = path.read_text(encoding="utf-8")
+            self.assertIn("node_modules/", updated)
+            self.assertIn("dist/", updated)
+            self.assertNotIn("oldname-project-assets", updated)
+            self.assertNotIn(".oldname/", updated)
+            self.assertEqual(1, updated.count("# tao-project-assets:start"))
+
+    def test_write_managed_block_is_idempotent_for_the_current_marker(self) -> None:
+        from support.graphify_tracking import write_managed_block
+
+        block = (
+            "# tao-project-assets:start\n"
+            ".tao/\n"
+            "# tao-project-assets:end"
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / ".gitignore"
+            self.assertEqual("installed", write_managed_block(path, block))
+            self.assertEqual("ok", write_managed_block(path, block))
+            self.assertEqual(
+                1, path.read_text(encoding="utf-8").count("# tao-project-assets:start")
+            )
+
+
+class ManagedHookLauncherRenameTests(unittest.TestCase):
+    """The managed hook must be recognized after the launcher is renamed."""
+
+    def test_spill_bridge_command_matches_regardless_of_launcher_name(self) -> None:
+        from support.claude_setup import _is_managed_claude_spill_bridge_command
+
+        installed_under_a_previous_name = (
+            "OLDNAME_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude "
+            "'/Users/someone/.oldname/bin/oldname-hook' workflow route triage "
+            "--request-classified --classification-evidence 'evidence'"
+        )
+        installed_under_the_current_name = (
+            "TAO_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude "
+            "'/Users/someone/.tao/bin/tao-hook' workflow route triage "
+            "--request-classified --classification-evidence 'evidence'"
+        )
+
+        self.assertTrue(
+            _is_managed_claude_spill_bridge_command(installed_under_a_previous_name)
+        )
+        self.assertTrue(
+            _is_managed_claude_spill_bridge_command(installed_under_the_current_name)
+        )
+
+    def test_unrelated_user_hook_is_not_claimed_as_managed(self) -> None:
+        from support.claude_setup import _is_managed_claude_spill_bridge_command
+
+        self.assertFalse(_is_managed_claude_spill_bridge_command("echo hello"))
+        self.assertFalse(
+            _is_managed_claude_spill_bridge_command(
+                "SPILL_AI_TOOL=claude my-own-script.sh --verbose"
+            )
+        )

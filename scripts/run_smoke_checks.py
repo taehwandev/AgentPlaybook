@@ -43,7 +43,7 @@ def test_start_hook(temp_dir: str) -> None:
     )
     print("SUCCESS: Start hook completed successfully.")
 
-    preflight_path = Path(temp_dir) / ".agentplaybook" / "preflight.json"
+    preflight_path = Path(temp_dir) / ".tao" / "preflight.json"
     assert preflight_path.exists(), "preflight.json was not created!"
     print("SUCCESS: preflight.json exists.")
 

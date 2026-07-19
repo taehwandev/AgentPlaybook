@@ -21,7 +21,7 @@ from workflow_skill_paths import canonical_doc_path, guidance_reference_path
 ROOT = Path(__file__).resolve().parents[1]
 FRONTMATTER_RE = re.compile(r"\A---\n(?P<header>.*?)\n---\n(?P<body>.*)\Z", re.DOTALL)
 MARKDOWN_LINK_RE = re.compile(r"(\[[^\]]+\]\()([^)]+)(\))")
-STUB_MARKER = "agentplaybook_skill_bundle_stub: true"
+STUB_MARKER = "tao_skill_bundle_stub: true"
 
 
 def main() -> int:
@@ -168,7 +168,7 @@ def stub_text(source_relative: str, skill_relative: str, reference_relative: str
         f"keyflow_id: {key}\n"
         f"status: review\n"
         f"type: compatibility-entrypoint\n"
-        f"agentplaybook_skill_bundle_stub: true\n"
+        f"tao_skill_bundle_stub: true\n"
         f"---\n\n"
         f"# {title}\n\n"
         f"This compatibility path has moved to the Tao Agent OS skill-bundle layout.\n\n"

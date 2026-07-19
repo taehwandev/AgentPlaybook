@@ -153,13 +153,13 @@ def route_doc(path: str) -> str:
 
 class ReviewHookTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_review_hook_detects_mutation_outside_pathspec(self) -> None:
         full_statuses = [
@@ -246,7 +246,7 @@ class ReviewHookTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path = project / ".tao" / "preflight.json"
             evidence_path.parent.mkdir(parents=True)
             preflight = {"route": {"command": "review", "gates": ["review hook"]}}
             evidence_path.write_text(json.dumps(preflight), encoding="utf-8")

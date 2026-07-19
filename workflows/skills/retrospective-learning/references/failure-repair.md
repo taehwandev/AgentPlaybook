@@ -50,13 +50,13 @@ This is one repair-and-resume cycle, not a generic retry budget.
 Generate the receipt first, then resume with its project-local path:
 
 ```text
-agentplaybook-hook repair-verify \
-  --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> \
+tao-hook repair-verify \
+  --project <TARGET_REPO> --rules <TAO_ROOT> \
   --repair-target <changed_file> \
   --resume-checkpoint <recorded_failed_checkpoint> \
   --repair-verification-kind <workflow_validate|unittest|py_compile|vibeguard>
 
-agentplaybook-hook <failed_hook> \
+tao-hook <failed_hook> \
   --repair-cycle 1 \
   --repair-target <same_changed_file> \
   --repair-evidence <project_local_receipt_path> \

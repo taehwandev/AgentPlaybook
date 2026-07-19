@@ -74,7 +74,7 @@ QUERY_FACETS: tuple[dict[str, object], ...] = (
         "terms": ("skill", "card", "bundle", "references", "canonical", "duplicate", "anatomy", "progressive disclosure", "source"),
         "docs": (
             "common/skills/agent-skill-card-anatomy/SKILL.md",
-            "docs/skills/agentplaybook-skill-bundle-migration/SKILL.md",
+            "docs/skills/tao-skill-bundle-migration/SKILL.md",
             "workflows/skills/documentation-update/SKILL.md",
             "common/skills/source-driven-development/SKILL.md",
         ),

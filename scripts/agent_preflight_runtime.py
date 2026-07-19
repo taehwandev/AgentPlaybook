@@ -19,10 +19,10 @@ from support.stable_launcher import stable_launcher_issue
 
 
 BASELINE_HOOK_RE = re.compile(
-    r"(?:workflow\.py.*route|agentplaybook-hook.*workflow.*route).*triage.*--request-classified"
+    r"(?:workflow\.py.*route|tao-hook.*workflow.*route).*triage.*--request-classified"
 )
 CLASSIFIED_HOOK_EVIDENCE_RE = re.compile(
-    r"(?:workflow\.py.*route|agentplaybook-hook.*workflow.*route).*triage.*--request-classified.*--classification-evidence"
+    r"(?:workflow\.py.*route|tao-hook.*workflow.*route).*triage.*--request-classified.*--classification-evidence"
 )
 AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
 AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = runtime_bridge_required_phrases("Antigravity", "AGENTS.md")
@@ -49,7 +49,7 @@ def check_agent_hooks(playbook_root: Path) -> tuple[list[str], list[str]]:
 
 
 def active_runtime_label() -> str:
-    for key in ("AGENTPLAYBOOK_AI_TOOL", "SPILL_AI_TOOL", "SPILL_TOKEN_USAGE_AI_TOOL"):
+    for key in ("TAO_AI_TOOL", "SPILL_AI_TOOL", "SPILL_TOKEN_USAGE_AI_TOOL"):
         value = os.environ.get(key, "").strip().lower()
         if value in {"agy", "antigravity"}:
             return "antigravity"

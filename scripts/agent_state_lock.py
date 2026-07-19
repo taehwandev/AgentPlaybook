@@ -46,4 +46,4 @@ def state_lock(path: Path) -> Iterator[None]:
 def project_state_lock(project: Path) -> Iterator[None]:
     """Serialize a multi-file runtime state snapshot or mutation."""
 
-    return state_lock(project.resolve() / ".agentplaybook" / ".state.lock")
+    return state_lock(project.resolve() / ".tao" / ".state.lock")

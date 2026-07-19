@@ -2,7 +2,7 @@
 keyflow_id: sys_agent_skill_card_anatomy
 status: stable
 type: human-reviewed-needed
-agentplaybook_card_contract: strict
+tao_card_contract: strict
 ---
 
 # Agent Skill Card Anatomy
@@ -62,7 +62,7 @@ evidence gaps, and output shape.
 For new broad-use guidance, or when an existing card is becoming too large to
 scan, prefer a skill bundle over a single long Markdown file. The canonical
 layout and migration procedure are owned by
-`docs/skills/agentplaybook-skill-bundle-migration/SKILL.md`.
+`docs/skills/tao-skill-bundle-migration/SKILL.md`.
 
 ```text
 <area>/skills/<skill-name>/SKILL.md
@@ -73,7 +73,7 @@ This card owns the anatomy of an executable skill card. It does not own the full
 bundle migration policy. Read the migration skill before restructuring a large
 card family, changing workflow router paths, or cleaning duplicated
 source-of-truth rules. For duplicate guidance cleanup, also read
-`docs/skills/agentplaybook-skill-bundle-migration/references/source-of-truth-ownership.md`.
+`docs/skills/tao-skill-bundle-migration/references/source-of-truth-ownership.md`.
 
 ## Common Rationalizations
 

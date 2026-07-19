@@ -10,13 +10,13 @@ from typing import Any
 
 DEFAULT_RULE_PATHS = (
     ".agents/structure-rules.json",
-    ".agentplaybook/structure-rules.json",
+    ".tao/structure-rules.json",
 )
 
 
 def load_structure_rule_configs(project: Path) -> tuple[list[dict[str, Any]], list[str]]:
     raw_paths: list[Path] = []
-    override = os.environ.get("AGENTPLAYBOOK_STRUCTURE_RULES", "").strip()
+    override = os.environ.get("TAO_STRUCTURE_RULES", "").strip()
     if override:
         raw_paths.append(Path(override).expanduser())
     raw_paths.extend(project / relative for relative in DEFAULT_RULE_PATHS)

@@ -26,7 +26,7 @@ Separate shared semantics from runtime mechanics. The provider-neutral
 canonical owner defines what the agent must know and do; runtime bridges define
 only how Codex, Claude, Gemini/Antigravity/AGY, or another runtime discovers,
 invokes, or enforces it. When several runtimes need the same repo-local skill, keep one
-canonical bundle under `.agentplaybook/skills/<skill>` and use repo-relative
+canonical bundle under `.tao/skills/<skill>` and use repo-relative
 runtime links or thin adapters. Do not maintain full runtime-specific copies of
 the same operational knowledge.
 
@@ -40,7 +40,7 @@ source text, environment values, or secrets.
 
 The parent owns the capsule lifecycle:
 
-1. Run `<AGENTPLAYBOOK_LAUNCHER> start` once for the multi-step task. Do not separately run
+1. Run `<TAO_LAUNCHER> start` once for the multi-step task. Do not separately run
    workflow list, classify, route, and preflight as a second startup sequence.
 2. Read the route's `required_docs` directly before work. Do not add a second
    document-confirmation step.
@@ -116,7 +116,7 @@ Select one mode before wiring a runtime:
   present on the machine. Reuse that root and do not clone another copy unless
   the user explicitly approves a new copy after seeing the found path.
 - First-time local shared install: clone once to a stable path such as
-  `~/.agent-playbook` when no usable root exists.
+  `~/.tao-agent-os` when no usable root exists.
 - Team-pinned install: use a submodule, vendored dependency, or workspace
   dependency when every teammate and agent must use the same reviewed version.
 
@@ -124,27 +124,27 @@ A usable root contains `AGENTS.md`, `index.md`, and `scripts/workflow.py`.
 Validate the selected root with:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> workflow validate
+<TAO_LAUNCHER> workflow validate
 ```
 
 Check runtime bridges, hooks, and permission allowlists with:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks --check
+<TAO_LAUNCHER> setup-agent-hooks --check
 ```
 
 If bridges, hooks, or permissions are missing, ask for approval to write
 user-level runtime config, then run:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks
+<TAO_LAUNCHER> setup-agent-hooks
 ```
 
 To repair only one runtime without touching other agent settings, pass its
 runtime selector. For example, Codex-only setup uses:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks --runtime codex
+<TAO_LAUNCHER> setup-agent-hooks --runtime codex
 ```
 
 A runtime-scoped check or repair validates and changes that runtime's managed
@@ -158,25 +158,25 @@ repair only Tao Agent OS-managed bridge blocks and allow only
 Tao Agent OS-managed entrypoints and suffix-aware runtime matchers. Do not
 broadly allow `python3`.
 For Claude, `setup-agent-hooks.py` installs a stable user-level launcher at
-`<AGENTPLAYBOOK_LAUNCHER>` and writes the current checkout to
-`~/.agentplaybook/agentplaybook-root`. Rerun setup after moving or migrating
+`<TAO_LAUNCHER>` and writes the current checkout to
+`~/.tao/tao-root`. Rerun setup after moving or migrating
 Tao Agent OS so the pointer is refreshed without changing the Claude hook
 command.
 
 Claude's runtime bridge is otherwise advisory: unlike the Codex prefix rule,
 prose alone does not stop a file edit when the agent skipped `start`. To make
 workflow entry enforceable rather than optional, `setup-agent-hooks.py` also
-installs a Claude `PreToolUse` gate (`agentplaybook-hook claude-pretool-gate`,
+installs a Claude `PreToolUse` gate (`tao-hook claude-pretool-gate`,
 matcher `Edit|Write|MultiEdit|NotebookEdit`). The gate denies a file-edit tool
-call when the nearest Tao Agent OS project (a directory with `.agentplaybook/`
+call when the nearest Tao Agent OS project (a directory with `.tao/`
 or an instruction file naming Tao Agent OS) has no fresh `preflight.json`,
 which forces the agent to run `start` before mutating files. After fresh
 evidence exists the gate marks the session and steps aside. It is fail-open:
 non-edit tools, directories outside Tao Agent OS, and any unexpected error allow
 the call, so the gate can never brick ordinary editing. Tune the freshness
-window with `AGENTPLAYBOOK_CLAUDE_GATE_MAX_AGE_SECONDS` (default 8 hours).
+window with `TAO_CLAUDE_GATE_MAX_AGE_SECONDS` (default 8 hours).
 When executing Tao Agent OS wrapper commands from an agent runtime, replace
-`<AGENTPLAYBOOK_ROOT>` with the resolved absolute path. Do not leave `$HOME`,
+`<TAO_ROOT>` with the resolved absolute path. Do not leave `$HOME`,
 `${HOME}`, `~`, or a relative path in the executable command.
 
 Spill token metering is an optional local bridge, not a Tao Agent OS
@@ -214,8 +214,8 @@ repo is not explicit in the current request, resolve the project before reading
 project docs or running task commands. Use the local entry helpers:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> project-discover --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
-<AGENTPLAYBOOK_LAUNCHER> agent-entry --runtime <codex|claude|antigravity|generic> --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
+<TAO_LAUNCHER> project-discover --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
+<TAO_LAUNCHER> agent-entry --runtime <codex|claude|antigravity|generic> --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
 ```
 
 `project-discover.py` returns one of three states:
@@ -274,7 +274,7 @@ Optional local project registry:
 }
 ```
 
-Store that file at `~/.agentplaybook/projects.json`, or pass a specific path
+Store that file at `~/.tao/projects.json`, or pass a specific path
 with `--registry`. The registry is local machine state and may contain personal
 paths; do not commit it to target repos. This is separate from global
 retrospective lessons, which must remain reusable and path-free.
@@ -305,7 +305,7 @@ When the current task may also edit or run shared Tao Agent OS files, add the
 selected Tao Agent OS root explicitly:
 
 ```text
-codex -C <TARGET_REPO> --add-dir <AGENTPLAYBOOK_ROOT>
+codex -C <TARGET_REPO> --add-dir <TAO_ROOT>
 ```
 
 Use `--add-dir` only for additional roots that belong in the current session's
@@ -421,29 +421,29 @@ Use `templates/repo-agents-routing.md` as the source block. Keep the block
 short and point to:
 
 ```text
-<AGENTPLAYBOOK_ROOT>/AGENTS.md
-<AGENTPLAYBOOK_ROOT>/index.md
-<AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
-<AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
-<AGENTPLAYBOOK_LAUNCHER>
-<AGENTPLAYBOOK_ROOT>/scripts/workflow.py
-<AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
-<AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
-<AGENTPLAYBOOK_ROOT>/scripts/agent-finish-check.py
+<TAO_ROOT>/AGENTS.md
+<TAO_ROOT>/index.md
+<TAO_ROOT>/scripts/agent-entry.py
+<TAO_ROOT>/scripts/project-discover.py
+<TAO_LAUNCHER>
+<TAO_ROOT>/scripts/workflow.py
+<TAO_ROOT>/scripts/setup-agent-hooks.py
+<TAO_ROOT>/scripts/agent-preflight.py
+<TAO_ROOT>/scripts/agent-finish-check.py
 ```
 
 For committed repo-local instruction files, keep the root reference portable.
-Use `${AGENTPLAYBOOK_HOME}` when each machine can set the variable, or a
-repo-relative pinned path such as `.agents/AgentPlaybook` when the playbook is
+Use `${TAO_HOME}` when each machine can set the variable, or a
+repo-relative pinned path such as `.agents/tao-agent-os` when the playbook is
 kept with the target repo. Do not commit personal absolute paths such as
-`/Users/.../AgentPlaybook`; keep them in shell environment setup, one-shot
+`/Users/.../tao-agent-os`; keep them in shell environment setup, one-shot
 prompts, or uncommitted user-level runtime bridges only.
 
 Do not paste the full playbook into runtime-specific files.
 
 For Graphify specifically, follow
 `docs/skills/graphify-project-integration/SKILL.md`: the canonical project
-bundle lives at `.agentplaybook/skills/graphify`, while only the Graphify
+bundle lives at `.tao/skills/graphify`, while only the Graphify
 discovery paths below `.codex`, `.claude`, and `.agents` are repo-relative
 links or genuinely runtime-specific hooks, rules, workflows, and registration.
 Other project-local knowledge under those directories remains independently
@@ -459,7 +459,7 @@ Use one-shot prompting when:
 - you want Claude, Gemini/Antigravity/AGY, or another agent to follow
   Tao Agent OS for one task without changing repo files
 
-Paste `templates/use-agentplaybook-prompt.md` into the agent, replacing the
+Paste `templates/use-tao-prompt.md` into the agent, replacing the
 target repo, task, Tao Agent OS root, and VibeGuard docs placeholders.
 
 The prompt explicitly tells the runtime to read `AGENTS.md` and `index.md`,
@@ -530,16 +530,16 @@ Codex:
 - Prefer repo-local `AGENTS.md` plus the routing block.
 - Start Codex with the selected target repo as the primary workspace:
   `codex -C <TARGET_REPO>`.
-- Add `--add-dir <AGENTPLAYBOOK_ROOT>` only when the task must include the
+- Add `--add-dir <TAO_ROOT>` only when the task must include the
   shared playbook root in the session workspace, such as maintaining
   Tao Agent OS itself or editing shared runtime bridge files.
 - Do not expect `AGENTS.md` or `.codex/rules` to change sandbox roots; they
   control behavior and permission matching, not the runtime's workspace root.
-- Use `<AGENTPLAYBOOK_LAUNCHER> start` once for multi-step work; do not run a second
+- Use `<TAO_LAUNCHER> start` once for multi-step work; do not run a second
   classify, route, or preflight sequence after it succeeds.
 - Tao Agent OS command permissions belong in user-level
   `~/.codex/rules/default.rules` as narrow `prefix_rule` entries for the
-  current `<AGENTPLAYBOOK_ROOT>/scripts/*.py` files.
+  current `<TAO_ROOT>/scripts/*.py` files.
 - Generate direct `python3 <script>` argv prefixes for those same scripts using
   resolved absolute paths only. Agents should invoke these wrappers as direct
   argv commands, not through `$HOME`, `${HOME}`, `~`, relative paths, or shell
@@ -547,7 +547,7 @@ Codex:
   trailing workflow arguments such as repeated `--gate-record` values are
   suffix-matched by the runtime policy and should not prompt again.
 - When a Codex tool call needs escalation, request the persistent permission
-  with `prefix_rule=["python3", "/absolute/path/to/AgentPlaybook/scripts/<name>.py"]`.
+  with `prefix_rule=["python3", "/absolute/path/to/tao-agent-os/scripts/<name>.py"]`.
   Do not include changing arguments such as `--project`, `--request`, `--gate-record`,
   `$(pwd)`, or user-provided text in the saved prefix.
 - `setup-agent-hooks.py` should leave only absolute, parameter-free
@@ -564,15 +564,15 @@ Claude:
 - If no Claude-specific file exists and Claude reads `AGENTS.md` in the target
   environment, do not create `CLAUDE.md` just for duplication.
 - If Claude is operating from chat without repo instruction discovery, paste
-  `templates/use-agentplaybook-prompt.md`.
+  `templates/use-tao-prompt.md`.
 - Tell Claude the exact Tao Agent OS root path or a repo-pinned submodule path.
 - Tao Agent OS command permissions belong in the user-level
   `~/.claude/settings.json`, not repo-local `.claude/settings.json`, because
   the Tao Agent OS `scripts/*.py` entrypoints are shared across projects.
 - Claude managed hooks should call the stable launcher
-  `<AGENTPLAYBOOK_LAUNCHER>`, not a moving checkout path such as
-  `/absolute/path/to/AgentPlaybook/scripts/workflow.py`. The setup script
-  refreshes `~/.agentplaybook/agentplaybook-root` to the current checkout and
+  `<TAO_LAUNCHER>`, not a moving checkout path such as
+  `/absolute/path/to/tao-agent-os/scripts/workflow.py`. The setup script
+  refreshes `~/.tao/tao-root` to the current checkout and
   removes stale managed hook commands that still point at old roots. The stable
   launcher supports both script aliases such as `workflow` and direct
   `agent-hook.py` subcommand aliases such as `start`, `handoff`, `review`, and
@@ -581,7 +581,7 @@ Claude:
 - Claude Tao Agent OS permissions should allow only that stable launcher and
   the narrow managed helper commands with the runtime's trailing wildcard form
   for arguments, for example
-  `Bash(/absolute/home/.agentplaybook/bin/agentplaybook-hook *)`. Do not
+  `Bash(/absolute/home/.tao/bin/tao-hook *)`. Do not
   approve or document broad `python3`, relative `scripts/<name>.py`, or
   argument-specific variants for shared wrappers.
 - The managed Claude `UserPromptSubmit` workflow label hook must not call
@@ -619,7 +619,7 @@ Gemini/Antigravity/AGY:
   runtime. Runtime hooks remain in `~/.gemini/config/hooks.json`.
 - AGY Tao Agent OS permissions follow the same absolute-wrapper rule as
   Claude, using the AGY permission key shape, for example
-  `command(/Users/USER/.agentplaybook/bin/agentplaybook-hook *)`.
+  `command(/Users/USER/.tao/bin/tao-hook *)`.
   Avoid `$HOME`, `${HOME}`, `~`, relative script paths, and saved prefixes that
   include task-specific arguments.
 
@@ -667,7 +667,7 @@ For every runtime:
    separate file exists. Offer optional Step 2 for personal/global runtime
    bridges; only update those files when the user chooses it.
 11. Read Tao Agent OS `AGENTS.md`.
-12. For multi-step tasks, run `<AGENTPLAYBOOK_LAUNCHER> start` once with the
+12. For multi-step tasks, run `<TAO_LAUNCHER> start` once with the
     current request to produce routing and preflight evidence. If the request
     is a direct question, answer it before the start hook or editing. Use
     `index.md` only for simple answer-only work or an explicitly accepted
@@ -683,14 +683,14 @@ For every runtime:
     `required_docs` list is a valid no-source state and must continue once,
     with a recorded no-source decision, rather than retrying or blocking the
     capsule in preflight.
-14. Before delegating, run `<AGENTPLAYBOOK_LAUNCHER> handoff` to lazily create and
+14. Before delegating, run `<TAO_LAUNCHER> handoff` to lazily create and
     validate the execution capsule once. A worker may reuse the parent route,
     preflight, and required-doc brief only after a ready-and-valid result; it
     must not repeat required-doc reads, VibeGuard, review, or final validation.
     An invalid result is a successful fallback decision requiring the normal
     lifecycle on worker-specific evidence paths. Keep the parent as the sole
     gate-ledger owner and never overwrite its evidence during fallback.
-15. When wrapper scripts are available, run `<AGENTPLAYBOOK_LAUNCHER> finish`
+15. When wrapper scripts are available, run `<TAO_LAUNCHER> finish`
     before final report, commit, release, or handoff. Call
     `scripts/agent-finish-check.py` directly only as a lower-level fallback.
     Missing wrapper evidence or route gate evidence is non-compliant.
@@ -726,7 +726,7 @@ call Tao Agent OS routing instead of creating a second active workflow router.
 The alias should run:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <route-command> --request "<USER_REQUEST>"
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command <route-command> --request "<USER_REQUEST>"
 ```
 
 Do not let aliases bypass Start Hook, direct reading of the route
@@ -800,7 +800,7 @@ After connecting a runtime, verify:
 - the agent can produce a route, such as:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> workflow route task --request "<USER_REQUEST>"
+<TAO_LAUNCHER> workflow route task --request "<USER_REQUEST>"
 ```
 
 ## Stop If

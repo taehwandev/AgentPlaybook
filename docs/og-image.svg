@@ -61,7 +61,7 @@
   <!-- Right Side: Clean Futuristic Typography -->
   <g transform="translate(560, 240)">
     <!-- Label -->
-    <text x="0" y="0" font-family="'Outfit', 'Inter', sans-serif" font-weight="700" font-size="20" fill="#2bfd93" letter-spacing="4">AGENTPLAYBOOK</text>
+    <text x="0" y="0" font-family="'Outfit', 'Inter', sans-serif" font-weight="700" font-size="20" fill="#2bfd93" letter-spacing="4">TAO AGENT OS</text>
 
     <!-- Title -->
     <text x="0" y="80" font-family="'Outfit', 'Inter', sans-serif" font-weight="800" font-size="72" fill="url(#textGrad)" letter-spacing="-2">Tao Agent OS</text>

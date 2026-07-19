@@ -90,7 +90,7 @@ def _dirty_source_paths(project_path: Path) -> list[str]:
         value = line[3:].split(" -> ")[-1] if len(line) > 3 else ""
         if (
             not value
-            or ".agentplaybook" in Path(value).parts
+            or ".tao" in Path(value).parts
             or value.startswith("graphify-out/")
         ):
             continue

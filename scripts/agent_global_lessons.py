@@ -20,14 +20,14 @@ from workflow_common import (
 )
 
 SCHEMA_VERSION = 1
-STATE_HOME_ENV = "AGENTPLAYBOOK_STATE_HOME"
+STATE_HOME_ENV = "TAO_STATE_HOME"
 SAFE_SLUG_RE = re.compile(r"[^a-z0-9_]+")
 LESSON_STATUSES = ("accepted", "promoted")
 
 
 def state_home() -> Path:
     override = os.environ.get(STATE_HOME_ENV, "").strip()
-    return Path(override).expanduser() if override else Path.home() / ".agentplaybook"
+    return Path(override).expanduser() if override else Path.home() / ".tao"
 
 
 def lesson_summary(limit: int = 10) -> dict[str, Any]:

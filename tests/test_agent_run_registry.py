@@ -18,7 +18,7 @@ class AgentRunRegistryTests(unittest.TestCase):
     def test_register_and_transition_run_without_content_or_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
-            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence = project / ".tao" / "preflight.json"
             run = register_run(
                 project,
                 evidence,
@@ -54,7 +54,7 @@ class AgentRunRegistryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
             run = register_run(project, project / "preflight.json", {"command": "task"}, {})
-            registry = project / ".agentplaybook" / "run-registry.json"
+            registry = project / ".tao" / "run-registry.json"
             payload = json.loads(registry.read_text())
             old = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
             payload["runs"][-1]["updated_at"] = old

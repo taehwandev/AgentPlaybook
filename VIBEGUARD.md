@@ -87,12 +87,12 @@ vibeguard evidence install-claude-hook .
 - Initial Tao Agent OS application in a repo with no guardrails should use the current VibeGuard command policy with the selected Tao Agent OS root as `--rules`. Prefer `vibeguard` when installed, otherwise use the package command:
 
   ```bash
-  vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
-  vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
-  vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+  vibeguard setup . --rules <TAO_ROOT>
+  vibeguard audit . --fix --rules <TAO_ROOT>
+  vibeguard audit . --rules <TAO_ROOT>
   ```
 
-- Existing managed VibeGuard guardrails should be refreshed with `vibeguard update . --rules <AGENTPLAYBOOK_ROOT>` only when that mode is selected, then checked with `vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>`. Use the package command only if no trusted binary is installed or the user explicitly requests the latest published package.
+- Existing managed VibeGuard guardrails should be refreshed with `vibeguard update . --rules <TAO_ROOT>` only when that mode is selected, then checked with `vibeguard audit . --rules <TAO_ROOT>`. Use the package command only if no trusted binary is installed or the user explicitly requests the latest published package.
 
 - Normal Tao Agent OS maintenance should run audit-only before editing and before finishing.
 

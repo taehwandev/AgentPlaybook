@@ -1,5 +1,5 @@
 ---
-keyflow_id: sys_agentplaybook_agent_bootstrap
+keyflow_id: sys_tao_agent_bootstrap
 status: review
 type: human-reviewed-needed
 ---
@@ -42,7 +42,7 @@ file.
 ```
 
 For one-shot task use without editing repo-local instructions, use
-`templates/use-agentplaybook-prompt.md`.
+`templates/use-tao-prompt.md`.
 
 For runtime-specific setup across Codex, Claude, Antigravity, and generic
 agents, use `docs/skills/agent-runtime-integration/SKILL.md`.
@@ -56,7 +56,7 @@ Choose the setup mode before editing the target repo:
    unless the user explicitly approves a new copy after seeing the found path.
 2. First-time local shared install: use this when no usable copy exists and the
    user wants one install reused across personal repos. Clone once to a stable
-   path such as `~/.agent-playbook`.
+   path such as `~/.tao-agent-os`.
 3. Team-pinned install: use this when the repo needs a reviewed version shared
    by teammates and agents. Add a submodule, vendored dependency, or workspace
    dependency only after approval.
@@ -91,7 +91,7 @@ Local reuse is the default and a hard stop for install work:
    Tao Agent OS root's entry helper before project work:
 
    ```text
-   python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
+   python3 <TAO_ROOT>/scripts/agent-entry.py --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
    ```
 
    Continue only when it returns `selected`. If it returns `ambiguous` or
@@ -103,12 +103,12 @@ Local reuse is the default and a hard stop for install work:
    `CONTRIBUTING.md`, task docs, PRD/ARD docs, equivalent project docs, or an
    explicitly documented local override file.
 4. Check whether the user supplied an explicit Tao Agent OS path.
-5. Check `AGENTPLAYBOOK_HOME`.
+5. Check `TAO_HOME`.
 6. Check legacy `KEYFLOW_AGENT_ROOT` only when present.
-7. Check common local installs such as `~/.agent-playbook`,
-   `~/AgentPlaybook`, `~/git/AgentPlaybook`, and `~/GitHub/AgentPlaybook`.
+7. Check common local installs such as `~/.tao-agent-os`,
+   `~/tao-agent-os`, `~/git/tao-agent-os`, and `~/GitHub/tao-agent-os`.
 8. Check repo-pinned locations only when the target repo already contains one,
-   such as `.agents/AgentPlaybook`, `tools/AgentPlaybook`, or a git submodule.
+   such as `.agents/tao-agent-os`, `tools/tao-agent-os`, or a git submodule.
 
 A usable Tao Agent OS root contains all of:
 
@@ -153,24 +153,24 @@ Application drill:
 Audit only, preserving existing guardrails:
 
 ```bash
-vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+vibeguard audit . --rules <TAO_ROOT>
 ```
 
 Refresh an existing managed VibeGuard block only when the user explicitly
 selects that option:
 
 ```bash
-vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
-vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
-vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+vibeguard update . --rules <TAO_ROOT>
+vibeguard audit . --fix --rules <TAO_ROOT>
+vibeguard audit . --rules <TAO_ROOT>
 ```
 
 Use `setup` only for first-time target repos with no guardrails:
 
 ```bash
-vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
-vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
-vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+vibeguard setup . --rules <TAO_ROOT>
+vibeguard audit . --fix --rules <TAO_ROOT>
+vibeguard audit . --rules <TAO_ROOT>
 ```
 
 If `vibeguard` is not installed, use the same command shapes with
@@ -196,7 +196,7 @@ report the blocker. Do not continue as if the safety gate were optional.
 
 If no usable local or repo-pinned copy exists, choose one of these modes:
 
-- Local shared install: clone once to `~/.agent-playbook`. This is best for
+- Local shared install: clone once to `~/.tao-agent-os`. This is best for
   individual users and multiple personal repos.
 - Repo-pinned install: add Tao Agent OS as a git submodule or vendored
   dependency. This is best for teams that need a reviewed version.
@@ -206,18 +206,18 @@ writing outside the target repo.
 After installing or selecting a root, run:
 
 ```bash
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
+python3 <TAO_ROOT>/scripts/workflow.py validate
 ```
 
 For an explicit target repo, install project permissions and Graphify runtime
 integration together. Graphify is included by default for `--target`:
 
 ```bash
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --target <TARGET_REPO>
+python3 <TAO_ROOT>/scripts/setup-agent-hooks.py --target <TARGET_REPO>
 ```
 
 This installs one canonical project-local Graphify skill under
-`.agentplaybook/skills/graphify`, repo-relative runtime links for Codex,
+`.tao/skills/graphify`, repo-relative runtime links for Codex,
 Claude, and AGY, and their runtime integration. It must not silently run
 initial extraction. Read `docs/skills/graphify-project-integration/SKILL.md`,
 then read the target's canonical Graphify `SKILL.md`, build the initial graph
@@ -228,14 +228,14 @@ because it writes across multiple repositories.
 Then check runtime bridges, hooks, and permission allowlists:
 
 ```bash
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check
+python3 <TAO_ROOT>/scripts/setup-agent-hooks.py --check
 ```
 
 If the check reports missing bridges, hooks, or permissions, ask for approval
 before writing user-level runtime config, then run:
 
 ```bash
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
+python3 <TAO_ROOT>/scripts/setup-agent-hooks.py
 ```
 
 The setup is global because the workflow router, graph-backed document routing,
@@ -244,7 +244,7 @@ only Tao Agent OS-managed bridge blocks and allow only the current
 Tao Agent OS Python entrypoints by exact path, not broad `python3` execution:
 
 ```text
-<AGENTPLAYBOOK_ROOT>/scripts/*.py
+<TAO_ROOT>/scripts/*.py
 ```
 
 Claude Code permissions belong in `~/.claude/settings.json`. AGY/Antigravity
@@ -285,10 +285,10 @@ that subsystem.
    short pointer or by pointing them back to `AGENTS.md`.
 7. Do not create new runtime-specific instruction files when the runtime already
    reads `AGENTS.md`.
-8. Keep committed repo-local paths portable. Prefer `${AGENTPLAYBOOK_HOME}` for
+8. Keep committed repo-local paths portable. Prefer `${TAO_HOME}` for
    a shared local install, or use a repo-relative pinned path such as
-   `.agents/AgentPlaybook`. Do not commit personal absolute paths such as
-   `/Users/.../AgentPlaybook`; use those only in shell env setup, one-shot
+   `.agents/tao-agent-os`. Do not commit personal absolute paths such as
+   `/Users/.../tao-agent-os`; use those only in shell env setup, one-shot
    prompts, or uncommitted user-level runtime bridges.
 9. Decide whether the target repo uses Graphify. A shared Tao Agent OS graph
    never substitutes for the target repo's own graph. When Graphify is enabled,
@@ -299,11 +299,11 @@ that subsystem.
    Prefer shared route cards over per-repo skill copies unless the repo has a
    genuine local skill surface.
     When several runtimes need that local skill, keep its shared operational
-    content once under `.agentplaybook/skills/<skill>` and use repo-relative
+    content once under `.tao/skills/<skill>` and use repo-relative
     runtime links or thin adapters. Do not maintain parallel Codex, Claude, and
     Antigravity/AGY copies of the same knowledge.
 11. Do not paste the full Tao Agent OS library into repo-local files.
-12. For multi-step setup or migration work, run `<AGENTPLAYBOOK_LAUNCHER> start` once with
+12. For multi-step setup or migration work, run `<TAO_LAUNCHER> start` once with
    the current request. Open every route `required_docs` entry directly, keep
    the workflow route gate ledger, run the review hook after meaningful
    changes, and run the finish hook before final report, commit, release, or
@@ -341,7 +341,7 @@ Before reporting success:
 - The target repo's local instruction file still contains its original
   repo-specific rules.
 - When Graphify is enabled, the `graphify readiness` gate proves CLI, the
-  installed and read canonical `.agentplaybook` `SKILL.md`, runtime links that
+  installed and read canonical `.tao` `SKILL.md`, runtime links that
   resolve to it, portable Git ownership, project integration, a fresh and
   input-complete target-root graph, and a successful scoped query smoke check.
   When project docs and code coexist, the check also proves a representative

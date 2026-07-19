@@ -148,13 +148,13 @@ def route_doc(path: str) -> str:
 
 class GateEvidenceLedgerTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_policy_invalid_gate_evidence_is_attributable_to_its_gate(self) -> None:
         # Regression (Codex finding): a gate with non-empty but
@@ -386,8 +386,8 @@ class GateEvidenceLedgerTests(unittest.TestCase):
     def test_custom_preflight_evidence_uses_separate_gate_ledger(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            default_evidence = root / ".agentplaybook" / "preflight.json"
-            custom_evidence = root / ".agentplaybook" / "preflight-smoke.json"
+            default_evidence = root / ".tao" / "preflight.json"
+            custom_evidence = root / ".tao" / "preflight-smoke.json"
             default_evidence.parent.mkdir(parents=True)
 
             self.assertEqual(
@@ -407,7 +407,7 @@ class GateEvidenceLedgerTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path = project / ".tao" / "preflight.json"
             evidence_path.parent.mkdir(parents=True)
             preflight = {
                 "project": str(project),

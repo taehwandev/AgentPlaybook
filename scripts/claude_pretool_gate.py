@@ -26,7 +26,7 @@ Contract (Claude Code PreToolUse hook):
 Requires a Claude Code that puts ``CLAUDE_CODE_SESSION_ID`` in the Bash
 subprocess environment (v2.1.128-v2.1.136, Week 19 2026), because that is what
 lets the ``start`` hook stamp the session the gate checks. On an older build the
-stamp is always absent and every edit is denied; set ``AGENTPLAYBOOK_CLAUDE_GATE=0``
+stamp is always absent and every edit is denied; set ``TAO_CLAUDE_GATE=0``
 to turn the gate off there.
 """
 
@@ -42,13 +42,13 @@ try:  # The gate must never fail to load; the import is only used for a message.
     from support.stable_launcher import stable_launcher_path
 except ImportError:  # pragma: no cover - exercised only on a broken install
     def stable_launcher_path() -> Path:
-        return Path.home() / ".agentplaybook" / "bin" / "agentplaybook-hook"
+        return Path.home() / ".tao" / "bin" / "tao-hook"
 
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 # Only Write creates a file from nothing; Edit/MultiEdit require an existing
 # file, so new-file sprawl flows through Write.
 NEW_FILE_TOOLS = {"Write"}
-STATE_DIR = ".agentplaybook"
+STATE_DIR = ".tao"
 PREFLIGHT_NAME = "preflight.json"
 SESSION_MARKER_DIR = "claude-pretool-gate"
 NEW_FILE_STATE_SUFFIX = ".newfiles"
@@ -59,7 +59,7 @@ EDIT_ACTIVITY_SUFFIX = ".edited"
 # User-global, because the Stop gate must find projects outside its own cwd.
 SESSION_PROJECT_DIR = "claude-session-projects"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
-OPT_IN_TOKEN = "agentplaybook"
+OPT_IN_TOKEN = "tao"
 DEFAULT_MAX_AGE_SECONDS = 8 * 60 * 60
 MAX_ROOT_WALK = 40
 # New source files past this count in one session must be collapsed or justified.
@@ -77,7 +77,7 @@ SOURCE_SUFFIXES = {
 
 def gate_enabled() -> bool:
     """Escape hatch for runtimes that cannot supply a session id."""
-    return os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE", "").strip() != "0"
+    return os.environ.get("TAO_CLAUDE_GATE", "").strip() != "0"
 
 
 def allow() -> int:
@@ -101,7 +101,7 @@ def deny(reason: str) -> int:
 
 
 def max_age_seconds() -> int:
-    raw = os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE_MAX_AGE_SECONDS", "").strip()
+    raw = os.environ.get("TAO_CLAUDE_GATE_MAX_AGE_SECONDS", "").strip()
     if not raw:
         return DEFAULT_MAX_AGE_SECONDS
     try:
@@ -186,9 +186,9 @@ def deny_reason(root: Path, session_id: str = "") -> str:
         "Tao Agent OS: run the workflow start hook before editing files in this "
         f"project. {cause} "
         f"Run `{stable_launcher_path()} start --project "
-        f"{root} --rules <AGENTPLAYBOOK_ROOT> --command <route> --request \"<user "
+        f"{root} --rules <TAO_ROOT> --command <route> --request \"<user "
         "request>\"`, read the route required_docs, then retry the edit. Set "
-        "AGENTPLAYBOOK_CLAUDE_GATE_MAX_AGE_SECONDS to tune the freshness window."
+        "TAO_CLAUDE_GATE_MAX_AGE_SECONDS to tune the freshness window."
     )
 
 
@@ -271,7 +271,7 @@ def record_session_project(root: Path, session_id: str) -> None:
 
 
 def new_file_budget() -> int:
-    raw = os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET", "").strip()
+    raw = os.environ.get("TAO_CLAUDE_GATE_NEW_FILE_BUDGET", "").strip()
     if not raw:
         return DEFAULT_NEW_FILE_BUDGET
     try:
@@ -355,7 +355,7 @@ def sprawl_deny_reason(count: int, budget: int, ack: Path, target: Path, root: P
         "it. Turning a task into many files, layers, or abstractions burns tokens and review "
         "time. Collapse the change into fewer files, or -- if each new file protects a concrete "
         f"present risk -- record the per-file justification by writing it to {ack}, then retry. "
-        "Tune with AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET."
+        "Tune with TAO_CLAUDE_GATE_NEW_FILE_BUDGET."
     )
 
 

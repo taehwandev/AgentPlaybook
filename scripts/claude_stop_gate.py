@@ -37,7 +37,7 @@ try:  # Never fail to load; used for the message and the session lookup.
     from support.stable_launcher import stable_launcher_path
 except ImportError:  # pragma: no cover - exercised only on a broken install
     def stable_launcher_path() -> Path:
-        return Path.home() / ".agentplaybook" / "bin" / "agentplaybook-hook"
+        return Path.home() / ".tao" / "bin" / "tao-hook"
 
     def recorded_session_id(payload: object) -> str:
         if not isinstance(payload, dict):
@@ -48,7 +48,7 @@ except ImportError:  # pragma: no cover - exercised only on a broken install
         recorded = session.get("session_id")
         return recorded if isinstance(recorded, str) else ""
 
-STATE_DIR = ".agentplaybook"
+STATE_DIR = ".tao"
 FINISH_NAME = "finish.json"
 SESSION_MARKER_DIR = "claude-pretool-gate"
 EDIT_ACTIVITY_SUFFIX = ".edited"
@@ -58,7 +58,7 @@ SESSION_PROJECT_DIR = "claude-session-projects"
 # Written by `finish`; see session_finished() for why finish.json alone is not enough.
 FINISHED_SUFFIX = ".finished"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
-OPT_IN_TOKEN = "agentplaybook"
+OPT_IN_TOKEN = "tao"
 
 
 def allow() -> int:
@@ -196,16 +196,16 @@ def block_reason(root: Path) -> str:
     return (
         "Tao Agent OS: this session edited files but has no passing finish check. "
         "Record the remaining route gates with `gate` or `gate-batch`, then run "
-        f"`{launcher} review --project {root} --rules <AGENTPLAYBOOK_ROOT> "
+        f"`{launcher} review --project {root} --rules <TAO_ROOT> "
         "--review-scope working-tree --review-outcome <pass|findings> ...` and "
-        f"`{launcher} finish --project {root} --rules <AGENTPLAYBOOK_ROOT>`. "
+        f"`{launcher} finish --project {root} --rules <TAO_ROOT>`. "
         "If finish reports failures, repair them instead of reporting completion. "
-        "Set AGENTPLAYBOOK_CLAUDE_STOP_GATE=0 to disable this gate."
+        "Set TAO_CLAUDE_STOP_GATE=0 to disable this gate."
     )
 
 
 def gate_enabled() -> bool:
-    return os.environ.get("AGENTPLAYBOOK_CLAUDE_STOP_GATE", "").strip() != "0"
+    return os.environ.get("TAO_CLAUDE_STOP_GATE", "").strip() != "0"
 
 
 def decide(payload: dict) -> int:
