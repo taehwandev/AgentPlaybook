@@ -3,8 +3,10 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import os
 import sys
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -42,8 +44,25 @@ def _opt_in_project(base: Path) -> Path:
     return project
 
 
-def _write_preflight(project: Path) -> None:
-    (project / ".agentplaybook" / "preflight.json").write_text("{}", encoding="utf-8")
+def _write_preflight(project: Path, session_id: str | None = None) -> None:
+    """Write preflight evidence the way `start` does, stamped with its session."""
+    payload: dict = {}
+    if session_id is not None:
+        payload["runtime_session"] = {"runtime": "claude", "session_id": session_id}
+    (project / ".agentplaybook" / "preflight.json").write_text(
+        json.dumps(payload), encoding="utf-8"
+    )
+
+
+def _age_preflight(project: Path, seconds: float) -> None:
+    preflight = project / ".agentplaybook" / "preflight.json"
+    stamp = time.time() - seconds
+    os.utime(preflight, (stamp, stamp))
+
+
+# Gate 2 (sprawl) tests only need gate 1 satisfied; `start` stamping this
+# session into the preflight is exactly what that means.
+_satisfy_workflow_entry = _write_preflight
 
 
 class ClaudePreToolGateTests(unittest.TestCase):
@@ -71,29 +90,85 @@ class ClaudePreToolGateTests(unittest.TestCase):
         self.assertEqual("deny", decision["permissionDecision"])
         self.assertIn("start hook", decision["permissionDecisionReason"])
 
-    def test_edit_with_fresh_preflight_is_allowed_and_marks_session(self) -> None:
+    def test_start_then_edit_is_allowed_and_stays_allowed(self) -> None:
+        # Regression: an ordering-based gate denied this, the *correct*, flow
+        # outright -- evidence written before the first edit attempt can never
+        # be newer than it, so a compliant session was permanently blocked.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _write_preflight(project, "s5")
+            payload = {"tool_name": "Write", "cwd": str(project), "session_id": "s5"}
+
+            for attempt in range(3):
+                code, out = _decide(payload)
+                with self.subTest(attempt=attempt):
+                    self.assertEqual(0, code)
+                    self.assertEqual("", out)
+
+    def test_preflight_from_another_session_does_not_open_the_gate(self) -> None:
+        # Regression: preflight.json is shared across runtimes and outlives a
+        # session, so freshness alone used to unlock an unrelated session.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _write_preflight(project, "other-session")
+
+            code, out = _decide(
+                {"tool_name": "Write", "cwd": str(project), "session_id": "sX"}
+            )
+
+            self.assertEqual(0, code)
+            self.assertEqual("deny", json.loads(out)["hookSpecificOutput"]["permissionDecision"])
+
+    def test_preflight_without_a_recorded_session_is_denied(self) -> None:
+        # Evidence from a runtime that records no session (or a pre-upgrade
+        # file) proves nothing about the session now asking to edit.
         with tempfile.TemporaryDirectory() as tmp:
             project = _opt_in_project(Path(tmp))
             _write_preflight(project)
-            code, out = _decide(
-                {"tool_name": "Write", "cwd": str(project), "session_id": "s5"}
-            )
-            self.assertEqual(0, code)
-            self.assertEqual("", out)
-            marker = project / ".agentplaybook" / "claude-pretool-gate" / "s5"
-            self.assertTrue(marker.exists())
 
-    def test_session_marker_short_circuits_without_preflight(self) -> None:
+            code, out = _decide(
+                {"tool_name": "Write", "cwd": str(project), "session_id": "sX"}
+            )
+
+            self.assertEqual(0, code)
+            self.assertEqual("deny", json.loads(out)["hookSpecificOutput"]["permissionDecision"])
+
+    def test_own_session_evidence_still_expires(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = _opt_in_project(Path(tmp))
-            marker_dir = project / ".agentplaybook" / "claude-pretool-gate"
-            marker_dir.mkdir(parents=True)
-            (marker_dir / "s6").write_text("", encoding="utf-8")
+            _write_preflight(project, "s7")
+            _age_preflight(project, gate.DEFAULT_MAX_AGE_SECONDS + 60)
+
             code, out = _decide(
-                {"tool_name": "Edit", "cwd": str(project), "session_id": "s6"}
+                {"tool_name": "Write", "cwd": str(project), "session_id": "s7"}
             )
-        self.assertEqual(0, code)
-        self.assertEqual("", out)
+
+            self.assertEqual(0, code)
+            self.assertEqual("deny", json.loads(out)["hookSpecificOutput"]["permissionDecision"])
+
+    def test_gate_never_writes_evidence(self) -> None:
+        # `start` is the only writer of workflow-entry proof. A gate that can
+        # write it can fabricate it, which is how the first bypass happened.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            state = project / ".agentplaybook"
+            before = sorted(p.name for p in state.rglob("*"))
+
+            _decide({"tool_name": "Write", "cwd": str(project), "session_id": "sX"})
+
+            self.assertEqual(before, sorted(p.name for p in state.rglob("*")))
+
+    def test_deny_reason_uses_resolved_absolute_launcher_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+
+            _, out = _decide(
+                {"tool_name": "Edit", "cwd": str(project), "session_id": "s"}
+            )
+
+            reason = json.loads(out)["hookSpecificOutput"]["permissionDecisionReason"]
+            self.assertIn(str(gate.stable_launcher_path()), reason)
+            self.assertNotIn("~/.agentplaybook", reason)
 
     def test_malformed_stdin_fails_open(self) -> None:
         with patch_stdin("not json{{"):
@@ -112,6 +187,9 @@ class ClaudePreToolGateTests(unittest.TestCase):
         self.assertEqual("deny", json.loads(out)["hookSpecificOutput"]["permissionDecision"])
 
     def _write_new_source(self, project: Path, session: str, relative: str) -> tuple[int, str]:
+        # Gate 2 (sprawl) is what these tests exercise; put the session past
+        # gate 1 explicitly rather than depending on preflight timing.
+        _satisfy_workflow_entry(project, session)
         return _decide(
             {
                 "tool_name": "Write",

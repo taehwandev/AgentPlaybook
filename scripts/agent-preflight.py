@@ -336,6 +336,25 @@ def _enforce_worker_environment(args: argparse.Namespace) -> None:
         raise ValueError("worker start must use the launcher-issued single-use reservation token")
 
 
+def runtime_session() -> dict[str, str]:
+    """Identify the runtime session this preflight was produced in.
+
+    The Claude PreToolUse gate needs to know that ``start`` ran inside the
+    session that is now trying to edit. Freshness cannot answer that: this file
+    is shared by every runtime and outlives a session, so a previous run used to
+    satisfy the gate. Recording the session here keeps ``start`` the only writer
+    of that proof and leaves the gate read-only.
+
+    A runtime that exposes no session id simply records nothing, which the gate
+    treats as "not this session" rather than as an error.
+    """
+    for runtime, variable in (("claude", "CLAUDE_CODE_SESSION_ID"),):
+        value = os.environ.get(variable, "").strip()
+        if value:
+            return {"runtime": runtime, "session_id": value}
+    return {}
+
+
 def request_intake(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "request": args.request or "",
@@ -449,6 +468,7 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
         "git_status": git_status,
         "vibeguard": vibeguard,
         "global_lessons": global_lessons,
+        "runtime_session": runtime_session(),
     })
     hook_warnings, hook_failures = check_agent_hooks(playbook_root)
     failures = collect_failures(

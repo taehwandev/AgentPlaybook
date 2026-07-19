@@ -32,6 +32,12 @@ import sys
 import time
 from pathlib import Path
 
+try:  # The gate must never fail to load; the import is only used for a message.
+    from support.stable_launcher import stable_launcher_path
+except ImportError:  # pragma: no cover - exercised only on a broken install
+    def stable_launcher_path() -> Path:
+        return Path.home() / ".agentplaybook" / "bin" / "agentplaybook-hook"
+
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 # Only Write creates a file from nothing; Edit/MultiEdit require an existing
 # file, so new-file sprawl flows through Write.
@@ -114,11 +120,16 @@ def find_project_root(cwd: Path) -> Path | None:
     return None
 
 
-def evidence_is_fresh(root: Path) -> bool:
-    preflight = root / STATE_DIR / PREFLIGHT_NAME
+def evidence_mtime(root: Path) -> float | None:
     try:
-        mtime = preflight.stat().st_mtime
+        return (root / STATE_DIR / PREFLIGHT_NAME).stat().st_mtime
     except OSError:
+        return None
+
+
+def evidence_is_fresh(root: Path) -> bool:
+    mtime = evidence_mtime(root)
+    if mtime is None:
         return False
     return (time.time() - mtime) <= max_age_seconds()
 
@@ -128,23 +139,11 @@ def safe_session_id(session_id: str) -> str:
     return cleaned or "unknown-session"
 
 
-def session_marker(root: Path, session_id: str) -> Path:
-    return root / STATE_DIR / SESSION_MARKER_DIR / safe_session_id(session_id)
-
-
-def touch_marker(marker: Path) -> None:
-    try:
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text("", encoding="utf-8")
-    except OSError:
-        pass
-
-
 def deny_reason(root: Path) -> str:
     return (
         "AgentPlaybook: run the workflow start hook before editing files in this "
         f"project. No fresh preflight evidence at {root / STATE_DIR / PREFLIGHT_NAME}. "
-        "Run `~/.agentplaybook/bin/agentplaybook-hook start --project "
+        f"Run `{stable_launcher_path()} start --project "
         f"{root} --rules <AGENTPLAYBOOK_ROOT> --command <route> --request \"<user "
         "request>\"`, read the route required_docs, then retry the edit. Set "
         "AGENTPLAYBOOK_CLAUDE_GATE_MAX_AGE_SECONDS to tune the freshness window."
@@ -152,14 +151,36 @@ def deny_reason(root: Path) -> str:
 
 
 def workflow_entry_allows(root: Path, session_id: str) -> bool:
-    """Gate 1: the workflow ``start`` hook must have run this session."""
-    marker = session_marker(root, session_id)
-    if marker.exists():
-        return True
-    if evidence_is_fresh(root):
-        touch_marker(marker)
-        return True
-    return False
+    """Gate 1: the workflow ``start`` hook must have run this session.
+
+    The gate only reads. ``start`` stamps its own session into the preflight
+    evidence, so proof of workflow entry has exactly one writer. Two earlier
+    designs failed because the gate wrote that proof itself: first by promoting
+    any fresh evidence into a session marker (which let a previous session's
+    file unlock this one), then by comparing timestamps (which denied the
+    correct ``start`` -> edit order outright, because evidence written before
+    the first edit attempt can never be newer than it).
+
+    Freshness stays as a second condition so an abandoned session cannot be
+    resumed days later on its original evidence.
+    """
+    if not session_id:
+        # No session to attribute; freshness is the only signal left.
+        return evidence_is_fresh(root)
+    return recorded_session_id(root) == session_id and evidence_is_fresh(root)
+
+
+def recorded_session_id(root: Path) -> str:
+    """Session id that the `start` hook stamped into the preflight evidence."""
+    try:
+        payload = json.loads((root / STATE_DIR / PREFLIGHT_NAME).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    runtime_session = payload.get("runtime_session")
+    if not isinstance(runtime_session, dict):
+        return ""
+    recorded = runtime_session.get("session_id")
+    return recorded if isinstance(recorded, str) else ""
 
 
 def new_file_budget() -> int:
