@@ -22,6 +22,12 @@ Contract (Claude Code PreToolUse hook):
 - Prints a ``permissionDecision`` JSON object to allow or deny.
 - Only file-edit tools are gated; everything else and every unexpected error
   fails open (exit 0, no output) so the gate can never brick ordinary editing.
+
+Requires a Claude Code that puts ``CLAUDE_CODE_SESSION_ID`` in the Bash
+subprocess environment (v2.1.128-v2.1.136, Week 19 2026), because that is what
+lets the ``start`` hook stamp the session the gate checks. On an older build the
+stamp is always absent and every edit is denied; set ``AGENTPLAYBOOK_CLAUDE_GATE=0``
+to turn the gate off there.
 """
 
 from __future__ import annotations
@@ -32,6 +38,12 @@ import sys
 import time
 from pathlib import Path
 
+try:  # The gate must never fail to load; the import is only used for a message.
+    from support.stable_launcher import stable_launcher_path
+except ImportError:  # pragma: no cover - exercised only on a broken install
+    def stable_launcher_path() -> Path:
+        return Path.home() / ".agentplaybook" / "bin" / "agentplaybook-hook"
+
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 # Only Write creates a file from nothing; Edit/MultiEdit require an existing
 # file, so new-file sprawl flows through Write.
@@ -41,6 +53,9 @@ PREFLIGHT_NAME = "preflight.json"
 SESSION_MARKER_DIR = "claude-pretool-gate"
 NEW_FILE_STATE_SUFFIX = ".newfiles"
 SPRAWL_ACK_SUFFIX = ".sprawl-ack"
+# Shared with claude_stop_gate.py, which blocks a stop when an editing session
+# has no passing finish.
+EDIT_ACTIVITY_SUFFIX = ".edited"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
 OPT_IN_TOKEN = "agentplaybook"
 DEFAULT_MAX_AGE_SECONDS = 8 * 60 * 60
@@ -56,6 +71,11 @@ SOURCE_SUFFIXES = {
     ".java", ".js", ".jsx", ".kt", ".kts", ".m", ".mjs", ".mm", ".php", ".py",
     ".rb", ".rs", ".sass", ".scss", ".svelte", ".swift", ".ts", ".tsx", ".vue",
 }
+
+
+def gate_enabled() -> bool:
+    """Escape hatch for runtimes that cannot supply a session id."""
+    return os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE", "").strip() != "0"
 
 
 def allow() -> int:
@@ -114,11 +134,16 @@ def find_project_root(cwd: Path) -> Path | None:
     return None
 
 
-def evidence_is_fresh(root: Path) -> bool:
-    preflight = root / STATE_DIR / PREFLIGHT_NAME
+def evidence_mtime(root: Path) -> float | None:
     try:
-        mtime = preflight.stat().st_mtime
+        return (root / STATE_DIR / PREFLIGHT_NAME).stat().st_mtime
     except OSError:
+        return None
+
+
+def evidence_is_fresh(root: Path) -> bool:
+    mtime = evidence_mtime(root)
+    if mtime is None:
         return False
     return (time.time() - mtime) <= max_age_seconds()
 
@@ -128,23 +153,37 @@ def safe_session_id(session_id: str) -> str:
     return cleaned or "unknown-session"
 
 
-def session_marker(root: Path, session_id: str) -> Path:
-    return root / STATE_DIR / SESSION_MARKER_DIR / safe_session_id(session_id)
+def deny_reason(root: Path, session_id: str = "") -> str:
+    """Explain the denial in terms of what is actually wrong with the evidence.
 
-
-def touch_marker(marker: Path) -> None:
-    try:
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text("", encoding="utf-8")
-    except OSError:
-        pass
-
-
-def deny_reason(root: Path) -> str:
+    Reporting "no fresh evidence" when a stamped-but-foreign or unstamped
+    preflight is sitting right there sends the reader looking for a missing
+    file. Each cause has a different fix, so each gets its own sentence.
+    """
+    preflight = root / STATE_DIR / PREFLIGHT_NAME
+    recorded = recorded_session_id(root)
+    if evidence_mtime(root) is None:
+        cause = f"No preflight evidence at {preflight}."
+    elif not evidence_is_fresh(root):
+        cause = f"Preflight evidence at {preflight} is older than the freshness window."
+    elif not recorded:
+        cause = (
+            f"Preflight evidence at {preflight} records no runtime session, so it "
+            "cannot prove start ran in this session. This happens when the start hook "
+            "ran without CLAUDE_CODE_SESSION_ID in its environment; rerunning start "
+            "from a Bash tool call records it."
+        )
+    elif session_id and recorded != session_id:
+        cause = (
+            f"Preflight evidence at {preflight} belongs to a different session, so it "
+            "proves nothing about this one."
+        )
+    else:
+        cause = f"Preflight evidence at {preflight} does not satisfy the workflow entry gate."
     return (
         "AgentPlaybook: run the workflow start hook before editing files in this "
-        f"project. No fresh preflight evidence at {root / STATE_DIR / PREFLIGHT_NAME}. "
-        "Run `~/.agentplaybook/bin/agentplaybook-hook start --project "
+        f"project. {cause} "
+        f"Run `{stable_launcher_path()} start --project "
         f"{root} --rules <AGENTPLAYBOOK_ROOT> --command <route> --request \"<user "
         "request>\"`, read the route required_docs, then retry the edit. Set "
         "AGENTPLAYBOOK_CLAUDE_GATE_MAX_AGE_SECONDS to tune the freshness window."
@@ -152,14 +191,54 @@ def deny_reason(root: Path) -> str:
 
 
 def workflow_entry_allows(root: Path, session_id: str) -> bool:
-    """Gate 1: the workflow ``start`` hook must have run this session."""
-    marker = session_marker(root, session_id)
-    if marker.exists():
-        return True
-    if evidence_is_fresh(root):
-        touch_marker(marker)
-        return True
-    return False
+    """Gate 1: the workflow ``start`` hook must have run this session.
+
+    The gate only reads. ``start`` stamps its own session into the preflight
+    evidence, so proof of workflow entry has exactly one writer. Two earlier
+    designs failed because the gate wrote that proof itself: first by promoting
+    any fresh evidence into a session marker (which let a previous session's
+    file unlock this one), then by comparing timestamps (which denied the
+    correct ``start`` -> edit order outright, because evidence written before
+    the first edit attempt can never be newer than it).
+
+    Freshness stays as a second condition so an abandoned session cannot be
+    resumed days later on its original evidence.
+    """
+    if not session_id:
+        # Nothing to attribute the evidence to. Falling back to freshness here
+        # would reopen the original bypass on any payload missing a session.
+        return False
+    return recorded_session_id(root) == session_id and evidence_is_fresh(root)
+
+
+def recorded_session_id(root: Path) -> str:
+    """Session id that the `start` hook stamped into the preflight evidence."""
+    try:
+        payload = json.loads((root / STATE_DIR / PREFLIGHT_NAME).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    runtime_session = payload.get("runtime_session")
+    if not isinstance(runtime_session, dict):
+        return ""
+    recorded = runtime_session.get("session_id")
+    return recorded if isinstance(recorded, str) else ""
+
+
+def record_edit_activity(root: Path, session_id: str) -> None:
+    """Note that this session actually mutated files.
+
+    This is an activity record, not gate-passing proof -- the distinction that
+    matters here. Writing proof is what let an earlier version of this gate
+    fabricate its own workflow entry; writing "this session edited something" is
+    only what the Stop gate needs to know a missing finish is worth blocking on.
+    A read-only session never gets this marker and is never blocked at Stop.
+    """
+    marker = root / STATE_DIR / SESSION_MARKER_DIR / (safe_session_id(session_id) + EDIT_ACTIVITY_SUFFIX)
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("", encoding="utf-8")
+    except OSError:
+        pass
 
 
 def new_file_budget() -> int:
@@ -267,6 +346,8 @@ def sprawl_deny(tool: str, payload: dict, root: Path, cwd: Path, session_id: str
 
 
 def decide(payload: dict) -> int:
+    if not gate_enabled():
+        return allow()
     tool = payload.get("tool_name")
     if tool not in EDIT_TOOLS:
         return allow()
@@ -281,10 +362,11 @@ def decide(payload: dict) -> int:
         return allow()
     session_id = str(payload.get("session_id") or "")
     if not workflow_entry_allows(root, session_id):
-        return deny(deny_reason(root))
+        return deny(deny_reason(root, session_id))
     sprawl_reason = sprawl_deny(tool, payload, root, cwd, session_id)
     if sprawl_reason:
         return deny(sprawl_reason)
+    record_edit_activity(root, session_id)
     return allow()
 
 

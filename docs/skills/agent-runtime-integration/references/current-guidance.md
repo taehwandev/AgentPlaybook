@@ -40,7 +40,7 @@ source text, environment values, or secrets.
 
 The parent owns the capsule lifecycle:
 
-1. Run `~/.agentplaybook/bin/agentplaybook-hook start` once for the multi-step task. Do not separately run
+1. Run `<AGENTPLAYBOOK_LAUNCHER> start` once for the multi-step task. Do not separately run
    workflow list, classify, route, and preflight as a second startup sequence.
 2. Read the route's `required_docs` directly before work. Do not add a second
    document-confirmation step.
@@ -124,27 +124,27 @@ A usable root contains `AGENTS.md`, `index.md`, and `scripts/workflow.py`.
 Validate the selected root with:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook workflow validate
+<AGENTPLAYBOOK_LAUNCHER> workflow validate
 ```
 
 Check runtime bridges, hooks, and permission allowlists with:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks --check
+<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks --check
 ```
 
 If bridges, hooks, or permissions are missing, ask for approval to write
 user-level runtime config, then run:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks
+<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks
 ```
 
 To repair only one runtime without touching other agent settings, pass its
 runtime selector. For example, Codex-only setup uses:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks --runtime codex
+<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks --runtime codex
 ```
 
 A runtime-scoped check or repair validates and changes that runtime's managed
@@ -158,7 +158,7 @@ repair only AgentPlaybook-managed bridge blocks and allow only
 AgentPlaybook-managed entrypoints and suffix-aware runtime matchers. Do not
 broadly allow `python3`.
 For Claude, `setup-agent-hooks.py` installs a stable user-level launcher at
-`~/.agentplaybook/bin/agentplaybook-hook` and writes the current checkout to
+`<AGENTPLAYBOOK_LAUNCHER>` and writes the current checkout to
 `~/.agentplaybook/agentplaybook-root`. Rerun setup after moving or migrating
 AgentPlaybook so the pointer is refreshed without changing the Claude hook
 command.
@@ -214,8 +214,8 @@ repo is not explicit in the current request, resolve the project before reading
 project docs or running task commands. Use the local entry helpers:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook project-discover --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
-~/.agentplaybook/bin/agentplaybook-hook agent-entry --runtime <codex|claude|antigravity|generic> --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
+<AGENTPLAYBOOK_LAUNCHER> project-discover --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
+<AGENTPLAYBOOK_LAUNCHER> agent-entry --runtime <codex|claude|antigravity|generic> --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>"
 ```
 
 `project-discover.py` returns one of three states:
@@ -425,7 +425,7 @@ short and point to:
 <AGENTPLAYBOOK_ROOT>/index.md
 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
 <AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
-~/.agentplaybook/bin/agentplaybook-hook
+<AGENTPLAYBOOK_LAUNCHER>
 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py
 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py
 <AGENTPLAYBOOK_ROOT>/scripts/agent-preflight.py
@@ -535,7 +535,7 @@ Codex:
   AgentPlaybook itself or editing shared runtime bridge files.
 - Do not expect `AGENTS.md` or `.codex/rules` to change sandbox roots; they
   control behavior and permission matching, not the runtime's workspace root.
-- Use `~/.agentplaybook/bin/agentplaybook-hook start` once for multi-step work; do not run a second
+- Use `<AGENTPLAYBOOK_LAUNCHER> start` once for multi-step work; do not run a second
   classify, route, or preflight sequence after it succeeds.
 - AgentPlaybook command permissions belong in user-level
   `~/.codex/rules/default.rules` as narrow `prefix_rule` entries for the
@@ -570,7 +570,7 @@ Claude:
   `~/.claude/settings.json`, not repo-local `.claude/settings.json`, because
   the AgentPlaybook `scripts/*.py` entrypoints are shared across projects.
 - Claude managed hooks should call the stable launcher
-  `~/.agentplaybook/bin/agentplaybook-hook`, not a moving checkout path such as
+  `<AGENTPLAYBOOK_LAUNCHER>`, not a moving checkout path such as
   `/absolute/path/to/AgentPlaybook/scripts/workflow.py`. The setup script
   refreshes `~/.agentplaybook/agentplaybook-root` to the current checkout and
   removes stale managed hook commands that still point at old roots. The stable
@@ -667,7 +667,7 @@ For every runtime:
    separate file exists. Offer optional Step 2 for personal/global runtime
    bridges; only update those files when the user chooses it.
 11. Read AgentPlaybook `AGENTS.md`.
-12. For multi-step tasks, run `~/.agentplaybook/bin/agentplaybook-hook start` once with the
+12. For multi-step tasks, run `<AGENTPLAYBOOK_LAUNCHER> start` once with the
     current request to produce routing and preflight evidence. If the request
     is a direct question, answer it before the start hook or editing. Use
     `index.md` only for simple answer-only work or an explicitly accepted
@@ -683,14 +683,14 @@ For every runtime:
     `required_docs` list is a valid no-source state and must continue once,
     with a recorded no-source decision, rather than retrying or blocking the
     capsule in preflight.
-14. Before delegating, run `~/.agentplaybook/bin/agentplaybook-hook handoff` to lazily create and
+14. Before delegating, run `<AGENTPLAYBOOK_LAUNCHER> handoff` to lazily create and
     validate the execution capsule once. A worker may reuse the parent route,
     preflight, and required-doc brief only after a ready-and-valid result; it
     must not repeat required-doc reads, VibeGuard, review, or final validation.
     An invalid result is a successful fallback decision requiring the normal
     lifecycle on worker-specific evidence paths. Keep the parent as the sole
     gate-ledger owner and never overwrite its evidence during fallback.
-15. When wrapper scripts are available, run `~/.agentplaybook/bin/agentplaybook-hook finish`
+15. When wrapper scripts are available, run `<AGENTPLAYBOOK_LAUNCHER> finish`
     before final report, commit, release, or handoff. Call
     `scripts/agent-finish-check.py` directly only as a lower-level fallback.
     Missing wrapper evidence or route gate evidence is non-compliant.
@@ -726,7 +726,7 @@ call AgentPlaybook routing instead of creating a second active workflow router.
 The alias should run:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <route-command> --request "<USER_REQUEST>"
+<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <route-command> --request "<USER_REQUEST>"
 ```
 
 Do not let aliases bypass Start Hook, direct reading of the route
@@ -800,7 +800,7 @@ After connecting a runtime, verify:
 - the agent can produce a route, such as:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook workflow route task --request "<USER_REQUEST>"
+<AGENTPLAYBOOK_LAUNCHER> workflow route task --request "<USER_REQUEST>"
 ```
 
 ## Stop If

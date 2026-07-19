@@ -21,29 +21,43 @@ def spill_helper_permission_commands(tool: str, *, home: Path | None = None) -> 
 
 
 def spill_helper_path_variants(helper: str, *, home: Path | None = None) -> list[str]:
+    """Return one executable, install-time absolute shell spelling."""
     home_path = home or Path.home()
-    bases = (
-        str(home_path),
-        "~",
-        "$HOME",
-        "${HOME}",
-    )
+    path = f"{home_path}/{SPILL_HELPER_RELATIVE_DIR}/{helper}"
+    return [_escape_spaces(path)]
 
+
+def obsolete_spill_helper_path_variants(helper: str, *, home: Path | None = None) -> list[str]:
+    """All spellings emitted by setup before canonicalization."""
+    home_path = home or Path.home()
+    canonical = set(spill_helper_path_variants(helper, home=home_path))
     variants: list[str] = []
-    for base in bases:
+    for base in (str(home_path), "~", "$HOME", "${HOME}"):
         path = f"{base}/{SPILL_HELPER_RELATIVE_DIR}/{helper}"
         variants.extend(_shell_path_spellings(path))
-    return _dedupe(variants)
+    return [variant for variant in _dedupe(variants) if variant not in canonical]
+
+
+def obsolete_spill_helper_permission_commands(tool: str, *, home: Path | None = None) -> list[str]:
+    commands: list[str] = []
+    for helper in SPILL_HELPER_NAMES:
+        flag = "--label" if helper.endswith("setup.mjs") else "--tool"
+        for path in obsolete_spill_helper_path_variants(helper, home=home):
+            commands.append(f"node {path} {flag} {tool}")
+    return _dedupe(commands)
 
 
 def _shell_path_spellings(path: str) -> list[str]:
-    escaped = path.replace("Application Support", "Application\\ Support")
     return [
         path,
-        escaped,
+        _escape_spaces(path),
         _quote(path),
         _double_quote(path),
     ]
+
+
+def _escape_spaces(value: str) -> str:
+    return value.replace(" ", "\\ ")
 
 
 def _quote(value: str) -> str:

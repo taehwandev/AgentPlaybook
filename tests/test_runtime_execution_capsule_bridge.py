@@ -145,19 +145,19 @@ class RuntimeExecutionCapsuleBridgeTests(unittest.TestCase):
         prompt_template = (ROOT / "templates" / "use-agentplaybook-prompt.md").read_text()
         normalized_repo_template = " ".join(repo_template.split())
 
-        self.assertIn("run `~/.agentplaybook/bin/agentplaybook-hook start` once", repo_template)
+        self.assertIn("run `<AGENTPLAYBOOK_LAUNCHER> start` once", repo_template)
         self.assertIn("read the route's `required_docs`", normalized_repo_template)
-        self.assertIn("agentplaybook-hook handoff", repo_template)
-        self.assertEqual(1, repo_template.count("agentplaybook-hook start"))
+        self.assertIn("<AGENTPLAYBOOK_LAUNCHER> handoff", repo_template)
+        self.assertEqual(1, repo_template.count("<AGENTPLAYBOOK_LAUNCHER> start"))
 
-        self.assertIn("agentplaybook-hook start", prompt_template)
+        self.assertIn("<AGENTPLAYBOOK_LAUNCHER> start", prompt_template)
         self.assertIn("Read every `required_docs` entry", prompt_template)
-        self.assertIn("agentplaybook-hook handoff", prompt_template)
+        self.assertIn("<AGENTPLAYBOOK_LAUNCHER> handoff", prompt_template)
         self.assertNotIn("scripts/workflow.py list", prompt_template)
         self.assertNotIn("scripts/workflow.py classify", prompt_template)
         self.assertNotIn("scripts/agent-preflight.py --project", prompt_template)
         self.assertNotIn("scripts/agent-finish-check.py --project", prompt_template)
-        self.assertIn("agentplaybook-hook finish", prompt_template)
+        self.assertIn("<AGENTPLAYBOOK_LAUNCHER> finish", prompt_template)
         self.assertNotIn("read <AGENTPLAYBOOK_ROOT>/AGENTS.md and <AGENTPLAYBOOK_ROOT>/index.md", prompt_template)
         for template in (repo_template, prompt_template):
             self.assertNotIn("docs-read", template.lower())
@@ -194,7 +194,14 @@ class RuntimeExecutionCapsuleBridgeTests(unittest.TestCase):
                 text = (ROOT / relative).read_text(encoding="utf-8")
                 normalized = " ".join(text.lower().split())
 
-                self.assertIn("agentplaybook-hook start", normalized)
+                # Agent-facing docs carry the launcher placeholder so nothing
+                # copy-pasteable bypasses the resolved-absolute permission
+                # entries; human-facing pages keep the literal command.
+                self.assertTrue(
+                    "agentplaybook-hook start" in normalized
+                    or "<agentplaybook_launcher> start" in normalized,
+                    f"{relative} does not name the canonical start lifecycle",
+                )
                 self.assertIn("required_docs", normalized)
                 self.assertIn("review hook", normalized)
                 self.assertIn("finish hook", normalized)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from pathlib import Path
 
 from support.permission_entries import (
@@ -25,6 +26,7 @@ _CLASSIFICATION_EVIDENCE = (
 )
 _PRETOOL_GATE_MATCHER = "Edit|Write|MultiEdit|NotebookEdit"
 _PRETOOL_GATE_ALIAS = "claude-pretool-gate"
+_STOP_GATE_ALIAS = "claude-stop-gate"
 
 
 def configure_claude(
@@ -70,6 +72,12 @@ def configure_claude(
     status = _merge_claude_pre_tool_gate(target, gate_cmd, dry_run)
     results.append({"tool": "claude", "hook": "PreToolUse_workflow_gate", "status": status, "path": str(target)})
 
+    stop_cmd = (
+        f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 {quote(str(launcher_path))} {_STOP_GATE_ALIAS}"
+    )
+    status = _merge_claude_stop_gate(target, stop_cmd, dry_run)
+    results.append({"tool": "claude", "hook": "Stop_finish_gate", "status": status, "path": str(target)})
+
     cleanup_entries = claude_legacy_permission_entries(scripts_dir)
     if not spill_available:
         cleanup_entries += claude_permission_entries(scripts_dir, spill_available=True)
@@ -89,13 +97,21 @@ def configure_claude(
 def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) -> str:
     config = read_json(target)
     hooks = config.get("hooks", {})
-    groups: list = hooks.get("UserPromptSubmit", [])
+    if not isinstance(hooks, dict):
+        hooks = {}
+    groups = hooks.get("UserPromptSubmit", [])
+    if not isinstance(groups, list):
+        groups = []
 
     has_managed_command = False
     for group in groups:
+        if not isinstance(group, dict):
+            continue
         for hook in group.get("hooks", []):
+            if not isinstance(hook, dict):
+                continue
             hook_command = hook.get("command", "")
-            if hook_command == command:
+            if hook_command == command and group.get("matcher") == ".*":
                 return "ok"
             if _is_managed_claude_spill_bridge_command(hook_command):
                 has_managed_command = True
@@ -103,15 +119,12 @@ def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) 
     if dry_run:
         return "would_update" if has_managed_command else "missing"
 
-    cleaned = [
-        group for group in groups
-        if not any(
-            _is_managed_claude_spill_bridge_command(hook.get("command", ""))
-            for hook in group.get("hooks", [])
-        )
-    ]
+    cleaned = _remove_managed_hook_objects(
+        groups,
+        _is_managed_claude_spill_bridge_command,
+    )
     cleaned.append({
-        "matcher": "",
+        "matcher": ".*",
         "hooks": [{"type": "command", "command": command, "timeout": 5}],
     })
     hooks["UserPromptSubmit"] = cleaned
@@ -124,14 +137,63 @@ def _is_managed_claude_pre_tool_gate_command(command: str) -> bool:
     return _PRETOOL_GATE_ALIAS in command
 
 
-def _merge_claude_pre_tool_gate(target: Path, command: str, dry_run: bool) -> str:
+def _is_managed_claude_stop_gate_command(command: str) -> bool:
+    return _STOP_GATE_ALIAS in command
+
+
+def _merge_claude_stop_gate(target: Path, command: str, dry_run: bool) -> str:
+    """Install the Stop gate without disturbing unrelated user Stop hooks."""
     config = read_json(target)
     hooks = config.get("hooks", {})
-    groups: list = hooks.get("PreToolUse", [])
+    if not isinstance(hooks, dict):
+        hooks = {}
+    groups = hooks.get("Stop", [])
+    if not isinstance(groups, list):
+        groups = []
 
     has_managed_command = False
     for group in groups:
+        if not isinstance(group, dict):
+            continue
         for hook in group.get("hooks", []):
+            if not isinstance(hook, dict):
+                continue
+            hook_command = hook.get("command", "")
+            if hook_command == command:
+                return "ok"
+            if _is_managed_claude_stop_gate_command(hook_command):
+                has_managed_command = True
+
+    if dry_run:
+        return "would_update" if has_managed_command else "missing"
+
+    cleaned = _remove_managed_hook_objects(groups, _is_managed_claude_stop_gate_command)
+    cleaned.append({
+        "matcher": "",
+        "hooks": [{"type": "command", "command": command, "timeout": 10}],
+    })
+    hooks["Stop"] = cleaned
+    config["hooks"] = hooks
+    write_json(target, config)
+    return "installed"
+
+
+def _merge_claude_pre_tool_gate(target: Path, command: str, dry_run: bool) -> str:
+    config = read_json(target)
+    hooks = config.get("hooks", {})
+    if not isinstance(hooks, dict):
+        hooks = {}
+    groups = hooks.get("PreToolUse", [])
+    if not isinstance(groups, list):
+        groups = []
+
+    has_managed_command = False
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        for hook in group.get("hooks", []):
+            if not isinstance(hook, dict):
+                continue
             hook_command = hook.get("command", "")
             if hook_command == command and group.get("matcher") == _PRETOOL_GATE_MATCHER:
                 return "ok"
@@ -141,13 +203,10 @@ def _merge_claude_pre_tool_gate(target: Path, command: str, dry_run: bool) -> st
     if dry_run:
         return "would_update" if has_managed_command else "missing"
 
-    cleaned = [
-        group for group in groups
-        if not any(
-            _is_managed_claude_pre_tool_gate_command(hook.get("command", ""))
-            for hook in group.get("hooks", [])
-        )
-    ]
+    cleaned = _remove_managed_hook_objects(
+        groups,
+        _is_managed_claude_pre_tool_gate_command,
+    )
     cleaned.append({
         "matcher": _PRETOOL_GATE_MATCHER,
         "hooks": [{"type": "command", "command": command, "timeout": 10}],
@@ -158,10 +217,43 @@ def _merge_claude_pre_tool_gate(target: Path, command: str, dry_run: bool) -> st
     return "installed"
 
 
+def _remove_managed_hook_objects(
+    groups: list,
+    predicate: Callable[[str], bool],
+) -> list:
+    """Remove managed command objects without deleting neighboring user hooks."""
+    cleaned: list = []
+    for group in groups:
+        if not isinstance(group, dict):
+            cleaned.append(group)
+            continue
+        group_hooks = group.get("hooks")
+        if not isinstance(group_hooks, list):
+            cleaned.append(group)
+            continue
+        remaining = [
+            hook
+            for hook in group_hooks
+            if not (
+                isinstance(hook, dict)
+                and predicate(str(hook.get("command", "")))
+            )
+        ]
+        if remaining:
+            updated = dict(group)
+            updated["hooks"] = remaining
+            cleaned.append(updated)
+    return cleaned
+
+
 def _remove_claude_user_prompt_submit(target: Path, dry_run: bool) -> str:
     config = read_json(target)
     hooks = config.get("hooks", {})
-    groups: list = hooks.get("UserPromptSubmit", [])
+    if not isinstance(hooks, dict):
+        hooks = {}
+    groups = hooks.get("UserPromptSubmit", [])
+    if not isinstance(groups, list):
+        groups = []
     changed = False
     cleaned_groups = []
 

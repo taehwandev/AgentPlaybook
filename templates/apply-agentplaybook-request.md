@@ -31,14 +31,14 @@ Do not claim the file was read unless you actually opened it.
 If the target project is not explicit or the runtime starts outside the target,
 run the AgentPlaybook entry helper before reading project docs:
 
-~/.agentplaybook/bin/agentplaybook-hook agent-entry --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
+<AGENTPLAYBOOK_LAUNCHER> agent-entry --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
 
 Continue only when it returns `selected`. If it returns `ambiguous` or
 `not_found`, ask me for the target project instead of guessing.
 
 Use an existing local AgentPlaybook install if one is available. Check an
 explicit path from me first, then AGENTPLAYBOOK_HOME, then common local clones
-such as ~/.agent-playbook or ~/GitHub/AgentPlaybook.
+such as ~/.agent-playbook, ~/git/AgentPlaybook, or ~/GitHub/AgentPlaybook.
 
 If any usable local or repo-pinned AgentPlaybook root exists, stop install
 selection there and reuse it. Do not download, clone, vendor, copy, overwrite,
@@ -58,16 +58,16 @@ Select one setup mode and tell me which one you selected before editing:
 A usable AgentPlaybook root must contain AGENTS.md, index.md, and
 scripts/workflow.py. Validate it with:
 
-~/.agentplaybook/bin/agentplaybook-hook workflow validate
+<AGENTPLAYBOOK_LAUNCHER> workflow validate
 
 Check user-level runtime bridges, hooks, and permission allowlists:
 
-~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks --check
+<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks --check
 
 If the check reports missing bridges, hooks, or permissions, ask for approval
 to update user-level runtime config, then run:
 
-~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks
+<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks
 
 This setup is global by design. It allows only AgentPlaybook-managed
 entrypoints with suffix-aware runtime matchers. It must not broadly allow
@@ -78,7 +78,7 @@ use `$HOME`, `${HOME}`, `~`, relative paths, or shell `-lc` wrappers for
 AgentPlaybook Python wrappers: those forms can be treated as shell expansion or
 a single shell string before the runtime permission matcher sees the trusted
 script path. For Claude Code, update `~/.claude/settings.json` so managed hooks
-call `~/.agentplaybook/bin/agentplaybook-hook`, and refresh
+call `<AGENTPLAYBOOK_LAUNCHER>`, and refresh
 `~/.agentplaybook/agentplaybook-root` to the selected AgentPlaybook checkout so
 moves or migrations do not leave Claude pointing at a stale `workflow.py`
 absolute path. For
@@ -150,7 +150,7 @@ files are present, update their AgentPlaybook pointer in the same pass or point
 them back to AGENTS.md. Do not create a separate runtime-specific file only to
 duplicate guidance when the active runtime already reads AGENTS.md.
 
-For any multi-step setup or follow-up task, run `~/.agentplaybook/bin/agentplaybook-hook start` once with
+For any multi-step setup or follow-up task, run `<AGENTPLAYBOOK_LAUNCHER> start` once with
 `--request "<USER_REQUEST>"` before selecting task documents, editing,
 reviewing, committing, or reporting completion. It performs workflow routing
 and preflight; do not separately repeat workflow list, classify, route, or
@@ -178,7 +178,7 @@ Before executing wrapper commands, replace `<AGENTPLAYBOOK_ROOT>` with the
 resolved absolute path; do not leave `$HOME`, `${HOME}`, `~`, or a relative path
 in the executable command.
 
-~/.agentplaybook/bin/agentplaybook-hook start --project . --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
+<AGENTPLAYBOOK_LAUNCHER> start --project . --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
 
 Read every route `required_docs` entry directly after start and before editing
 or reviewing. Use the route's review hook after meaningful edits.
@@ -186,8 +186,8 @@ or reviewing. Use the route's review hook after meaningful edits.
 Before final report, commit, release, or handoff, record any remaining manual
 gate evidence, then run the read-only finish check:
 
-~/.agentplaybook/bin/agentplaybook-hook gate-batch --project . --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"<gate>","status":"SUCCESS","evidence":"<evidence>"}]'
-~/.agentplaybook/bin/agentplaybook-hook finish --project . --rules <AGENTPLAYBOOK_ROOT>
+<AGENTPLAYBOOK_LAUNCHER> gate-batch --project . --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"<gate>","status":"SUCCESS","evidence":"<evidence>"}]'
+<AGENTPLAYBOOK_LAUNCHER> finish --project . --rules <AGENTPLAYBOOK_ROOT>
 
 Call `workflow.py route`, `agent-preflight.py`, or `agent-finish-check.py`
 directly only as lower-level diagnostic or compatibility fallbacks when the
@@ -220,16 +220,16 @@ not replace unrelated user content.
 
 Also run the AgentPlaybook runtime setup check:
 
-~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks --check
+<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks --check
 
 If bridges, hooks, or permissions are missing, ask for approval to update
 user-level runtime config and then run:
 
-~/.agentplaybook/bin/agentplaybook-hook setup-agent-hooks
+<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks
 
 Keep the permission allowlist narrow: allow only AgentPlaybook-managed
 entrypoints by suffix-aware runtime matcher, not broad `python3`. For Claude
-managed hooks, prefer the stable `~/.agentplaybook/bin/agentplaybook-hook`
+managed hooks, prefer the stable `<AGENTPLAYBOOK_LAUNCHER>`
 launcher plus the refreshed root pointer over a moving checkout's absolute
 `scripts/workflow.py` path.
 The setup command should install or repair the managed bridge block for Codex,
@@ -253,7 +253,7 @@ The bridge must force this behavior:
 - Claude reads CLAUDE.md.
 - Antigravity reads AGENTS.md.
 - Do not claim an instruction file was read unless you actually opened it.
-- For multi-step work, run `~/.agentplaybook/bin/agentplaybook-hook start` once with my current request;
+- For multi-step work, run `<AGENTPLAYBOOK_LAUNCHER> start` once with my current request;
   it performs AgentPlaybook workflow routing and preflight. Do not separately
   repeat workflow list, classify, route, or preflight after it succeeds.
 - Read every route `required_docs` entry directly after start and before editing

@@ -182,7 +182,7 @@ do not separately repeat workflow list, classify, route, or preflight after it
 succeeds:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 `--command` accepts a workflow route, not a stage label. For implementation work,
@@ -265,13 +265,13 @@ paths and must stop once rather than retry search.
 Discover valid commands, platforms, and concerns with:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook workflow list
+<AGENTPLAYBOOK_LAUNCHER> workflow list
 ```
 
 When the right document is not obvious from `index.md`, search by keyword:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook workflow query <keyword> [<keyword> ...]
+<AGENTPLAYBOOK_LAUNCHER> workflow query <keyword> [<keyword> ...]
 ```
 
 The query command uses the pinned Wikimap source to return exact sections and
@@ -385,12 +385,12 @@ Python entrypoints under `scripts/`, ensure `setup-agent-hooks.py` (via
 `permission_entries.py`) automatically generates and updates these wildcard
 combinations in settings.json and config.json. Claude managed user-level
 hooks must use the stable launcher installed by `setup-agent-hooks.py` at
-`~/.agentplaybook/bin/agentplaybook-hook`; setup refreshes
+`<AGENTPLAYBOOK_LAUNCHER>`; setup refreshes
 `~/.agentplaybook/agentplaybook-root` after moves or migrations so the Claude
 hook command does not point at a stale checkout path.
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 After start, read the route's `required_docs` in order before editing or
@@ -469,8 +469,8 @@ compatible. The canonical decision rules live in
 `workflows/skills/ambiguity-gate/SKILL.md`.
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook gate-batch --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"orient","status":"SUCCESS","evidence":"<evidence>"},{"gate":"scope","status":"SUCCESS","evidence":"<evidence>"},{"gate":"act","status":"SUCCESS","evidence":"<evidence>"},{"gate":"verify","status":"SUCCESS","evidence":"<evidence>"},{"gate":"report","status":"SUCCESS","evidence":"<evidence>"}]'
-~/.agentplaybook/bin/agentplaybook-hook finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+<AGENTPLAYBOOK_LAUNCHER> gate-batch --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"orient","status":"SUCCESS","evidence":"<evidence>"},{"gate":"scope","status":"SUCCESS","evidence":"<evidence>"},{"gate":"act","status":"SUCCESS","evidence":"<evidence>"},{"gate":"verify","status":"SUCCESS","evidence":"<evidence>"},{"gate":"report","status":"SUCCESS","evidence":"<evidence>"}]'
+<AGENTPLAYBOOK_LAUNCHER> finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
 ```
 
 `finish` must not create or override gate evidence. A later structured `FAIL`
@@ -620,6 +620,17 @@ creation or record content-free diagnostics according to the local product
 contract, not to estimate or infer from private content. A bridge that only
 apologizes after exposing those details is non-compliant; it must change the
 next action path or stop.
+
+`<AGENTPLAYBOOK_LAUNCHER>` means the installed stable launcher, which lives
+outside the checkout at `~/.agentplaybook/bin/agentplaybook-hook`. It is a
+separate user-global directory, not a path under `<AGENTPLAYBOOK_ROOT>`; the
+`~/.agentplaybook/agentplaybook-root` pointer file is what links the two.
+Before executing it, resolve the placeholder to that machine's absolute path.
+Do not run it as `~/...`, `$HOME/...`, or `${HOME}/...`: setup installs one
+resolved absolute permission entry per runtime, so a home-relative spelling is
+not in the allowlist and produces an approval prompt. Committed documents keep
+the placeholder rather than a personal absolute path, for the same reason
+`<AGENTPLAYBOOK_ROOT>` is never written out as `/Users/...`.
 
 `<AGENTPLAYBOOK_ROOT>` means the directory containing this shared library. In
 committed or shared repo-local instructions, do not replace it with a personal

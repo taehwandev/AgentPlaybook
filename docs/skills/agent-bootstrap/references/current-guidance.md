@@ -106,7 +106,7 @@ Local reuse is the default and a hard stop for install work:
 5. Check `AGENTPLAYBOOK_HOME`.
 6. Check legacy `KEYFLOW_AGENT_ROOT` only when present.
 7. Check common local installs such as `~/.agent-playbook`,
-   `~/AgentPlaybook`, and `~/GitHub/AgentPlaybook`.
+   `~/AgentPlaybook`, `~/git/AgentPlaybook`, and `~/GitHub/AgentPlaybook`.
 8. Check repo-pinned locations only when the target repo already contains one,
    such as `.agents/AgentPlaybook`, `tools/AgentPlaybook`, or a git submodule.
 
@@ -303,7 +303,7 @@ that subsystem.
     runtime links or thin adapters. Do not maintain parallel Codex, Claude, and
     Antigravity/AGY copies of the same knowledge.
 11. Do not paste the full AgentPlaybook library into repo-local files.
-12. For multi-step setup or migration work, run `~/.agentplaybook/bin/agentplaybook-hook start` once with
+12. For multi-step setup or migration work, run `<AGENTPLAYBOOK_LAUNCHER> start` once with
    the current request. Open every route `required_docs` entry directly, keep
    the workflow route gate ledger, run the review hook after meaningful
    changes, and run the finish hook before final report, commit, release, or

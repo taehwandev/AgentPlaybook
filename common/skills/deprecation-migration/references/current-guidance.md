@@ -67,6 +67,34 @@ artifacts, runtime entrypoints, and tests no longer depend on it.
 Do not use a migration as an excuse for a broad rewrite. Keep each slice small
 enough to prove compatibility and rollback or forward-fix behavior.
 
+## Workspace Root Relocation
+
+Treat a developer workspace root rename as a coordinated migration across all
+repositories under that root. Before the move, record each repository's HEAD,
+branch, worktree state, and tracked or untracked changes. Preserve historical
+evidence that only describes completed runs; update active registries,
+launchers, IDE settings, permission rules, hooks, and operator documentation.
+
+Prefer repository-relative references or an overridable environment variable
+for maintained files. After a bulk path substitution, parse structured files
+and check for duplicate keys because old and new configuration entries can
+collapse onto the same key.
+
+Handle generated and runtime state explicitly:
+
+- recreate or repair virtual-environment launchers whose shebangs contain the
+  old absolute path;
+- regenerate build metadata and textual caches, then remove or quarantine
+  compiled module caches that still embed the old root;
+- stop and restart live processes or applications launched from the old root;
+- inspect linked worktree metadata and report missing or prunable worktrees
+  separately from relocation failures.
+
+Finish by rerunning the canonical installer from the new root, validating
+structured configuration, rebuilding at least one path-sensitive product, and
+proving that the old workspace root is absent except for intentional migration
+fixtures or compatibility fallbacks with an explicit owner.
+
 ## Common Rationalizations
 
 | Rationalization | Required Response |

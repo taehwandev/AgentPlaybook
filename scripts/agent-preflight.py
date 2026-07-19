@@ -17,6 +17,7 @@ from typing import Any
 from agent_execution_capsule import create_preflight_snapshot
 from agent_execution_capsule_state import atomic_write_json
 from agent_global_lessons import lesson_summary
+from agent_runtime_session import runtime_session
 from agent_hook_gate_records import reset_and_record_preflight_gate
 from agent_preflight_runtime import (
     active_runtime_label,
@@ -362,6 +363,14 @@ def write_early_bridge_failure(
     }
     write_json(evidence_path, evidence)
     print(f"Preflight evidence: {evidence_path}")
+    if not runtime_session():
+        # Silently writing an empty session leaves the Claude gate denying every
+        # edit later, far from the cause. Say it here, where start can be rerun.
+        print(
+            "WARNING: no runtime session id in this environment; the Claude edit gate "
+            "will deny edits until start runs with CLAUDE_CODE_SESSION_ID set.",
+            file=sys.stderr,
+        )
     print(f"FAIL: {failure}", file=sys.stderr)
     return 1
 
@@ -449,6 +458,7 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
         "git_status": git_status,
         "vibeguard": vibeguard,
         "global_lessons": global_lessons,
+        "runtime_session": runtime_session(),
     })
     hook_warnings, hook_failures = check_agent_hooks(playbook_root)
     failures = collect_failures(
@@ -473,6 +483,14 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
             failures.append(f"preflight gate ledger initialization failed: {error}")
 
     print(f"Preflight evidence: {evidence_path}")
+    if not runtime_session():
+        # Silently writing an empty session leaves the Claude gate denying every
+        # edit later, far from the cause. Say it here, where start can be rerun.
+        print(
+            "WARNING: no runtime session id in this environment; the Claude edit gate "
+            "will deny edits until start runs with CLAUDE_CODE_SESSION_ID set.",
+            file=sys.stderr,
+        )
     if route_payload:
         print(f"Route: {route_payload.get('command')} gates={route_payload.get('gates')}")
     print(f"VibeGuard overall: {vibeguard['overall']['status']}")

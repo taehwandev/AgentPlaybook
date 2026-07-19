@@ -131,14 +131,19 @@ def _go_permissions(project_path: Path) -> list[str]:
 # ── Python ─────────────────────────────────────────────────────────────────
 
 def _python_permissions(project_path: Path) -> list[str]:
-    has_python = (
+    packaged = (
         (project_path / "pyproject.toml").exists()
         or (project_path / "setup.py").exists()
         or (project_path / "requirements.txt").exists()
     )
-    if not has_python:
+    if not (packaged or _has_python_sources(project_path)):
         return []
-    entries: list[str] = []
+    entries: list[str] = [
+        "Edit(**/*.py)",
+        "Write(**/*.py)",
+    ]
+    if not packaged:
+        return entries
     for base in (
         "uv run", "uv pip install", "uv sync",
         "poetry run", "poetry install",
@@ -146,6 +151,21 @@ def _python_permissions(project_path: Path) -> list[str]:
     ):
         entries += _cmd_entries(base)
     return entries
+
+
+def _has_python_sources(project_path: Path) -> bool:
+    """Detect script-style Python repos that ship no packaging manifest.
+
+    Bounded to the top two levels so this stays cheap on large checkouts.
+    """
+    if any(project_path.glob("*.py")):
+        return True
+    for child in project_path.iterdir():
+        if child.name.startswith(".") or not child.is_dir():
+            continue
+        if any(child.glob("*.py")):
+            return True
+    return False
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────

@@ -14,7 +14,11 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from support.permission_entries import codex_prefix_rule_entries
+from support.permission_entries import (
+    claude_legacy_permission_entries,
+    codex_legacy_prefix_rule_entries,
+    codex_prefix_rule_entries,
+)
 from support.setup_config_files import merge_codex_prefix_rules, merge_permissions_allow
 from support.graphify_setup import (
     CANONICAL_SKILL_PATH,
@@ -38,6 +42,7 @@ from support.graphify_tracking import install_tracking_policies
 from support import setup_agent_hooks_impl
 from support.setup_agent_hooks_impl import (
     _should_configure_global_graphify,
+    configure_external_project,
     ensure_local_claude_excluded,
 )
 from support.stable_launcher import ensure_stable_launcher, stable_launcher_path, stable_root_pointer_path
@@ -52,6 +57,11 @@ class SetupAgentHooksTests(unittest.TestCase):
                 ["setup-agent-hooks.py", "--check", "--runtime", "codex"],
             ),
             patch.object(setup_agent_hooks_impl, "_has_codex", return_value=True),
+            patch.object(
+                setup_agent_hooks_impl,
+                "ensure_stable_launcher",
+                return_value=[],
+            ) as ensure_launcher,
             patch.object(setup_agent_hooks_impl, "configure_codex", return_value=[]),
             patch.object(
                 setup_agent_hooks_impl.shutil,
@@ -67,6 +77,28 @@ class SetupAgentHooksTests(unittest.TestCase):
             setup_agent_hooks_impl.main()
 
         configure_global.assert_not_called()
+        ensure_launcher.assert_called_once_with(ROOT, True)
+
+    def test_agy_only_setup_installs_stable_launcher(self) -> None:
+        with (
+            patch.object(
+                sys,
+                "argv",
+                ["setup-agent-hooks.py", "--runtime", "agy"],
+            ),
+            patch.object(setup_agent_hooks_impl, "_has_agy", return_value=True),
+            patch.object(
+                setup_agent_hooks_impl,
+                "ensure_stable_launcher",
+                return_value=[],
+            ) as ensure_launcher,
+            patch.object(setup_agent_hooks_impl, "configure_agy", return_value=[]),
+            patch.object(setup_agent_hooks_impl, "configure_global_graphify", return_value=[]),
+            patch.object(setup_agent_hooks_impl, "configure_target_projects", return_value=[]),
+        ):
+            setup_agent_hooks_impl.main()
+
+        ensure_launcher.assert_called_once_with(ROOT, False)
 
     def test_global_graphify_stays_enabled_outside_codex_only_setup(self) -> None:
         self.assertFalse(_should_configure_global_graphify({"codex"}))
@@ -972,6 +1004,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 self.assertTrue(os.access(launcher, os.X_OK))
                 self.assertEqual(f"{ROOT.resolve()}\n", pointer.read_text())
                 self.assertIn("scripts/workflow.py", launcher.read_text())
+                self.assertIn('Path.home() / "git" / "AgentPlaybook"', launcher.read_text())
                 self.assertIn('"execution-capsule": "agent_execution_capsule.py"', launcher.read_text())
                 self.assertIn('"agent-os-status": "agent-os-status.py"', launcher.read_text())
                 self.assertIn('"agent-os-watchdog": "agent-os-watchdog.py"', launcher.read_text())
@@ -983,6 +1016,30 @@ class SetupAgentHooksTests(unittest.TestCase):
                 check = ensure_stable_launcher(ROOT, dry_run=True)
 
         self.assertTrue(all(result["status"] == "ok" for result in check))
+
+    def test_codex_setup_is_idempotent_in_a_clean_home(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_home:
+            home = Path(temp_home)
+            with patch.dict(os.environ, {"HOME": temp_home}):
+                first = ensure_stable_launcher(ROOT, dry_run=False)
+                first += setup_agent_hooks_impl.configure_codex(False, root=ROOT)
+                first_snapshot = {
+                    path.relative_to(home): path.read_bytes()
+                    for path in home.rglob("*")
+                    if path.is_file()
+                }
+
+                second = ensure_stable_launcher(ROOT, dry_run=False)
+                second += setup_agent_hooks_impl.configure_codex(False, root=ROOT)
+                second_snapshot = {
+                    path.relative_to(home): path.read_bytes()
+                    for path in home.rglob("*")
+                    if path.is_file()
+                }
+
+        self.assertTrue(all(result["status"] in {"installed", "ok"} for result in first))
+        self.assertTrue(all(result["status"] == "ok" for result in second))
+        self.assertEqual(first_snapshot, second_snapshot)
 
     def test_stable_launcher_soft_fails_when_root_pointer_is_missing(self) -> None:
         with tempfile.TemporaryDirectory() as temp_home:
@@ -1129,56 +1186,122 @@ class SetupAgentHooksTests(unittest.TestCase):
             self.assertEqual("ok", status)
             self.assertNotIn(".claude/", (project / ".git" / "info" / "exclude").read_text())
 
-    def test_codex_merge_removes_argument_specific_agentplaybook_prefix_rules(self) -> None:
+    def test_tracked_claude_settings_remain_machine_portable_and_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self._git(project, "init")
+            settings = project / ".claude" / "settings.json"
+            settings.parent.mkdir()
+            settings.write_text(json.dumps({
+                "permissions": {"allow": ["Bash(user-owned-command *)"]}
+            }) + "\n")
+            self._git(project, "add", ".claude/settings.json")
+
+            first = configure_external_project(
+                project,
+                ROOT / "scripts",
+                dry_run=False,
+                spill_available=False,
+            )
+            first_text = settings.read_text()
+            second = configure_external_project(
+                project,
+                ROOT / "scripts",
+                dry_run=False,
+                spill_available=False,
+            )
+
+            self.assertTrue(all(result["status"] in {"installed", "ok"} for result in first))
+            self.assertTrue(all(result["status"] == "ok" for result in second))
+            self.assertEqual(first_text, settings.read_text())
+            self.assertIn("Bash(user-owned-command *)", first_text)
+            self.assertNotIn(str(Path.home()), first_text)
+            self.assertNotIn(str(stable_launcher_path()), first_text)
+
+    def test_codex_merge_removes_only_exact_generated_rules_and_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir) / "default.rules"
+            scripts_dir = ROOT / "scripts"
+            generated_legacy = next(
+                entry
+                for entry in codex_legacy_prefix_rule_entries(scripts_dir)
+                if "workflow_gate_policy.py" in entry and '"python3"' in entry
+            )
+            custom_same_script = (
+                'prefix_rule(pattern=["python3", "scripts/agent-hook.py", '
+                '"custom-action"], decision="allow")'
+            )
+            custom_shell_rule = (
+                'prefix_rule(pattern=["/bin/zsh", "-lc", '
+                '"python3 scripts/agent-hook.py custom-action"], decision="allow")'
+            )
             target.write_text(
                 "\n".join(
                     [
-                        'prefix_rule(pattern=["python3", "$HOME/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-preflight.py", "--project", "$(pwd)"], decision="allow")',
-                        'prefix_rule(pattern=["python3", "scripts/agent-hook.py", "docs-read", "--project", "$(pwd)"], decision="allow")',
-                        'prefix_rule(pattern=["/bin/zsh", "-lc", "python3 \\"$HOME/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-hook.py\\" finish --project \\"$(pwd)\\" --gate \\"verify=done\\""], decision="allow")',
+                        generated_legacy,
+                        custom_same_script,
+                        custom_shell_rule,
+                        'prefix_rule(pattern=["custom-tool"], decision="allow")',
                         "",
                     ]
                 )
             )
 
+            entries = codex_prefix_rule_entries(scripts_dir)
+            cleanup_entries = codex_legacy_prefix_rule_entries(scripts_dir)
             status = merge_codex_prefix_rules(
                 target,
-                codex_prefix_rule_entries(ROOT / "scripts"),
+                entries,
                 dry_run=False,
+                cleanup_entries=cleanup_entries,
             )
 
             text = target.read_text()
+            second_status = merge_codex_prefix_rules(
+                target,
+                entries,
+                dry_run=False,
+                cleanup_entries=cleanup_entries,
+            )
             self.assertEqual("installed", status)
+            self.assertEqual("ok", second_status)
             self.assertIn("# agentplaybook-hooks:begin", text)
             self.assertIn(str(ROOT / "scripts" / "agent-preflight.py"), text)
-            self.assertNotIn("$HOME", text)
-            self.assertNotIn("$(pwd)", text)
-            self.assertNotIn("--project", text)
-            self.assertNotIn("--gate", text)
+            self.assertNotIn(generated_legacy, text)
+            self.assertIn(custom_same_script, text)
+            self.assertIn(custom_shell_rule, text)
+            self.assertIn('prefix_rule(pattern=["custom-tool"], decision="allow")', text)
+            self.assertEqual(text, target.read_text())
 
-    def test_permission_merge_removes_argument_specific_agentplaybook_allow_entries(self) -> None:
+    def test_permission_merge_removes_only_exact_generated_entries_and_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir) / "settings.json"
-            target.write_text(
-                """{
-  "permissions": {
-    "allow": [
-      "command(python3 ~/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-hook.py finish --project \\"$(pwd)\\" --gate \\"verify=done\\")",
-      "command(python3 ~/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-hook\\\\.py review --project \\"$(pwd)\\")",
-      "command(python3 /Users/example/Other/scripts/custom.py --project keep)"
-    ]
-  }
-}
-"""
+            generated_legacy = "command(python3 ~/AgentPlaybook/scripts/agent-hook.py)"
+            custom_same_script = (
+                "command(python3 ~/AgentPlaybook/scripts/agent-hook.py custom-action)"
             )
+            spill_custom = (
+                "command(node ~/Library/Application\\ Support/Spill/adapters/setup/"
+                "spill-token-metering-setup.mjs --label antigravity --stage custom)"
+            )
+            target.write_text(json.dumps({
+                "permissions": {
+                    "allow": [
+                        "$defaults",
+                        generated_legacy,
+                        custom_same_script,
+                        spill_custom,
+                        "command(custom-tool)",
+                    ]
+                }
+            }) + "\n")
             entries = [
                 f"command(python3 {ROOT / 'scripts' / 'agent-hook.py'})",
                 f"command(python3 {ROOT / 'scripts' / 'agent-hook.py'} *)",
             ]
             cleanup_entries = [
-                "command(python3 ~/Documents/KeyFlowVault/AgentPlaybook/scripts/agent-hook.py)",
+                "$defaults",
+                generated_legacy,
             ]
 
             status = merge_permissions_allow(
@@ -1189,12 +1312,22 @@ class SetupAgentHooksTests(unittest.TestCase):
             )
 
             text = target.read_text()
+            allow = json.loads(text)["permissions"]["allow"]
+            second_status = merge_permissions_allow(
+                target,
+                entries,
+                dry_run=False,
+                cleanup_entries=cleanup_entries,
+            )
             self.assertEqual("installed", status)
+            self.assertEqual("ok", second_status)
             self.assertIn(str(ROOT / "scripts" / "agent-hook.py"), text)
-            self.assertIn("Other/scripts/custom.py", text)
-            self.assertNotIn("$(pwd)", text)
-            self.assertNotIn("--gate", text)
-            self.assertNotIn("agent-hook\\.py", text)
+            self.assertNotIn(generated_legacy, text)
+            self.assertNotIn("$defaults", text)
+            self.assertIn(custom_same_script, allow)
+            self.assertIn(spill_custom, allow)
+            self.assertIn("command(custom-tool)", allow)
+            self.assertEqual(text, target.read_text())
 
     def _git(self, project: Path, *args: str) -> None:
         subprocess.run(

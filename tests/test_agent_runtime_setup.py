@@ -56,8 +56,19 @@ from agent_review_hook import review_hook, review_vibeguard_command, workflow_va
 from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
-from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
-from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
+from support.claude_setup import (
+    _CLASSIFICATION_EVIDENCE,
+    _merge_claude_pre_tool_gate,
+    _merge_claude_user_prompt_submit,
+)
+from support.permission_entries import (
+    EXECUTABLE_ENTRYPOINTS,
+    agy_permission_entries,
+    claude_permission_entries,
+    codex_prefix_rule_entries,
+)
+from support.project_type_detection import detect_project_permissions
+from support.spill_permissions import spill_helper_path_variants
 from support.runtime_bridge import (
     CODEX_DISPATCH_BRIDGE_PHRASE,
     RUNTIME_BRIDGE_GRAPH_PHRASES,
@@ -191,6 +202,53 @@ class RuntimeSetupTests(unittest.TestCase):
         self.assertNotIn(old_command, commands)
         self.assertIn(new_command, commands)
 
+    def test_claude_hook_migration_preserves_neighboring_user_hooks(self) -> None:
+        cases = (
+            (
+                "UserPromptSubmit",
+                "SPILL_AI_TOOL=claude agentplaybook-hook workflow route triage "
+                "--request-classified --classification-evidence safe",
+                "SPILL_AI_TOOL=claude agentplaybook-hook workflow route triage "
+                "--request-classified --classification-evidence safe",
+                _merge_claude_user_prompt_submit,
+                ".*",
+            ),
+            (
+                "PreToolUse",
+                "agentplaybook-hook claude-pretool-gate",
+                "agentplaybook-hook claude-pretool-gate",
+                _merge_claude_pre_tool_gate,
+                "Edit|Write|MultiEdit|NotebookEdit",
+            ),
+        )
+        for hook_name, old_command, new_command, merge, matcher in cases:
+            with self.subTest(hook=hook_name), tempfile.TemporaryDirectory() as tmp:
+                target = Path(tmp) / "settings.json"
+                target.write_text(json.dumps({
+                    "hooks": {
+                        hook_name: [
+                            {
+                                "matcher": "old-matcher",
+                                "hooks": [
+                                    {"type": "command", "command": old_command},
+                                    {"type": "command", "command": "user-owned-command"},
+                                ],
+                            }
+                        ]
+                    }
+                }))
+
+                status = merge(target, new_command, dry_run=False)
+                groups = json.loads(target.read_text())["hooks"][hook_name]
+                commands = [hook["command"] for group in groups for hook in group["hooks"]]
+
+                self.assertEqual("installed", status)
+                self.assertIn("user-owned-command", commands)
+                if old_command != new_command:
+                    self.assertNotIn(old_command, commands)
+                self.assertEqual(1, commands.count(new_command))
+                self.assertTrue(any(group.get("matcher") == matcher for group in groups))
+
     def test_preflight_warns_for_claude_hook_without_classification_evidence(self) -> None:
         config = {
             "hooks": {
@@ -216,21 +274,26 @@ class RuntimeSetupTests(unittest.TestCase):
         self.assertTrue(any("--classification-evidence" in warning for warning in warnings))
 
     def test_setup_permissions_include_new_workflow_helpers(self) -> None:
-        entries = "\n".join(codex_prefix_rule_entries(ROOT / "scripts"))
+        entry_list = codex_prefix_rule_entries(ROOT / "scripts")
+        entries = "\n".join(entry_list)
 
-        self.assertIn("workflow_gate_policy.py", entries)
-        self.assertIn("workflow_concern_docs.py", entries)
+        self.assertEqual(18, len(EXECUTABLE_ENTRYPOINTS))
+        self.assertTrue(all((ROOT / "scripts" / name).is_file() for name in EXECUTABLE_ENTRYPOINTS))
+        for name in EXECUTABLE_ENTRYPOINTS:
+            self.assertIn(str(ROOT / "scripts" / name), entries)
+        self.assertNotIn("workflow_gate_policy.py", entries)
+        self.assertNotIn("tests/", entries)
+        self.assertNotIn("support/", entries)
         self.assertNotIn("agent-docs-read.py", entries)
-        self.assertIn("agent_delegation_plan.py", entries)
-        self.assertIn("agent_finish_gate_policy.py", entries)
-        self.assertIn("agent_gate_evidence.py", entries)
-        self.assertIn("agent_finish_common.py", entries)
-        self.assertIn("agent_finish_check_steps.py", entries)
-        self.assertIn("agent_finish_final_checks.py", entries)
         self.assertIn(
             f'prefix_rule(pattern=["python3", "{ROOT / "scripts" / "agent-hook.py"}"], decision="allow")',
             entries,
         )
+        self.assertIn(
+            f'prefix_rule(pattern=["{stable_launcher_path()}"], decision="allow")',
+            entries,
+        )
+        self.assertEqual(55, len(entry_list))
         self.assertNotIn("$HOME", entries)
         self.assertNotIn("${HOME}", entries)
         self.assertNotIn("$AGENTPLAYBOOK_HOME", entries)
@@ -240,38 +303,72 @@ class RuntimeSetupTests(unittest.TestCase):
         self.assertNotIn("--request", entries)
 
     def test_setup_permissions_use_stable_launcher_for_claude(self) -> None:
-        entries = "\n".join(claude_permission_entries(ROOT / "scripts", spill_available=False))
-
-        self.assertIn(str(stable_launcher_path()), entries)
-        self.assertIn("agentplaybook-hook", entries)
-        self.assertNotIn(str(ROOT / "scripts" / "agent-hook.py"), entries)
-        self.assertNotIn("python3 scripts/", entries)
-        self.assertNotIn("python scripts/", entries)
-
-    def test_setup_permissions_use_stable_launcher_for_agy(self) -> None:
-        # Regression: agy_permission_entries used to enumerate every *.py file
-        # under the repo (scripts/ and tests/ alike) with 81 path/env/
-        # interpreter/suffix variants each -- a real ~/.gemini/config/
-        # config.json grew to 17,547 allow entries this way, and each
-        # startup preflight check paid for scanning that bloat. AGY should
-        # follow the same absolute-wrapper-only rule as Claude: only the
-        # stable launcher gets a permission entry.
-        entry_list = agy_permission_entries(ROOT / "scripts", spill_available=False)
+        entry_list = claude_permission_entries(ROOT / "scripts", spill_available=True)
         entries = "\n".join(entry_list)
 
         self.assertIn(str(stable_launcher_path()), entries)
         self.assertIn("agentplaybook-hook", entries)
-        self.assertNotIn(str(ROOT / "scripts" / "agent-hook.py"), entries)
+        self.assertNotIn(str(ROOT / "scripts"), entries)
+        self.assertNotIn("$defaults", entry_list)
         self.assertNotIn("$HOME", entries)
         self.assertNotIn("${HOME}", entries)
-        self.assertNotIn("$AGENTPLAYBOOK_HOME", entries)
         self.assertNotIn("~/", entries)
-        self.assertNotIn("python3 scripts/", entries)
-        self.assertNotIn("python scripts/", entries)
-        # Entry count must not scale with the number of *.py files in the
-        # repo -- that per-file combinatorial growth is exactly what grew a
-        # real AGY config to 17,547 entries.
-        self.assertLess(len(entry_list), 100)
+        self.assertEqual(78, len(entry_list))
+
+    def test_setup_permissions_cover_python_verification_commands(self) -> None:
+        # These are the verification kinds the repair hook accepts, so setup must
+        # install them on every machine instead of relying on hand-added local rules.
+        entries = claude_permission_entries(ROOT / "scripts", spill_available=False)
+
+        for command in ("python3 -m unittest", "python3 -m pytest", "python3 -m py_compile"):
+            self.assertIn(f"Bash({command} *)", entries)
+
+    def test_python_edit_permissions_cover_script_style_repos(self) -> None:
+        # AgentPlaybook ships no packaging manifest, so manifest-only detection
+        # would leave its own 181 *.py files without an edit permission.
+        self.assertIn("Edit(**/*.py)", detect_project_permissions(ROOT))
+
+    def test_python_edit_permissions_skip_non_python_repos(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            (project / "README.md").write_text("no python here\n")
+
+            self.assertEqual([], detect_project_permissions(project))
+
+    def test_packaged_python_repos_keep_toolchain_permissions(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            (project / "pyproject.toml").write_text("[project]\n")
+
+            entries = detect_project_permissions(project)
+
+            self.assertIn("Edit(**/*.py)", entries)
+            self.assertIn("Bash(uv run *)", entries)
+
+    def test_setup_permissions_use_stable_launcher_for_agy(self) -> None:
+        entry_list = agy_permission_entries(ROOT / "scripts", spill_available=True)
+        entries = "\n".join(entry_list)
+
+        self.assertIn(str(stable_launcher_path()), entries)
+        self.assertIn("agentplaybook-hook", entries)
+        self.assertNotIn(str(ROOT / "scripts"), entries)
+        self.assertNotIn("$HOME", entries)
+        self.assertNotIn("${HOME}", entries)
+        self.assertNotIn("~/", entries)
+        self.assertEqual(78, len(entry_list))
+
+    def test_spill_helper_uses_one_absolute_escaped_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_home:
+            variants = spill_helper_path_variants(
+                "spill-token-metering-setup.mjs",
+                home=Path(temp_home),
+            )
+
+        self.assertEqual(1, len(variants))
+        self.assertTrue(Path(temp_home).is_absolute())
+        self.assertIn("Application\\ Support", variants[0])
+        self.assertNotIn("$HOME", variants[0])
+        self.assertNotIn("~/", variants[0])
 
     def test_agy_runtime_bridge_requires_project_discovery_entry(self) -> None:
         required = [

@@ -6,9 +6,34 @@ import json
 from pathlib import Path
 
 from support.setup_config_files import quote
+from support.spill_permissions import obsolete_spill_helper_permission_commands as _obsolete_spill_helper_permission_commands
 from support.spill_permissions import spill_helper_permission_commands as _spill_helper_permission_commands
 from support.stable_launcher import stable_launcher_path
 
+
+# The public Python commands that an agent may invoke directly. This is the
+# union of the stable launcher's script targets and the standalone maintenance
+# CLIs; import-only modules and tests are intentionally absent.
+EXECUTABLE_ENTRYPOINTS = (
+    "agent-entry.py",
+    "agent-finish-check.py",
+    "agent-hook.py",
+    "agent-os-maintenance.py",
+    "agent-os-status.py",
+    "agent-os-watchdog.py",
+    "agent-preflight.py",
+    "agent_execution_capsule.py",
+    "check_android_external_skill_manifest.py",
+    "claude_pretool_gate.py",
+    "migrate_skill_bundles.py",
+    "project-discover.py",
+    "run_smoke_checks.py",
+    "setup-agent-hooks.py",
+    "setup-project-graphify.py",
+    "workflow.py",
+    "workflow_dispatch.py",
+    "workflow_dispatch_launch.py",
+)
 
 # Historical names retained only so setup can remove obsolete permissions.
 # They are not executable entrypoints and must never be offered to a runtime.
@@ -28,17 +53,21 @@ def claude_permission_entries(scripts_dir: Path, *, spill_available: bool = True
 
 
 def claude_legacy_permission_entries(scripts_dir: Path) -> list[str]:
-    entries: list[str] = []
+    entries: list[str] = ["$defaults"]
+    for command in _obsolete_stable_launcher_commands("claude"):
+        _add_permission_command_entries(entries, "Bash", command)
+    for command in _obsolete_spill_helper_permission_commands("claude"):
+        _add_permission_command_entries(entries, "Bash", command)
     for script in _legacy_agentplaybook_python_scripts(scripts_dir):
-        for command in _python_entrypoint_commands(script, "claude", include_legacy=True):
+        for command in _python_entrypoint_commands(script, "claude", scripts_dir.parent, include_legacy=True):
             _add_permission_command_entries(entries, "Bash", command)
     return entries
 
 
 def claude_project_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -> list[str]:
+    # The stable launcher is a user-level machine path. Project settings stay
+    # portable and rely on the user-level Claude permission installed above.
     entries: list[str] = []
-    for command in _stable_launcher_commands("claude", include_spill_env=spill_available):
-        _add_permission_command_entries(entries, "Bash", command)
     for subcommand in ("log", "status", "diff", "show", "branch"):
         entries.append(f"Bash(git -C * {subcommand} *)")
     for command in _common_playbook_tool_commands():
@@ -60,8 +89,12 @@ def agy_permission_entries(scripts_dir: Path, *, spill_available: bool = True) -
 
 def agy_legacy_permission_entries(scripts_dir: Path) -> list[str]:
     entries: list[str] = []
+    for command in _obsolete_stable_launcher_commands("antigravity"):
+        _add_permission_command_entries(entries, "command", command)
+    for command in _obsolete_spill_helper_permission_commands("antigravity"):
+        _add_permission_command_entries(entries, "command", command)
     for script in _legacy_agentplaybook_python_scripts(scripts_dir):
-        for command in _python_entrypoint_commands(script, "antigravity", include_legacy=True):
+        for command in _python_entrypoint_commands(script, "antigravity", scripts_dir.parent, include_legacy=True):
             entries.append(f"command({command})")
             entries.append(f"command({command}:*)")
             entries.append(f"command({command} *)")
@@ -73,7 +106,7 @@ def agy_legacy_permission_entries(scripts_dir: Path) -> list[str]:
 
 
 def codex_prefix_rule_entries(scripts_dir: Path) -> list[str]:
-    entries: list[str] = []
+    entries = [_codex_prefix_rule([str(stable_launcher_path())])]
     for script in _agentplaybook_python_scripts(scripts_dir):
         path = str(script.resolve())
         entries.append(_codex_prefix_rule(["python3", path]))
@@ -82,28 +115,38 @@ def codex_prefix_rule_entries(scripts_dir: Path) -> list[str]:
     return entries
 
 
+def codex_legacy_prefix_rule_entries(scripts_dir: Path) -> list[str]:
+    """Exact legacy rules setup may remove outside its managed block."""
+    entries: list[str] = []
+    for script in _legacy_agentplaybook_python_scripts(scripts_dir):
+        path = str(script.resolve())
+        entries.append(_codex_prefix_rule(["python3", path]))
+        entries.append(_codex_prefix_rule(["python", path]))
+        entries.append(_codex_prefix_rule([path]))
+    return entries
+
+
 def _agentplaybook_python_scripts(scripts_dir: Path) -> list[Path]:
-    project_root = scripts_dir.parent
-    scripts: list[Path] = []
-    exclude_dirs = {".git", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache", ".wikimap"}
-    for path in project_root.rglob("*.py"):
-        if any(part in exclude_dirs for part in path.parts):
-            continue
-        if path.name in STALE_PERMISSION_ENTRYPOINTS:
-            continue
-        scripts.append(path)
-    return sorted(scripts)
+    return [scripts_dir / name for name in EXECUTABLE_ENTRYPOINTS]
 
 
 def _legacy_agentplaybook_python_scripts(scripts_dir: Path) -> list[Path]:
-    current = _agentplaybook_python_scripts(scripts_dir)
+    """All paths emitted by the former recursive permission generator."""
+    project_root = scripts_dir.parent
+    exclude_dirs = {".git", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache", ".wikimap"}
+    scripts: list[Path] = []
+    for path in project_root.rglob("*.py"):
+        if any(part in exclude_dirs for part in path.parts):
+            continue
+        scripts.append(path)
     removed = [scripts_dir / name for name in STALE_PERMISSION_ENTRYPOINTS]
-    return sorted({*current, *removed})
+    return sorted({*scripts, *removed})
 
 
 def _python_entrypoint_commands(
     script: Path,
     tool: str,
+    project_root: Path | None = None,
     *,
     include_legacy: bool = False,
     include_spill_env: bool = True,
@@ -116,7 +159,7 @@ def _python_entrypoint_commands(
             f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
         )
     path_variants = (
-        _legacy_entrypoint_path_variants(script)
+        _legacy_entrypoint_path_variants(script, project_root)
         if include_legacy
         else _entrypoint_path_variants(script)
     )
@@ -124,6 +167,21 @@ def _python_entrypoint_commands(
         for prefix in env_prefixes:
             commands.append(f"{prefix}python3 {path}")
             commands.append(f"{prefix}python {path}")
+            commands.append(f"{prefix}{path}")
+    return commands
+
+
+def _obsolete_stable_launcher_commands(tool: str) -> list[str]:
+    """Launcher commands built from spellings setup no longer emits."""
+    commands: list[str] = []
+    env_prefixes = (
+        "",
+        f"SPILL_AI_TOOL={tool} ",
+        f"SPILL_TOKEN_USAGE_AI_TOOL={tool} ",
+        f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL={tool} ",
+    )
+    for path in _obsolete_stable_launcher_path_variants():
+        for prefix in env_prefixes:
             commands.append(f"{prefix}{path}")
     return commands
 
@@ -144,23 +202,50 @@ def _stable_launcher_commands(tool: str, *, include_spill_env: bool = True) -> l
 
 
 def _stable_launcher_path_variants() -> list[str]:
+    """Canonical launcher path: one install-time resolved absolute form.
+
+    Home-relative spellings are deliberately excluded because the managed
+    runtime contracts use machine-resolved executable paths. Obsolete
+    spellings are removed by the cleanup path, not regenerated here.
+    """
+    return [str(stable_launcher_path())]
+
+
+def _obsolete_stable_launcher_path_variants() -> list[str]:
+    """Home-relative launcher spellings that setup must now remove."""
     raw = str(stable_launcher_path())
-    return _dedupe([raw, quote(raw), _double_quote(raw)])
+    variants = [quote(raw), _double_quote(raw)]
+    home = str(Path.home())
+    if raw.startswith(home + "/"):
+        suffix = raw[len(home) + 1:]
+        variants += [
+            f"~/{suffix}",
+            f"$HOME/{suffix}",
+            _double_quote(f"$HOME/{suffix}"),
+            f"${{HOME}}/{suffix}",
+            _double_quote(f"${{HOME}}/{suffix}"),
+        ]
+    return _dedupe(variants)
 
 
 def _entrypoint_path_variants(script: Path) -> list[str]:
-    raw = str(script.resolve())
-    return [raw, quote(raw), _double_quote(raw)]
+    return [str(script.resolve())]
 
 
-def _legacy_entrypoint_path_variants(script: Path) -> list[str]:
+def _legacy_entrypoint_path_variants(script: Path, project_root: Path | None = None) -> list[str]:
     raw = str(script.resolve())
     variants = [
-        *_entrypoint_path_variants(script),
+        raw,
         quote(raw),
         _double_quote(raw),
         str(Path("scripts") / script.name),
     ]
+    if project_root:
+        try:
+            rel = str(script.resolve().relative_to(project_root.resolve()))
+            variants += [rel, quote(rel), _double_quote(rel)]
+        except ValueError:
+            pass
     home = str(Path.home())
     if raw.startswith(home + "/"):
         suffix = raw[len(home) + 1:]
@@ -230,4 +315,6 @@ def _common_playbook_tool_commands() -> list[str]:
         "python -m unittest",
         "python3 -m unittest discover -s tests",
         "python -m unittest discover -s tests",
+        "python3 -m py_compile",
+        "python -m py_compile",
     ]
