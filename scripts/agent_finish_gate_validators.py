@@ -43,6 +43,11 @@ UNCHANGED_DECISIONS = ("unchanged", "변경 없음")
 
 NO_DOC_DECISIONS = ("not applicable", "no doc", "no docs", "해당 없음")
 
+EXPLICIT_DOCUMENTATION_DECISION_PATTERN = re.compile(
+    r"\b(?:documentation|impact)\s+decision\s*[:=]\s*"
+    r"(updated|created|added|unchanged|not applicable|no docs?|변경 없음|해당 없음)\b"
+)
+
 UNCHANGED_COVERAGE_PHRASES = (
     "already covered", "already covers", "already documented",
     "existing doc", "existing docs", "inspected", "current doc",
@@ -66,14 +71,27 @@ DOC_INSPECTION_PROOF_PHRASES = (
 # doc already reflects the change.
 DOC_COVERAGE_STATE_PHRASES = (
     "already covered", "already covers", "already documented",
+    "already contains", "contains the requested", "contains the required",
     "existing doc", "existing docs", "current doc", "current docs",
     "up to date", "still current", "no edit needed", "covered by",
     "coverage:", "covered_by=", "covers the",
     "remains accurate", "remain accurate", "still accurate",
     "stays accurate", "stays correct", "still correct",
     "accurate as written", "correct as written",
-    "이미", "커버", "반영되어", "반영됨", "현재 문서", "여전히 정확",
+    "이미", "커버", "반영되어", "반영됨", "이미 포함", "현재 문서", "여전히 정확",
 )
+
+
+def _explicit_documentation_decision(text: str) -> str | None:
+    match = EXPLICIT_DOCUMENTATION_DECISION_PATTERN.search(text)
+    return match.group(1) if match else None
+
+
+def documentation_decision_has_any(text: str, phrases: tuple[str, ...]) -> bool:
+    """Prefer a labeled decision over decision-like words in its reason."""
+
+    explicit = _explicit_documentation_decision(text)
+    return has_any(explicit if explicit is not None else text, phrases)
 
 DURABLE_DOC_CHANGE_PATTERNS = (
     r"\b(planning|plan|requirements?|spec|scope|acceptance criteria)\b.*\b(changed?|updated?|new|added|removed|revised?)\b",
@@ -216,8 +234,8 @@ def validate_documentation_impact_evidence(evidence: str) -> list[str]:
             "operator action", "이유", "왜", "변경",
         ),
     )
-    no_doc_decision = has_any(text, NO_DOC_DECISIONS)
-    unchanged_decision = has_any(text, UNCHANGED_DECISIONS)
+    no_doc_decision = documentation_decision_has_any(text, NO_DOC_DECISIONS)
+    unchanged_decision = documentation_decision_has_any(text, UNCHANGED_DECISIONS)
     if no_doc_decision and _has_durable_doc_change_signal(text):
         return [
             "documentation impact evidence cannot use not-applicable/no-docs "

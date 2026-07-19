@@ -984,6 +984,36 @@ class FinishGatePolicyTests(unittest.TestCase):
 
         self.assertEqual([], failures)
 
+    def test_documentation_impact_allows_unchanged_when_existing_doc_contains_change(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation impact decision: artifact: "
+                    "drafts/article.md; unchanged; opened and reviewed the exact "
+                    "draft path, which already contains the requested wording and "
+                    "acceptance coverage"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_documentation_impact_uses_explicit_updated_decision_before_reason_text(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "pre-edit documentation artifact selection: "
+                    "workflows/skills/documentation-update/references/current-guidance.md; "
+                    "impact decision: updated; reason: clarified the unchanged-evidence "
+                    "contract"
+                )
+            },
+            [DOCUMENTATION_IMPACT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
     def test_documentation_impact_rejects_unchanged_without_inspection_proof(self) -> None:
         failures = validate_gate_evidence(
             {
@@ -1023,6 +1053,20 @@ class FinishGatePolicyTests(unittest.TestCase):
         )
 
         self.assertTrue(any("cannot use not-applicable/no-docs" in failure for failure in failures))
+
+    def test_documentation_uses_explicit_updated_decision_before_reason_text(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_GATE: (
+                    "documentation decision: updated; source-of-truth target: "
+                    "workflows/skills/documentation-update/references/current-guidance.md; "
+                    "reason: documented the unchanged-evidence contract"
+                )
+            },
+            [DOCUMENTATION_GATE],
+        )
+
+        self.assertEqual([], failures)
 
         failures = validate_gate_evidence(
             {

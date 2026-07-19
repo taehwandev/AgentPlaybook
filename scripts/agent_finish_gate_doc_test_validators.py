@@ -6,8 +6,10 @@ from agent_finish_gate_skip_policy import _evidence_records_skip_reason
 from agent_finish_gate_validators import (
     NO_DOC_DECISIONS,
     UNCHANGED_DECISIONS,
+    _explicit_documentation_decision,
     _has_durable_doc_change_signal,
     _unchanged_evidence_is_grounded,
+    documentation_decision_has_any,
     has_any,
 )
 
@@ -102,7 +104,7 @@ def validate_documentation(evidence: str) -> list[str]:
             "문서 영향",
         )
     )
-    if has_any(text, NO_DOC_DECISIONS) and _has_durable_doc_change_signal(text):
+    if documentation_decision_has_any(text, NO_DOC_DECISIONS) and _has_durable_doc_change_signal(text):
         return [
             "documentation evidence cannot use not-applicable/no-docs when it "
             "also names a durable planning, requirements, acceptance, workflow "
@@ -111,7 +113,7 @@ def validate_documentation(evidence: str) -> list[str]:
         ]
     if _is_documentation_skip_decision(text) and not has_any(text, DOC_SKIP_APPROVAL_PHRASES):
         return [DOCUMENTATION_SKIP_NEEDS_APPROVAL]
-    if has_any(text, UNCHANGED_DECISIONS) and not _unchanged_evidence_is_grounded(text):
+    if documentation_decision_has_any(text, UNCHANGED_DECISIONS) and not _unchanged_evidence_is_grounded(text):
         return [
             "documentation evidence can use unchanged only when it names the "
             "existing doc path it opened/inspected and states why that "
@@ -131,6 +133,9 @@ def validate_documentation(evidence: str) -> list[str]:
 def _is_documentation_skip_decision(text: str) -> bool:
     """True when the documentation evidence declares a skip: an explicit
     not-applicable/no-docs decision or any recorded skip/생략 reason."""
+    explicit = _explicit_documentation_decision(text)
+    if explicit is not None:
+        return has_any(explicit, NO_DOC_DECISIONS)
     return has_any(text, NO_DOC_DECISIONS) or _evidence_records_skip_reason(text)
 
 

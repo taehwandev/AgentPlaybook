@@ -133,7 +133,12 @@ Hard rules the finish-check enforces:
 - `unchanged` is valid only when the evidence names the concrete existing doc
   path (for example `app/README.md`, not just a doc class), proves that doc was
   actually opened/inspected/read this task, and states why the already-read doc
-  covers the change. A bare coverage claim, or one without a named path, fails.
+  covers or already contains the change. The validator accepts equivalent
+  coverage wording; it must not require one exact English phrase. A bare
+  coverage claim, or one without a named path, fails.
+- When structured evidence includes `documentation decision:` or
+  `impact decision:`, that labeled value is authoritative. Decision-like words
+  in the reason explain the change and must not override the recorded decision.
 - Skipping documentation (`not applicable`, `no docs`, or `skipped`) is never
   self-approved and a no-durable-doc reason alone is not sufficient. When you
   believe docs should genuinely not be written, ask the user
