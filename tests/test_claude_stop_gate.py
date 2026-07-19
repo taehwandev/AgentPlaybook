@@ -46,8 +46,8 @@ def _blocked(out: str) -> bool:
 
 def _opt_in_project(base: Path) -> Path:
     project = base / "proj"
-    (project / ".agentplaybook" / gate.SESSION_MARKER_DIR).mkdir(parents=True)
-    (project / "AGENTS.md").write_text("uses agentplaybook\n", encoding="utf-8")
+    (project / ".tao" / gate.SESSION_MARKER_DIR).mkdir(parents=True)
+    (project / "AGENTS.md").write_text("uses tao\n", encoding="utf-8")
     return project
 
 
@@ -65,7 +65,7 @@ def _write_finish(project: Path, session_id: str | None = None) -> None:
     payload: dict = {}
     if session_id is not None:
         payload["runtime_session"] = {"runtime": "claude", "session_id": session_id}
-    (project / ".agentplaybook" / "finish.json").write_text(
+    (project / ".tao" / "finish.json").write_text(
         json.dumps(payload), encoding="utf-8"
     )
 
@@ -160,7 +160,7 @@ class ClaudeStopGateTests(unittest.TestCase):
 
             finish_check.record_session_finished(project, {})
 
-            marker_dir = project / ".agentplaybook" / gate.SESSION_MARKER_DIR
+            marker_dir = project / ".tao" / gate.SESSION_MARKER_DIR
             self.assertEqual([], list(marker_dir.iterdir()))
 
     def test_second_stop_without_new_edits_is_not_blocked_again(self) -> None:
@@ -190,6 +190,21 @@ class ClaudeStopGateTests(unittest.TestCase):
             self.assertEqual("", quiet)
             self.assertTrue(_blocked(rearmed))
 
+    def test_stop_checks_every_project_the_session_edited(self) -> None:
+        # Regression: the Stop gate only looked at the cwd project. With a
+        # finish there, it allowed a stop while another edited project had none.
+        with tempfile.TemporaryDirectory() as tmp:
+            here = _opt_in_project(Path(tmp) / "here")
+            there = _opt_in_project(Path(tmp) / "there")
+            _record_edit(here, "s1")
+            gate.finished_marker(here, "s1").write_text("", encoding="utf-8")
+            _record_edit(there, "s1")
+
+            with patch.object(gate, "session_projects", lambda sid, cwd_root: [here, there]):
+                _, out = _decide(_payload(here, "s1"))
+
+        self.assertTrue(_blocked(out))
+
     def test_stop_hook_active_never_blocks_again(self) -> None:
         # The gate already blocked once and the model continued; blocking a
         # second time would trap the session in a loop.
@@ -207,13 +222,13 @@ class ClaudeStopGateTests(unittest.TestCase):
             project = _opt_in_project(Path(tmp))
             _record_edit(project, "s1")
 
-            with patch.dict("os.environ", {"AGENTPLAYBOOK_CLAUDE_STOP_GATE": "0"}):
+            with patch.dict("os.environ", {"TAO_CLAUDE_STOP_GATE": "0"}):
                 code, out = _decide(_payload(project, "s1"))
 
         self.assertEqual(0, code)
         self.assertEqual("", out)
 
-    def test_non_agentplaybook_project_is_never_blocked(self) -> None:
+    def test_non_tao_project_is_never_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             code, out = _decide({"session_id": "s1", "cwd": tmp})
 
@@ -235,7 +250,7 @@ class ClaudeStopGateTests(unittest.TestCase):
 
         reason = json.loads(out)["reason"]
         self.assertIn(str(gate.stable_launcher_path()), reason)
-        self.assertNotIn("~/.agentplaybook", reason)
+        self.assertNotIn("~/.tao", reason)
 
     def test_setup_installs_stop_gate_without_removing_user_hooks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -244,7 +259,7 @@ class ClaudeStopGateTests(unittest.TestCase):
             target.write_text(json.dumps({
                 "hooks": {"Stop": [{"matcher": "", "hooks": [user_hook]}]}
             }))
-            command = "AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 /abs/agentplaybook-hook claude-stop-gate"
+            command = "TAO_HOOK_SOFT_FAIL=1 /abs/tao-hook claude-stop-gate"
 
             status = _merge_claude_stop_gate(target, command, dry_run=False)
             commands = [
@@ -261,7 +276,7 @@ class ClaudeStopGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "settings.json"
             target.write_text(json.dumps({"hooks": {}}))
-            command = "AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 /abs/agentplaybook-hook claude-stop-gate"
+            command = "TAO_HOOK_SOFT_FAIL=1 /abs/tao-hook claude-stop-gate"
 
             first = _merge_claude_stop_gate(target, command, dry_run=False)
             after_first = target.read_text()

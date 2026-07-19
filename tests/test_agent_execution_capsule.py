@@ -66,7 +66,7 @@ class ExecutionCapsuleTests(unittest.TestCase):
             "reference_docs": [],
             "gates": ["verify"],
         }
-        self.evidence_path = self.project / ".agentplaybook" / "preflight.json"
+        self.evidence_path = self.project / ".tao" / "preflight.json"
         self.evidence_path.parent.mkdir(parents=True, exist_ok=True)
         self.evidence_path.write_text(
             json.dumps(
@@ -834,7 +834,7 @@ class ExecutionCapsuleTests(unittest.TestCase):
         alias_root = public_var / physical_root.relative_to(private_var)
         alias_project = alias_root / "project"
         alias_rules = alias_root / "rules"
-        alias_evidence = alias_project / ".agentplaybook" / "preflight.json"
+        alias_evidence = alias_project / ".tao" / "preflight.json"
 
         capsule = refresh_execution_capsule(
             alias_project,
@@ -919,7 +919,7 @@ class ExecutionCapsuleTests(unittest.TestCase):
         self.assertRegex(fingerprint, r"^[0-9a-f]{64}$")
 
     def test_reusable_worker_environment_cannot_write_parent_gate_evidence(self) -> None:
-        with patch.dict("os.environ", {"AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY": "1"}):
+        with patch.dict("os.environ", {"TAO_PARENT_EVIDENCE_READONLY": "1"}):
             with self.assertRaisesRegex(PermissionError, "cannot write parent"):
                 from agent_gate_evidence import record_gate_evidence
 
@@ -1093,14 +1093,14 @@ class ExecutionCapsuleTests(unittest.TestCase):
 
     def _init_repository(self, path: Path, files: dict[str, str]) -> None:
         path.mkdir(parents=True)
-        (path / ".gitignore").write_text(".agentplaybook/\n", encoding="utf-8")
+        (path / ".gitignore").write_text(".tao/\n", encoding="utf-8")
         for relative, content in files.items():
             destination = path / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_text(content, encoding="utf-8")
         self._git(path, "init", "-q")
         self._git(path, "config", "user.email", "tests@example.invalid")
-        self._git(path, "config", "user.name", "AgentPlaybook Tests")
+        self._git(path, "config", "user.name", "Tao Agent OS Tests")
         self._git(path, "add", "-A")
         self._git(path, "commit", "-qm", "initial")
 

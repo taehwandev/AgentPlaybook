@@ -1,4 +1,4 @@
-"""Persistence and deduplication for content-free AgentPlaybook lessons."""
+"""Persistence and deduplication for content-free Tao Agent OS lessons."""
 
 from __future__ import annotations
 

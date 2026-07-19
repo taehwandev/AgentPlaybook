@@ -1,4 +1,4 @@
-"""Bounded local retention policy for AgentPlaybook runtime state."""
+"""Bounded local retention policy for Tao Agent OS runtime state."""
 
 from __future__ import annotations
 

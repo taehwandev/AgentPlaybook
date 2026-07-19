@@ -6,7 +6,7 @@ type: ai-generated
 
 # API Contract Compatibility
 
-Use when routed to `common/skills/api-contract-compatibility/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/api-contract-compatibility/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

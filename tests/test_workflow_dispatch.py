@@ -148,13 +148,13 @@ def route_doc(path: str) -> str:
 
 class WorkflowDispatchTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_dispatch_profiles_match_stage_policy(self) -> None:
         expected = {
@@ -331,7 +331,7 @@ class WorkflowDispatchTests(unittest.TestCase):
             self.assertEqual(1, len(received))
             self.assertEqual("codex", received[0][0])
             self.assertIn("worker-reservation-token", received[0][-1])
-            scheduler = json.loads((Path(temp_dir) / ".agentplaybook" / "scheduler.json").read_text())
+            scheduler = json.loads((Path(temp_dir) / ".tao" / "scheduler.json").read_text())
             self.assertEqual("failed", scheduler["tasks"][-1]["state"])
 
     def test_dispatch_revalidates_capsule_and_mints_worker_token_at_launch(self) -> None:
@@ -449,10 +449,10 @@ class WorkflowDispatchTests(unittest.TestCase):
                     self.assertEqual(0, execute_dispatch_manifest(manifest))
 
         environment = launch.call_args.kwargs["env"]
-        self.assertTrue(environment["AGENTPLAYBOOK_WORKER_EVIDENCE"].endswith("preflight.json"))
-        self.assertRegex(environment["AGENTPLAYBOOK_WORKER_RESERVATION_TOKEN"], r"^[0-9a-f]{32}$")
-        self.assertEqual("worker-evidence-and-state", environment["AGENTPLAYBOOK_CAPABILITY_ENFORCEMENT"])
-        self.assertNotIn("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY", environment)
+        self.assertTrue(environment["TAO_WORKER_EVIDENCE"].endswith("preflight.json"))
+        self.assertRegex(environment["TAO_WORKER_RESERVATION_TOKEN"], r"^[0-9a-f]{32}$")
+        self.assertEqual("worker-evidence-and-state", environment["TAO_CAPABILITY_ENFORCEMENT"])
+        self.assertNotIn("TAO_PARENT_EVIDENCE_READONLY", environment)
 
     def test_worker_environment_exports_partial_result_resume_token(self) -> None:
         from workflow_dispatch_launch import worker_environment
@@ -464,11 +464,11 @@ class WorkflowDispatchTests(unittest.TestCase):
             },
             {"partial_result_id": "result-1"},
         )
-        self.assertEqual("result-1", environment["AGENTPLAYBOOK_RESUME_RESULT_ID"])
+        self.assertEqual("result-1", environment["TAO_RESUME_RESULT_ID"])
         self.assertEqual("task-1", worker_environment({
             "worker_preflight_evidence": "/tmp/preflight.json",
             "worker_reservation_token": "a" * 32,
-        }, {"task_id": "task-1"})["AGENTPLAYBOOK_TASK_ID"])
+        }, {"task_id": "task-1"})["TAO_TASK_ID"])
 
     def test_dispatch_manifest_carries_explicit_partial_result_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -599,7 +599,7 @@ class WorkflowDispatchTests(unittest.TestCase):
 
             self.assertEqual("inline", manifest["execution_mode"])
             self.assertFalse(manifest["handoff_state"]["worker_evidence_reserved"])
-            self.assertFalse((project / ".agentplaybook" / "workers").exists())
+            self.assertFalse((project / ".tao" / "workers").exists())
 
     def test_dispatch_requires_child_when_isolation_is_explicit(self) -> None:
         manifest = build_dispatch_manifest(
@@ -729,7 +729,7 @@ class WorkflowDispatchTests(unittest.TestCase):
         request = "기획변경 때 문서 정리가 누락되는 걸 막아줘"
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence = project / ".tao" / "preflight.json"
             evidence.parent.mkdir(parents=True)
             parent_route = {
                 "command": "feature",
@@ -780,7 +780,7 @@ class WorkflowDispatchTests(unittest.TestCase):
     def test_dispatch_rejects_stale_same_command_parent_request_context(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence = project / ".tao" / "preflight.json"
             evidence.parent.mkdir(parents=True)
             evidence.write_text(
                 json.dumps(
@@ -831,7 +831,7 @@ class WorkflowDispatchTests(unittest.TestCase):
         request = "기획변경 때 문서 정리가 누락되는 걸 막아줘"
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence = project / ".tao" / "preflight.json"
             evidence.parent.mkdir(parents=True)
             evidence.write_text(
                 json.dumps(
@@ -891,7 +891,7 @@ class WorkflowDispatchTests(unittest.TestCase):
             project = root / "current"
             foreign = root / "foreign"
             project.mkdir()
-            evidence = foreign / ".agentplaybook" / "preflight.json"
+            evidence = foreign / ".tao" / "preflight.json"
             evidence.parent.mkdir(parents=True)
             evidence.write_text(
                 json.dumps(
@@ -937,7 +937,7 @@ class WorkflowDispatchTests(unittest.TestCase):
                 "foreign-parent-only.md", build.call_args.kwargs["route"]["required_docs"]
             )
             self.assertEqual(
-                project.resolve() / ".agentplaybook" / "preflight.json",
+                project.resolve() / ".tao" / "preflight.json",
                 build.call_args.kwargs["evidence_path"],
             )
 
@@ -946,7 +946,7 @@ class WorkflowDispatchTests(unittest.TestCase):
         classification = "answered direct question; separate actionable clear-scoped workflow setup"
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            evidence = project / ".agentplaybook" / "preflight.json"
+            evidence = project / ".tao" / "preflight.json"
             evidence.parent.mkdir(parents=True)
             parent_route = {
                 "command": "workflow-setup",
@@ -1029,7 +1029,7 @@ class WorkflowDispatchTests(unittest.TestCase):
     def test_dispatch_invalid_capsule_uses_isolated_worker_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            worker_evidence = project / ".agentplaybook" / "workers" / "test-worker" / "preflight.json"
+            worker_evidence = project / ".tao" / "workers" / "test-worker" / "preflight.json"
             capsule_state = {
                 "path": "/tmp/execution-capsule.json",
                 "reusable": False,
@@ -1061,12 +1061,12 @@ class WorkflowDispatchTests(unittest.TestCase):
             self.assertTrue(worker_reservation_matches(worker_evidence.parent, token))
 
     def test_dispatch_rejects_worker_evidence_outside_isolated_root_or_parent_collision(self) -> None:
-        parent = ROOT / ".agentplaybook" / "preflight.json"
-        outside = ROOT / ".agentplaybook" / "not-isolated.json"
-        parent_in_worker_root = ROOT / ".agentplaybook" / "workers" / "parent" / "preflight.json"
+        parent = ROOT / ".tao" / "preflight.json"
+        outside = ROOT / ".tao" / "not-isolated.json"
+        parent_in_worker_root = ROOT / ".tao" / "workers" / "parent" / "preflight.json"
         for parent_path, worker_path, expected in (
-            (parent, parent, "under <project>/.agentplaybook/workers"),
-            (parent, outside, "under <project>/.agentplaybook/workers"),
+            (parent, parent, "under <project>/.tao/workers"),
+            (parent, outside, "under <project>/.tao/workers"),
             (parent_in_worker_root, parent_in_worker_root, "must not overlap parent evidence"),
         ):
             with self.subTest(worker_path=worker_path):
@@ -1084,9 +1084,9 @@ class WorkflowDispatchTests(unittest.TestCase):
             root = Path(temp_dir)
             project = root / "project"
             outside = root / "outside"
-            (project / ".agentplaybook").mkdir(parents=True)
+            (project / ".tao").mkdir(parents=True)
             outside.mkdir()
-            (project / ".agentplaybook" / "workers").symlink_to(
+            (project / ".tao" / "workers").symlink_to(
                 outside,
                 target_is_directory=True,
             )
@@ -1105,7 +1105,7 @@ class WorkflowDispatchTests(unittest.TestCase):
             rules = root / "rules"
             project.mkdir()
             rules.mkdir()
-            evidence = project / ".agentplaybook" / "parent-a.json"
+            evidence = project / ".tao" / "parent-a.json"
             manifest = build_dispatch_manifest(
                 "feature",
                 "기획변경 때 문서 정리가 누락되는 걸 막아줘",
@@ -1119,7 +1119,7 @@ class WorkflowDispatchTests(unittest.TestCase):
         self.assertEqual(str(rules), handoff["rules"])
         self.assertEqual(str(evidence), handoff["preflight_evidence"])
         self.assertTrue(str(handoff["gate_ledger"]).endswith("parent-a-gate-evidence.json"))
-        self.assertIn(f"AgentPlaybook rules root: {rules}", prompt)
+        self.assertIn(f"Tao Agent OS rules root: {rules}", prompt)
 
     def test_dispatch_spill_label_contract_is_preserved(self) -> None:
         self.assertEqual(("workflow_setup", "plan"), SPILL_ACTION_LABELS["dispatch"])

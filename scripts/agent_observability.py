@@ -1,4 +1,4 @@
-"""Read-only content-free status API for the AgentPlaybook OS layers."""
+"""Read-only content-free status API for the Tao Agent OS layers."""
 
 from __future__ import annotations
 

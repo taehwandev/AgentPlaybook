@@ -25,7 +25,7 @@ def resolve_verification_target(
     raw = Path(target.strip()).expanduser()
     candidates = [raw] if raw.is_absolute() else [project / raw, rules / raw]
     # Prefer rules when both names resolve to one checkout. Skill maintenance
-    # is specifically allowed to change canonical playbook files.
+    # is specifically allowed to change canonical Tao Agent OS files.
     roots = (("rules", rules.resolve()), ("project", project.resolve()))
     for candidate in candidates:
         try:

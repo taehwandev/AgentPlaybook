@@ -1,4 +1,4 @@
-"""Build the local AgentPlaybook document graph."""
+"""Build the local Tao Agent OS document graph."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def _markdown_docs(root: Path) -> set[str]:
     docs: set[str] = set()
     for path in root.rglob("*.md"):
         rel = path.relative_to(root).as_posix()
-        if rel.startswith(".agentplaybook/") or "/.agentplaybook/" in rel:
+        if rel.startswith(".tao/") or "/.tao/" in rel:
             continue
         docs.add(rel)
     return docs

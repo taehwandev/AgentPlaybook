@@ -30,7 +30,7 @@ REQUIRED_SPILL_ACTION_LABELS = {"classify", "dispatch", "list", "query", "valida
 def spill_tool_label(env: dict[str, str] | None = None) -> str:
     values = env if env is not None else os.environ
 
-    explicit_tool = _normal_tool_label(values.get("AGENTPLAYBOOK_AI_TOOL", ""))
+    explicit_tool = _normal_tool_label(values.get("TAO_AI_TOOL", ""))
     if explicit_tool:
         return explicit_tool
 

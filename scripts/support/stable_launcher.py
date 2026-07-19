@@ -1,4 +1,4 @@
-"""Install a stable AgentPlaybook launcher for user-level runtime hooks."""
+"""Install a stable Tao Agent OS launcher for user-level runtime hooks."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ import os
 from pathlib import Path
 
 
-LAUNCHER_NAME = "agentplaybook-hook"
-STATE_DIR_NAME = ".agentplaybook"
-ROOT_POINTER_NAME = "agentplaybook-root"
+LAUNCHER_NAME = "tao-hook"
+STATE_DIR_NAME = ".tao"
+ROOT_POINTER_NAME = "tao-root"
 
 
 def stable_launcher_path() -> Path:
@@ -36,13 +36,13 @@ def ensure_stable_launcher(root: Path, dry_run: bool) -> list[dict]:
     if dry_run:
         return [
             {
-                "tool": "agentplaybook",
+                "tool": "tao",
                 "hook": "stable_launcher",
                 "status": "ok" if launcher_ok else "missing",
                 "path": str(launcher_path),
             },
             {
-                "tool": "agentplaybook",
+                "tool": "tao",
                 "hook": "root_pointer",
                 "status": "ok" if pointer_ok else "missing",
                 "path": str(pointer_path),
@@ -62,8 +62,8 @@ def ensure_stable_launcher(root: Path, dry_run: bool) -> list[dict]:
         pointer_status = "installed"
 
     return [
-        {"tool": "agentplaybook", "hook": "stable_launcher", "status": launcher_status, "path": str(launcher_path)},
-        {"tool": "agentplaybook", "hook": "root_pointer", "status": pointer_status, "path": str(pointer_path)},
+        {"tool": "tao", "hook": "stable_launcher", "status": launcher_status, "path": str(launcher_path)},
+        {"tool": "tao", "hook": "root_pointer", "status": pointer_status, "path": str(pointer_path)},
     ]
 
 
@@ -73,12 +73,12 @@ def stable_launcher_issue(root: Path) -> str:
     pointer_path = stable_root_pointer_path()
     if not launcher_path.exists() or _read_text(launcher_path) != _launcher_script_text() or not _is_executable(launcher_path):
         return (
-            "AgentPlaybook stable launcher is missing or stale. "
+            "Tao Agent OS stable launcher is missing or stale. "
             f"Run: python3 {root / 'scripts' / 'setup-agent-hooks.py'}"
         )
     if _read_text(pointer_path) != f"{root.resolve()}\n":
         return (
-            "AgentPlaybook root pointer is missing or stale. "
+            "Tao Agent OS root pointer is missing or stale. "
             f"Run: python3 {root / 'scripts' / 'setup-agent-hooks.py'}"
         )
     return ""
@@ -102,8 +102,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-STATE_DIR_NAME = ".agentplaybook"
-ROOT_POINTER_NAME = "agentplaybook-root"
+STATE_DIR_NAME = ".tao"
+ROOT_POINTER_NAME = "tao-root"
 REQUIRED_MARKERS = ("AGENTS.md", "index.md", "scripts/workflow.py")
 SCRIPT_ALIASES = {
     "workflow": "workflow.py",
@@ -140,11 +140,11 @@ HOOK_ALIASES = {
 # main()) entirely -- it is a lower-level fallback for human debugging only,
 # never the normal agent path. Require an explicit opt-in so an agent cannot
 # casually use it to dodge the wrapped `finish` hook's guardrails.
-DIRECT_FINISH_CHECK_ENV = "AGENTPLAYBOOK_ALLOW_DIRECT_FINISH_CHECK"
+DIRECT_FINISH_CHECK_ENV = "TAO_ALLOW_DIRECT_FINISH_CHECK"
 
 def main():
     if len(sys.argv) < 2:
-        return _soft_fail("missing AgentPlaybook script alias")
+        return _soft_fail("missing Tao Agent OS script alias")
 
     script_alias = sys.argv[1]
     passthrough_args = list(sys.argv[2:])
@@ -154,36 +154,36 @@ def main():
     elif script_alias == "agent-finish-check" and os.environ.get(DIRECT_FINISH_CHECK_ENV) != "1":
         return _soft_fail(
             "direct agent-finish-check is a human-debugging fallback and skips the "
-            "finish hook's repair-cycle checks; run 'agentplaybook-hook finish' instead, "
+            "finish hook's repair-cycle checks; run 'tao-hook finish' instead, "
             f"or set {DIRECT_FINISH_CHECK_ENV}=1 to use it directly on purpose"
         )
     else:
         script_name = SCRIPT_ALIASES.get(script_alias)
     if not script_name:
-        return _soft_fail(f"unsupported AgentPlaybook script alias: {script_alias}")
+        return _soft_fail(f"unsupported Tao Agent OS script alias: {script_alias}")
 
     root = _find_root()
     if root is None:
         return _soft_fail(
-            "AgentPlaybook root is not configured. Run setup-agent-hooks.py from the current AgentPlaybook checkout."
+            "Tao Agent OS root is not configured. Run setup-agent-hooks.py from the current Tao Agent OS checkout."
         )
 
     script = root / "scripts" / script_name
     if not script.is_file():
         return _soft_fail(
-            "AgentPlaybook root pointer is stale. Run setup-agent-hooks.py from the current AgentPlaybook checkout."
+            "Tao Agent OS root pointer is stale. Run setup-agent-hooks.py from the current Tao Agent OS checkout."
         )
 
     env = os.environ.copy()
-    env.setdefault("AGENTPLAYBOOK_HOME", str(root))
+    env.setdefault("TAO_HOME", str(root))
     result = subprocess.run([sys.executable, str(script), *passthrough_args], env=env, check=False)
-    if result.returncode and env.get("AGENTPLAYBOOK_HOOK_SOFT_FAIL") == "1":
+    if result.returncode and env.get("TAO_HOOK_SOFT_FAIL") == "1":
         return 0
     return result.returncode
 
 def _find_root():
     candidates: list[Path] = []
-    env_root = os.environ.get("AGENTPLAYBOOK_HOME", "").strip()
+    env_root = os.environ.get("TAO_HOME", "").strip()
     if env_root:
         candidates.append(Path(env_root).expanduser())
 
@@ -200,11 +200,11 @@ def _find_root():
     candidates.extend(cwd.parents)
     candidates.extend(
         [
-            Path.home() / ".agent-playbook",
-            Path.home() / "AgentPlaybook",
-            Path.home() / "git" / "AgentPlaybook",
-            Path.home() / "Documents" / "KeyFlowVault" / "AgentPlaybook",
-            Path.home() / "GitHub" / "AgentPlaybook",
+            Path.home() / ".tao-agent-os",
+            Path.home() / "tao-agent-os",
+            Path.home() / "git" / "tao-agent-os",
+            Path.home() / "Documents" / "KeyFlowVault" / "tao-agent-os",
+            Path.home() / "GitHub" / "tao-agent-os",
         ]
     )
 
@@ -217,16 +217,16 @@ def _find_root():
         if resolved in seen:
             continue
         seen.add(resolved)
-        if _is_agentplaybook_root(resolved):
+        if _is_tao_root(resolved):
             return resolved
     return None
 
-def _is_agentplaybook_root(path):
+def _is_tao_root(path):
     return all((path / marker).exists() for marker in REQUIRED_MARKERS)
 
 def _soft_fail(message):
-    print(f"AgentPlaybook hook skipped: {message}", file=sys.stderr)
-    if os.environ.get("AGENTPLAYBOOK_HOOK_SOFT_FAIL") == "1":
+    print(f"Tao Agent OS hook skipped: {message}", file=sys.stderr)
+    if os.environ.get("TAO_HOOK_SOFT_FAIL") == "1":
         return 0
     return 1
 

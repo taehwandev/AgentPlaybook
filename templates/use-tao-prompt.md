@@ -1,19 +1,19 @@
 ---
-keyflow_id: sys_use_agentplaybook_prompt_template
+keyflow_id: sys_use_tao_prompt_template
 status: review
 type: human-reviewed-needed
 ---
 
-# Use AgentPlaybook Prompt
+# Use Tao Agent OS Prompt
 
 Paste this into Claude, Gemini/Antigravity/AGY, Codex, or another AI coding
-agent when the target repo is not yet wired to AgentPlaybook or when you want a
-one-shot task to follow AgentPlaybook explicitly.
+agent when the target repo is not yet wired to Tao Agent OS or when you want a
+one-shot task to follow Tao Agent OS explicitly.
 
 Replace the placeholders before sending.
 
 ```text
-Use AgentPlaybook for this task.
+Use Tao Agent OS for this task.
 
 Target repo:
 <TARGET_REPO_OR_CURRENT_DIRECTORY>
@@ -21,8 +21,8 @@ Target repo:
 Task:
 <TASK>
 
-AgentPlaybook root:
-<AGENTPLAYBOOK_ROOT>
+Tao Agent OS root:
+<TAO_ROOT>
 
 VibeGuard human docs:
 https://vibeguard.thdev.app/
@@ -34,7 +34,7 @@ Rules:
    override files.
    If the target repo is not explicit or the runtime current directory is
    outside the target, run:
-   <AGENTPLAYBOOK_LAUNCHER> agent-entry --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
+   <TAO_LAUNCHER> agent-entry --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
    Continue only when it returns `selected`; ask me to choose when it returns
    `ambiguous` or `not_found`.
    Do not rely on implicit runtime discovery. If you are Codex-style, explicitly
@@ -50,29 +50,29 @@ Rules:
    If a response exposed those background details, do not finish with an
    apology-only message. Repair the action path or stop with the specific
    blocker.
-2. Do not assume this runtime automatically loaded AgentPlaybook. Explicitly
-   read <AGENTPLAYBOOK_ROOT>/AGENTS.md. Let the start hook route the smallest
-   required document set; open <AGENTPLAYBOOK_ROOT>/index.md only for a simple
+2. Do not assume this runtime automatically loaded Tao Agent OS. Explicitly
+   read <TAO_ROOT>/AGENTS.md. Let the start hook route the smallest
+   required document set; open <TAO_ROOT>/index.md only for a simple
    answer-only lookup or an explicitly accepted routing fallback.
-3. Do not copy the whole AgentPlaybook library into this repo. Link only the
+3. Do not copy the whole Tao Agent OS library into this repo. Link only the
    relevant root, index, workflow script, and selected cards. If you edit
    committed repo-local instruction files, use a portable root reference such
-   as ${AGENTPLAYBOOK_HOME} or a repo-relative pinned path like
-   .agents/AgentPlaybook; do not commit a personal absolute path. Full local
+   as ${TAO_HOME} or a repo-relative pinned path like
+   .agents/tao-agent-os; do not commit a personal absolute path. Full local
    paths are acceptable only in this one-shot prompt, shell env setup, or
    uncommitted user-level runtime bridges.
 4. VibeGuard is required. Before editing documentation, code, config,
    dependency, data, deployment, or credential surfaces, inspect existing
    VibeGuard files and agent instructions. If they already exist, ask the
    application drill before running setup or update. Then apply the selected
-   VibeGuard mode with the published package command and <AGENTPLAYBOOK_ROOT>
+   VibeGuard mode with the published package command and <TAO_ROOT>
    as the rule source. The VibeGuard site is a human reference and does not
    need to be fetched by the agent. If the VibeGuard command cannot run, stop
    and report the blocker. Use VibeGuard update only when I explicitly choose
    to refresh an existing managed block.
 5. For multi-step tasks, run this once before selecting task documents,
    editing, reviewing, committing, or reporting completion:
-   <AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
+   <TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
    It performs workflow routing/preflight and returns the command manifest. Do
    not separately repeat workflow list, classify, route, or preflight.
    Do not wait for me to name document keywords. Let routing/search infer the
@@ -90,7 +90,7 @@ Rules:
    serial reason. Use Codex native workers, Claude Agent/Task workers, or the
    Gemini/AGY Antigravity agent runner according to the active runtime. At each
    parent-to-worker boundary, run:
-   <AGENTPLAYBOOK_LAUNCHER> handoff --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+   <TAO_LAUNCHER> handoff --project <TARGET_REPO> --rules <TAO_ROOT>
    This refreshes the provider-neutral, content-free execution capsule and
    validates it once. A ready and valid handoff lets the worker reuse the
    parent's route, preflight, and required-doc manifest and skip duplicate
@@ -115,7 +115,7 @@ Rules:
    the scope.
 6. Read every `required_docs` entry from the route before editing or reviewing.
    The start hook records the route, git status, and VibeGuard result in
-   <TARGET_REPO>/.agentplaybook/preflight.json. Do not add a second document
+   <TARGET_REPO>/.tao/preflight.json. Do not add a second document
    confirmation step.
 7. Keep a gate execution ledger from the route output. Mark each required gate
    when it is executed or fails, include concrete evidence such as a command,
@@ -128,7 +128,7 @@ Rules:
 9. If any required gate was not executed, stop before final report, commit,
    release, or handoff. Roll back only dependent agent-made changes after the
    failed checkpoint when safe, preserve user-owned changes, and run the
-   retrospective workflow. Improve and verify the canonical AgentPlaybook doc,
+   retrospective workflow. Improve and verify the canonical Tao Agent OS doc,
    hook, validator, or test before resuming that checkpoint. Allow one repair
    cycle only; stop if the same failure remains or the repair is unsafe or
    ambiguous.
@@ -145,10 +145,10 @@ Rules:
    recommended default.
 15. Before finishing, confirm every required route gate is `🐱🟢 SUCCESS` with ledger
     evidence. Before executing wrapper commands, replace
-    `<AGENTPLAYBOOK_ROOT>` with the resolved absolute path; do not leave
+    `<TAO_ROOT>` with the resolved absolute path; do not leave
     `$HOME`, `${HOME}`, `~`, or a relative path in the executable command. When
     available, run:
-    <AGENTPLAYBOOK_LAUNCHER> finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+    <TAO_LAUNCHER> finish --project <TARGET_REPO> --rules <TAO_ROOT>
     Record manual gate facts first with `agent-hook.py gate` or `gate-batch`.
     Finish is read-only: it accepts no inline gate evidence and never mutates
     the ledger while validating completion.

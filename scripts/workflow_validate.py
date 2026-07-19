@@ -34,7 +34,7 @@ from workflow_spill import validate_spill_label_contracts
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 REMOVED_GATE_OPTION_RE = re.compile(r"--gate(?![-\w])")
 FRONTMATTER_REQUIRED_KEYS = ("keyflow_id:", "status:", "type:")
-STRICT_CARD_MARKER = "agentplaybook_card_contract: strict"
+STRICT_CARD_MARKER = "tao_card_contract: strict"
 STRICT_CARD_REQUIRED_HEADINGS = (
     "## Use When",
     "## Decision Rule",
@@ -45,7 +45,7 @@ STRICT_CARD_REQUIRED_HEADINGS = (
     "## Verification",
 )
 MARKDOWN_VALIDATE_IGNORED_DIRS = {
-    ".agentplaybook",
+    ".tao",
     ".git",
     ".mypy_cache",
     ".pytest_cache",

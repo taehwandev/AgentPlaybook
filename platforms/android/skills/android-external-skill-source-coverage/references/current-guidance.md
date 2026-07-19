@@ -12,7 +12,7 @@ those repositories.
 
 ## Purpose
 
-AgentPlaybook should keep concise shared rules in the Android cards, while this
+Tao Agent OS should keep concise shared rules in the Android cards, while this
 manifest prevents source omissions. When a task touches a surface listed here,
 read the relevant source skill file and its references before designing,
 editing, or reviewing that surface.
@@ -27,16 +27,16 @@ not relevant.
 
 ## Source Policy
 
-- Do not vendor or copy full external skill repositories into AgentPlaybook by
+- Do not vendor or copy full external skill repositories into Tao Agent OS by
   default.
-- Distill reusable rules into AgentPlaybook only when they remain correct across
+- Distill reusable rules into Tao Agent OS only when they remain correct across
   products and repositories.
 - Keep provider-specific setup, sample code, release notes, and surface details
-  as source references unless AgentPlaybook needs a reusable rule.
+  as source references unless Tao Agent OS needs a reusable rule.
 - If a source repository changes, refresh this manifest with the new commit and
   re-check whether Android cards need rule updates.
 - In final reports or PR descriptions, cite the source repository and the
-  source surface, not only the AgentPlaybook summary.
+  source surface, not only the Tao Agent OS summary.
 
 ## Source Snapshots
 
@@ -44,9 +44,9 @@ These local snapshots were reviewed for this manifest:
 
 | Repository | Local snapshot | Commit |
 | --- | --- | --- |
-| `https://github.com/android/skills` | `/private/tmp/notmid-agentplaybook-source-android-skills` | `07302ca15e21d827cab5ca64d46407fb51dbe0aa` |
-| `https://github.com/skydoves/compose-performance-skills` | `/private/tmp/notmid-agentplaybook-source-compose-performance-skills` | `1b32f81724c0d71fe9ef093ca44697f559fdab6e` |
-| `https://github.com/chrisbanes/skills` | `/private/tmp/notmid-agentplaybook-source-chrisbanes-skills` | `10e5158f9d674d340531c6559ce311b22e3f6457` |
+| `https://github.com/android/skills` | `/private/tmp/notmid-tao-source-android-skills` | `07302ca15e21d827cab5ca64d46407fb51dbe0aa` |
+| `https://github.com/skydoves/compose-performance-skills` | `/private/tmp/notmid-tao-source-compose-performance-skills` | `1b32f81724c0d71fe9ef093ca44697f559fdab6e` |
+| `https://github.com/chrisbanes/skills` | `/private/tmp/notmid-tao-source-chrisbanes-skills` | `10e5158f9d674d340531c6559ce311b22e3f6457` |
 
 ## No-Omission Gate
 
@@ -58,7 +58,7 @@ or platform-SDK work:
 3. Read the listed `references/` docs when the task changes implementation,
    dependencies, public contracts, security behavior, testing, or verification
    for that surface.
-4. Update the concise AgentPlaybook rule card only when the lesson is reusable.
+4. Update the concise Tao Agent OS rule card only when the lesson is reusable.
 5. Report the source surface and residual source docs not loaded because they
    were out of scope.
 
@@ -91,7 +91,7 @@ The workflow router should include this manifest for Android concerns such as:
   CameraX, Credential Manager, Play surfaces, Wear, XR, and AppFunctions.
 
 If an Android route for those concerns does not include this manifest, treat the
-route as incomplete before editing. Keep AgentPlaybook's local Android
+route as incomplete before editing. Keep Tao Agent OS's local Android
 architecture as the primary rule source; use external skills to prevent
 omission and to confirm version-sensitive source behavior.
 
@@ -105,7 +105,7 @@ Use the narrowest external source file that matches the touched surface:
 | Compose state hoisting, state-holder split, side effects, modifiers, slots, focus, UI testing, Flow, or coroutine ownership | `chrisbanes/skills` matching `skills/<name>/SKILL.md`. |
 | Android CLI/device inspection, AGP, R8, Navigation 3, edge-to-edge, testing setup, intent security, CameraX, credentials, Play, Wear, XR, or AppFunctions | `android/skills` matching platform `SKILL.md` and its listed references. |
 
-Do not copy full skill text into AgentPlaybook. Distill only reusable decision
+Do not copy full skill text into Tao Agent OS. Distill only reusable decision
 rules, stop signals, and verification requirements into the local Android card
 that owns the recurring lesson.
 
@@ -360,9 +360,9 @@ Skill coverage:
 - `skills/shepherd/SKILL.md`
 - `skills/using-chrisbanes-skills/SKILL.md`
 
-## AgentPlaybook Mapping
+## Tao Agent OS Mapping
 
-These AgentPlaybook cards consume this source coverage:
+These Tao Agent OS cards consume this source coverage:
 
 - `platforms/android/skills/android-module-structure/SKILL.md` for Android modularization,
   source-set, SDK-surface, toolchain, and package-boundary routing.

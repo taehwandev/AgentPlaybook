@@ -90,6 +90,6 @@ external state.
 
 ## Conflict Handling
 
-If shared AgentPlaybook guidance conflicts with repo-local instructions, follow the
+If shared Tao Agent OS guidance conflicts with repo-local instructions, follow the
 repo-local instructions and mention the conflict when it matters. Shared docs
 are defaults, not overrides.

@@ -2,7 +2,7 @@
 keyflow_id: sys_ci_cd_automation
 status: stable
 type: human-reviewed-needed
-agentplaybook_card_contract: strict
+tao_card_contract: strict
 ---
 
 # CI/CD And Automation

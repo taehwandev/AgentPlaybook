@@ -10,7 +10,7 @@ RUNTIME_TO_PLATFORM = {
     "codex": "codex",
 }
 
-CANONICAL_SKILL_DIR = Path(".agentplaybook/skills/graphify")
+CANONICAL_SKILL_DIR = Path(".tao/skills/graphify")
 CANONICAL_SKILL_PATH = CANONICAL_SKILL_DIR / "SKILL.md"
 
 PLATFORM_SKILL_DIRS = {
@@ -53,7 +53,7 @@ PLATFORM_CANONICAL_INTEGRATION_TARGETS = {
 
 TRACKING_POLICY_PATHS = (
     Path(".gitignore"),
-    Path(".agentplaybook/.gitignore"),
+    Path(".tao/.gitignore"),
     Path(".graphifyignore"),
     Path("graphify-out/.gitignore"),
 )
@@ -69,33 +69,33 @@ GRAPHIFY_RUNTIME_ADAPTER_INPUTS = (
     Path(".codex/hooks.json"),
 )
 
-ROOT_GITIGNORE_BLOCK = """# agentplaybook-project-assets:start
+ROOT_GITIGNORE_BLOCK = """# tao-project-assets:start
 # Runtime evidence is local, but canonical project skills are repository assets.
-!.agentplaybook/
-.agentplaybook/*
-!.agentplaybook/.gitignore
-!.agentplaybook/skills/
-.agentplaybook/skills/*
-!.agentplaybook/skills/graphify/
-!.agentplaybook/skills/graphify/**
-# agentplaybook-project-assets:end"""
+!.tao/
+.tao/*
+!.tao/.gitignore
+!.tao/skills/
+.tao/skills/*
+!.tao/skills/graphify/
+!.tao/skills/graphify/**
+# tao-project-assets:end"""
 
-AGENTPLAYBOOK_GITIGNORE_BLOCK = """# agentplaybook-project-assets:start
+TAO_GITIGNORE_BLOCK = """# tao-project-assets:start
 /*
 !/.gitignore
 !/skills/
 /skills/*
 !/skills/graphify/
 !/skills/graphify/**
-# agentplaybook-project-assets:end"""
+# tao-project-assets:end"""
 
 GRAPHIFY_INPUT_BLOCK = "\n".join(
     (
-        "# agentplaybook-graphify-inputs:start",
-        ".agentplaybook/",
+        "# tao-graphify-inputs:start",
+        ".tao/",
         *(path.as_posix() for path in GRAPHIFY_RUNTIME_ADAPTER_INPUTS),
         "graphify-out/",
-        "# agentplaybook-graphify-inputs:end",
+        "# tao-graphify-inputs:end",
     )
 )
 
@@ -115,7 +115,7 @@ type: ai-generated
 # Graphify project rule
 
 The single project Graphify source is
-`.agentplaybook/skills/graphify/SKILL.md`. Read it before Graphify work and use
+`.tao/skills/graphify/SKILL.md`. Read it before Graphify work and use
 `.agents/skills/graphify` only as the Antigravity/AGY discovery link. Do not
 copy shared Graphify guidance into this runtime rule.
 """
@@ -127,11 +127,11 @@ type: ai-generated
 description: Run the project's canonical Graphify skill
 ---
 
-1. Read `.agentplaybook/skills/graphify/SKILL.md` completely.
+1. Read `.tao/skills/graphify/SKILL.md` completely.
 2. Apply that canonical workflow from the project root with the user's current
    Graphify arguments.
 3. Keep this file limited to AGY invocation; update shared behavior only in the
-   canonical skill through AgentPlaybook setup.
+   canonical skill through Tao Agent OS setup.
 """
 
 CANONICAL_SKILL_REPLACEMENTS = (

@@ -6,7 +6,7 @@ type: ai-generated
 
 # Tool Failure Recovery
 
-Use when routed to `common/skills/tool-failure-recovery/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/tool-failure-recovery/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

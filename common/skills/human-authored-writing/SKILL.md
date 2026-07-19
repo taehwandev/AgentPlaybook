@@ -6,7 +6,7 @@ type: ai-generated
 
 # Human-Authored Writing
 
-Use when routed to `common/skills/human-authored-writing/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/human-authored-writing/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

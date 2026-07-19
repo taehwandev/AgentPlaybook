@@ -6,7 +6,7 @@ type: ai-generated
 
 # Application Command And UI
 
-Use when routed to `platforms/application/skills/application-command-ui/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/application/skills/application-command-ui/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

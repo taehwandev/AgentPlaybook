@@ -1,14 +1,24 @@
-"""User-level runtime bridge helpers for AgentPlaybook setup."""
+"""User-level runtime bridge helpers for Tao Agent OS setup."""
 
 from __future__ import annotations
 
 import re
 from pathlib import Path
 
-RUNTIME_BRIDGE_BEGIN = "<!-- agentplaybook-runtime-bridge:start -->"
-RUNTIME_BRIDGE_END = "<!-- agentplaybook-runtime-bridge:end -->"
+RUNTIME_BRIDGE_BEGIN = "<!-- tao-runtime-bridge:start -->"
+RUNTIME_BRIDGE_END = "<!-- tao-runtime-bridge:end -->"
 LEGACY_RUNTIME_BRIDGE_BEGIN = "<!-- BEGIN MANAGED RUNTIME BRIDGE -->"
 LEGACY_RUNTIME_BRIDGE_END = "<!-- END MANAGED RUNTIME BRIDGE -->"
+# A managed block is identified by its marker, so renaming the marker orphans
+# every block written under the old one: setup stops recognizing it and appends
+# a second block beside it. Match the marker shape rather than a list of past
+# names, so a block from any earlier naming is removed without this file having
+# to carry that naming forward.
+SUPERSEDED_RUNTIME_BRIDGE_PATTERN = re.compile(
+    r"<!-- (?P<name>[a-z0-9-]+)-runtime-bridge:start -->[\s\S]*?"
+    r"<!-- (?P=name)-runtime-bridge:end -->\n?",
+    re.MULTILINE,
+)
 CODEX_DISPATCH_BRIDGE_PHRASE = (
     "For a bounded Codex leaf, use workflow.py dispatch --execute only when isolation is explicitly "
     "required. A matching parent profile or unavailable parent profile information both stay in the "
@@ -36,18 +46,18 @@ AUTO_DELEGATION_BRIDGE_PHRASE = (
     "the concrete serial reason."
 )
 RUNTIME_START_BRIDGE_PHRASE = (
-    "For multi-step work, run AgentPlaybook agent-hook.py start once; do not separately repeat "
+    "For multi-step work, run Tao Agent OS agent-hook.py start once; do not separately repeat "
     "workflow list, classify, route, or preflight. For a classified or answered request, keep "
     "passing the current --request and add --request-classified with --classification-evidence "
     "so delegated workers can safely reuse only the matching capsule."
 )
 RUNTIME_FINISH_BRIDGE_PHRASE = (
-    "For multi-step work, run AgentPlaybook agent-hook.py finish before final report, commit, "
+    "For multi-step work, run Tao Agent OS agent-hook.py finish before final report, commit, "
     "release, or handoff; direct agent-finish-check.py is a lower-level fallback only."
 )
 RUNTIME_CAPSULE_BRIDGE_PHRASES = [
     (
-        "At each parent-to-worker boundary, run AgentPlaybook agent-hook.py handoff; it lazily creates "
+        "At each parent-to-worker boundary, run Tao Agent OS agent-hook.py handoff; it lazily creates "
         "the provider-neutral, content-free execution capsule for that worker and validates it once."
     ),
     (
@@ -80,7 +90,7 @@ RUNTIME_BRIDGE_GRAPH_PHRASES = [
 
 RUNTIME_BRIDGE_COMMON_REQUIRED_PHRASES = [
     "Start every task by identifying the current project root.",
-    "If the runtime starts outside the target repo or the target repo is not explicit, run AgentPlaybook agent-entry.py or project-discover.py before project work.",
+    "If the runtime starts outside the target repo or the target repo is not explicit, run Tao Agent OS agent-entry.py or project-discover.py before project work.",
     "If project discovery returns ambiguous or not_found, ask the user for the target project before routing, editing, testing, committing, or reporting completion.",
     "Before project work, open the project-root instruction file for the active runtime.",
     RUNTIME_START_BRIDGE_PHRASE,
@@ -88,7 +98,7 @@ RUNTIME_BRIDGE_COMMON_REQUIRED_PHRASES = [
     *RUNTIME_CAPSULE_BRIDGE_PHRASES,
     RUNTIME_FINISH_BRIDGE_PHRASE,
     AUTO_DELEGATION_BRIDGE_PHRASE,
-    "Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
+    "Do not mention Tao Agent OS setup, hook, permission, helper, or label commands in normal conversation.",
     "Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
 ]
 
@@ -113,17 +123,17 @@ def runtime_bridge_block(root: Path, runtime_name: str, instruction_file: str) -
     dispatch_phrase = [f"- {CODEX_DISPATCH_BRIDGE_PHRASE}"] if runtime_name == "Codex" else []
     return "\n".join([
         RUNTIME_BRIDGE_BEGIN,
-        "## AgentPlaybook Runtime Bridge",
+        "## Tao Agent OS Runtime Bridge",
         "",
         f"Apply this bridge before project work in {runtime_name} sessions.",
         "",
-        f"- Shared AgentPlaybook root: `{root}`",
+        f"- Shared Tao Agent OS root: `{root}`",
         "- Start every task by identifying the current project root.",
-        "- If the runtime starts outside the target repo or the target repo is not explicit, run AgentPlaybook agent-entry.py or project-discover.py before project work.",
+        "- If the runtime starts outside the target repo or the target repo is not explicit, run Tao Agent OS agent-entry.py or project-discover.py before project work.",
         "- If project discovery returns ambiguous or not_found, ask the user for the target project before routing, editing, testing, committing, or reporting completion.",
         "- Before project work, open the project-root instruction file for the active runtime.",
         f"- {runtime_name} reads {instruction_file}.",
-        "- Read project-root instructions before AgentPlaybook shared guidance.",
+        "- Read project-root instructions before Tao Agent OS shared guidance.",
         f"- {RUNTIME_START_BRIDGE_PHRASE}",
         "- Use the route/search output from that start hook for the user's current request; route/search owns natural-language document discovery.",
         "- Do not wait for the user to name document keywords; infer the work surface from the request, platform, concern, and touched files, then read the route required_docs before editing or reviewing.",
@@ -135,7 +145,7 @@ def runtime_bridge_block(root: Path, runtime_name: str, instruction_file: str) -
         *native_delegation_phrase,
         *dispatch_phrase,
         f"- If this bridge or the project-root {instruction_file} cannot be confirmed before project work, stop before routing, editing, testing, committing, or reporting completion and ask for bridge repair.",
-        "- Do not mention AgentPlaybook setup, hook, permission, helper, or label commands in normal conversation.",
+        "- Do not mention Tao Agent OS setup, hook, permission, helper, or label commands in normal conversation.",
         "- Do not report whether background labels, hooks, or metering ran unless the user explicitly asks about that subsystem.",
         "- If a response exposed those background details, do not answer with an apology-only message; continue by repairing the action path or stopping with the specific blocker.",
         RUNTIME_BRIDGE_END,
@@ -161,6 +171,16 @@ def merge_runtime_bridge(
     legacy_present = bool(legacy_pattern.search(text))
     if legacy_present:
         text = legacy_pattern.sub("", text)
+
+    def _drop_superseded(match: re.Match[str]) -> str:
+        # Keep the block that matches the marker in use; drop the rest.
+        return match.group(0) if match.group(0).startswith(RUNTIME_BRIDGE_BEGIN) else ""
+
+    superseded_text = SUPERSEDED_RUNTIME_BRIDGE_PATTERN.sub(_drop_superseded, text)
+    superseded_present = superseded_text != text
+    if superseded_present:
+        text = superseded_text
+    legacy_present = legacy_present or superseded_present
     pattern = re.compile(
         re.escape(RUNTIME_BRIDGE_BEGIN)
         + r"[\s\S]*?"

@@ -6,7 +6,7 @@ type: ai-generated
 
 # SOLID Design Principles
 
-Use when routed to `common/skills/solid-design-principles/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/solid-design-principles/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

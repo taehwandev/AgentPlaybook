@@ -206,7 +206,7 @@ COMMANDS: Dict[str, Profile] = {
             "verification",
             "handoff",
         ),
-        notes=("Use for reviewing durable docs, wiki pages, playbooks, and runbooks.",),
+        notes=("Use for reviewing durable docs, wiki pages, operational guides, and runbooks.",),
     ),
     "commit": Profile(
         docs=(

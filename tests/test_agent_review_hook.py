@@ -153,13 +153,13 @@ def route_doc(path: str) -> str:
 
 class ReviewHookTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_review_hook_detects_mutation_outside_pathspec(self) -> None:
         full_statuses = [
@@ -240,13 +240,81 @@ class ReviewHookTests(unittest.TestCase):
             any("outside the review pathspec" in detail for detail in outputs[0]["details"])
         )
 
+    def test_review_hook_tolerates_omitted_structure_review_evidence(self) -> None:
+        outputs: list[dict[str, object]] = []
+
+        def git_status(_project: Path) -> tuple[dict[str, object], list[str]]:
+            result = {
+                "command": ["git", "status", "--short", "--untracked-files=all"],
+                "cwd": str(ROOT),
+                "returncode": 0,
+                "stdout": "",
+                "stderr": "",
+            }
+            return result, []
+
+        def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+            if command[:3] == ["vibeguard", "audit", "."]:
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": "Overall: Ready\n",
+                    "stderr": "",
+                }
+            return {"command": command, "cwd": str(cwd), "returncode": 0, "stdout": "", "stderr": ""}
+
+        def finish_with_result(
+            name: str,
+            success: bool,
+            details: list[str],
+            output: Path | None,
+            payload: dict[str, object],
+            repair_cycle: int,
+        ) -> int:
+            outputs.append({"name": name, "success": success, "details": details})
+            return 0 if success else 1
+
+        args = SimpleNamespace(
+            project=ROOT,
+            rules=ROOT,
+            evidence=None,
+            review_outcome="pass",
+            code_review_evidence="reviewed scoped change",
+            docs_freshness_evidence="docs unchanged because no durable docs impact",
+            structure_review_evidence=None,
+            boundary_plan_evidence=None,
+            side_effect_audit_evidence="side-effect audit checked diff",
+            review_scope="pathspec",
+            review_path=["scripts/agent-hook.py"],
+            max_changed_paths=25,
+            max_source_file_lines=500,
+            max_function_lines=120,
+            output=None,
+            repair_cycle=0,
+        )
+
+        # Omitting the optional evidence flags must surface a normal gate result,
+        # not crash the hook before it can report anything.
+        with patch("agent_review_hook.record_review_failure"):
+            review_hook(
+                args,
+                run_command,
+                git_status,
+                lambda _project, _rules: ["vibeguard", "audit", "."],
+                lambda output: "Ready" if "Ready" in output else "unknown",
+                finish_with_result,
+            )
+
+        self.assertTrue(outputs)
+
     def test_review_failure_records_resumable_checkpoint(self) -> None:
         from agent_repair_ledger import checkpoint_has_recorded_failure
         from agent_review_hook import record_review_failure
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
-            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path = project / ".tao" / "preflight.json"
             evidence_path.parent.mkdir(parents=True)
             preflight = {"route": {"command": "review", "gates": ["review hook"]}}
             evidence_path.write_text(json.dumps(preflight), encoding="utf-8")

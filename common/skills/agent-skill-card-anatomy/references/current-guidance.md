@@ -2,12 +2,12 @@
 keyflow_id: sys_agent_skill_card_anatomy
 status: stable
 type: human-reviewed-needed
-agentplaybook_card_contract: strict
+tao_card_contract: strict
 ---
 
 # Agent Skill Card Anatomy
 
-Use when creating, updating, or reviewing an AgentPlaybook common card,
+Use when creating, updating, or reviewing an Tao Agent OS common card,
 workflow, platform card, product-pattern card, or agent-facing template.
 
 The goal is to make each card executable by an agent: the card should say when
@@ -62,7 +62,7 @@ evidence gaps, and output shape.
 For new broad-use guidance, or when an existing card is becoming too large to
 scan, prefer a skill bundle over a single long Markdown file. The canonical
 layout and migration procedure are owned by
-`docs/skills/agentplaybook-skill-bundle-migration/SKILL.md`.
+`docs/skills/tao-skill-bundle-migration/SKILL.md`.
 
 ```text
 <area>/skills/<skill-name>/SKILL.md
@@ -73,7 +73,7 @@ This card owns the anatomy of an executable skill card. It does not own the full
 bundle migration policy. Read the migration skill before restructuring a large
 card family, changing workflow router paths, or cleaning duplicated
 source-of-truth rules. For duplicate guidance cleanup, also read
-`docs/skills/agentplaybook-skill-bundle-migration/references/source-of-truth-ownership.md`.
+`docs/skills/tao-skill-bundle-migration/references/source-of-truth-ownership.md`.
 
 ## Common Rationalizations
 
@@ -100,7 +100,7 @@ source-of-truth rules. For duplicate guidance cleanup, also read
 ## Do Not
 
 - Do not copy a third-party skill, vendor workflow, or repo-local policy
-  wholesale into shared AgentPlaybook guidance.
+  wholesale into shared Tao Agent OS guidance.
 - Do not add a new card when an existing card should be tightened or linked.
 - Do not create separate "quick reference", "changelog", or auxiliary docs for
   a card unless the route explicitly needs a reference file.
@@ -120,7 +120,7 @@ source-of-truth rules. For duplicate guidance cleanup, also read
 ## Verification
 
 For document-only changes, run the repository's workflow validation and a diff
-sanity check. For strict AgentPlaybook cards, validation should confirm
+sanity check. For strict Tao Agent OS cards, validation should confirm
 frontmatter and the required action sections.
 
 When a route, concern, or command should load the card, add or update workflow

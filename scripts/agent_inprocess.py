@@ -1,4 +1,4 @@
-"""Run local AgentPlaybook Python entrypoints without spawning Python again."""
+"""Run local Tao Agent OS Python entrypoints without spawning Python again."""
 
 from __future__ import annotations
 
@@ -65,18 +65,18 @@ def run_script_main(script: Path, argv: list[str], cwd: Path) -> dict[str, Any]:
     return run_callable_as_command(command=command, cwd=cwd, callback=_run)
 
 
-def run_workflow_validate(playbook_root: Path) -> dict[str, Any]:
+def run_workflow_validate(tao_root: Path) -> dict[str, Any]:
     from workflow_validate import validate
 
     return run_callable_as_command(
-        command=[sys.executable, str(playbook_root / "scripts" / "workflow.py"), "validate"],
-        cwd=playbook_root,
+        command=[sys.executable, str(tao_root / "scripts" / "workflow.py"), "validate"],
+        cwd=tao_root,
         callback=validate,
     )
 
 
 def _load_script_module(script: Path) -> Any:
-    module_name = f"_agentplaybook_{script.stem.replace('-', '_')}_{abs(hash(script))}"
+    module_name = f"_tao_{script.stem.replace('-', '_')}_{abs(hash(script))}"
     spec = importlib.util.spec_from_file_location(module_name, script)
     if spec is None or spec.loader is None:
         raise ImportError(f"unable to load script: {script}")

@@ -6,7 +6,7 @@ type: ai-generated
 
 # Agent Handoff Continuation Workflow
 
-Use when routed to `workflows/skills/agent-handoff-continuation/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `workflows/skills/agent-handoff-continuation/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

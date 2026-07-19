@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 
-EDGE_ORIGIN = "agentplaybook_explicit_path"
+EDGE_ORIGIN = "tao_explicit_path"
 CODE_SUFFIXES = {
     ".c", ".cc", ".cpp", ".go", ".h", ".hpp", ".java", ".js", ".kt",
     ".kts", ".mjs", ".py", ".rs", ".sh", ".swift", ".ts", ".tsx",

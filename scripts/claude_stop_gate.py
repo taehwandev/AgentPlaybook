@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Claude Code Stop gate for AgentPlaybook.
+"""Claude Code Stop gate for Tao Agent OS.
 
 The PreToolUse gate forces `start` before the first edit, but nothing forced the
 other end of the lifecycle. `review` and `finish` were enforced only by the model
@@ -7,7 +7,7 @@ remembering to run them, which is exactly the kind of rule a model skips under
 load: a session could edit files all the way to a final report with no review
 evidence and no gate ledger, and the work would look finished.
 
-This gate closes that end. When a session edited files in an AgentPlaybook
+This gate closes that end. When a session edited files in an Tao Agent OS
 project and has no passing `finish` from that same session, stopping is blocked
 once, with the commands needed to resolve it.
 
@@ -37,7 +37,7 @@ try:  # Never fail to load; used for the message and the session lookup.
     from support.stable_launcher import stable_launcher_path
 except ImportError:  # pragma: no cover - exercised only on a broken install
     def stable_launcher_path() -> Path:
-        return Path.home() / ".agentplaybook" / "bin" / "agentplaybook-hook"
+        return Path.home() / ".tao" / "bin" / "tao-hook"
 
     def recorded_session_id(payload: object) -> str:
         if not isinstance(payload, dict):
@@ -48,15 +48,17 @@ except ImportError:  # pragma: no cover - exercised only on a broken install
         recorded = session.get("session_id")
         return recorded if isinstance(recorded, str) else ""
 
-STATE_DIR = ".agentplaybook"
+STATE_DIR = ".tao"
 FINISH_NAME = "finish.json"
 SESSION_MARKER_DIR = "claude-pretool-gate"
 EDIT_ACTIVITY_SUFFIX = ".edited"
 BLOCKED_SUFFIX = ".stop-blocked"
+# Written by the PreToolUse gate; see session_projects().
+SESSION_PROJECT_DIR = "claude-session-projects"
 # Written by `finish`; see session_finished() for why finish.json alone is not enough.
 FINISHED_SUFFIX = ".finished"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
-OPT_IN_TOKEN = "agentplaybook"
+OPT_IN_TOKEN = "tao"
 
 
 def allow() -> int:
@@ -166,21 +168,44 @@ def session_finished(root: Path, session_id: str) -> bool:
     return recorded_session_id(payload) == session_id
 
 
+def session_projects(session_id: str, cwd_root: Path | None) -> list[Path]:
+    """Every project this session edited, not just the one it happens to sit in.
+
+    A stop happens once, with one cwd, but a session can edit files across
+    several projects. Checking only the cwd project let an edited project stop
+    unverified: the cwd project had a finish, so the gate allowed the stop while
+    another project's work had never been reviewed.
+    """
+    roots: list[Path] = []
+    if cwd_root is not None:
+        roots.append(cwd_root)
+    index = Path.home() / STATE_DIR / SESSION_PROJECT_DIR / safe_session_id(session_id)
+    try:
+        recorded = index.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        recorded = []
+    for line in recorded:
+        candidate = Path(line.strip())
+        if line.strip() and candidate not in roots:
+            roots.append(candidate)
+    return roots
+
+
 def block_reason(root: Path) -> str:
     launcher = stable_launcher_path()
     return (
-        "AgentPlaybook: this session edited files but has no passing finish check. "
+        "Tao Agent OS: this session edited files but has no passing finish check. "
         "Record the remaining route gates with `gate` or `gate-batch`, then run "
-        f"`{launcher} review --project {root} --rules <AGENTPLAYBOOK_ROOT> "
+        f"`{launcher} review --project {root} --rules <TAO_ROOT> "
         "--review-scope working-tree --review-outcome <pass|findings> ...` and "
-        f"`{launcher} finish --project {root} --rules <AGENTPLAYBOOK_ROOT>`. "
+        f"`{launcher} finish --project {root} --rules <TAO_ROOT>`. "
         "If finish reports failures, repair them instead of reporting completion. "
-        "Set AGENTPLAYBOOK_CLAUDE_STOP_GATE=0 to disable this gate."
+        "Set TAO_CLAUDE_STOP_GATE=0 to disable this gate."
     )
 
 
 def gate_enabled() -> bool:
-    return os.environ.get("AGENTPLAYBOOK_CLAUDE_STOP_GATE", "").strip() != "0"
+    return os.environ.get("TAO_CLAUDE_STOP_GATE", "").strip() != "0"
 
 
 def decide(payload: dict) -> int:
@@ -193,18 +218,17 @@ def decide(payload: dict) -> int:
         cwd = Path(payload.get("cwd") or os.getcwd()).resolve()
     except OSError:
         return allow()
-    root = find_project_root(cwd)
-    if root is None:
-        return allow()
     session_id = str(payload.get("session_id") or "")
     if not session_id:
         return allow()
-    if session_finished(root, session_id):
-        return allow()
-    if not has_unreported_edits(root, session_id):
-        return allow()
-    record_block(root, session_id)
-    return block(block_reason(root))
+    for root in session_projects(session_id, find_project_root(cwd)):
+        if session_finished(root, session_id):
+            continue
+        if not has_unreported_edits(root, session_id):
+            continue
+        record_block(root, session_id)
+        return block(block_reason(root))
+    return allow()
 
 
 def main() -> int:

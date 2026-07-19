@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run automated smoke checks to verify AgentPlaybook hooks and search library E2E."""
+"""Run automated smoke checks to verify Tao Agent OS hooks and search library E2E."""
 
 import shutil
 import subprocess
@@ -43,7 +43,7 @@ def test_start_hook(temp_dir: str) -> None:
     )
     print("SUCCESS: Start hook completed successfully.")
 
-    preflight_path = Path(temp_dir) / ".agentplaybook" / "preflight.json"
+    preflight_path = Path(temp_dir) / ".tao" / "preflight.json"
     assert preflight_path.exists(), "preflight.json was not created!"
     print("SUCCESS: preflight.json exists.")
 

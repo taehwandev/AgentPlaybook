@@ -1,6 +1,6 @@
 # Agent/runtime evidence and generated graph outputs are not guidance sources.
-.agentplaybook
-scripts/.agentplaybook
+.tao
+scripts/.tao
 graphify-out
 
 # Runtime Graphify discovery views resolve to the canonical project skill and
@@ -9,5 +9,5 @@ graphify-out
 .claude/skills/graphify
 .codex/skills/graphify
 
-# Vendored dependency notices are provenance, not AgentPlaybook guidance.
+# Vendored dependency notices are provenance, not Tao Agent OS guidance.
 scripts/third_party

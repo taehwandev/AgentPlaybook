@@ -6,7 +6,7 @@ type: ai-generated
 
 # Server Side Caching
 
-Use when routed to `common/skills/server-side-caching/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/server-side-caching/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

@@ -217,7 +217,7 @@ def _select_execution_context(
 
 
 def _parent_evidence_path(project: Path, evidence_path: Path | None) -> Path:
-    return evidence_path.expanduser().resolve() if evidence_path else project / ".agentplaybook" / "preflight.json"
+    return evidence_path.expanduser().resolve() if evidence_path else project / ".tao" / "preflight.json"
 
 
 def execute_dispatch_manifest(

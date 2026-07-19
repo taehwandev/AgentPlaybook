@@ -6,7 +6,7 @@ type: ai-generated
 
 # Web Accessibility I18n
 
-Use when routed to `platforms/web/skills/web-accessibility-i18n/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/web/skills/web-accessibility-i18n/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

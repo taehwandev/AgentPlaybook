@@ -148,13 +148,13 @@ def route_doc(path: str) -> str:
 
 class HandoffHookTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_handoff_hook_refreshes_one_ready_parent_capsule(self) -> None:
         route = {
@@ -167,13 +167,13 @@ class HandoffHookTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir).resolve()
             subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-            (project / ".gitignore").write_text(".agentplaybook/\n", encoding="utf-8")
+            (project / ".gitignore").write_text(".tao/\n", encoding="utf-8")
             subprocess.run(["git", "add", ".gitignore"], cwd=project, check=True)
             subprocess.run(
                 [
                     "git",
                     "-c",
-                    "user.name=AgentPlaybook Tests",
+                    "user.name=Tao Agent OS Tests",
                     "-c",
                     "user.email=tests@example.invalid",
                     "commit",
@@ -183,7 +183,7 @@ class HandoffHookTests(unittest.TestCase):
                 cwd=project,
                 check=True,
             )
-            evidence_path = project / ".agentplaybook" / "preflight.json"
+            evidence_path = project / ".tao" / "preflight.json"
             evidence_path.parent.mkdir(parents=True)
             preflight = {
                 "project": str(project),

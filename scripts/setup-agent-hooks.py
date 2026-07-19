@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Configure AI runtime bridges, hooks, and permissions for AgentPlaybook.
+"""Configure AI runtime bridges, hooks, and permissions for Tao Agent OS.
 
-Run once after cloning AgentPlaybook to install the short user-level bridge
-blocks and allow the AgentPlaybook Python entrypoints in local agent runtimes.
+Run once after cloning Tao Agent OS to install the short user-level bridge
+blocks and allow the Tao Agent OS Python entrypoints in local agent runtimes.
 When the optional local Spill helper is installed, this also wires
-AgentPlaybook's workflow label bridge. Re-running is safe; existing bridges,
+Tao Agent OS's workflow label bridge. Re-running is safe; existing bridges,
 hooks, and permissions are deduplicated.
 
 Usage:

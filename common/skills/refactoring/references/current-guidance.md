@@ -4,7 +4,7 @@ status: stable
 type: ai-generated
 ---
 
-# Refactoring Playbook
+# Refactoring Guidance
 
 Use when behavior should stay the same and structure should improve.
 

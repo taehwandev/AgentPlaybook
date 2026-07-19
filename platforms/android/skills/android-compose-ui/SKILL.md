@@ -6,7 +6,7 @@ type: ai-generated
 
 # Android Compose UI
 
-Use when routed to `platforms/android/skills/android-compose-ui/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/android/skills/android-compose-ui/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

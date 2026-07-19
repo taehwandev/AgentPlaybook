@@ -91,7 +91,7 @@ def _git_state(
 
 
 def _cache_path(project: Path) -> Path:
-    return project / ".agentplaybook" / "vibeguard-cache.json"
+    return project / ".tao" / "vibeguard-cache.json"
 
 
 def _read_cache(project: Path) -> dict[str, Any]:

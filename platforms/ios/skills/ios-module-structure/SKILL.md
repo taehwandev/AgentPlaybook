@@ -6,7 +6,7 @@ type: ai-generated
 
 # iOS Module Structure
 
-Use when routed to `platforms/ios/skills/ios-module-structure/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/ios/skills/ios-module-structure/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

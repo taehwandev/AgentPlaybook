@@ -6,7 +6,7 @@ type: ai-generated
 
 # Swift Review
 
-Use when routed to `platforms/swift/skills/swift-review/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/swift/skills/swift-review/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

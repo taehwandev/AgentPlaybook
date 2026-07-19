@@ -1,4 +1,4 @@
-"""Gate ledger helpers for the AgentPlaybook hook CLI."""
+"""Gate ledger helpers for the Tao Agent OS hook CLI."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ from agent_hook_runtime import finish_with_result, print_status
 
 
 def preflight_evidence_path(args: argparse.Namespace) -> Path:
-    return args.evidence if args.evidence else args.project / ".agentplaybook" / "preflight.json"
+    return args.evidence if args.evidence else args.project / ".tao" / "preflight.json"
 
 
 def gate_hook(args: argparse.Namespace) -> int:

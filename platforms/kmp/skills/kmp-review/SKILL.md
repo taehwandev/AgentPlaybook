@@ -6,7 +6,7 @@ type: ai-generated
 
 # KMP Review
 
-Use when routed to `platforms/kmp/skills/kmp-review/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/kmp/skills/kmp-review/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

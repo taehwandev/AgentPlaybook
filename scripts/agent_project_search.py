@@ -137,7 +137,7 @@ def registry_search_roots(registry: dict[str, object]) -> list[Path]:
 
 
 def env_search_roots() -> list[Path]:
-    raw = os.environ.get("AGENTPLAYBOOK_PROJECT_SEARCH_ROOTS", "")
+    raw = os.environ.get("TAO_PROJECT_SEARCH_ROOTS", "")
     if not raw:
         return []
     return [
@@ -216,10 +216,10 @@ def safe_resolve(path: Path) -> Path:
 
 
 def default_registry_path() -> Path:
-    raw = os.environ.get("AGENTPLAYBOOK_PROJECT_REGISTRY")
+    raw = os.environ.get("TAO_PROJECT_REGISTRY")
     if raw:
         return Path(os.path.expandvars(raw)).expanduser()
-    return Path.home() / ".agentplaybook" / "projects.json"
+    return Path.home() / ".tao" / "projects.json"
 
 
 def iter_child_dirs(path: Path) -> list[Path]:

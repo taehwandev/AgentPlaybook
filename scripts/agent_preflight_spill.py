@@ -1,4 +1,4 @@
-"""Spill label helpers for AgentPlaybook preflight."""
+"""Spill label helpers for Tao Agent OS preflight."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def write_spill_label(task_type: str, stage: str) -> None:
 
 
 def spill_setup_helper_path() -> Path:
-    override = os.environ.get("AGENTPLAYBOOK_SPILL_HELPER_PATH", "")
+    override = os.environ.get("TAO_SPILL_HELPER_PATH", "")
     return Path(override) if override else DEFAULT_SPILL_SETUP_HELPER
 
 

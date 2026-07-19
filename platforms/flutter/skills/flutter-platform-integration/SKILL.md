@@ -6,7 +6,7 @@ type: ai-generated
 
 # Flutter Platform Integration
 
-Use when routed to `platforms/flutter/skills/flutter-platform-integration/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/flutter/skills/flutter-platform-integration/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

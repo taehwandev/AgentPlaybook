@@ -17,7 +17,7 @@ blocking because the current task does not yet satisfy its execution contract.
 3. Separate facts, assumptions, missed signals, and unknowns. Name the root
    cause as a missing rule, unclear ownership, weak verification, stale docs,
    missing platform guidance, ambiguous decision, or execution error.
-4. Select the canonical AgentPlaybook owner. Improve at least one durable
+4. Select the canonical Tao Agent OS owner. Improve at least one durable
    enforcement surface: owning guidance, hook, validator, or focused test. A
    note or queued lesson alone is not a repair.
 5. Verify the repair with the closest allowlisted documentation, workflow,
@@ -50,20 +50,20 @@ This is one repair-and-resume cycle, not a generic retry budget.
 Generate the receipt first, then resume with its project-local path:
 
 ```text
-agentplaybook-hook repair-verify \
-  --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> \
+tao-hook repair-verify \
+  --project <TARGET_REPO> --rules <TAO_ROOT> \
   --repair-target <changed_file> \
   --resume-checkpoint <recorded_failed_checkpoint> \
   --repair-verification-kind <workflow_validate|unittest|py_compile|vibeguard>
 
-agentplaybook-hook <failed_hook> \
+tao-hook <failed_hook> \
   --repair-cycle 1 \
   --repair-target <same_changed_file> \
   --repair-evidence <project_local_receipt_path> \
   --resume-checkpoint <same_recorded_failed_checkpoint> ...
 ```
 
-The verifier accepts only a changed file under the project or playbook rules
+The verifier accepts only a changed file under the project or Tao Agent OS rules
 root and fixed verification kinds. A receipt becomes invalid when its target,
 preflight, route, failure signature, checkpoint, or result changes.
 

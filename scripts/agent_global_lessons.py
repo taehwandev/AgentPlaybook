@@ -20,14 +20,14 @@ from workflow_common import (
 )
 
 SCHEMA_VERSION = 1
-STATE_HOME_ENV = "AGENTPLAYBOOK_STATE_HOME"
+STATE_HOME_ENV = "TAO_STATE_HOME"
 SAFE_SLUG_RE = re.compile(r"[^a-z0-9_]+")
 LESSON_STATUSES = ("accepted", "promoted")
 
 
 def state_home() -> Path:
     override = os.environ.get(STATE_HOME_ENV, "").strip()
-    return Path(override).expanduser() if override else Path.home() / ".agentplaybook"
+    return Path(override).expanduser() if override else Path.home() / ".tao"
 
 
 def lesson_summary(limit: int = 10) -> dict[str, Any]:
@@ -84,7 +84,7 @@ def retrospective_candidate(finish_result: dict[str, Any]) -> dict[str, Any]:
         "root_cause": root_cause,
         "next_action": "repair_verify_then_resume_failed_checkpoint",
         "required_retrospective_output": "immediate_correction_plan",
-        "repair_rule": "improve_playbook_doc_hook_validator_or_test_before_resume",
+        "repair_rule": "improve_tao_doc_hook_validator_or_test_before_resume",
         "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
         "repair_policy": REPAIR_POLICY,
         "resume_rule": f"resume_{RESUME_SCOPE}_after_verified_improvement",

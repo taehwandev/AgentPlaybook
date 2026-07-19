@@ -22,7 +22,7 @@ repo.
 
 ## Agentic Control Plane
 
-The workflow script is the agentic coding control plane for AgentPlaybook. It
+The workflow script is the agentic coding control plane for Tao Agent OS. It
 gives the active agent a route manifest, required documents, required gates,
 run-state expectations, delegation policy, and evidence policy so Codex, Claude
 Code, Gemini CLI, GitHub Copilot coding agent, Cursor, Aider, Devin, Replit
@@ -42,7 +42,7 @@ Run the shared start hook once for every multi-step task when it exists. It
 performs request intake, routing, and preflight as one lifecycle entry:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 The start hook requires the current request with `--request`. After the request
@@ -85,7 +85,7 @@ and record its output.
 Discover the supported values from the script itself:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py list
+python3 <TAO_ROOT>/scripts/workflow.py list
 ```
 
 Treat the executable `list` output as the only current command, platform, and
@@ -112,11 +112,11 @@ list.
 Examples:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform android --concern security --concern ui
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command bugfix --request "<USER_REQUEST>" --platform server --concern api
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "Show me how we build an app feature here" --platform android --concern ui
-<AGENTPLAYBOOK_LAUNCHER> workflow validate
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command product --request "<USER_REQUEST>" --platform android --concern security --concern ui
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command bugfix --request "<USER_REQUEST>" --platform server --concern api
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command product --request "Show me how we build an app feature here" --platform android --concern ui
+<TAO_LAUNCHER> workflow validate
 ```
 
 Do not force broad app/product requests through the `feature` route. The router
@@ -145,7 +145,7 @@ The route output is the command manifest for the agent:
 - `stop_condition`: terminal recovery condition; this must be
   `same_failure_after_repair_or_unsafe_repair`.
 - `notes`: apply these routing hints before choosing commands or edits.
-- `missing`: stop if this is not empty; fix the playbook reference first.
+- `missing`: stop if this is not empty; fix the Tao Agent OS reference first.
 
 Markdown output is optimized for direct agent reading. JSON output exposes the
 same fields for wrappers, launchers, or CI checks.
@@ -440,7 +440,7 @@ Before finalizing, compare the route's `gates` with the ledger:
 - Every required gate must be marked `executed` with evidence.
 - Every required gate must be `🐱🟢 SUCCESS` before completion is reported.
 - If the route includes a `review hook` gate, run
-  `python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py review --review-outcome <pass|findings> ...`
+  `python3 <TAO_ROOT>/scripts/agent-hook.py review --review-outcome <pass|findings> ...`
   and record
   the hook result as that gate's evidence. Do not replace it with a memory-only
   manual review unless the hook is unavailable and the fallback is reported.
@@ -467,7 +467,7 @@ workflow's executable checklist:
 Before editing, reviewing, committing, or reporting completion:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 The route may promote additional `required_docs` from the root
@@ -485,7 +485,7 @@ instructions, or the requirement to read every routed `required_docs` entry
 before edits.
 
 The route/search layer uses the repository-pinned Wikimap source for
-deterministic, incremental section retrieval over AgentPlaybook guidance. It
+deterministic, incremental section retrieval over Tao Agent OS guidance. It
 runs only `update --no-map` and `search --json`; do not wire Wikimap install,
 hook, migration, semantic-note, source-editing, or Graphify-import commands into
 the workflow. The ignored `.wikimap/` SQLite index is disposable. The pinned
@@ -521,7 +521,7 @@ deterministic guidance; the second stops for a source or routing repair.
 
 The command includes task-specific arguments, but persistent runtime permission
 prefixes must not. For Codex escalation, request only
-`["python3", "/absolute/path/to/AgentPlaybook/scripts/agent-hook.py"]` as the
+`["python3", "/absolute/path/to/tao-agent-os/scripts/agent-hook.py"]` as the
 saved `prefix_rule`; for Claude and AGY, allow only the equivalent absolute
 wrapper command plus the runtime's trailing argument wildcard. Never save
 `--project`, `--request`, `--gate-record`, `$HOME`, `$(pwd)`, or user text in the
@@ -556,13 +556,13 @@ When more than one routed required doc changes, record one `documentation`
 Before final report, commit, release, or handoff:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+python3 <TAO_ROOT>/scripts/agent-hook.py finish --project <TARGET_REPO> --rules <TAO_ROOT>
 ```
 
 Do not wait until finish to write all gate evidence by hand. The only gate-state
 writers are the `gate` and `gate-batch` hooks, which require an explicit
 `SUCCESS` or `FAIL` status. The default path is a structured gate ledger at
-`<TARGET_REPO>/.agentplaybook/gate-evidence.json`, bound to the current
+`<TARGET_REPO>/.tao/gate-evidence.json`, bound to the current
 preflight evidence hash, route fingerprint, and stable execution-capsule
 fingerprint (the preflight, route, and required-document snapshot). Custom preflight evidence files
 use `<preflight-stem>-gate-evidence.json` so parallel jobs do not overwrite one
@@ -576,7 +576,7 @@ ledger. For gates that only the active agent can prove, batch
 structured records instead of spawning one shell process per gate:
 
 ```text
-python3 <AGENTPLAYBOOK_ROOT>/scripts/agent-hook.py gate-batch --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"cycle contract","fields":{"cycle_type":"workflow_setup","input_scope":"<safe-source-scope>","allowed_changes":"<safe-scope>","forbidden_changes":"<safe-boundary>","acceptance_criteria":"<safe-criteria>","verification":"<check>","stop_condition":"<condition>","checkpoint":"<handoff-or-next-cycle>"}},{"gate":"agentic run state","fields":{"state":"scoped","transition":"scoped -> acting","evidence":"<gate-or-command>","checkpoint":"<resume-or-handoff>","blockers":"<none-or-current-blocker>"}},{"gate":"boundary plan","fields":{"scope":"<owned-scope>","verification":"<nearest-check>"}}]'
+python3 <TAO_ROOT>/scripts/agent-hook.py gate-batch --project <TARGET_REPO> --rules <TAO_ROOT> --gate-record '[{"gate":"cycle contract","fields":{"cycle_type":"workflow_setup","input_scope":"<safe-source-scope>","allowed_changes":"<safe-scope>","forbidden_changes":"<safe-boundary>","acceptance_criteria":"<safe-criteria>","verification":"<check>","stop_condition":"<condition>","checkpoint":"<handoff-or-next-cycle>"}},{"gate":"agentic run state","fields":{"state":"scoped","transition":"scoped -> acting","evidence":"<gate-or-command>","checkpoint":"<resume-or-handoff>","blockers":"<none-or-current-blocker>"}},{"gate":"boundary plan","fields":{"scope":"<owned-scope>","verification":"<nearest-check>"}}]'
 ```
 
 Use this ledger to capture what happened, not to craft magic validator prose.
@@ -645,9 +645,9 @@ plan requirement.
 when the finish hook is unavailable.
 
 `agent-preflight.py` records the route manifest, current git status, and
-VibeGuard audit result in `<TARGET_REPO>/.agentplaybook/preflight.json`.
+VibeGuard audit result in `<TARGET_REPO>/.tao/preflight.json`.
 It also records a content-free summary of accepted and promoted global lessons
-from `~/.agentplaybook/` when that local store exists.
+from `~/.tao/` when that local store exists.
 When `--request-classified` is used, it must also record
 `--classification-evidence`; otherwise request intake is treated as skipped.
 For work routes, that evidence must include a resolved-scope signal rather than
@@ -655,13 +655,13 @@ a generic `classified`, `done`, `handled`, `clarified`, or `no blockers`
 marker.
 `agent-finish-check.py` requires evidence for every route gate, runs
 `workflow.py validate`, runs `git diff --check`, uses the task-local VibeGuard
-audit cache when both the target project git state and AgentPlaybook rules git
+audit cache when both the target project git state and Tao Agent OS rules git
 state are unchanged. Failed VibeGuard invocations must not be cached; rerun the
 tool after transient failures. Finish-check writes
-`<TARGET_REPO>/.agentplaybook/finish.json`.
+`<TARGET_REPO>/.tao/finish.json`.
 It also writes `gate_signals`, `missed_gates`, and
 `retrospective_required`. When `retrospective_required` is true, it writes a
-safe lesson candidate under `~/.agentplaybook/lessons/inbox/` when permitted.
+safe lesson candidate under `~/.tao/lessons/inbox/` when permitted.
 If the route classification or stored request text requires Grill-Me, the finish
 check must receive Grill-Me protocol evidence through a gate such as
 `grill-me if needed=</grilling session/output evidence>`. Legacy
@@ -691,7 +691,7 @@ If the agent missed any required gate:
 5. If finish-check sets `retrospective_required` or the hook/gate returns
    `FAIL`, run the canonical
    `workflows/skills/retrospective-learning/SKILL.md` repair cycle. Improve the
-   owning AgentPlaybook guidance, hook, validator, or test and verify that
+   owning Tao Agent OS guidance, hook, validator, or test and verify that
    improvement. A lesson candidate or correction-plan note alone is
    insufficient. For finish-check evidence failures, the improvement must make
    the validator's required evidence fields clear and testable.
@@ -797,7 +797,7 @@ Workflow route:
 - concerns: ...
 
 Verified:
-- python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py validate
+- python3 <TAO_ROOT>/scripts/workflow.py validate
 - ...task-specific checks...
 
 Gate ledger:

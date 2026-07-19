@@ -14,12 +14,12 @@ in the same pass or point them back to `AGENTS.md`; do not create duplicate
 runtime-specific files only for this block.
 
 ```text
-Shared AgentPlaybook library:
-<AGENTPLAYBOOK_ROOT>/AGENTS.md
-<AGENTPLAYBOOK_ROOT>/index.md
-<AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
-<AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
-<AGENTPLAYBOOK_LAUNCHER>
+Shared Tao Agent OS library:
+<TAO_ROOT>/AGENTS.md
+<TAO_ROOT>/index.md
+<TAO_ROOT>/scripts/agent-entry.py
+<TAO_ROOT>/scripts/project-discover.py
+<TAO_LAUNCHER>
 
 Use repo-local instructions first. If this block is being installed into a
 personal or global runtime instructions file, and the runtime starts outside the
@@ -28,17 +28,17 @@ target repo or the request does not name one clear repo, run
 `ambiguous` or `not_found`. If `agent-entry.py` returns `selected`, prefer
 starting or relaunching the runtime with that selected repo as the primary
 workspace. For Codex, use `codex -C <TARGET_REPO>`; add
-`--add-dir <AGENTPLAYBOOK_ROOT>` only when the task needs the shared
-AgentPlaybook root in the session workspace. Repo instruction files define
+`--add-dir <TAO_ROOT>` only when the task needs the shared
+Tao Agent OS root in the session workspace. Repo instruction files define
 behavior; runtime launch options define filesystem scope. Explicitly read the
 current target project's
-instruction file for this runtime before using AgentPlaybook: Codex-style
+instruction file for this runtime before using Tao Agent OS: Codex-style
 agents read `AGENTS.md`, Claude reads `CLAUDE.md` when
 present, Codex-specific setups read `CODEX.md` when present,
 Gemini/Antigravity/AGY reads `AGENTS.md`, and generic agents read their
 configured project instruction document or `.agents/README.md` when used.
 If the request names a product/workspace alias that may map to multiple repos,
-use the local `~/.agentplaybook/projects.json` workspace group when available.
+use the local `~/.tao/projects.json` workspace group when available.
 Do not guess a single repo from the alias alone. If work starts in one primary
 repo and investigation shows a secondary repo must be written, stop before that
 write and record a workspace scope checkpoint: starting primary, secondary or
@@ -49,13 +49,13 @@ repo was written, pass it as `workspace scope checkpoint=<evidence>`,
 `scope expansion checkpoint=<evidence>`, or
 `cross-repo scope checkpoint=<evidence>`.
 Use the shared index only to select the smallest relevant document set.
-Do not create repo-local skill documents merely to copy shared AgentPlaybook
+Do not create repo-local skill documents merely to copy shared Tao Agent OS
 behavior. Keep repo-local skills, workflows, wiki pages, or runbooks only when
 they contain product-specific facts, commands, domain policy, or verification
 that cannot be shared safely.
 VibeGuard is required before documentation, code, config, dependency, data,
 deployment, or credential changes. Apply the current VibeGuard package command
-flow with <AGENTPLAYBOOK_ROOT> as the rule source before editing and again
+flow with <TAO_ROOT> as the rule source before editing and again
 before finishing. The VibeGuard site is a human reference and does not need to
 be fetched by the agent. Do not run VibeGuard `setup` or `update` blindly. If
 this repo already has custom agent instructions,
@@ -64,7 +64,7 @@ application drill first: add pointer vs merge vs pin; audit-only vs refresh
 with update vs first-time setup; apply now vs prepare instructions only.
 Default to preserving current guardrails and running audit only unless the user
 chooses to refresh the managed block.
-For multi-step tasks, run `<AGENTPLAYBOOK_LAUNCHER> start` once with `--request
+For multi-step tasks, run `<TAO_LAUNCHER> start` once with `--request
 "<USER_REQUEST>"`; it runs workflow routing/preflight and reports the required
 hooks for the route. Do not separately repeat workflow list, classify, route, or
 preflight. Use the start output as the command manifest before selecting task
@@ -87,7 +87,7 @@ verification, delegate automatically without waiting for explicit user
 multi-agent wording. Use Codex native workers, Claude Agent/Task workers, or
 the Gemini/AGY Antigravity agent runner according to the active runtime.
 Otherwise record the concrete serial reason. At each parent-to-worker boundary,
-run `<AGENTPLAYBOOK_LAUNCHER> handoff`; it refreshes the provider-neutral, content-free
+run `<TAO_LAUNCHER> handoff`; it refreshes the provider-neutral, content-free
 execution capsule and validates it once. A ready and valid handoff lets the
 worker reuse the parent's route, preflight, and required-doc manifest and skip
 duplicate startup. An invalid handoff is a successful fallback decision that
@@ -106,11 +106,11 @@ PRD/ARD or repo-local instruction makes the slice clearly trivial.
 Baseline documentation enforcement (the `documentation` gate always runs and is
 non-empty, `unchanged` needs inspection proof, skipping docs needs recorded user
 approval, and a `triage`/`plan` roadmap needs `product route re-entry` with PRD
-coverage) is enforced centrally by the shared AgentPlaybook finish-check and is
+coverage) is enforced centrally by the shared Tao Agent OS finish-check and is
 identical across Codex, Claude, and Gemini/Antigravity/AGY.
 Do not duplicate or restate these rules in repo-local files; keep only this
 pointer. The source of truth and the exception process are
-`<AGENTPLAYBOOK_ROOT>/workflows/skills/documentation-update/SKILL.md`; add
+`<TAO_ROOT>/workflows/skills/documentation-update/SKILL.md`; add
 exceptions there rather than self-judging, and load that card in Grill-Me or
 self-review before completion.
 If the workflow router or start hook cannot run, stop and report the blocker
@@ -122,17 +122,17 @@ to be 🐱🟢 SUCCESS. Use only two cat signal badges in human-visible reports:
 missed, or missing evidence and triggers missed-gate recovery: stop
 finalization, preserve the first failed checkpoint, roll back only dependent
 agent-made changes when safe, and run the retrospective workflow. Improve and
-verify the owning AgentPlaybook doc, hook, validator, or test before resuming
+verify the owning Tao Agent OS doc, hook, validator, or test before resuming
 that checkpoint. One repair cycle is allowed; stop on the same failure or an
 unsafe or ambiguous repair. Do not report any third gate state.
 When the wrapper scripts are available, keep the existing start evidence,
-run `<AGENTPLAYBOOK_LAUNCHER> review` after the scoped diff is ready, and run
-`<AGENTPLAYBOOK_LAUNCHER> finish` before final report, commit, release, or handoff. Pass
+run `<TAO_LAUNCHER> review` after the scoped diff is ready, and run
+`<TAO_LAUNCHER> finish` before final report, commit, release, or handoff. Pass
 evidence for every route gate to the finish check. The wrappers write local
 evidence under
-`.agentplaybook/`; this directory is runtime evidence and should usually be
+`.tao/`; this directory is runtime evidence and should usually be
 gitignored. When executing wrapper commands from an agent runtime, resolve
-`<AGENTPLAYBOOK_ROOT>` to an absolute path first; do not leave `$HOME`,
+`<TAO_ROOT>` to an absolute path first; do not leave `$HOME`,
 `${HOME}`, `~`, or a relative path in the executable command. Missing wrapper
 evidence or missing route gate evidence is
 non-compliant even when the final files look correct. VibeGuard `Needs review`
@@ -145,10 +145,10 @@ If a request asks for Grill-Me or classification returns `grill_me: true`,
 missing Grill-Me protocol or `/grilling` session evidence is 🐱🔴 FAIL and
 requires missed-gate recovery.
 Do not load every shared document by default.
-Replace `<AGENTPLAYBOOK_ROOT>` with a portable root reference. In committed
-repo-local instructions, use `${AGENTPLAYBOOK_HOME}` for shared local installs
-or a repo-relative pinned path such as `.agents/AgentPlaybook`; do not commit a
-personal absolute path such as `/Users/.../AgentPlaybook`. Full local paths
+Replace `<TAO_ROOT>` with a portable root reference. In committed
+repo-local instructions, use `${TAO_HOME}` for shared local installs
+or a repo-relative pinned path such as `.agents/tao-agent-os`; do not commit a
+personal absolute path such as `/Users/.../tao-agent-os`. Full local paths
 belong only in shell environment setup, one-shot prompts, or uncommitted
 user-level runtime bridges. Use legacy `${KEYFLOW_AGENT_ROOT}` only when the
 environment already provides it.
@@ -156,74 +156,74 @@ Keep repo paths, commands, components, role matrices, and domain terms in this r
 ```
 
 For one-shot runtime prompting without editing repo instructions, use
-`templates/use-agentplaybook-prompt.md`.
+`templates/use-tao-prompt.md`.
 
 Core direct routes:
 
 ```text
-Document index: <AGENTPLAYBOOK_ROOT>/index.md
-Agent operating skill: <AGENTPLAYBOOK_ROOT>/common/skills/agent-operating-skill/SKILL.md
-Task intake/effort routing: <AGENTPLAYBOOK_ROOT>/common/skills/task-intake-effort-routing/SKILL.md
-Stack discovery: <AGENTPLAYBOOK_ROOT>/common/skills/stack-discovery/SKILL.md
-LLM discipline: <AGENTPLAYBOOK_ROOT>/common/skills/llm-coding-discipline/SKILL.md
-Code conventions: <AGENTPLAYBOOK_ROOT>/common/skills/code-conventions/SKILL.md
-Code structure/ownership: <AGENTPLAYBOOK_ROOT>/common/skills/code-structure-ownership/SKILL.md
-Reusable code design: <AGENTPLAYBOOK_ROOT>/common/skills/reusable-code-design/SKILL.md
-Component API design: <AGENTPLAYBOOK_ROOT>/common/skills/component-api-design/SKILL.md
-State modeling: <AGENTPLAYBOOK_ROOT>/common/skills/state-modeling/SKILL.md
-Error modeling: <AGENTPLAYBOOK_ROOT>/common/skills/error-modeling/SKILL.md
-Tool failure recovery: <AGENTPLAYBOOK_ROOT>/common/skills/tool-failure-recovery/SKILL.md
-Agent interaction: <AGENTPLAYBOOK_ROOT>/common/skills/agent-interaction/SKILL.md
-LLM wiki documentation: <AGENTPLAYBOOK_ROOT>/common/skills/llm-wiki-documentation/SKILL.md
-Editing safety: <AGENTPLAYBOOK_ROOT>/common/skills/agent-editing-safety/SKILL.md
-Worktree hygiene: <AGENTPLAYBOOK_ROOT>/common/skills/worktree-hygiene/SKILL.md
-Defensive boundaries: <AGENTPLAYBOOK_ROOT>/common/skills/defensive-boundaries/SKILL.md
-UI visual verification: <AGENTPLAYBOOK_ROOT>/common/skills/ui-visual-verification/SKILL.md
-Workflow and lifecycle wrapper: <AGENTPLAYBOOK_LAUNCHER>
+Document index: <TAO_ROOT>/index.md
+Agent operating skill: <TAO_ROOT>/common/skills/agent-operating-skill/SKILL.md
+Task intake/effort routing: <TAO_ROOT>/common/skills/task-intake-effort-routing/SKILL.md
+Stack discovery: <TAO_ROOT>/common/skills/stack-discovery/SKILL.md
+LLM discipline: <TAO_ROOT>/common/skills/llm-coding-discipline/SKILL.md
+Code conventions: <TAO_ROOT>/common/skills/code-conventions/SKILL.md
+Code structure/ownership: <TAO_ROOT>/common/skills/code-structure-ownership/SKILL.md
+Reusable code design: <TAO_ROOT>/common/skills/reusable-code-design/SKILL.md
+Component API design: <TAO_ROOT>/common/skills/component-api-design/SKILL.md
+State modeling: <TAO_ROOT>/common/skills/state-modeling/SKILL.md
+Error modeling: <TAO_ROOT>/common/skills/error-modeling/SKILL.md
+Tool failure recovery: <TAO_ROOT>/common/skills/tool-failure-recovery/SKILL.md
+Agent interaction: <TAO_ROOT>/common/skills/agent-interaction/SKILL.md
+LLM wiki documentation: <TAO_ROOT>/common/skills/llm-wiki-documentation/SKILL.md
+Editing safety: <TAO_ROOT>/common/skills/agent-editing-safety/SKILL.md
+Worktree hygiene: <TAO_ROOT>/common/skills/worktree-hygiene/SKILL.md
+Defensive boundaries: <TAO_ROOT>/common/skills/defensive-boundaries/SKILL.md
+UI visual verification: <TAO_ROOT>/common/skills/ui-visual-verification/SKILL.md
+Workflow and lifecycle wrapper: <TAO_LAUNCHER>
   (aliases: workflow, start, handoff, gate, review, finish, agent-entry,
   project-discover, agent-preflight, agent-finish-check, agent-os-status,
   agent-os-watchdog, agent-os-maintenance, workflow-dispatch)
-Android architecture: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-architecture/SKILL.md
-Android Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-compose-ui/SKILL.md
-Android module/package structure: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-module-structure/SKILL.md
-Android ViewModel/state: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-viewmodel-state/SKILL.md
-Android state/data: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-state-data/SKILL.md
-Android DataStore persistence: <AGENTPLAYBOOK_ROOT>/platforms/android/references/android-datastore.md
-Android background work: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-background-work/SKILL.md
-Android security: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-security/SKILL.md
-Android review: <AGENTPLAYBOOK_ROOT>/platforms/android/skills/android-review/SKILL.md
-KMP architecture: <AGENTPLAYBOOK_ROOT>/platforms/kmp/skills/kmp-architecture/SKILL.md
-KMP module/source-set structure: <AGENTPLAYBOOK_ROOT>/platforms/kmp/skills/kmp-module-structure/SKILL.md
-KMP Compose UI: <AGENTPLAYBOOK_ROOT>/platforms/kmp/skills/kmp-compose-ui/SKILL.md
-Flutter architecture: <AGENTPLAYBOOK_ROOT>/platforms/flutter/skills/flutter-architecture/SKILL.md
-Flutter project/package structure: <AGENTPLAYBOOK_ROOT>/platforms/flutter/skills/flutter-project-structure/SKILL.md
-Flutter widget UI: <AGENTPLAYBOOK_ROOT>/platforms/flutter/skills/flutter-widget-ui/SKILL.md
-iOS target/package structure: <AGENTPLAYBOOK_ROOT>/platforms/ios/skills/ios-module-structure/SKILL.md
-iOS SwiftUI UI: <AGENTPLAYBOOK_ROOT>/platforms/ios/skills/ios-swiftui-ui/SKILL.md
-iOS UIKit UI: <AGENTPLAYBOOK_ROOT>/platforms/ios/skills/ios-uikit-ui/SKILL.md
-Web React UI: <AGENTPLAYBOOK_ROOT>/platforms/web/skills/web-react-ui/SKILL.md
-Server API implementation: <AGENTPLAYBOOK_ROOT>/platforms/server/skills/server-api-implementation/SKILL.md
-Application command/UI: <AGENTPLAYBOOK_ROOT>/platforms/application/skills/application-command-ui/SKILL.md
-Auth/RBAC implementation: <AGENTPLAYBOOK_ROOT>/product-patterns/skills/auth-rbac-implementation/SKILL.md
-Invitation implementation: <AGENTPLAYBOOK_ROOT>/product-patterns/skills/invitation-implementation/SKILL.md
-Billing/entitlements implementation: <AGENTPLAYBOOK_ROOT>/product-patterns/skills/billing-entitlements-implementation/SKILL.md
-Agent task lifecycle: <AGENTPLAYBOOK_ROOT>/workflows/skills/agent-task-lifecycle/SKILL.md
-Request triage workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/request-triage/SKILL.md
-Agent handoff/continuation: <AGENTPLAYBOOK_ROOT>/workflows/skills/agent-handoff-continuation/SKILL.md
-Scripted agent workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/scripted-agent-workflow/SKILL.md
-Ambiguity gate: <AGENTPLAYBOOK_ROOT>/workflows/skills/ambiguity-gate/SKILL.md
-Product architecture delivery: <AGENTPLAYBOOK_ROOT>/workflows/skills/product-architecture-delivery/SKILL.md
-Development cycle: <AGENTPLAYBOOK_ROOT>/workflows/skills/development-cycle/SKILL.md
-Multi-agent collaboration: <AGENTPLAYBOOK_ROOT>/workflows/skills/multi-agent-collaboration/SKILL.md
-Multi-perspective review: <AGENTPLAYBOOK_ROOT>/workflows/skills/multi-perspective-review/SKILL.md
-Retrospective learning: <AGENTPLAYBOOK_ROOT>/workflows/skills/retrospective-learning/SKILL.md
-Planning/research workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/planning-research/SKILL.md
-Documentation workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/documentation-update/SKILL.md
-Feature workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/feature-implementation/SKILL.md
-Bugfix/debugging workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/bugfix-debugging/SKILL.md
-Refactor workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/refactor-cleanup/SKILL.md
-Release readiness workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/release-readiness/SKILL.md
-Review/commit workflow: <AGENTPLAYBOOK_ROOT>/workflows/skills/review-and-commit/SKILL.md
+Android architecture: <TAO_ROOT>/platforms/android/skills/android-architecture/SKILL.md
+Android Compose UI: <TAO_ROOT>/platforms/android/skills/android-compose-ui/SKILL.md
+Android module/package structure: <TAO_ROOT>/platforms/android/skills/android-module-structure/SKILL.md
+Android ViewModel/state: <TAO_ROOT>/platforms/android/skills/android-viewmodel-state/SKILL.md
+Android state/data: <TAO_ROOT>/platforms/android/skills/android-state-data/SKILL.md
+Android DataStore persistence: <TAO_ROOT>/platforms/android/references/android-datastore.md
+Android background work: <TAO_ROOT>/platforms/android/skills/android-background-work/SKILL.md
+Android security: <TAO_ROOT>/platforms/android/skills/android-security/SKILL.md
+Android review: <TAO_ROOT>/platforms/android/skills/android-review/SKILL.md
+KMP architecture: <TAO_ROOT>/platforms/kmp/skills/kmp-architecture/SKILL.md
+KMP module/source-set structure: <TAO_ROOT>/platforms/kmp/skills/kmp-module-structure/SKILL.md
+KMP Compose UI: <TAO_ROOT>/platforms/kmp/skills/kmp-compose-ui/SKILL.md
+Flutter architecture: <TAO_ROOT>/platforms/flutter/skills/flutter-architecture/SKILL.md
+Flutter project/package structure: <TAO_ROOT>/platforms/flutter/skills/flutter-project-structure/SKILL.md
+Flutter widget UI: <TAO_ROOT>/platforms/flutter/skills/flutter-widget-ui/SKILL.md
+iOS target/package structure: <TAO_ROOT>/platforms/ios/skills/ios-module-structure/SKILL.md
+iOS SwiftUI UI: <TAO_ROOT>/platforms/ios/skills/ios-swiftui-ui/SKILL.md
+iOS UIKit UI: <TAO_ROOT>/platforms/ios/skills/ios-uikit-ui/SKILL.md
+Web React UI: <TAO_ROOT>/platforms/web/skills/web-react-ui/SKILL.md
+Server API implementation: <TAO_ROOT>/platforms/server/skills/server-api-implementation/SKILL.md
+Application command/UI: <TAO_ROOT>/platforms/application/skills/application-command-ui/SKILL.md
+Auth/RBAC implementation: <TAO_ROOT>/product-patterns/skills/auth-rbac-implementation/SKILL.md
+Invitation implementation: <TAO_ROOT>/product-patterns/skills/invitation-implementation/SKILL.md
+Billing/entitlements implementation: <TAO_ROOT>/product-patterns/skills/billing-entitlements-implementation/SKILL.md
+Agent task lifecycle: <TAO_ROOT>/workflows/skills/agent-task-lifecycle/SKILL.md
+Request triage workflow: <TAO_ROOT>/workflows/skills/request-triage/SKILL.md
+Agent handoff/continuation: <TAO_ROOT>/workflows/skills/agent-handoff-continuation/SKILL.md
+Scripted agent workflow: <TAO_ROOT>/workflows/skills/scripted-agent-workflow/SKILL.md
+Ambiguity gate: <TAO_ROOT>/workflows/skills/ambiguity-gate/SKILL.md
+Product architecture delivery: <TAO_ROOT>/workflows/skills/product-architecture-delivery/SKILL.md
+Development cycle: <TAO_ROOT>/workflows/skills/development-cycle/SKILL.md
+Multi-agent collaboration: <TAO_ROOT>/workflows/skills/multi-agent-collaboration/SKILL.md
+Multi-perspective review: <TAO_ROOT>/workflows/skills/multi-perspective-review/SKILL.md
+Retrospective learning: <TAO_ROOT>/workflows/skills/retrospective-learning/SKILL.md
+Planning/research workflow: <TAO_ROOT>/workflows/skills/planning-research/SKILL.md
+Documentation workflow: <TAO_ROOT>/workflows/skills/documentation-update/SKILL.md
+Feature workflow: <TAO_ROOT>/workflows/skills/feature-implementation/SKILL.md
+Bugfix/debugging workflow: <TAO_ROOT>/workflows/skills/bugfix-debugging/SKILL.md
+Refactor workflow: <TAO_ROOT>/workflows/skills/refactor-cleanup/SKILL.md
+Release readiness workflow: <TAO_ROOT>/workflows/skills/release-readiness/SKILL.md
+Review/commit workflow: <TAO_ROOT>/workflows/skills/review-and-commit/SKILL.md
 ```
 
 Use `index.md` for platform, product-pattern, and task-specific common cards

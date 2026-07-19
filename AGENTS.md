@@ -4,9 +4,9 @@ status: stable
 type: human-reviewed
 ---
 
-# AgentPlaybook Shared Agent Instructions
+# Tao Agent OS Shared Agent Instructions
 
-This file is the entrypoint for agents that consult the shared AgentPlaybook library.
+This file is the entrypoint for agents that consult the shared Tao Agent OS library.
 
 ## Purpose
 
@@ -23,8 +23,8 @@ non-project directory, or a directory that may not be the requested target, use
 the local project entry helpers before project work when they exist:
 
 ```text
-<AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
-<AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
+<TAO_ROOT>/scripts/agent-entry.py
+<TAO_ROOT>/scripts/project-discover.py
 ```
 
 Continue only when discovery returns `selected`. If it returns `ambiguous` or
@@ -32,17 +32,17 @@ Continue only when discovery returns `selected`. If it returns `ambiguous` or
 prompt. Keep discovery cheap by preferring the current directory, explicit
 paths, registry aliases, and known search roots over broad home-directory
 scans. After selection, read the target project's local instructions before
-using shared AgentPlaybook guidance.
+using shared Tao Agent OS guidance.
 
 When starting or relaunching a runtime, make the selected target project the
 primary workspace. For Codex, use `codex -C <TARGET_REPO>`; add
-`--add-dir <AGENTPLAYBOOK_ROOT>` only when the current task must include the
-shared playbook root in the session workspace. Instruction files define agent
+`--add-dir <TAO_ROOT>` only when the current task must include the
+shared Tao Agent OS root in the session workspace. Instruction files define agent
 behavior; runtime launch roots define filesystem scope and prevent repeated
 permission prompts.
 
 When one product spans multiple repositories, keep that product as a local
-workspace group in `~/.agentplaybook/projects.json`. Treat the first selected
+workspace group in `~/.tao/projects.json`. Treat the first selected
 repo as the primary repo for acceptance. If investigation shows that another
 repo is the source of truth or must be written, stop before that write and
 record a workspace scope checkpoint: starting primary, secondary/source-of-truth
@@ -51,7 +51,7 @@ write`, or `multi-session`), write scope, and cross-repo verification.
 
 ## Shared Guidance Boundary
 
-Write AgentPlaybook guidance as a reusable common baseline, not as the operating
+Write Tao Agent OS guidance as a reusable common baseline, not as the operating
 model of one product, service, vendor, customer, team, or repository. A rule
 belongs in this shared library only when it remains correct after removing
 service names, product policy, local paths, command names, account names,
@@ -70,15 +70,15 @@ shared library. This includes generated repo wikis, code-derived module
 summaries, project runbooks, product decisions, local commands, local paths,
 service setup, role matrices, and domain policy for one repo or product.
 
-AgentPlaybook may define reusable rules for creating, reviewing, refreshing, and
+Tao Agent OS may define reusable rules for creating, reviewing, refreshing, and
 reading LLM wiki pages. Those meta-rules live in:
 
 ```text
-<AGENTPLAYBOOK_ROOT>/common/skills/llm-wiki-documentation/SKILL.md
-<AGENTPLAYBOOK_ROOT>/common/skills/llm-wiki-documentation/references/current-guidance.md
+<TAO_ROOT>/common/skills/llm-wiki-documentation/SKILL.md
+<TAO_ROOT>/common/skills/llm-wiki-documentation/references/current-guidance.md
 ```
 
-When applying AgentPlaybook to a target repo, read the target repo's local LLM
+When applying Tao Agent OS to a target repo, read the target repo's local LLM
 wiki only after repo/runtime instructions, the workflow route, and the relevant
 skill entrypoints. Treat project LLM wiki pages as navigation or source-derived
 summaries unless the target repo explicitly marks a reviewed page as a source of
@@ -109,8 +109,8 @@ When instructions conflict, follow this order:
 3. The target repo's local instructions, such as `AGENTS.md`, `CLAUDE.md`,
    `CODEX.md`, `.agents/README.md`, `CONTRIBUTING.md`, or an explicitly
    documented local override file.
-4. More specific shared AgentPlaybook documents, such as platform or product-pattern docs.
-5. Shared AgentPlaybook common cards.
+4. More specific shared Tao Agent OS documents, such as platform or product-pattern docs.
+5. Shared Tao Agent OS common cards.
 6. General guidance in `README.md`.
 
 If the conflict changes behavior, verification, security, or data handling, call
@@ -121,7 +121,7 @@ it out before or after the work.
 For implementation, review, refactoring, debugging, documentation, or planning tasks, first consult:
 
 ```text
-<AGENTPLAYBOOK_ROOT>/common/skills/agent-operating-skill/SKILL.md
+<TAO_ROOT>/common/skills/agent-operating-skill/SKILL.md
 ```
 
 Then load only the supporting documents relevant to the task.
@@ -131,7 +131,7 @@ Then load only the supporting documents relevant to the task.
 When creating PRDs, specs, or ARDs, follow the path and naming rules in:
 
 ```text
-<AGENTPLAYBOOK_ROOT>/common/skills/doc-conventions/SKILL.md
+<TAO_ROOT>/common/skills/doc-conventions/SKILL.md
 ```
 
 Repo-local instructions override this guide. Always state the output path in the
@@ -139,10 +139,10 @@ handoff.
 
 ## Required VibeGuard Gate
 
-VibeGuard is mandatory for AgentPlaybook maintenance and for repos that apply
-AgentPlaybook. Before documentation, code, configuration, dependency, data,
+VibeGuard is mandatory for Tao Agent OS maintenance and for repos that apply
+Tao Agent OS. Before documentation, code, configuration, dependency, data,
 deployment, or credential changes, run the VibeGuard audit for the target repo.
-When applying AgentPlaybook to another repo, do not run VibeGuard `setup` or
+When applying Tao Agent OS to another repo, do not run VibeGuard `setup` or
 `update` blindly; use the application drill in `docs/skills/agent-bootstrap/SKILL.md` when
 the target already has agent instructions or guardrails. Use `update` only when
 the user explicitly chooses to refresh an existing managed VibeGuard block;
@@ -182,13 +182,13 @@ do not separately repeat workflow list, classify, route, or preflight after it
 succeeds:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 `--command` accepts a workflow route, not a stage label. For implementation work,
 use the closest route such as `bugfix`, `feature`, `build`, or `task`; `implement`
 is an execution-stage label and is not a valid route command. When uncertain,
-confirm the current route choices with `agentplaybook-hook workflow list` before
+confirm the current route choices with `tao-hook workflow list` before
 running the hook.
 
 Use the start output as the route, document, and gate manifest, then execute the
@@ -226,7 +226,7 @@ The workflow router also promotes required docs from
 specific work surface. This is the root-level document routing map for common
 agent tasks such as workflow script changes, request classifier work, tests,
 skill cards, agent instruction files, UI-capable platform work, and shared
-playbook docs. Request-intent rules may match the route command, selected
+Tao Agent OS docs. Request-intent rules may match the route command, selected
 platform, request text, and reusable document sets; for example screen, list,
 favorites, or explicit framework choices on Android, Application, Flutter, iOS,
 KMP, Swift, and Web promote the matching UI, state, structure, review, visual
@@ -246,7 +246,7 @@ as frontmatter `requires_docs` may promote an additional doc to `required_docs`.
 
 Natural-language document discovery is a router responsibility, not a hook
 responsibility. The router/search layer uses the repository-pinned Wikimap
-backend to incrementally index AgentPlaybook guidance without a model or network
+backend to incrementally index Tao Agent OS guidance without a model or network
 call, then overlays explicit workflow facets and the local document graph.
 Wikimap matches are candidate/reference seeds; only route policy or an explicit
 required-doc relation promotes a required document. Hooks do not run search
@@ -265,19 +265,19 @@ paths and must stop once rather than retry search.
 Discover valid commands, platforms, and concerns with:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> workflow list
+<TAO_LAUNCHER> workflow list
 ```
 
 When the right document is not obvious from `index.md`, search by keyword:
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> workflow query <keyword> [<keyword> ...]
+<TAO_LAUNCHER> workflow query <keyword> [<keyword> ...]
 ```
 
 The query command uses the pinned Wikimap source to return exact sections and
 lines, while preserving the existing `workflow.py query` interface. It requires
 no separate install, model call, or network access at query time; its disposable
-SQLite cache stays under ignored `.wikimap/`. Explicit AgentPlaybook facets
+SQLite cache stays under ignored `.wikimap/`. Explicit Tao Agent OS facets
 remain a policy overlay for phrases such as code cleanup, change review,
 verification, UI feature work, skill docs, or document routing, and the local
 document graph surfaces connected skill entrypoints and references. If Wikimap
@@ -302,7 +302,7 @@ reports or machine-readable hook status. Completion requires every required
 gate to be `🐱🟢 SUCCESS`. If a
 required gate fails or lacks evidence, report `🐱🔴 FAIL`, follow missed-gate
 recovery, and do not finalize. On a required hook or gate `FAIL`, run the
-actionable retrospective, improve the canonical AgentPlaybook guidance, hook,
+actionable retrospective, improve the canonical Tao Agent OS guidance, hook,
 validator, or test, verify that improvement, and then resume the original task
 at `first_failed_checkpoint`. A note or queued candidate alone is not recovery.
 Use one repair cycle only. Stop when the same failure signature recurs after
@@ -360,11 +360,11 @@ creating the local commit.
 
 For multi-step tasks, use the executable wrappers when they are available. The
 single start hook creates routing and preflight evidence with the current target
-project and selected AgentPlaybook rule source before editing, reviewing,
+project and selected Tao Agent OS rule source before editing, reviewing,
 committing, or reporting completion:
 
 When executing wrapper commands from an agent runtime, replace
-`<AGENTPLAYBOOK_ROOT>` with the resolved absolute path first. Do not leave
+`<TAO_ROOT>` with the resolved absolute path first. Do not leave
 `$HOME`, `${HOME}`, `~`, or a relative path in the executable command; those
 forms can bypass narrow permission-prefix matching and cause repeated approval
 prompts. Always register and request command permissions using the parameter-free
@@ -374,7 +374,7 @@ with arguments, any change to those arguments (e.g., different project paths or
 options) will fail prefix matching and trigger repeated prompts.
 For Codex `exec_command` escalations, set `prefix_rule` to only the executable
 and resolved wrapper path, such as
-`["/Users/USER/.agentplaybook/bin/agentplaybook-hook"]`; never
+`["/Users/USER/.tao/bin/tao-hook"]`; never
 include `--project`, `--request`, `--gate-record`, `$(pwd)`, `$HOME`, or other runtime
 arguments in the saved prefix. AGY (Antigravity) permission allowlists must follow the same
 shape with only an absolute wrapper command plus a trailing argument wildcard.
@@ -385,12 +385,12 @@ Python entrypoints under `scripts/`, ensure `setup-agent-hooks.py` (via
 `permission_entries.py`) automatically generates and updates these wildcard
 combinations in settings.json and config.json. Claude managed user-level
 hooks must use the stable launcher installed by `setup-agent-hooks.py` at
-`<AGENTPLAYBOOK_LAUNCHER>`; setup refreshes
-`~/.agentplaybook/agentplaybook-root` after moves or migrations so the Claude
+`<TAO_LAUNCHER>`; setup refreshes
+`~/.tao/tao-root` after moves or migrations so the Claude
 hook command does not point at a stale checkout path.
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
+<TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
 After start, read the route's `required_docs` in order before editing or
@@ -469,8 +469,15 @@ compatible. The canonical decision rules live in
 `workflows/skills/ambiguity-gate/SKILL.md`.
 
 ```text
-<AGENTPLAYBOOK_LAUNCHER> gate-batch --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"orient","status":"SUCCESS","evidence":"<evidence>"},{"gate":"scope","status":"SUCCESS","evidence":"<evidence>"},{"gate":"act","status":"SUCCESS","evidence":"<evidence>"},{"gate":"verify","status":"SUCCESS","evidence":"<evidence>"},{"gate":"report","status":"SUCCESS","evidence":"<evidence>"}]'
-<AGENTPLAYBOOK_LAUNCHER> finish --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>
+<TAO_LAUNCHER> gate-batch --project <TARGET_REPO> --rules <TAO_ROOT> --gate-record '[{"gate":"orient","status":"SUCCESS","evidence":"<evidence>"},{"gate":"scope","status":"SUCCESS","evidence":"<evidence>"},{"gate":"act","status":"SUCCESS","evidence":"<evidence>"},{"gate":"verify","status":"SUCCESS","evidence":"<evidence>"},{"gate":"report","status":"SUCCESS","evidence":"<evidence>"}]'
+<TAO_LAUNCHER> finish --project <TARGET_REPO> --rules <TAO_ROOT>
+```
+
+Structured gate fields must be passed in the record's `fields` object; putting
+JSON-shaped text inside `evidence` does not populate them. For example:
+
+```json
+{"gate":"retrospective check","status":"SUCCESS","evidence":"closeout checked","fields":{"skills_checked":"graphify","outcome":"no_reusable_gap","observation":"not_needed"}}
 ```
 
 `finish` must not create or override gate evidence. A later structured `FAIL`
@@ -480,14 +487,14 @@ recorded through `gate` or `gate-batch`.
 Call `agent-finish-check.py` directly only as a lower-level diagnostic or
 compatibility fallback when the finish hook is unavailable.
 
-The wrappers write local JSON evidence under `<TARGET_REPO>/.agentplaybook/`.
-The gate ledger is `<TARGET_REPO>/.agentplaybook/gate-evidence.json` for the
+The wrappers write local JSON evidence under `<TARGET_REPO>/.tao/`.
+The gate ledger is `<TARGET_REPO>/.tao/gate-evidence.json` for the
 default `preflight.json`; custom preflight evidence files use
 `<preflight-stem>-gate-evidence.json` so concurrent or delegated runs do not
 overwrite one another.
 That directory is local runtime evidence and should usually be gitignored.
 The wrappers may also read or write safe cross-agent lessons under
-`~/.agentplaybook/`. That user-global store is for content-free lesson metadata
+`~/.tao/`. That user-global store is for content-free lesson metadata
 only: missed gate slugs, failure types, root-cause categories, next actions, and
 promotion status. It must not contain prompts, responses, commands, file paths,
 repo names, branch names, diffs, logs, source content, environment values,
@@ -521,7 +528,7 @@ actually run.
 
 When `agent-finish-check.py` marks `retrospective_required`, run the
 canonical retrospective repair cycle before reporting completion. Improve and
-verify the owning AgentPlaybook guidance, hook, validator, or test, apply safe
+verify the owning Tao Agent OS guidance, hook, validator, or test, apply safe
 scoped fixes, then resume at `first_failed_checkpoint`. Stop instead of
 continuing when the same failure recurs after repair, the repair is unsafe or
 ambiguous, source ownership is uncertain, verification fails, or the single
@@ -549,34 +556,34 @@ are intentionally selected through `index.md` or `scripts/workflow.py` instead
 of being listed as baseline direct routes here.
 
 ```text
-<AGENTPLAYBOOK_ROOT>/index.md
-<AGENTPLAYBOOK_ROOT>/common/skills/stack-discovery/SKILL.md
-<AGENTPLAYBOOK_ROOT>/common/skills/llm-coding-discipline/SKILL.md
-<AGENTPLAYBOOK_ROOT>/common/skills/code-conventions/SKILL.md
-<AGENTPLAYBOOK_ROOT>/common/skills/tool-failure-recovery/SKILL.md
-<AGENTPLAYBOOK_ROOT>/common/skills/agent-interaction/SKILL.md
-<AGENTPLAYBOOK_ROOT>/common/skills/agent-editing-safety/SKILL.md
+<TAO_ROOT>/index.md
+<TAO_ROOT>/common/skills/stack-discovery/SKILL.md
+<TAO_ROOT>/common/skills/llm-coding-discipline/SKILL.md
+<TAO_ROOT>/common/skills/code-conventions/SKILL.md
+<TAO_ROOT>/common/skills/tool-failure-recovery/SKILL.md
+<TAO_ROOT>/common/skills/agent-interaction/SKILL.md
+<TAO_ROOT>/common/skills/agent-editing-safety/SKILL.md
 ```
 
 ## Workflow Documents
 
 ```text
-<AGENTPLAYBOOK_ROOT>/workflows/skills/agent-task-lifecycle/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/agent-handoff-continuation/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/scripted-agent-workflow/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/ambiguity-gate/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/product-architecture-delivery/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/development-cycle/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/multi-agent-collaboration/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/multi-perspective-review/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/retrospective-learning/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/planning-research/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/documentation-update/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/feature-implementation/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/bugfix-debugging/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/refactor-cleanup/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/release-readiness/SKILL.md
-<AGENTPLAYBOOK_ROOT>/workflows/skills/review-and-commit/SKILL.md
+<TAO_ROOT>/workflows/skills/agent-task-lifecycle/SKILL.md
+<TAO_ROOT>/workflows/skills/agent-handoff-continuation/SKILL.md
+<TAO_ROOT>/workflows/skills/scripted-agent-workflow/SKILL.md
+<TAO_ROOT>/workflows/skills/ambiguity-gate/SKILL.md
+<TAO_ROOT>/workflows/skills/product-architecture-delivery/SKILL.md
+<TAO_ROOT>/workflows/skills/development-cycle/SKILL.md
+<TAO_ROOT>/workflows/skills/multi-agent-collaboration/SKILL.md
+<TAO_ROOT>/workflows/skills/multi-perspective-review/SKILL.md
+<TAO_ROOT>/workflows/skills/retrospective-learning/SKILL.md
+<TAO_ROOT>/workflows/skills/planning-research/SKILL.md
+<TAO_ROOT>/workflows/skills/documentation-update/SKILL.md
+<TAO_ROOT>/workflows/skills/feature-implementation/SKILL.md
+<TAO_ROOT>/workflows/skills/bugfix-debugging/SKILL.md
+<TAO_ROOT>/workflows/skills/refactor-cleanup/SKILL.md
+<TAO_ROOT>/workflows/skills/release-readiness/SKILL.md
+<TAO_ROOT>/workflows/skills/review-and-commit/SKILL.md
 ```
 
 ## Operating Rule
@@ -589,24 +596,24 @@ Keep reusable agent knowledge single-owned and provider-neutral. Runtime files
 are thin adapters or pointers unless behavior is genuinely runtime-specific;
 do not maintain parallel Codex, Claude, or Gemini/Antigravity/AGY copies of the
 same operational rule or skill. Follow
-`docs/skills/agentplaybook-skill-bundle-migration/references/source-of-truth-ownership.md`
+`docs/skills/tao-skill-bundle-migration/references/source-of-truth-ownership.md`
 for the canonical ownership and duplicate-audit rule.
 
-When applying AgentPlaybook to another repo, reuse an existing usable local or
-repo-pinned AgentPlaybook root by default. Do not download, clone, vendor, copy,
+When applying Tao Agent OS to another repo, reuse an existing usable local or
+repo-pinned Tao Agent OS root by default. Do not download, clone, vendor, copy,
 overwrite, or add a second root while one exists unless the user explicitly
 approves after being told the found path.
 
-When adding AgentPlaybook routing to a target repo, keep `AGENTS.md` as the
+When adding Tao Agent OS routing to a target repo, keep `AGENTS.md` as the
 canonical instruction file when that runtime reads it. If existing
 runtime-specific files such as `CLAUDE.md`, `CODEX.md`, `.agents/README.md`, or
-Antigravity CLI docs are present, update their AgentPlaybook pointer in the same
+Antigravity CLI docs are present, update their Tao Agent OS pointer in the same
 pass or point them back to `AGENTS.md`; do not create extra runtime-specific
 files only for duplication.
 
 User-level runtime bridges must be fail-closed. If a bridge cannot confirm the
 current project root, the project-root instruction file for the active runtime,
-or the required AgentPlaybook/VibeGuard evidence gates, the agent must stop
+or the required Tao Agent OS/VibeGuard evidence gates, the agent must stop
 before routing, editing, testing, committing, or reporting completion and ask
 for bridge repair. Generated or managed runtime bridges must also enforce
 silent background behavior: do not mention setup helpers, hook commands,
@@ -621,22 +628,22 @@ contract, not to estimate or infer from private content. A bridge that only
 apologizes after exposing those details is non-compliant; it must change the
 next action path or stop.
 
-`<AGENTPLAYBOOK_LAUNCHER>` means the installed stable launcher, which lives
-outside the checkout at `~/.agentplaybook/bin/agentplaybook-hook`. It is a
-separate user-global directory, not a path under `<AGENTPLAYBOOK_ROOT>`; the
-`~/.agentplaybook/agentplaybook-root` pointer file is what links the two.
+`<TAO_LAUNCHER>` means the installed stable launcher, which lives
+outside the checkout at `~/.tao/bin/tao-hook`. It is a
+separate user-global directory, not a path under `<TAO_ROOT>`; the
+`~/.tao/tao-root` pointer file is what links the two.
 Before executing it, resolve the placeholder to that machine's absolute path.
 Do not run it as `~/...`, `$HOME/...`, or `${HOME}/...`: setup installs one
 resolved absolute permission entry per runtime, so a home-relative spelling is
 not in the allowlist and produces an approval prompt. Committed documents keep
 the placeholder rather than a personal absolute path, for the same reason
-`<AGENTPLAYBOOK_ROOT>` is never written out as `/Users/...`.
+`<TAO_ROOT>` is never written out as `/Users/...`.
 
-`<AGENTPLAYBOOK_ROOT>` means the directory containing this shared library. In
+`<TAO_ROOT>` means the directory containing this shared library. In
 committed or shared repo-local instructions, do not replace it with a personal
-absolute path such as `/Users/.../AgentPlaybook`. Use `${AGENTPLAYBOOK_HOME}`
+absolute path such as `/Users/.../tao-agent-os`. Use `${TAO_HOME}`
 when each machine can set the variable, or a repo-relative pinned path such as
-`.agents/AgentPlaybook` when the root is committed or pinned with the target
+`.agents/tao-agent-os` when the root is committed or pinned with the target
 repo. Personal absolute paths are acceptable only in uncommitted local runtime
 bridges, one-shot prompts, or shell environment setup for a specific user.
 `${KEYFLOW_AGENT_ROOT}` is accepted only as a legacy local alias when already
@@ -662,7 +669,7 @@ deployment, or credentials:
 12. If execution evidence is available, run `vibeguard evidence .` before the final response and do not claim tests or audits ran unless they were observed.
 13. Keep secrets server-side. Do not expose provider keys, database URLs, signing secrets, service-role keys, or webhook secrets to client code.
 14. If the user pastes a secret in chat, treat it as exposed. Do not repeat it, put it in commands/logs/files/GitHub secrets/deployment settings/servers, or continue with deployment using that value. Guide the user to rotate it and enter a new value only through a local provider UI or secret-store prompt.
-15. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
+15. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external agent-guidance bundles or rule libraries unless the user explicitly asks for that separate setup.
 16. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the `vibeguard:start` and `vibeguard:end` markers.
 
 Refresh this managed block only when `vibeguard audit .` reports stale guardrails, or manually with `vibeguard update .` / `npx --yes @taehwandev/vibeguard@latest update .`.

@@ -6,7 +6,7 @@ type: ai-generated
 
 # Agent Credential Broker Ideation
 
-Use when routed to `product-patterns/skills/agent-credential-broker-ideation/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `product-patterns/skills/agent-credential-broker-ideation/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

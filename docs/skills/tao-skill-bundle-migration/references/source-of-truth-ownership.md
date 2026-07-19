@@ -1,12 +1,12 @@
 ---
-keyflow_id: sys_agentplaybook_source_of_truth_ownership
+keyflow_id: sys_tao_source_of_truth_ownership
 status: review
 type: human-reviewed-needed
 ---
 
 # Source-Of-Truth Ownership
 
-Use this when restructuring AgentPlaybook guidance, moving flat docs into skill
+Use this when restructuring Tao Agent OS guidance, moving flat docs into skill
 bundles, cleaning duplicated rules, or deciding where a topic belongs.
 
 The goal is to prevent agents from reading several stale versions of the same
@@ -54,11 +54,11 @@ or configuration files outside that link may own unavoidable runtime wiring.
 For repo-local skills, prefer this shape:
 
 ```text
-.agentplaybook/skills/<skill>/   # one canonical, commit-worthy source
+.tao/skills/<skill>/   # one canonical, commit-worthy source
 .<runtime>/skills/<skill>        # repo-relative link or thin runtime adapter
 ```
 
-The `.agentplaybook` directory may also contain local workflow evidence, but
+The `.tao` directory may also contain local workflow evidence, but
 that evidence is not part of the canonical skill and must remain ignored. Use
 an allowlist tracking policy so `skills/<skill>/**` is portable while
 preflight, gate, review, cache, and receipt files stay local.
@@ -73,7 +73,7 @@ Preferred ownership order:
 4. Workflow skills own agent process, gates, evidence, review, release, and
    handoff behavior.
 5. Common skills own reusable engineering rules that cross platforms.
-6. `docs/skills/...` owns AgentPlaybook maintenance, runtime integration, and
+6. `docs/skills/...` owns Tao Agent OS maintenance, runtime integration, and
    documentation-system rules.
 7. `index.md`, README summaries, and router metadata own
    discovery only; they should not own detailed operational rules.
@@ -126,7 +126,7 @@ Run this drill before creating a new card or splitting an existing one:
 ## Compatibility Stubs
 
 Flat `.md` compatibility stubs are temporary exceptions, not the normal
-AgentPlaybook layout. Prefer deleting them after internal routes, links, tests,
+Tao Agent OS layout. Prefer deleting them after internal routes, links, tests,
 and required-document manifests target the canonical bundle.
 
 Keep a flat stub only when a named downstream repo instruction, runtime bridge,
@@ -152,7 +152,7 @@ require updating several narrative copies.
 
 When a request names folder structure, `SKILL.md`, `references/`, skill bundles,
 source-of-truth cleanup, duplicated guidance, or misplaced docs, routing should
-load `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md` before edits.
+load `docs/skills/tao-skill-bundle-migration/SKILL.md` before edits.
 
 ## Stop If
 
@@ -163,7 +163,7 @@ load `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md` before edits.
 - A moved rule loses a stronger stop condition, verification requirement, or
   source constraint.
 - A third-party skill or vendor workflow is copied instead of distilled into a
-  reusable AgentPlaybook rule.
+  reusable Tao Agent OS rule.
 - Codex, Claude, and Antigravity/AGY each retain a full copy of the same skill
   or operational knowledge instead of resolving to one canonical owner.
 - The cleanup would delete a compatibility path still referenced by runtime

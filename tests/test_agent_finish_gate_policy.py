@@ -147,13 +147,13 @@ def route_doc(path: str) -> str:
 
 class FinishGatePolicyTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_documentation_concern_routes_to_documentation_workflow(self) -> None:
         self.assertEqual(
@@ -215,12 +215,12 @@ class FinishGatePolicyTests(unittest.TestCase):
             ):
                 self.assertEqual(0, agent_preflight.run_preflight(args, ROOT))
 
-            evidence = json.loads((project / ".agentplaybook" / "preflight.json").read_text(encoding="utf-8"))
+            evidence = json.loads((project / ".tao" / "preflight.json").read_text(encoding="utf-8"))
 
         self.assertEqual(1, routed.call_count)
         self.assertIn("execution_snapshot", evidence)
         self.assertNotIn("project_git", evidence["execution_snapshot"])
-        self.assertFalse((project / ".agentplaybook" / "execution-capsule.json").exists())
+        self.assertFalse((project / ".tao" / "execution-capsule.json").exists())
 
     def test_finish_cli_has_no_gate_override_option(self) -> None:
         finish_options = {
@@ -280,7 +280,7 @@ class FinishGatePolicyTests(unittest.TestCase):
 
     def test_finish_final_check_failure_requires_retrospective_lesson(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = temp_dir
+            os.environ["TAO_STATE_HOME"] = temp_dir
 
             retrospective_required = requires_retrospective(
                 missed_gates=[],

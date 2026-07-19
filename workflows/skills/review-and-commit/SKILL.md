@@ -6,7 +6,7 @@ type: ai-generated
 
 # Review And Commit Workflow
 
-Use when routed to `workflows/skills/review-and-commit/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `workflows/skills/review-and-commit/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

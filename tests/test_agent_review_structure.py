@@ -99,9 +99,9 @@ class AgentReviewStructureTests(unittest.TestCase):
                 [
                     "git",
                     "-c",
-                    "user.name=AgentPlaybook Tests",
+                    "user.name=Tao Agent OS Tests",
                     "-c",
-                    "user.email=agentplaybook@example.invalid",
+                    "user.email=tao@example.invalid",
                     "commit",
                     "-m",
                     "initial",

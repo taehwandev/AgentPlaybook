@@ -116,7 +116,7 @@ Do not:
 
 ## Global Agent Lessons
 
-Use a user-local global lesson store such as `~/.agentplaybook/` only for
+Use a user-local global lesson store such as `~/.tao/` only for
 content-free cross-agent learning metadata. This store helps future agents on
 the same machine notice accepted or promoted lessons before repeating a workflow
 mistake.

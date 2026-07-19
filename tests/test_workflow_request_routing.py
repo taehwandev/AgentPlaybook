@@ -149,13 +149,13 @@ def route_doc(path: str) -> str:
 
 class WorkflowRequestRoutingTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_scenario_testing_requests_infer_testing_concern(self) -> None:
         examples = (
@@ -388,10 +388,10 @@ class WorkflowRequestRoutingTests(unittest.TestCase):
 
     def test_writing_requests_infer_human_authored_writing_concern(self) -> None:
         examples = (
-            "AgentPlaybook 소개하는 글을 써줘. 바이브가드도 같이 소개해줘.",
+            "Tao Agent OS 소개하는 글을 써줘. 바이브가드도 같이 소개해줘.",
             "블로그 글 써달라고 하면 공유 writing workspace에 초안을 저장하게 해줘.",
             "AI 티 덜 나게 문체를 다듬어줘.",
-            "Write an article introducing AgentPlaybook and VibeGuard.",
+            "Write an article introducing Tao Agent OS and VibeGuard.",
             "Draft release notes with a less AI-sounding tone.",
         )
 
@@ -406,7 +406,7 @@ class WorkflowRequestRoutingTests(unittest.TestCase):
 
     def test_ambiguous_writing_style_rewrite_requires_triage(self) -> None:
         request = (
-            "# AgentPlaybook: AI 에이전트의 작업 습관을 프로젝트 밖에 저장하기 "
+            "# Tao Agent OS: AI 에이전트의 작업 습관을 프로젝트 밖에 저장하기 "
             "이거 작성 다시하자. 나는 ~했다. 뭐뭐다. 이다. "
             "이런 투로 쓰는데 존대라서 이런건 어떻게 내 스타일로 쓰도록 가이드하지?"
         )

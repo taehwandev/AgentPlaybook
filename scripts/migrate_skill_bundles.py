@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert flat AgentPlaybook guidance docs into skill bundles.
+"""Convert flat Tao Agent OS guidance docs into skill bundles.
 
 The migration is intentionally mechanical: each flat guidance card moves into a
 small SKILL.md entrypoint plus references/current-guidance.md. Flat source
@@ -21,7 +21,7 @@ from workflow_skill_paths import canonical_doc_path, guidance_reference_path
 ROOT = Path(__file__).resolve().parents[1]
 FRONTMATTER_RE = re.compile(r"\A---\n(?P<header>.*?)\n---\n(?P<body>.*)\Z", re.DOTALL)
 MARKDOWN_LINK_RE = re.compile(r"(\[[^\]]+\]\()([^)]+)(\))")
-STUB_MARKER = "agentplaybook_skill_bundle_stub: true"
+STUB_MARKER = "tao_skill_bundle_stub: true"
 
 
 def main() -> int:
@@ -135,7 +135,7 @@ def skill_text(skill_relative: str, title: str) -> str:
         f"---\n\n"
         f"# {title}\n\n"
         f"Use when routed to `{skill_relative}` or when work needs this "
-        f"AgentPlaybook guidance area.\n\n"
+        f"Tao Agent OS guidance area.\n\n"
         f"## Read\n\n"
         f"- `references/current-guidance.md` for the detailed guidance for this skill.\n"
         f"- Related `SKILL.md` entrypoints named by the reference before loading their "
@@ -168,10 +168,10 @@ def stub_text(source_relative: str, skill_relative: str, reference_relative: str
         f"keyflow_id: {key}\n"
         f"status: review\n"
         f"type: compatibility-entrypoint\n"
-        f"agentplaybook_skill_bundle_stub: true\n"
+        f"tao_skill_bundle_stub: true\n"
         f"---\n\n"
         f"# {title}\n\n"
-        f"This compatibility path has moved to the AgentPlaybook skill-bundle layout.\n\n"
+        f"This compatibility path has moved to the Tao Agent OS skill-bundle layout.\n\n"
         f"## Read\n\n"
         f"- `{skill_link}` for the canonical lightweight entrypoint.\n"
         f"- `{reference_link}` for the full detailed guidance that previously lived here.\n\n"

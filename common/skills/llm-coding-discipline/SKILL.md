@@ -6,7 +6,7 @@ type: ai-generated
 
 # LLM Coding Discipline
 
-Use when routed to `common/skills/llm-coding-discipline/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/llm-coding-discipline/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

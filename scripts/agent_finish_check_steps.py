@@ -1,4 +1,4 @@
-"""Step functions for AgentPlaybook finish checks."""
+"""Step functions for Tao Agent OS finish checks."""
 
 from __future__ import annotations
 
@@ -53,12 +53,12 @@ def resolve_paths(args: argparse.Namespace) -> tuple[Path, Path, Path, Path]:
     evidence_path = (
         args.evidence.resolve()
         if args.evidence
-        else project / ".agentplaybook" / "preflight.json"
+        else project / ".tao" / "preflight.json"
     )
     output_path = (
         args.output.resolve()
         if args.output
-        else project / ".agentplaybook" / "finish.json"
+        else project / ".tao" / "finish.json"
     )
     return project, rules, evidence_path, output_path
 

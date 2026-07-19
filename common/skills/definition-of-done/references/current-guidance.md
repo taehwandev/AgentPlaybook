@@ -2,7 +2,7 @@
 keyflow_id: sys_definition_of_done
 status: stable
 type: human-reviewed-needed
-agentplaybook_card_contract: strict
+tao_card_contract: strict
 ---
 
 # Definition Of Done
@@ -121,7 +121,7 @@ minimum, completion evidence should include:
 - final diff or side-effect audit result
 - residual risk
 
-For AgentPlaybook maintenance, `workflow.py validate`, the nearest unit tests,
+For Tao Agent OS maintenance, `workflow.py validate`, the nearest unit tests,
 `git diff --check`, review hook, finish-check, and VibeGuard audit are the usual
 completion evidence.
 

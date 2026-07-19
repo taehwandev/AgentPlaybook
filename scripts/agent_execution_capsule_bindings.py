@@ -36,7 +36,7 @@ def preflight_identity_failures(
     if recorded_rules != rules:
         failures.append("execution capsule preflight rules identity does not match")
     try:
-        evidence_path.resolve().relative_to(project / ".agentplaybook")
+        evidence_path.resolve().relative_to(project / ".tao")
     except ValueError:
         failures.append(
             "execution capsule preflight evidence is outside the current project evidence root"

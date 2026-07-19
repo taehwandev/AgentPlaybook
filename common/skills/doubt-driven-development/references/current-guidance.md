@@ -2,7 +2,7 @@
 keyflow_id: sys_doubt_driven_development
 status: stable
 type: human-reviewed-needed
-agentplaybook_card_contract: strict
+tao_card_contract: strict
 ---
 
 # Doubt-Driven Development

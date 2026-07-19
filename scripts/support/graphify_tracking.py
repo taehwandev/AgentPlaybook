@@ -2,10 +2,22 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
+# A managed block is found by its marker lines, so renaming the marker orphans
+# every block written under the old one: the search misses it and a second block
+# is appended beside it. Match the marker shape rather than a list of past names,
+# so a block from any earlier naming is removed without carrying that naming
+# forward here.
+SUPERSEDED_MANAGED_BLOCK_PATTERN = re.compile(
+    r"# (?P<name>[a-z0-9-]+)-project-assets:start[\s\S]*?"
+    r"# (?P=name)-project-assets:end\n?",
+    re.MULTILINE,
+)
+
 from support.graphify_contract import (
-    AGENTPLAYBOOK_GITIGNORE_BLOCK,
+    TAO_GITIGNORE_BLOCK,
     GRAPHIFY_INPUT_BLOCK,
     GRAPHIFY_OUTPUT_GITIGNORE,
     ROOT_GITIGNORE_BLOCK,
@@ -16,8 +28,8 @@ def install_tracking_policies(project_path: Path) -> list[dict[str, str]]:
     policies = (
         (project_path / ".gitignore", ROOT_GITIGNORE_BLOCK),
         (
-            project_path / ".agentplaybook" / ".gitignore",
-            AGENTPLAYBOOK_GITIGNORE_BLOCK,
+            project_path / ".tao" / ".gitignore",
+            TAO_GITIGNORE_BLOCK,
         ),
     )
     results: list[dict[str, str]] = []
@@ -138,9 +150,13 @@ def _runtime_blanket_root(value: str) -> str | None:
 
 def write_managed_block(path: Path, block: str) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
-    content = path.read_text(encoding="utf-8") if path.exists() else ""
+    content = original = path.read_text(encoding="utf-8") if path.exists() else ""
     begin = block.splitlines()[0]
     end = block.splitlines()[-1]
+    content = SUPERSEDED_MANAGED_BLOCK_PATTERN.sub(
+        lambda match: match.group(0) if match.group(0).startswith(begin) else "",
+        content,
+    )
     cursor = 0
     found = False
     fragments: list[str] = []
@@ -163,7 +179,7 @@ def write_managed_block(path: Path, block: str) -> str:
     else:
         separator = "" if not content else ("" if content.endswith("\n\n") else "\n")
         updated = content + separator + block + "\n"
-    if updated == content:
+    if updated == original:
         return "ok"
     path.write_text(updated, encoding="utf-8")
     return "installed"

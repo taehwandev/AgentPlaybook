@@ -54,7 +54,7 @@ def configure_agy(
         )
         results.append({
             "tool": "agy",
-            "hook": "permissions.AgentPlaybookPython",
+            "hook": "permissions.TaoAgentOSPython",
             "status": status,
             "path": str(target),
         })

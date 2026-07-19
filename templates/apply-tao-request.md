@@ -1,22 +1,22 @@
 ---
-keyflow_id: sys_apply_agentplaybook_request_template
+keyflow_id: sys_apply_tao_request_template
 status: review
 type: human-reviewed-needed
 ---
 
-# Apply AgentPlaybook Request
+# Apply Tao Agent OS Request
 
 Paste this into an AI coding agent when you want it to connect a project to
-AgentPlaybook.
+Tao Agent OS.
 
-Use `templates/use-agentplaybook-prompt.md` instead when you only want one task
-to follow AgentPlaybook without changing repo-local instruction files.
+Use `templates/use-tao-prompt.md` instead when you only want one task
+to follow Tao Agent OS without changing repo-local instruction files.
 
 ## Step 1: Required Application Prompt
 
 ```text
-Step 1 - Apply AgentPlaybook to this project:
-https://github.com/taehwandev/AgentPlaybook
+Step 1 - Apply Tao Agent OS to this project:
+https://github.com/taehwandev/tao-agent-os
 
 Before changing anything, open and read this project's current agent instructions first:
 AGENTS.md, CLAUDE.md, CODEX.md, .agents/README.md, CONTRIBUTING.md, task docs,
@@ -29,21 +29,21 @@ AGENTS.md, and generic agents must explicitly read the project instruction
 document they are configured to load.
 Do not claim the file was read unless you actually opened it.
 If the target project is not explicit or the runtime starts outside the target,
-run the AgentPlaybook entry helper before reading project docs:
+run the Tao Agent OS entry helper before reading project docs:
 
-<AGENTPLAYBOOK_LAUNCHER> agent-entry --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
+<TAO_LAUNCHER> agent-entry --request "<USER_REQUEST>" --cwd "<CURRENT_DIRECTORY>" --runtime <RUNTIME>
 
 Continue only when it returns `selected`. If it returns `ambiguous` or
 `not_found`, ask me for the target project instead of guessing.
 
-Use an existing local AgentPlaybook install if one is available. Check an
-explicit path from me first, then AGENTPLAYBOOK_HOME, then common local clones
-such as ~/.agent-playbook, ~/git/AgentPlaybook, or ~/GitHub/AgentPlaybook.
+Use an existing local Tao Agent OS install if one is available. Check an
+explicit path from me first, then TAO_HOME, then common local clones
+such as ~/.tao-agent-os, ~/git/tao-agent-os, or ~/GitHub/tao-agent-os.
 
-If any usable local or repo-pinned AgentPlaybook root exists, stop install
+If any usable local or repo-pinned Tao Agent OS root exists, stop install
 selection there and reuse it. Do not download, clone, vendor, copy, overwrite,
-or add a second AgentPlaybook root unless I explicitly approve after you ask:
-"AgentPlaybook already exists locally at <path>. Do you want me to download or
+or add a second Tao Agent OS root unless I explicitly approve after you ask:
+"Tao Agent OS already exists locally at <path>. Do you want me to download or
 pin a new copy anyway, or should I reuse the existing root?"
 
 Select one setup mode and tell me which one you selected before editing:
@@ -51,35 +51,35 @@ Select one setup mode and tell me which one you selected before editing:
 - Existing local install: if a usable install exists, link this repo to that
   copy. Do not clone, vendor, or copy a second copy.
 - First-time local shared install: if no usable install exists, ask before
-  cloning once to ~/.agent-playbook.
-- Team-pinned install: ask before adding AgentPlaybook as a repo-pinned
+  cloning once to ~/.tao-agent-os.
+- Team-pinned install: ask before adding Tao Agent OS as a repo-pinned
   submodule, vendored dependency, or workspace dependency.
 
-A usable AgentPlaybook root must contain AGENTS.md, index.md, and
+A usable Tao Agent OS root must contain AGENTS.md, index.md, and
 scripts/workflow.py. Validate it with:
 
-<AGENTPLAYBOOK_LAUNCHER> workflow validate
+<TAO_LAUNCHER> workflow validate
 
 Check user-level runtime bridges, hooks, and permission allowlists:
 
-<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks --check
+<TAO_LAUNCHER> setup-agent-hooks --check
 
 If the check reports missing bridges, hooks, or permissions, ask for approval
 to update user-level runtime config, then run:
 
-<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks
+<TAO_LAUNCHER> setup-agent-hooks
 
-This setup is global by design. It allows only AgentPlaybook-managed
+This setup is global by design. It allows only Tao Agent OS-managed
 entrypoints with suffix-aware runtime matchers. It must not broadly allow
 `python3`.
 For Codex, update `~/.codex/rules/default.rules` with direct `python3 <script>`
 argv prefixes for the same scripts using resolved absolute paths only. Do not
 use `$HOME`, `${HOME}`, `~`, relative paths, or shell `-lc` wrappers for
-AgentPlaybook Python wrappers: those forms can be treated as shell expansion or
+Tao Agent OS Python wrappers: those forms can be treated as shell expansion or
 a single shell string before the runtime permission matcher sees the trusted
 script path. For Claude Code, update `~/.claude/settings.json` so managed hooks
-call `<AGENTPLAYBOOK_LAUNCHER>`, and refresh
-`~/.agentplaybook/agentplaybook-root` to the selected AgentPlaybook checkout so
+call `<TAO_LAUNCHER>`, and refresh
+`~/.tao/tao-root` to the selected Tao Agent OS checkout so
 moves or migrations do not leave Claude pointing at a stale `workflow.py`
 absolute path. For
 AGY/Antigravity, support both
@@ -87,14 +87,14 @@ AGY/Antigravity, support both
 `~/.gemini/antigravity-cli/settings.json`; hooks remain in
 `~/.gemini/config/hooks.json`.
 
-Do not install token-usage event hooks from AgentPlaybook. Spill token metering
+Do not install token-usage event hooks from Tao Agent OS. Spill token metering
 is optional and belongs to the separate Spill installer. If the local Spill
-setup helper exists, AgentPlaybook setup may add a safe workflow label bridge.
-If the helper is absent, remove only AgentPlaybook-managed Spill label hooks/env
-and keep the normal AgentPlaybook Python wrapper permissions.
+setup helper exists, Tao Agent OS setup may add a safe workflow label bridge.
+If the helper is absent, remove only Tao Agent OS-managed Spill label hooks/env
+and keep the normal Tao Agent OS Python wrapper permissions.
 
-VibeGuard is required. After selecting the AgentPlaybook root, apply VibeGuard
-with the selected AgentPlaybook root as the rule source.
+VibeGuard is required. After selecting the Tao Agent OS root, apply VibeGuard
+with the selected Tao Agent OS root as the rule source.
 
 Before changing files, inspect this repo's current agent instructions,
 .vibeguard.json, VIBEGUARD.md, and any managed VibeGuard block.
@@ -102,7 +102,7 @@ Before changing files, inspect this repo's current agent instructions,
 If this repo already has instructions or guardrails, ask me this application
 drill before running setup or update:
 
-1. AgentPlaybook link style: add a short pointer, merge into the current
+1. Tao Agent OS link style: add a short pointer, merge into the current
    instruction file, or pin a repo-local copy?
 2. VibeGuard handling: audit only with current guardrails, refresh the managed
    block with update, or first-time setup?
@@ -110,19 +110,19 @@ drill before running setup or update:
 
 If I choose audit-only:
 
-npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard audit . --rules <TAO_ROOT>
 
 If I explicitly choose to refresh the managed VibeGuard block:
 
-npx --yes @taehwandev/vibeguard update . --rules <AGENTPLAYBOOK_ROOT>
-npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
-npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard update . --rules <TAO_ROOT>
+npx --yes @taehwandev/vibeguard audit . --fix --rules <TAO_ROOT>
+npx --yes @taehwandev/vibeguard audit . --rules <TAO_ROOT>
 
 If this repo has never used VibeGuard and I choose first-time setup:
 
-npx --yes @taehwandev/vibeguard setup . --rules <AGENTPLAYBOOK_ROOT>
-npx --yes @taehwandev/vibeguard audit . --fix --rules <AGENTPLAYBOOK_ROOT>
-npx --yes @taehwandev/vibeguard audit . --rules <AGENTPLAYBOOK_ROOT>
+npx --yes @taehwandev/vibeguard setup . --rules <TAO_ROOT>
+npx --yes @taehwandev/vibeguard audit . --fix --rules <TAO_ROOT>
+npx --yes @taehwandev/vibeguard audit . --rules <TAO_ROOT>
 
 For full VibeGuard usage, use https://vibeguard.thdev.app/ as a human
 reference. Do not block only because your browsing/fetch tool cannot read that
@@ -137,20 +137,20 @@ with a short routing block. Preserve existing project rules. Keep repo-specific
 commands, paths, services, product policy, and domain language in this repo.
 
 When writing committed repo-local instruction files, do not commit my personal
-absolute path such as /Users/.../AgentPlaybook. Use ${AGENTPLAYBOOK_HOME} for a
+absolute path such as /Users/.../tao-agent-os. Use ${TAO_HOME} for a
 shared local install, or a repo-relative pinned path such as
-.agents/AgentPlaybook for a team-pinned install. Full local paths are allowed
+.agents/tao-agent-os for a team-pinned install. Full local paths are allowed
 only in shell environment setup, one-shot prompts, or uncommitted user-level
 runtime bridges. If an existing committed instruction file contains a personal
 absolute path, replace it with a portable reference before reporting success.
 
 Prefer AGENTS.md as the canonical instruction file when the active runtimes read
 it. If repo-local Claude, Codex, Antigravity CLI, or other runtime instruction
-files are present, update their AgentPlaybook pointer in the same pass or point
+files are present, update their Tao Agent OS pointer in the same pass or point
 them back to AGENTS.md. Do not create a separate runtime-specific file only to
 duplicate guidance when the active runtime already reads AGENTS.md.
 
-For any multi-step setup or follow-up task, run `<AGENTPLAYBOOK_LAUNCHER> start` once with
+For any multi-step setup or follow-up task, run `<TAO_LAUNCHER> start` once with
 `--request "<USER_REQUEST>"` before selecting task documents, editing,
 reviewing, committing, or reporting completion. It performs workflow routing
 and preflight; do not separately repeat workflow list, classify, route, or
@@ -174,11 +174,11 @@ recovery. Do not report any third gate state.
 When the wrapper scripts are available, use the single start hook before
 editing, reviewing, committing, or reporting completion:
 
-Before executing wrapper commands, replace `<AGENTPLAYBOOK_ROOT>` with the
+Before executing wrapper commands, replace `<TAO_ROOT>` with the
 resolved absolute path; do not leave `$HOME`, `${HOME}`, `~`, or a relative path
 in the executable command.
 
-<AGENTPLAYBOOK_LAUNCHER> start --project . --rules <AGENTPLAYBOOK_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
+<TAO_LAUNCHER> start --project . --rules <TAO_ROOT> --command <COMMAND> --request "<USER_REQUEST>" [--platform <PLATFORM>] [--concern <CONCERN>]
 
 Read every route `required_docs` entry directly after start and before editing
 or reviewing. Use the route's review hook after meaningful edits.
@@ -186,14 +186,14 @@ or reviewing. Use the route's review hook after meaningful edits.
 Before final report, commit, release, or handoff, record any remaining manual
 gate evidence, then run the read-only finish check:
 
-<AGENTPLAYBOOK_LAUNCHER> gate-batch --project . --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"<gate>","status":"SUCCESS","evidence":"<evidence>"}]'
-<AGENTPLAYBOOK_LAUNCHER> finish --project . --rules <AGENTPLAYBOOK_ROOT>
+<TAO_LAUNCHER> gate-batch --project . --rules <TAO_ROOT> --gate-record '[{"gate":"<gate>","status":"SUCCESS","evidence":"<evidence>"}]'
+<TAO_LAUNCHER> finish --project . --rules <TAO_ROOT>
 
 Call `workflow.py route`, `agent-preflight.py`, or `agent-finish-check.py`
 directly only as lower-level diagnostic or compatibility fallbacks when the
 corresponding hook is unavailable; never run them as a second lifecycle.
 
-The wrappers write local evidence under .agentplaybook/. Missing wrapper
+The wrappers write local evidence under .tao/. Missing wrapper
 evidence or missing gate evidence is non-compliant even if the final files look
 correct. If final VibeGuard is Needs review, report it explicitly and pass
 --allow-vibeguard-review with a reason only when that review state is
@@ -204,7 +204,7 @@ not enough, and clarified/no blockers is too generic by itself. If the request
 asks for Grill-Me or classification returns grill_me true, missing Grill-Me
 protocol or `/grilling` session evidence is 🐱🔴 FAIL.
 
-After connecting it, verify that the referenced AgentPlaybook AGENTS.md and
+After connecting it, verify that the referenced Tao Agent OS AGENTS.md and
 index.md files exist, confirm the VibeGuard gate is passing, then continue with
 my original task.
 ```
@@ -218,18 +218,18 @@ Use this only if I choose the optional setup for better future agent behavior.
 Preserve existing personal instructions. Add or update a short managed block; do
 not replace unrelated user content.
 
-Also run the AgentPlaybook runtime setup check:
+Also run the Tao Agent OS runtime setup check:
 
-<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks --check
+<TAO_LAUNCHER> setup-agent-hooks --check
 
 If bridges, hooks, or permissions are missing, ask for approval to update
 user-level runtime config and then run:
 
-<AGENTPLAYBOOK_LAUNCHER> setup-agent-hooks
+<TAO_LAUNCHER> setup-agent-hooks
 
-Keep the permission allowlist narrow: allow only AgentPlaybook-managed
+Keep the permission allowlist narrow: allow only Tao Agent OS-managed
 entrypoints by suffix-aware runtime matcher, not broad `python3`. For Claude
-managed hooks, prefer the stable `<AGENTPLAYBOOK_LAUNCHER>`
+managed hooks, prefer the stable `<TAO_LAUNCHER>`
 launcher plus the refreshed root pointer over a moving checkout's absolute
 `scripts/workflow.py` path.
 The setup command should install or repair the managed bridge block for Codex,
@@ -253,8 +253,8 @@ The bridge must force this behavior:
 - Claude reads CLAUDE.md.
 - Antigravity reads AGENTS.md.
 - Do not claim an instruction file was read unless you actually opened it.
-- For multi-step work, run `<AGENTPLAYBOOK_LAUNCHER> start` once with my current request;
-  it performs AgentPlaybook workflow routing and preflight. Do not separately
+- For multi-step work, run `<TAO_LAUNCHER> start` once with my current request;
+  it performs Tao Agent OS workflow routing and preflight. Do not separately
   repeat workflow list, classify, route, or preflight after it succeeds.
 - Read every route `required_docs` entry directly after start and before editing
   or reviewing. Keep the route's review and finish hooks in the lifecycle.
@@ -282,12 +282,12 @@ The bridge must force this behavior:
   implementation before lower-level coding steps.
 - If my request is ambiguous and the answer changes behavior, scope, safety, or
   external state, ask before working.
-- For multi-step tasks, require AgentPlaybook start and finish hook evidence
+- For multi-step tasks, require Tao Agent OS start and finish hook evidence
   when those wrapper scripts are available; missing wrapper or gate evidence is
   non-compliant.
 
 Optional local project registry for this machine:
-~/.agentplaybook/projects.json
+~/.tao/projects.json
 
 {
   "projects": [
@@ -303,5 +303,5 @@ For a team-pinned install, add this sentence:
 
 ```text
 Prefer a repo-pinned submodule or vendored dependency so every teammate and
-agent uses the same reviewed AgentPlaybook version.
+agent uses the same reviewed Tao Agent OS version.
 ```

@@ -1,7 +1,7 @@
 .DS_Store
 .antigravitycli/
 *.log
-.agentplaybook/
+.tao/
 node_modules/
 dist/
 build/
@@ -37,16 +37,20 @@ graphify-out/cost.json
 graphify-out/**/cost.json
 graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 
-# agentplaybook-project-assets:start
+# tao-project-assets:start
 # Runtime evidence is local, but canonical project skills are repository assets.
-!.agentplaybook/
-.agentplaybook/*
-!.agentplaybook/.gitignore
-!.agentplaybook/skills/
-.agentplaybook/skills/*
-!.agentplaybook/skills/graphify/
-!.agentplaybook/skills/graphify/**
-# agentplaybook-project-assets:end
+!.tao/
+.tao/*
+!.tao/.gitignore
+!.tao/skills/
+.tao/skills/*
+!.tao/skills/graphify/
+!.tao/skills/graphify/**
+# tao-project-assets:end
 
 # Evidence emitted from a nested working directory is always local runtime state.
-*/.agentplaybook/
+*/.tao/
+
+# Bytecode caches, written whenever the test suite or a hook runs.
+__pycache__/
+*.pyc

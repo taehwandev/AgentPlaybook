@@ -6,7 +6,7 @@ type: ai-generated
 
 # Android State And Data
 
-Use when routed to `platforms/android/skills/android-state-data/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/android/skills/android-state-data/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

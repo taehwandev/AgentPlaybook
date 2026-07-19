@@ -33,7 +33,7 @@ cleanup.
   rules.
 - A configured writing workspace from the user's explicit path, repo-local
   instructions, or local project registry such as
-  `~/.agentplaybook/projects.json`.
+  `~/.tao/projects.json`.
 - Two or three approved author voice samples when the user asks for a consistent
   personal voice.
 - The publishing target only after the writing workspace is identified or the
@@ -140,7 +140,7 @@ it as a plain folder.
 
 ## Do Not
 
-- Do not put shared AgentPlaybook rules for a single person's personal path,
+- Do not put shared Tao Agent OS rules for a single person's personal path,
   blog engine, or publishing repo.
 - Do not write drafts into generated site output, build artifacts, or public
   HTML folders.

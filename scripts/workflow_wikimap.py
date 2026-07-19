@@ -1,4 +1,4 @@
-"""Pinned Wikimap adapter for AgentPlaybook document discovery.
+"""Pinned Wikimap adapter for Tao Agent OS document discovery.
 
 Only deterministic indexing and read-only search are exposed here. Graphify,
 hook installation, migration, semantic notes, and source edits stay outside
@@ -23,12 +23,12 @@ WIKIMAP_SHA256 = "1e81848539ad959d90c15441b08cc95073619331afe4562f3960808f755970
 WIKIMAP_SCRIPT = Path(__file__).resolve().parent / "third_party" / "wikimap" / "wikimap.py"
 WIKIMAP_TIMEOUT_SECONDS = 15
 WIKIMAP_IGNORES = (
-    ".agentplaybook",
+    ".tao",
     ".agents/skills/graphify",
     ".claude/skills/graphify",
     ".codex/skills/graphify",
     "graphify-out",
-    "scripts/.agentplaybook",
+    "scripts/.tao",
     "scripts/third_party",
 )
 

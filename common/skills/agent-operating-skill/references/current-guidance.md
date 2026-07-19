@@ -14,7 +14,7 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 2. Classify request clarity and effort before loading broad context. If the user asks a direct question, answer it before starting workflow routing, editing, or project-specific commands.
 3. Read repo-local instructions before changing files.
 4. Discover the project stack before choosing commands or libraries.
-5. For multi-step tasks, run `<AGENTPLAYBOOK_LAUNCHER> start ... --request
+5. For multi-step tasks, run `<TAO_LAUNCHER> start ... --request
    "<USER_REQUEST>"` once before selecting task documents, editing, reviewing,
    committing, or reporting completion. It performs routing and preflight; do
    not separately repeat workflow list, classify, route, or preflight after it
@@ -50,11 +50,11 @@ Use this before implementation, review, refactoring, debugging, documentation, o
    created, this PRD-skip checkpoint is still required and must be visible to
    the user, not only recorded internally.
 9. Check preflight's global lesson summary when available. Accepted or promoted
-   lessons from `~/.agentplaybook/` apply across repos unless repo-local
+   lessons from `~/.tao/` apply across repos unless repo-local
    instructions conflict.
 10. Keep a gate execution ledger for the route and mark each gate with
     evidence when it is executed. Prefer structured
-    `.agentplaybook/gate-evidence.json` entries for the default
+    `.tao/gate-evidence.json` entries for the default
     `preflight.json`, or `<preflight-stem>-gate-evidence.json` entries for a
     custom preflight evidence file, written by executable hooks or one
     `agent-hook.py gate-batch` call over repeated single-gate shell calls or
@@ -68,7 +68,7 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 12. For work-producing routes, record a cycle contract before editing: cycle
     type, input/source scope, allowed and forbidden changes, acceptance or
     verification method, stop condition, and checkpoint or next cycle.
-13. Use `index.md` to load only relevant AgentPlaybook cards.
+13. Use `index.md` to load only relevant Tao Agent OS cards.
 14. Use the route manifest's `parallel_execution.phases` before treating gates
     as a serial checklist. Parallelize independent read-only orientation when
     the runtime supports it: selected document reads, file searches, stack
@@ -172,13 +172,13 @@ While editing:
   named before workers start. Serialize shared contracts, generated files,
   migrations, dependency changes, release config, and architecture boundaries.
   When work is actually delegated or parallelized, write
-  `.agentplaybook/agent-delegation-plan.json` before workers start and keep the
+  `.tao/agent-delegation-plan.json` before workers start and keep the
   lead agent responsible for integration review and final verification.
 
 Before finishing:
 
 - Run the route's review hook after meaningful edits, then run
-  `<AGENTPLAYBOOK_LAUNCHER> finish` before final report, handoff, commit, or
+  `<TAO_LAUNCHER> finish` before final report, handoff, commit, or
   release. Use `agent-finish-check.py` directly only as a lower-level diagnostic
   or compatibility fallback when the finish hook is unavailable.
 - Confirm every required workflow route gate has structured ledger evidence

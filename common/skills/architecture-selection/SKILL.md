@@ -6,7 +6,7 @@ type: ai-generated
 
 # Architecture Selection
 
-Use when routed to `common/skills/architecture-selection/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/architecture-selection/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

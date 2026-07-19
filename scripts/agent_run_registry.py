@@ -1,4 +1,4 @@
-"""Content-free local registry for AgentPlaybook run lifecycle state."""
+"""Content-free local registry for Tao Agent OS run lifecycle state."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ MAX_RUNS = 100
 
 
 def registry_path(project: Path) -> Path:
-    return project.resolve() / ".agentplaybook" / REGISTRY_FILENAME
+    return project.resolve() / ".tao" / REGISTRY_FILENAME
 
 
 def register_run(

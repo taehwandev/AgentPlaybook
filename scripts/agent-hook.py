@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the three essential AgentPlaybook hooks.
+"""Run the three essential Tao Agent OS hooks.
 
 Hooks intentionally expose only two outcomes: SUCCESS or FAIL. Details explain
 why, but callers should treat any non-zero exit as blocking.
@@ -100,7 +100,22 @@ def start_hook(args: argparse.Namespace) -> int:
         args.output,
         {"preflight": result},
         args.repair_cycle,
+        invocation_error=_is_invocation_error(result),
     )
+
+
+def _is_invocation_error(result: dict[str, Any]) -> bool:
+    """True when preflight rejected the call itself rather than failing a gate.
+
+    argparse exits 2 on a usage error, which happens before any gate runs, so
+    nothing is written to the ledger. Treating that as a gate failure sends the
+    caller into a repair cycle that can never complete, because repair-verify
+    builds its receipt from a recorded failed checkpoint and there is none.
+    """
+    if result.get("returncode") != 2:
+        return False
+    output = f"{result.get('stderr', '')}{result.get('stdout', '')}"
+    return "error: argument" in output or "invalid choice" in output
 
 
 def _hook_summary_from_preflight(path: Path) -> list[str]:
@@ -186,7 +201,7 @@ def _register_started_run(args: argparse.Namespace, details: list[str]) -> None:
 
 def _transition_finished_run(args: argparse.Namespace, success: bool) -> None:
     try:
-        evidence_path = args.evidence or args.project / ".agentplaybook" / "preflight.json"
+        evidence_path = args.evidence or args.project / ".tao" / "preflight.json"
         payload = json.loads(evidence_path.read_text(encoding="utf-8"))
         transition_run(
             args.project,
@@ -310,7 +325,7 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
         "--repair-cycle",
         type=repair_cycle,
         default=0,
-        help="0 for normal execution, 1 only after a verified playbook repair",
+        help="0 for normal execution, 1 only after a verified Tao Agent OS repair",
     )
     parser.add_argument("--repair-target", default="")
     parser.add_argument("--repair-evidence", default="")
@@ -472,7 +487,7 @@ def _add_gate_arguments(parser: argparse.ArgumentParser) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run essential AgentPlaybook hooks.",
+        description="Run essential Tao Agent OS hooks.",
         allow_abbrev=False,
     )
     _add_common_arguments(parser)
@@ -597,9 +612,9 @@ def main() -> int:
 
 
 def _apply_worker_evidence_boundary(args: argparse.Namespace) -> str:
-    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+    if os.environ.get("TAO_PARENT_EVIDENCE_READONLY") == "1":
         return "reusable worker capsule cannot run lifecycle hooks that write parent evidence"
-    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    expected = os.environ.get("TAO_WORKER_EVIDENCE")
     if not expected:
         return ""
     expected_path = Path(expected).expanduser().resolve()

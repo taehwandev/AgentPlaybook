@@ -6,7 +6,7 @@ type: ai-generated
 
 # Auth, RBAC, Permissions
 
-Use when routed to `product-patterns/skills/auth-rbac-permissions/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `product-patterns/skills/auth-rbac-permissions/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

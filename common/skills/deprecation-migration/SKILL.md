@@ -6,7 +6,7 @@ type: ai-generated
 
 # Deprecation And Migration
 
-Use when routed to `common/skills/deprecation-migration/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/deprecation-migration/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

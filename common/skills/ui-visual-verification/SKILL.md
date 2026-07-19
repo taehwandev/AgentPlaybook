@@ -6,7 +6,7 @@ type: ai-generated
 
 # UI Visual Verification
 
-Use when routed to `common/skills/ui-visual-verification/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/ui-visual-verification/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

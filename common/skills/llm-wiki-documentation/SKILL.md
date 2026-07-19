@@ -7,7 +7,7 @@ type: ai-generated
 # LLM Wiki Documentation
 
 Use when routed to `common/skills/llm-wiki-documentation/SKILL.md` or when work
-needs this AgentPlaybook guidance area.
+needs this Tao Agent OS guidance area.
 
 ## Read
 

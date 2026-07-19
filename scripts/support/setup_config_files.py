@@ -16,14 +16,14 @@ def merge_codex_prefix_rules(
 ) -> str:
     original = target.read_text() if target.exists() else ""
     block = "\n".join([
-        "# agentplaybook-hooks:begin",
-        "# Managed by AgentPlaybook setup. Keep narrow; do not replace with broad python3 rules.",
+        "# tao-hooks:begin",
+        "# Managed by Tao Agent OS setup. Keep narrow; do not replace with broad python3 rules.",
         *entries,
-        "# agentplaybook-hooks:end",
+        "# tao-hooks:end",
         "",
     ])
     pattern = re.compile(
-        r"# agentplaybook-hooks:begin[\s\S]*?# agentplaybook-hooks:end\n?",
+        r"# tao-hooks:begin[\s\S]*?# tao-hooks:end\n?",
         re.MULTILINE,
     )
     unmanaged = pattern.sub("", original)

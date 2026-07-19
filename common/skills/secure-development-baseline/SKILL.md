@@ -6,7 +6,7 @@ type: ai-generated
 
 # Secure Development Baseline
 
-Use when routed to `common/skills/secure-development-baseline/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/secure-development-baseline/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

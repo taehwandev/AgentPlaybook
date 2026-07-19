@@ -1,33 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Emerald-to-Cyan Gradients -->
+    <!-- Traditional Taoist / Korean Sam-Taegeuk inspired gradient -->
     <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2bfd93" />
-      <stop offset="50%" stop-color="#00e5ff" />
-      <stop offset="100%" stop-color="#3b82f6" />
+      <stop offset="0%" stop-color="#C8373B" />
+      <stop offset="50%" stop-color="#CCA250" />
+      <stop offset="100%" stop-color="#1D3B6C" />
     </linearGradient>
 
-    <!-- Glow Filter -->
-    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="16" result="blur" />
+    <!-- Subtle Soft Glow for Light Mode -->
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComponentTransfer in="blur" result="glow">
+        <feFuncA type="linear" slope="0.3" />
+      </feComponentTransfer>
       <feMerge>
-        <feMergeNode in="blur" />
+        <feMergeNode in="glow" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
   </defs>
 
-  <!-- Abstract AP Monogram (No bulky background container for clean header integration) -->
-  <g filter="url(#neonGlow)">
-    <!-- Stylized 'A' paths -->
-    <path d="M140 380 L234 150 C242 130, 270 130, 278 150 L372 380"
-          fill="none" stroke="url(#logoGrad)" stroke-width="38" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Elegant Stylized 'T' & Taegeuk (Yin-Yang / Tao path) Monogram -->
+  <g filter="url(#softGlow)" transform="translate(0, 0)">
+    <!-- Serene circular flow representing the Tao / Taegeuk outer circle -->
+    <circle cx="256" cy="256" r="180" fill="none" stroke="url(#logoGrad)" stroke-width="12" opacity="0.3" stroke-dasharray="8 8" />
 
-    <!-- Stylized 'P' paths overlapping -->
-    <path d="M236 210 L300 210 C345 210, 376 180, 376 145 C376 110, 345 80, 300 80 L270 80"
-          fill="none" stroke="url(#logoGrad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 50)" />
+    <!-- Stylized 'T' stem: Calligraphic elegant vertical stroke -->
+    <path d="M256 120 L256 380"
+          fill="none" stroke="url(#logoGrad)" stroke-width="36" stroke-linecap="round" />
 
-    <!-- A smart grid node circle representing the AI core -->
-    <circle cx="256" cy="270" r="20" fill="#ffffff" filter="drop-shadow(0px 0px 10px #00e5ff)" />
+    <!-- Stylized 'T' top bar: Swirling curve of the Taegeuk (representing Yin & Yang energy meeting) -->
+    <path d="M120 180 C180 120, 332 120, 392 180"
+          fill="none" stroke="url(#logoGrad)" stroke-width="36" stroke-linecap="round" />
+
+    <!-- Modern Korean traditional trigram elements (건곤감리 느낌의 미니멀 라인) -->
+    <!-- Geon (건) - Sky: Top Left -->
+    <path d="M100 100 L140 100" fill="none" stroke="#C8373B" stroke-width="8" stroke-linecap="round" />
+    <path d="M100 115 L140 115" fill="none" stroke="#C8373B" stroke-width="8" stroke-linecap="round" />
+
+    <!-- Gon (곤) - Earth: Bottom Right -->
+    <path d="M372 397 L392 397" fill="none" stroke="#1D3B6C" stroke-width="8" stroke-linecap="round" />
+    <path d="M402 397 L422 397" fill="none" stroke="#1D3B6C" stroke-width="8" stroke-linecap="round" />
+    <path d="M372 412 L392 412" fill="none" stroke="#1D3B6C" stroke-width="8" stroke-linecap="round" />
+    <path d="M402 412 L422 412" fill="none" stroke="#1D3B6C" stroke-width="8" stroke-linecap="round" />
+
+    <!-- AI Core node circle at the center representing Tao (the origin) -->
+    <circle cx="256" cy="220" r="24" fill="#ffffff" stroke="url(#logoGrad)" stroke-width="8" filter="drop-shadow(0px 4px 10px rgba(29, 59, 108, 0.2))" />
   </g>
 </svg>

@@ -16,7 +16,7 @@ from support.graphify_contract import (
 
 
 def install_canonical_skill(graphify: str, project_path: Path) -> bool:
-    with tempfile.TemporaryDirectory(prefix="agentplaybook-graphify-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="tao-graphify-") as temp_dir:
         stage_project = Path(temp_dir)
         completed = subprocess.run(
             [graphify, "install", "--project", "--platform", "agents"],

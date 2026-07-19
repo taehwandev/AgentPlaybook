@@ -1,4 +1,4 @@
-"""Registry parsing helpers for AgentPlaybook workspace groups."""
+"""Registry parsing helpers for Tao Agent OS workspace groups."""
 
 from __future__ import annotations
 

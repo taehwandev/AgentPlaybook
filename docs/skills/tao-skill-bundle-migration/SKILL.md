@@ -1,12 +1,12 @@
 ---
-keyflow_id: sys_docs_agentplaybook_skill_bundle_migration_md_skill
+keyflow_id: sys_docs_tao_skill_bundle_migration_md_skill
 status: review
 type: ai-generated
 ---
 
-# AgentPlaybook Skill Bundle Migration
+# Tao Agent OS Skill Bundle Migration
 
-Use when creating, moving, splitting, routing, or reviewing AgentPlaybook
+Use when creating, moving, splitting, routing, or reviewing Tao Agent OS
 guidance in the `SKILL.md` plus `references/` layout.
 
 ## Read

@@ -1,4 +1,4 @@
-"""Runtime hook setup entry flow for AgentPlaybook."""
+"""Runtime hook setup entry flow for Tao Agent OS."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ DEFAULT_GITHUB_DIR = Path.home() / "GitHub"
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Configure AI runtime bridges, hooks, and permissions for AgentPlaybook."
+        description="Configure AI runtime bridges, hooks, and permissions for Tao Agent OS."
     )
     parser.add_argument(
         "--dry-run",
@@ -184,7 +184,7 @@ def fail_if_setup_incomplete(args: argparse.Namespace, results: list[dict]) -> N
     if any(result["tool"] == "graphify" for result in missing):
         print(
             "\nTarget setup is incomplete. Install/repair the canonical Graphify skill and "
-            "runtime links, then read .agentplaybook/skills/graphify/SKILL.md, build the graph "
+            "runtime links, then read .tao/skills/graphify/SKILL.md, build the graph "
             "from the target root, and rerun --check.",
             file=sys.stderr,
         )
@@ -225,7 +225,7 @@ def _has_agy() -> bool:
 
 
 def _spill_setup_helper_path() -> Path:
-    override = os.environ.get("AGENTPLAYBOOK_SPILL_HELPER_PATH", "")
+    override = os.environ.get("TAO_SPILL_HELPER_PATH", "")
     return Path(override) if override else DEFAULT_SPILL_SETUP_HELPER
 
 
@@ -258,7 +258,7 @@ def configure_codex(dry_run: bool, *, root: Path) -> list[dict]:
         },
         {
             "tool": "codex",
-            "hook": "rules.AgentPlaybookPython",
+            "hook": "rules.TaoAgentOSPython",
             "status": rules_status,
             "path": str(rules_target),
         },
@@ -272,7 +272,7 @@ def configure_external_project(
     *,
     spill_available: bool = True,
 ) -> list[dict]:
-    """Install AgentPlaybook + project-type-specific permissions for an external project.
+    """Install Tao Agent OS + project-type-specific permissions for an external project.
 
     Combines portable project-level git and verification entries with entries
     detected from the project's build toolchain (Swift,

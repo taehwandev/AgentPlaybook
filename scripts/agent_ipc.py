@@ -1,4 +1,4 @@
-"""Content-free local IPC/event channel shared by AgentPlaybook layers."""
+"""Content-free local IPC/event channel shared by Tao Agent OS layers."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ SAFE_OPAQUE = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
 
 
 def events_path(project: Path) -> Path:
-    return project.resolve() / ".agentplaybook" / EVENTS_FILENAME
+    return project.resolve() / ".tao" / EVENTS_FILENAME
 
 
 def emit_event(

@@ -6,7 +6,7 @@ type: ai-generated
 
 # Asset Lifecycle
 
-Use when routed to `common/skills/asset-lifecycle/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/asset-lifecycle/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

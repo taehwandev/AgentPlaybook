@@ -1,4 +1,4 @@
-"""Read-only structure checks for the AgentPlaybook review hook."""
+"""Read-only structure checks for the Tao Agent OS review hook."""
 
 from __future__ import annotations
 
@@ -77,7 +77,7 @@ STRUCTURE_REVIEW_SCOPE_NOTE = (
     "from runtime hard gates; test files are exempt only from the oversized-block check"
 )
 REVIEW_SKIP_PARTS = {
-    ".agentplaybook",
+    ".tao",
     ".git",
     ".next",
     "DerivedData",

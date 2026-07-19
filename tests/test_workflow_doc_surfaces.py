@@ -148,13 +148,13 @@ def route_doc(path: str) -> str:
 
 class WorkflowDocSurfacesTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_android_screen_request_routes_to_feature(self) -> None:
         classification = classify_request(
@@ -409,7 +409,7 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
         )
 
         self.assertIn("common/skills/agent-skill-card-anatomy/SKILL.md", docs)
-        self.assertIn("docs/skills/agentplaybook-skill-bundle-migration/SKILL.md", docs)
+        self.assertIn("docs/skills/tao-skill-bundle-migration/SKILL.md", docs)
         self.assertTrue(any(match["name"] == "skill_docs" for match in matches))
 
     def test_skill_bundle_structure_request_promotes_migration_docs(self) -> None:
@@ -424,7 +424,7 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
         )
 
         self.assertIn(
-            route_doc("docs/skills/agentplaybook-skill-bundle-migration/SKILL.md"),
+            route_doc("docs/skills/tao-skill-bundle-migration/SKILL.md"),
             route["required_docs"],
         )
         self.assertIn(route_doc("common/skills/agent-skill-card-anatomy/SKILL.md"), route["required_docs"])
@@ -707,7 +707,7 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                item["path"] == "docs/skills/agentplaybook-skill-bundle-migration/SKILL.md"
+                item["path"] == "docs/skills/tao-skill-bundle-migration/SKILL.md"
                 for item in results
             ),
             results,

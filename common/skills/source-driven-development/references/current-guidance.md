@@ -2,7 +2,7 @@
 keyflow_id: sys_source_driven_development
 status: stable
 type: human-reviewed-needed
-agentplaybook_card_contract: strict
+tao_card_contract: strict
 ---
 
 # Source-Driven Development
@@ -66,7 +66,7 @@ Create or consult a narrow source map that names:
 
 - the entrypoint for each touched surface
 - the implementation-affecting reference group
-- the local AgentPlaybook card that owns the reusable rule
+- the local Tao Agent OS card that owns the reusable rule
 - the verification question that proves the source was applied
 
 Keep the source map as a router, not a vendor copy. Distill only recurring
@@ -98,7 +98,7 @@ guidance.
   package policy.
 - Do not browse broad search results when official docs or repo-pinned docs are
   available.
-- Do not overfit shared AgentPlaybook guidance to one vendor's API shape.
+- Do not overfit shared Tao Agent OS guidance to one vendor's API shape.
 
 ## Stop If
 

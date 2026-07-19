@@ -1,4 +1,4 @@
-"""Provider-neutral API and runtime-adapter contracts for AgentPlaybook OS."""
+"""Provider-neutral API and runtime-adapter contracts for Tao Agent OS."""
 
 from __future__ import annotations
 

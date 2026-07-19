@@ -148,13 +148,13 @@ def route_doc(path: str) -> str:
 
 class VibeguardCacheTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._old_state_home = os.environ.get("AGENTPLAYBOOK_STATE_HOME")
+        self._old_state_home = os.environ.get("TAO_STATE_HOME")
 
     def tearDown(self) -> None:
         if self._old_state_home is None:
-            os.environ.pop("AGENTPLAYBOOK_STATE_HOME", None)
+            os.environ.pop("TAO_STATE_HOME", None)
         else:
-            os.environ["AGENTPLAYBOOK_STATE_HOME"] = self._old_state_home
+            os.environ["TAO_STATE_HOME"] = self._old_state_home
 
     def test_vibeguard_cache_reuses_same_git_state_and_invalidates_on_status_change(self) -> None:
         calls: list[list[str]] = []
@@ -368,7 +368,7 @@ class VibeguardCacheTests(unittest.TestCase):
                 vibeguard_command=command,
                 parse_overall=parse,
             )
-            cache_path = project / ".agentplaybook" / "vibeguard-cache.json"
+            cache_path = project / ".tao" / "vibeguard-cache.json"
             payload = json.loads(cache_path.read_text(encoding="utf-8"))
             payload["result"]["returncode"] = 1
             payload["result"]["stderr"] = "old failure"

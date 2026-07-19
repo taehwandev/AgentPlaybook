@@ -25,7 +25,7 @@ DEFAULT_RUNTIMES = {"agy", "claude", "codex"}
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Install one .agentplaybook Graphify bundle and repo-relative runtime links."
+            "Install one .tao Graphify bundle and repo-relative runtime links."
         )
     )
     parser.add_argument(
@@ -38,7 +38,7 @@ def main() -> None:
         "--global",
         dest="global_scope",
         action="store_true",
-        help="Also install one user-level canonical skill under ~/.agentplaybook.",
+        help="Also install one user-level canonical skill under ~/.tao.",
     )
     parser.add_argument(
         "--runtime",

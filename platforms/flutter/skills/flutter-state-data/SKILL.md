@@ -6,7 +6,7 @@ type: ai-generated
 
 # Flutter State And Data
 
-Use when routed to `platforms/flutter/skills/flutter-state-data/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/flutter/skills/flutter-state-data/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

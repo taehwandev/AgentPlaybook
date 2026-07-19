@@ -19,7 +19,7 @@ views and adapters that resolve back to the canonical bundle.
 This preservation rule is migration safety, not permission to keep shared
 knowledge in three runtime-owned copies. If equivalent content exists below
 `.agents`, `.claude`, and `.codex`, move the shared content to one
-`.agentplaybook` owner and retain only symlinks or genuinely runtime-specific
+`.tao` owner and retain only symlinks or genuinely runtime-specific
 adapters. Until that migration is reviewed, Graphify must continue to see the
 existing project knowledge instead of silently deleting it from the graph.
 
@@ -28,13 +28,13 @@ existing project knowledge instead of silently deleting it from the graph.
 The canonical project skill is:
 
 ```text
-.agentplaybook/skills/graphify/
+.tao/skills/graphify/
   SKILL.md
   references/
   .graphify_version
 ```
 
-AgentPlaybook setup stages the provider-neutral Graphify bundle away from the
+Tao Agent OS setup stages the provider-neutral Graphify bundle away from the
 target, converts runtime-specific delegation wording into one runtime-neutral
 flow, and atomically replaces this directory. Stock Graphify project installers
 must not be run directly over the final runtime links because their copy and
@@ -43,7 +43,7 @@ uninstall paths can overwrite or delete the canonical target.
 The user-level fallback follows the same rule:
 
 ```text
-~/.agentplaybook/skills/graphify/          # one user-level canonical source
+~/.tao/skills/graphify/          # one user-level canonical source
 ~/.codex/skills/graphify                   # link
 ~/.claude/skills/graphify                  # link
 ~/.agents/skills/graphify                  # link
@@ -60,23 +60,23 @@ Codex, Claude, and Antigravity/AGY share this content. `AGENTS.md` and
 `CLAUDE.md` must not retain separate Graphify explanation sections. Runtime
 locations contain only discovery links or machine configuration; AGY's required
 rule/workflow files are themselves links to runtime adapters stored inside the
-canonical bundle. This applies the AgentPlaybook invariant `one reusable rule =
+canonical bundle. This applies the Tao Agent OS invariant `one reusable rule =
 one canonical owner`; see
-`docs/skills/agentplaybook-skill-bundle-migration/references/source-of-truth-ownership.md`.
+`docs/skills/tao-skill-bundle-migration/references/source-of-truth-ownership.md`.
 
 ## Target Setup
 
-For one explicit target, AgentPlaybook setup includes Graphify by default:
+For one explicit target, Tao Agent OS setup includes Graphify by default:
 
 ```bash
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --target <TARGET_REPO>
+python3 <TAO_ROOT>/scripts/setup-agent-hooks.py --target <TARGET_REPO>
 ```
 
 For Graphify-only repair or a parallel migration across already-connected
 repositories, use the narrower project installer:
 
 ```bash
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-project-graphify.py \
+python3 <TAO_ROOT>/scripts/setup-project-graphify.py \
   --project <TARGET_REPO_A> \
   --project <TARGET_REPO_B> \
   --jobs 4
@@ -105,14 +105,14 @@ graph from the target root.
 
 | Runtime | Project-local entrypoint | Project integration |
 | --- | --- | --- |
-| Canonical owner | `.agentplaybook/skills/graphify/SKILL.md` | Shared operational content and references |
-| Codex | `.codex/skills/graphify -> ../../.agentplaybook/skills/graphify` | Optional machine configuration only; no `AGENTS.md` Graphify copy |
-| Claude | `.claude/skills/graphify -> ../../.agentplaybook/skills/graphify` | Optional machine configuration only; no `CLAUDE.md` Graphify copy |
-| Antigravity/AGY | `.agents/skills/graphify -> ../../.agentplaybook/skills/graphify` | `.agents/rules/graphify.md` and `.agents/workflows/graphify.md` link to canonical runtime adapters |
+| Canonical owner | `.tao/skills/graphify/SKILL.md` | Shared operational content and references |
+| Codex | `.codex/skills/graphify -> ../../.tao/skills/graphify` | Optional machine configuration only; no `AGENTS.md` Graphify copy |
+| Claude | `.claude/skills/graphify -> ../../.tao/skills/graphify` | Optional machine configuration only; no `CLAUDE.md` Graphify copy |
+| Antigravity/AGY | `.agents/skills/graphify -> ../../.tao/skills/graphify` | `.agents/rules/graphify.md` and `.agents/workflows/graphify.md` link to canonical runtime adapters |
 
 Read the canonical `SKILL.md` once for the task. Confirm that every enabled
 runtime directory is a symlink whose resolved target is the canonical directory
-inside the same repository. Do not treat an AgentPlaybook card,
+inside the same repository. Do not treat a Tao Agent OS card,
 AGENTS/CLAUDE section, rule, workflow, hook, or the Graphify report as a
 substitute. Do not accept copied runtime bundles even when their hashes match;
 matching copies can drift on the next update.
@@ -129,7 +129,7 @@ preserve normal tool output as data rather than instructions.
 The managed `.graphifyignore` block must use narrow runtime exclusions:
 
 ```text
-.agentplaybook/
+.tao/
 .agents/skills/graphify
 .agents/rules/graphify.md
 .agents/workflows/graphify.md
@@ -159,14 +159,14 @@ removed by the same migration commit.
 
 ## Version-Control Policy
 
-AgentPlaybook setup creates an allowlist boundary for `.agentplaybook`.
+Tao Agent OS setup creates an allowlist boundary for `.tao`.
 
 Commit these project assets:
 
 - the root `.gitignore` change that allowlists the canonical skill while
-  keeping `.agentplaybook` runtime evidence local
-- `.agentplaybook/.gitignore`
-- `.agentplaybook/skills/graphify/**`
+  keeping `.tao` runtime evidence local
+- `.tao/.gitignore`
+- `.tao/skills/graphify/**`
 - `.graphifyignore`, because it defines the repository's graph input boundary
 - `graphify-out/.gitignore`, because it records the default local-only output
   policy
@@ -189,7 +189,7 @@ review:
 
 Do not commit:
 
-- `.agentplaybook` preflight, review, finish, gate-evidence, or cache
+- `.tao` preflight, review, finish, gate-evidence, or cache
   JSON files
 - Graphify `.graphify_*` sidecars, cache directories, chunk files,
   transcripts, cost/token trackers, dated backups, interpreter/root markers,
@@ -220,7 +220,7 @@ provider/model selection, source scoping, and any cost-sensitive decisions.
 Then verify:
 
 ```bash
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --check --target <TARGET_REPO>
+python3 <TAO_ROOT>/scripts/setup-agent-hooks.py --check --target <TARGET_REPO>
 graphify query "What are the main project modules and their relationships?"
 ```
 
@@ -232,7 +232,7 @@ the semantic backend did not materialize those references as graph edges, run
 the deterministic repair after extraction:
 
 ```bash
-python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-project-graphify.py \
+python3 <TAO_ROOT>/scripts/setup-project-graphify.py \
   --project <TARGET_REPO> \
   --repair-document-links
 ```
@@ -259,7 +259,7 @@ the canonical-skill read receipt and a real query/path smoke result.
 Graphify routes include a `graphify readiness` gate. Record these fields:
 
 - `cli`: resolved Graphify executable or verified CLI availability.
-- `skill_doc`: canonical `.agentplaybook/skills/graphify/SKILL.md` path and
+- `skill_doc`: canonical `.tao/skills/graphify/SKILL.md` path and
   confirmation it was read.
 - `runtime_links`: every enabled runtime link and its resolved canonical target.
 - `git_ownership`: canonical files and required policies tracked, every runtime

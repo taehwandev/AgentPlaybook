@@ -6,7 +6,7 @@ type: ai-generated
 
 # Agent Skill Card Anatomy
 
-Use when creating, updating, splitting, or reviewing AgentPlaybook common
+Use when creating, updating, splitting, or reviewing Tao Agent OS common
 cards, workflow cards, platform cards, product-pattern cards, or agent-facing
 templates.
 
@@ -14,7 +14,7 @@ templates.
 
 - `references/current-guidance.md` for strict card sections, rationalizations,
   red flags, stop conditions, and bundle layout rules.
-- `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md` before
+- `docs/skills/tao-skill-bundle-migration/SKILL.md` before
   broad structure or router changes.
 
 ## Process

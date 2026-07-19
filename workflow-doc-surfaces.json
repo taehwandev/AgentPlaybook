@@ -212,7 +212,7 @@
         "(\\uc911\\ubcf5|\\ud30c\\ud3b8|source-of-truth|\\uc18c\\uc2a4\\s*\\uc624\\ube0c\\s*\\ud2b8\\ub8e8\\uc2a4|\\uc704\\uce58).*(\\ubb38\\uc11c|\\uc2a4\\ud0ac|skills?|references?|\\ub808\\ud37c\\ub7f0\\uc2a4)"
       ],
       "docs": [
-        "docs/skills/agentplaybook-skill-bundle-migration/SKILL.md",
+        "docs/skills/tao-skill-bundle-migration/SKILL.md",
         "common/skills/agent-skill-card-anatomy/SKILL.md",
         "workflows/skills/documentation-update/SKILL.md",
         "common/skills/source-driven-development/SKILL.md"
@@ -797,7 +797,7 @@
       ],
       "docs": [
         "common/skills/agent-skill-card-anatomy/SKILL.md",
-        "docs/skills/agentplaybook-skill-bundle-migration/SKILL.md",
+        "docs/skills/tao-skill-bundle-migration/SKILL.md",
         "workflows/skills/documentation-update/SKILL.md",
         "common/skills/source-driven-development/SKILL.md"
       ],
@@ -821,7 +821,7 @@
       "reason": "Agent instruction changes affect startup behavior, route discipline, and editing safety."
     },
     {
-      "name": "playbook_docs",
+      "name": "tao_docs",
       "patterns": [
         "README.md",
         "index.md",
@@ -837,7 +837,7 @@
         "common/skills/source-driven-development/SKILL.md",
         "common/skills/human-authored-writing/SKILL.md"
       ],
-      "reason": "Shared playbook documentation changes need documentation update, source-driven, and writing guidance."
+      "reason": "Shared Tao Agent OS documentation changes need documentation update, source-driven, and writing guidance."
     }
   ]
 }

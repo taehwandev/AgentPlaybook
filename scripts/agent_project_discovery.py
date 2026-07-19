@@ -1,4 +1,4 @@
-"""Project discovery orchestration for user-level AgentPlaybook bridges."""
+"""Project discovery orchestration for user-level Tao Agent OS bridges."""
 
 from __future__ import annotations
 
@@ -120,7 +120,7 @@ def build_entry_manifest(
         **result.to_dict(),
         "runtime": runtime,
         "cwd": str(safe_resolve(cwd.expanduser())),
-        "agentplaybook": {
+        "tao": {
             "root": str(ROOT),
             "agent_instructions": str(ROOT / "AGENTS.md"),
             "index": str(ROOT / "index.md"),
@@ -139,7 +139,7 @@ def build_entry_manifest(
             "Open the selected project's runtime instruction files before project work.",
             "Treat the selected project as primary; stop for a workspace scope checkpoint before writing to a secondary repo.",
             "When starting a new runtime session, use the launch guidance so the selected project is the primary workspace.",
-            "Run AgentPlaybook workflow routing with the current request before editing.",
+            "Run Tao Agent OS workflow routing with the current request before editing.",
             "Run preflight before edits and finish check before final report, commit, release, or handoff.",
         ]
         manifest["workflow_command"] = (
@@ -153,12 +153,12 @@ def build_entry_manifest(
         manifest["next_steps"] = [
             "Ask the user to choose one candidate before reading project docs or editing.",
             "If this is a workspace group request, choose the primary repo or declare a multi-session plan before edits.",
-            "Optionally add a stable alias to ~/.agentplaybook/projects.json.",
+            "Optionally add a stable alias to ~/.tao/projects.json.",
         ]
     else:
         manifest["next_steps"] = [
             "Ask the user for the target project path before project work.",
-            "Optionally register known projects in ~/.agentplaybook/projects.json.",
+            "Optionally register known projects in ~/.tao/projects.json.",
         ]
     return manifest
 
@@ -167,10 +167,10 @@ def _runtime_launch_guidance(selected: ProjectCandidate, runtime: str) -> dict[s
     project = selected.path
     guidance: dict[str, object] = {
         "primary_workspace": str(project),
-        "agentplaybook_root": str(ROOT),
+        "tao_root": str(ROOT),
         "policy": (
             "Start the runtime with the selected target project as the primary workspace. "
-            "Add AgentPlaybook as an extra workspace only when the task may read, run, or edit shared playbook files."
+            "Add Tao Agent OS as an extra workspace only when the task may read, run, or edit shared Tao Agent OS files."
         ),
         "notes": [
             "Repo instruction files choose behavior; runtime launch options choose filesystem scope.",
@@ -188,7 +188,7 @@ def _runtime_launch_guidance(selected: ProjectCandidate, runtime: str) -> dict[s
         if project != ROOT:
             commands.append(
                 {
-                    "label": "target project plus AgentPlaybook",
+                    "label": "target project plus Tao Agent OS",
                     "command": f"codex -C {quote(str(project))} --add-dir {quote(str(ROOT))}",
                 }
             )
@@ -199,7 +199,7 @@ def _runtime_launch_guidance(selected: ProjectCandidate, runtime: str) -> dict[s
             "If using codex exec outside a git repo, add --skip-git-repo-check only after confirming that directory is an intentional workspace router.",
         ]
         if project == ROOT:
-            guidance["notes"].append("The selected project is AgentPlaybook itself, so an extra --add-dir for the same root is unnecessary.")
+            guidance["notes"].append("The selected project is Tao Agent OS itself, so an extra --add-dir for the same root is unnecessary.")
     else:
         guidance["notes"] = [
             *guidance["notes"],

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify AgentPlaybook gate evidence before final report, commit, or handoff."""
+"""Verify Tao Agent OS gate evidence before final report, commit, or handoff."""
 
 from __future__ import annotations
 
@@ -35,12 +35,12 @@ from agent_gate_evidence import (
 from agent_repair_ledger import failure_signature, record_failure_checkpoints
 
 
-def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
+def build_parser(tao_root: Path) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Check route gate evidence, validation, diff hygiene, and VibeGuard."
     )
     parser.add_argument("--project", type=Path, default=Path.cwd())
-    parser.add_argument("--rules", type=Path, default=playbook_root)
+    parser.add_argument("--rules", type=Path, default=tao_root)
     parser.add_argument("--evidence", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument(
@@ -52,7 +52,7 @@ def build_parser(playbook_root: Path) -> argparse.ArgumentParser:
 
 def build_result(
     *,
-    playbook_root: Path,
+    tao_root: Path,
     project: Path,
     rules: Path,
     evidence_path: Path,
@@ -75,7 +75,7 @@ def build_result(
     route = preflight.get("route") or {}
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "playbook_root": str(playbook_root),
+        "tao_root": str(tao_root),
         "project": str(project),
         "rules": str(rules),
         "preflight_evidence": str(evidence_path),
@@ -133,7 +133,7 @@ def process_failure_learning(
     if retrospective_required:
         failures.append(
             "retrospective repair is required before final report, commit, release, or handoff; "
-            "record the correction plan, improve the owning playbook doc, hook, validator, or "
+            "record the correction plan, improve the owning Tao Agent OS doc, hook, validator, or "
             "test, verify that repair, then resume the first failed checkpoint. Stop if the same "
             "failure remains or the repair is unsafe or ambiguous"
         )
@@ -210,7 +210,7 @@ def record_session_finished(project: Path, session: dict[str, Any]) -> None:
     safe = "".join(ch for ch in str(session_id) if ch.isalnum() or ch in "-_")
     if not safe:
         return
-    marker = project / ".agentplaybook" / "claude-pretool-gate" / f"{safe}.finished"
+    marker = project / ".tao" / "claude-pretool-gate" / f"{safe}.finished"
     try:
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text("", encoding="utf-8")
@@ -219,8 +219,8 @@ def record_session_finished(project: Path, session: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    playbook_root = Path(__file__).resolve().parents[1]
-    args = build_parser(playbook_root).parse_args()
+    tao_root = Path(__file__).resolve().parents[1]
+    args = build_parser(tao_root).parse_args()
     worker_error = _apply_worker_evidence_boundary(args)
     if worker_error:
         print(f"FAIL: {worker_error}", file=sys.stderr)
@@ -266,7 +266,7 @@ def main() -> int:
     )
     check_preflight_vibeguard(preflight, failures)
     validate, diff_check, vibeguard, overall = run_final_checks(
-        playbook_root,
+        tao_root,
         project,
         rules,
         args.allow_vibeguard_review,
@@ -282,7 +282,7 @@ def main() -> int:
     )
 
     result = build_result(
-        playbook_root=playbook_root,
+        tao_root=tao_root,
         project=project,
         rules=rules,
         evidence_path=evidence_path,
@@ -324,9 +324,9 @@ def main() -> int:
 
 
 def _apply_worker_evidence_boundary(args: argparse.Namespace) -> str:
-    if os.environ.get("AGENTPLAYBOOK_PARENT_EVIDENCE_READONLY") == "1":
+    if os.environ.get("TAO_PARENT_EVIDENCE_READONLY") == "1":
         return "reusable worker capsule cannot run a finish check against parent evidence"
-    expected = os.environ.get("AGENTPLAYBOOK_WORKER_EVIDENCE")
+    expected = os.environ.get("TAO_WORKER_EVIDENCE")
     if not expected:
         return ""
     expected_path = Path(expected).expanduser().resolve()

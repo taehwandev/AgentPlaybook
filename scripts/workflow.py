@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve shared AgentPlaybook workflow routes.
+"""Resolve shared Tao Agent OS workflow routes.
 
 This CLI does not run project commands. It produces the document route and
 gates an agent should use before it executes work in a target repository.
@@ -36,7 +36,7 @@ from workflow_validate import validate
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Resolve AgentPlaybook workflow routes.")
+    parser = argparse.ArgumentParser(description="Resolve Tao Agent OS workflow routes.")
     subparsers = parser.add_subparsers(dest="action", required=True)
 
     route = subparsers.add_parser("route", help="Print a workflow route manifest.")
@@ -77,7 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
     classify.add_argument("request", help="User request text to classify.")
     classify.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
-    query = subparsers.add_parser("query", help="Search playbook docs by keyword relevance.")
+    query = subparsers.add_parser("query", help="Search Tao Agent OS docs by keyword relevance.")
     query.add_argument("terms", nargs="+", help="Search terms (space-separated keywords).")
     query.add_argument(
         "--max",
@@ -261,7 +261,7 @@ def print_dispatch(args: argparse.Namespace) -> int:
     evidence_path = (
         args.evidence.expanduser().resolve()
         if args.evidence
-        else project / ".agentplaybook" / "preflight.json"
+        else project / ".tao" / "preflight.json"
     )
     parent_identity_matches = _preflight_identity_matches(
         evidence_path,
@@ -280,7 +280,7 @@ def print_dispatch(args: argparse.Namespace) -> int:
         rules=rules,
     )
     if not parent_identity_matches:
-        evidence_path = project / ".agentplaybook" / "preflight.json"
+        evidence_path = project / ".tao" / "preflight.json"
     route = parent_route
     if route is None:
         inferred_concerns = infer_concerns_from_request(args.request)

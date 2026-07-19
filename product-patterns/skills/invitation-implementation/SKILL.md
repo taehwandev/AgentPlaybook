@@ -6,7 +6,7 @@ type: ai-generated
 
 # Invitation Implementation
 
-Use when routed to `product-patterns/skills/invitation-implementation/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `product-patterns/skills/invitation-implementation/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

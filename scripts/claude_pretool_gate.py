@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Claude Code PreToolUse gate for AgentPlaybook.
+"""Claude Code PreToolUse gate for Tao Agent OS.
 
 This gate enforces two things a purely advisory bridge cannot, at the only point
 that actually stops the model -- the moment it calls an edit tool:
 
 1. Workflow entry. Nothing otherwise stops a file edit when the agent skipped the
    ``start`` hook, so the workflow is easy to ignore. The gate denies a file-edit
-   tool call when an AgentPlaybook project has no fresh preflight evidence, which
+   tool call when an Tao Agent OS project has no fresh preflight evidence, which
    forces ``start`` (route + preflight) before mutating files.
 2. Structural proportionality. Skill docs and the post-hoc review gate cannot
    stop a task from ballooning into many new files/layers -- by review time the
@@ -26,7 +26,7 @@ Contract (Claude Code PreToolUse hook):
 Requires a Claude Code that puts ``CLAUDE_CODE_SESSION_ID`` in the Bash
 subprocess environment (v2.1.128-v2.1.136, Week 19 2026), because that is what
 lets the ``start`` hook stamp the session the gate checks. On an older build the
-stamp is always absent and every edit is denied; set ``AGENTPLAYBOOK_CLAUDE_GATE=0``
+stamp is always absent and every edit is denied; set ``TAO_CLAUDE_GATE=0``
 to turn the gate off there.
 """
 
@@ -42,13 +42,13 @@ try:  # The gate must never fail to load; the import is only used for a message.
     from support.stable_launcher import stable_launcher_path
 except ImportError:  # pragma: no cover - exercised only on a broken install
     def stable_launcher_path() -> Path:
-        return Path.home() / ".agentplaybook" / "bin" / "agentplaybook-hook"
+        return Path.home() / ".tao" / "bin" / "tao-hook"
 
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 # Only Write creates a file from nothing; Edit/MultiEdit require an existing
 # file, so new-file sprawl flows through Write.
 NEW_FILE_TOOLS = {"Write"}
-STATE_DIR = ".agentplaybook"
+STATE_DIR = ".tao"
 PREFLIGHT_NAME = "preflight.json"
 SESSION_MARKER_DIR = "claude-pretool-gate"
 NEW_FILE_STATE_SUFFIX = ".newfiles"
@@ -56,8 +56,10 @@ SPRAWL_ACK_SUFFIX = ".sprawl-ack"
 # Shared with claude_stop_gate.py, which blocks a stop when an editing session
 # has no passing finish.
 EDIT_ACTIVITY_SUFFIX = ".edited"
+# User-global, because the Stop gate must find projects outside its own cwd.
+SESSION_PROJECT_DIR = "claude-session-projects"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
-OPT_IN_TOKEN = "agentplaybook"
+OPT_IN_TOKEN = "tao"
 DEFAULT_MAX_AGE_SECONDS = 8 * 60 * 60
 MAX_ROOT_WALK = 40
 # New source files past this count in one session must be collapsed or justified.
@@ -75,7 +77,7 @@ SOURCE_SUFFIXES = {
 
 def gate_enabled() -> bool:
     """Escape hatch for runtimes that cannot supply a session id."""
-    return os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE", "").strip() != "0"
+    return os.environ.get("TAO_CLAUDE_GATE", "").strip() != "0"
 
 
 def allow() -> int:
@@ -99,7 +101,7 @@ def deny(reason: str) -> int:
 
 
 def max_age_seconds() -> int:
-    raw = os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE_MAX_AGE_SECONDS", "").strip()
+    raw = os.environ.get("TAO_CLAUDE_GATE_MAX_AGE_SECONDS", "").strip()
     if not raw:
         return DEFAULT_MAX_AGE_SECONDS
     try:
@@ -110,7 +112,7 @@ def max_age_seconds() -> int:
 
 
 def opts_in(path: Path) -> bool:
-    """True when this directory marks a project that uses AgentPlaybook."""
+    """True when this directory marks a project that uses Tao Agent OS."""
     if (path / STATE_DIR).is_dir():
         return True
     for name in OPT_IN_FILES:
@@ -125,7 +127,7 @@ def opts_in(path: Path) -> bool:
 
 
 def find_project_root(cwd: Path) -> Path | None:
-    """Nearest ancestor (including cwd) that opts into AgentPlaybook."""
+    """Nearest ancestor (including cwd) that opts into Tao Agent OS."""
     for candidate in (cwd, *cwd.parents):
         if opts_in(candidate):
             return candidate
@@ -181,12 +183,12 @@ def deny_reason(root: Path, session_id: str = "") -> str:
     else:
         cause = f"Preflight evidence at {preflight} does not satisfy the workflow entry gate."
     return (
-        "AgentPlaybook: run the workflow start hook before editing files in this "
+        "Tao Agent OS: run the workflow start hook before editing files in this "
         f"project. {cause} "
         f"Run `{stable_launcher_path()} start --project "
-        f"{root} --rules <AGENTPLAYBOOK_ROOT> --command <route> --request \"<user "
+        f"{root} --rules <TAO_ROOT> --command <route> --request \"<user "
         "request>\"`, read the route required_docs, then retry the edit. Set "
-        "AGENTPLAYBOOK_CLAUDE_GATE_MAX_AGE_SECONDS to tune the freshness window."
+        "TAO_CLAUDE_GATE_MAX_AGE_SECONDS to tune the freshness window."
     )
 
 
@@ -241,8 +243,35 @@ def record_edit_activity(root: Path, session_id: str) -> None:
         pass
 
 
+def session_projects_index(session_id: str) -> Path:
+    """Per-session list of every project this session edited.
+
+    The Stop gate runs once, with one cwd, but a session can edit files in
+    several projects. Without this index it only ever checks the cwd project and
+    lets an edited-but-unverified project stop silently.
+    """
+    return Path.home() / STATE_DIR / SESSION_PROJECT_DIR / safe_session_id(session_id)
+
+
+def record_session_project(root: Path, session_id: str) -> None:
+    index = session_projects_index(session_id)
+    line = str(root)
+    try:
+        existing = index.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        existing = []
+    if line in existing:
+        return
+    try:
+        index.parent.mkdir(parents=True, exist_ok=True)
+        with index.open("a", encoding="utf-8") as handle:
+            handle.write(line + "\n")
+    except OSError:
+        pass
+
+
 def new_file_budget() -> int:
-    raw = os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET", "").strip()
+    raw = os.environ.get("TAO_CLAUDE_GATE_NEW_FILE_BUDGET", "").strip()
     if not raw:
         return DEFAULT_NEW_FILE_BUDGET
     try:
@@ -263,6 +292,27 @@ def write_target_path(payload: dict, cwd: Path) -> Path | None:
     if not target.is_absolute():
         target = cwd / target
     return target
+
+
+def find_edit_project_root(payload: dict, cwd: Path) -> Path | None:
+    """Resolve the project that owns the file being edited, not just the cwd.
+
+    A session's working directory and the file it edits are often different
+    projects: this gate let a whole article get rewritten in a writing workspace
+    while the cwd sat in another repo, so the writing project's own `start` was
+    never required and its edits were recorded against the wrong project. The
+    Stop gate then asked the cwd project for a finish, found one, and allowed a
+    stop that left the edited project unverified.
+
+    The target path decides. cwd stays as the fallback for tools that report no
+    file path.
+    """
+    target = write_target_path(payload, cwd)
+    if target is not None:
+        root = find_project_root(target.parent)
+        if root is not None:
+            return root
+    return find_project_root(cwd)
 
 
 def is_relative_to(path: Path, root: Path) -> bool:
@@ -300,12 +350,12 @@ def record_new_file(state: Path, key: str) -> None:
 
 def sprawl_deny_reason(count: int, budget: int, ack: Path, target: Path, root: Path) -> str:
     return (
-        f"AgentPlaybook proportionality gate: this task has already created {count} new "
+        f"Tao Agent OS proportionality gate: this task has already created {count} new "
         f"source file(s) in {root.name} (budget {budget}); creating {target.name} would exceed "
         "it. Turning a task into many files, layers, or abstractions burns tokens and review "
         "time. Collapse the change into fewer files, or -- if each new file protects a concrete "
         f"present risk -- record the per-file justification by writing it to {ack}, then retry. "
-        "Tune with AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET."
+        "Tune with TAO_CLAUDE_GATE_NEW_FILE_BUDGET."
     )
 
 
@@ -356,9 +406,9 @@ def decide(payload: dict) -> int:
         cwd = Path(cwd_raw).resolve()
     except OSError:
         return allow()
-    root = find_project_root(cwd)
+    root = find_edit_project_root(payload, cwd)
     if root is None:
-        # Not an AgentPlaybook project; never block ordinary editing.
+        # Not an Tao Agent OS project; never block ordinary editing.
         return allow()
     session_id = str(payload.get("session_id") or "")
     if not workflow_entry_allows(root, session_id):
@@ -367,6 +417,7 @@ def decide(payload: dict) -> int:
     if sprawl_reason:
         return deny(sprawl_reason)
     record_edit_activity(root, session_id)
+    record_session_project(root, session_id)
     return allow()
 
 

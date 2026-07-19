@@ -19,7 +19,7 @@ Each arrow is an asynchronous boundary. No stage may borrow authority from the
 next one.
 
 The separation is adapted from Hermes Agent's documented skill-creation and
-periodic curator model, while AgentPlaybook adds stricter content-free records,
+periodic curator model, while Tao Agent OS adds stricter content-free records,
 explicit caps, staging, and verification before canonical writes:
 
 - <https://hermes-agent.nousresearch.com/docs/user-guide/features/skills/>
@@ -143,7 +143,7 @@ Canonical skill writes happen only in a later bounded maintenance task:
 2. Reject or restage stale, ambiguous, cross-owner, or unverifiable proposals.
 3. Author and apply the canonical change only when the active task authorizes
    that maintenance and the applicable approval policy is satisfied.
-4. Run focused verification plus normal AgentPlaybook documentation,
+4. Run focused verification plus normal Tao Agent OS documentation,
    workflow, review, and finish checks. The maintenance recorder accepts
    `applied` only when the named canonical target is currently changed, its
    path is structurally linked to the staged `promotion_target`, and one fixed
