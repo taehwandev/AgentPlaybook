@@ -50,3 +50,7 @@ graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 
 # Evidence emitted from a nested working directory is always local runtime state.
 */.tao/
+
+# Bytecode caches, written whenever the test suite or a hook runs.
+__pycache__/
+*.pyc
