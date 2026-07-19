@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Discover the target project for an AgentPlaybook-guided task."""
+"""Discover the target project for an Tao Agent OS-guided task."""
 
 from __future__ import annotations
 

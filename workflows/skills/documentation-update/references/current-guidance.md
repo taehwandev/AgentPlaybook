@@ -14,7 +14,7 @@ Use when creating, reviewing, or restructuring docs, guides, specs, READMEs, age
 - `common/skills/code-conventions/SKILL.md` for naming and clarity
 - `common/skills/llm-wiki-documentation/SKILL.md` for wiki, knowledge-base, runbook, onboarding, durable architecture, or operational docs
 - `common/skills/agent-skill-card-anatomy/SKILL.md` when creating or materially updating an
-  AgentPlaybook guidance card
+  Tao Agent OS guidance card
 - `common/skills/project-naming/SKILL.md` when names, slugs, or product identifiers appear
 - `common/skills/verification-policy/SKILL.md` when links, examples, or commands can be checked
 - `common/skills/human-authored-writing/SKILL.md` when the task changes prose voice, tone, or AI-writing signals without changing facts
@@ -57,7 +57,7 @@ docs"; different work types need different durable documentation.
 | API route, event, DTO, schema, auth, or integration contract | API contract, schema note, integration spec, product-pattern card |
 | Persistence, migration, background job, release, deployment, or operator action | migration note, runbook, release note, rollback note |
 | Test strategy, scenario coverage, QA workflow, or verification harness | test plan, QA checklist, verification runbook |
-| Shared agent behavior, workflow rule, review rule, or platform guidance | AgentPlaybook common card, workflow card, skill card, platform card, repo `AGENTS.md` |
+| Shared agent behavior, workflow rule, review rule, or platform guidance | Tao Agent OS common card, workflow card, skill card, platform card, repo `AGENTS.md` |
 | Local command, repo path, product policy, domain term, or service-specific rule | repo-local `AGENTS.md`, `README.md`, wiki, runbook, or task doc |
 
 Common miss cases to check explicitly:
@@ -158,7 +158,7 @@ repo does not need its own copy of the rules to be governed by them. Repo-local
 instruction files — a target repo's `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, or
 `.agents/` docs — must carry only a short pointer to this card, never a restated
 or copied rule block. Keep root adapter/instruction files thin. When a rule or
-exception changes, update it here in AgentPlaybook so every repo and runtime
+exception changes, update it here in Tao Agent OS so every repo and runtime
 inherits it in one place; a duplicated enforcement block found in a repo-local
 file is itself a documentation miss and should be replaced with a pointer. This
 mirrors the standing rule to link to shared cards instead of copying full
@@ -199,7 +199,7 @@ because agents may treat active guidance as more mature than it is.
 
 ## Minimum Card Maturity
 
-Do not leave an AgentPlaybook card as a rough summary when it is meant to guide
+Do not leave an Tao Agent OS card as a rough summary when it is meant to guide
 agent behavior. A useful shared card should answer these questions directly:
 
 - When to load it: the triggering task, file type, platform, workflow, or risk.

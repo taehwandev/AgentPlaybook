@@ -1,4 +1,4 @@
-"""Types and formatting helpers for AgentPlaybook project discovery."""
+"""Types and formatting helpers for Tao Agent OS project discovery."""
 
 from __future__ import annotations
 

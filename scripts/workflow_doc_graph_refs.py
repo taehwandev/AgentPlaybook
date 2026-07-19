@@ -1,4 +1,4 @@
-"""Parse document references for the local AgentPlaybook graph."""
+"""Parse document references for the local Tao Agent OS graph."""
 
 from __future__ import annotations
 

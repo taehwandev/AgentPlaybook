@@ -6,7 +6,7 @@ type: ai-generated
 
 # Application React Desktop
 
-Use when routed to `platforms/application/skills/application-react-desktop/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/application/skills/application-react-desktop/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

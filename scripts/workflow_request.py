@@ -535,7 +535,7 @@ def _inspection_lacks_target(lowered: str) -> bool:
 
 
 def print_classification(result: dict[str, object]) -> None:
-    print("# AgentPlaybook Request Classification")
+    print("# Tao Agent OS Request Classification")
     print()
     print(f"Clarity: `{result['clarity']}`")
     print(f"Effort: `{result['effort']}`")

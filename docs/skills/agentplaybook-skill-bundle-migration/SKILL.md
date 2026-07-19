@@ -4,9 +4,9 @@ status: review
 type: ai-generated
 ---
 
-# AgentPlaybook Skill Bundle Migration
+# Tao Agent OS Skill Bundle Migration
 
-Use when creating, moving, splitting, routing, or reviewing AgentPlaybook
+Use when creating, moving, splitting, routing, or reviewing Tao Agent OS
 guidance in the `SKILL.md` plus `references/` layout.
 
 ## Read

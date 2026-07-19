@@ -6,7 +6,7 @@ type: ai-generated
 
 # Android External Skill Source Coverage
 
-Use when routed to `platforms/android/skills/android-external-skill-source-coverage/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/android/skills/android-external-skill-source-coverage/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

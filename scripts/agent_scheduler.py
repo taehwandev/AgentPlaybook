@@ -1,4 +1,4 @@
-"""Content-free queue and capacity primitives for the AgentPlaybook scheduler."""
+"""Content-free queue and capacity primitives for the Tao Agent OS scheduler."""
 
 from __future__ import annotations
 

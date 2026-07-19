@@ -1,4 +1,4 @@
-"""Runtime hook setup entry flow for AgentPlaybook."""
+"""Runtime hook setup entry flow for Tao Agent OS."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ DEFAULT_GITHUB_DIR = Path.home() / "GitHub"
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Configure AI runtime bridges, hooks, and permissions for AgentPlaybook."
+        description="Configure AI runtime bridges, hooks, and permissions for Tao Agent OS."
     )
     parser.add_argument(
         "--dry-run",
@@ -272,7 +272,7 @@ def configure_external_project(
     *,
     spill_available: bool = True,
 ) -> list[dict]:
-    """Install AgentPlaybook + project-type-specific permissions for an external project.
+    """Install Tao Agent OS + project-type-specific permissions for an external project.
 
     Combines portable project-level git and verification entries with entries
     detected from the project's build toolchain (Swift,

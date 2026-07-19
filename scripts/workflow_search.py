@@ -1,6 +1,6 @@
 """Natural-language document search for workflow.py.
 
-Pinned Wikimap provides deterministic section retrieval. AgentPlaybook keeps
+Pinned Wikimap provides deterministic section retrieval. Tao Agent OS keeps
 policy facets and its local document graph on top so explicit workflow rules
 remain stronger than lexical ranking and Graphify remains project-structural.
 """
@@ -341,7 +341,7 @@ def _score_terms(
 
 
 def print_query_results(query: str, results: List[Dict[str, object]]) -> None:
-    print(f'# AgentPlaybook Document Query: "{query}"')
+    print(f'# Tao Agent OS Document Query: "{query}"')
     print()
     if not results:
         print("No matching documents found.")

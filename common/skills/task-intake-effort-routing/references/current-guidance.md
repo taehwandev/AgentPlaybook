@@ -287,7 +287,7 @@ Escalate from `quick` to `standard` or `deep` when:
 Intake is verified when the route and effort explain:
 
 - why the request is answer-only, exact, scoped, vague, broad, or risky
-- which repo-local or AgentPlaybook documents must be read before work
+- which repo-local or Tao Agent OS documents must be read before work
 - which gate or Grill-Me protocol use blocks implementation, if any
 - which verification surface will prove the request when work is complete
 

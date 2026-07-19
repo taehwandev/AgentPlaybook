@@ -17,7 +17,7 @@ blocking because the current task does not yet satisfy its execution contract.
 3. Separate facts, assumptions, missed signals, and unknowns. Name the root
    cause as a missing rule, unclear ownership, weak verification, stale docs,
    missing platform guidance, ambiguous decision, or execution error.
-4. Select the canonical AgentPlaybook owner. Improve at least one durable
+4. Select the canonical Tao Agent OS owner. Improve at least one durable
    enforcement surface: owning guidance, hook, validator, or focused test. A
    note or queued lesson alone is not a repair.
 5. Verify the repair with the closest allowlisted documentation, workflow,

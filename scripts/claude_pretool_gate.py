@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Claude Code PreToolUse gate for AgentPlaybook.
+"""Claude Code PreToolUse gate for Tao Agent OS.
 
 This gate enforces two things a purely advisory bridge cannot, at the only point
 that actually stops the model -- the moment it calls an edit tool:
 
 1. Workflow entry. Nothing otherwise stops a file edit when the agent skipped the
    ``start`` hook, so the workflow is easy to ignore. The gate denies a file-edit
-   tool call when an AgentPlaybook project has no fresh preflight evidence, which
+   tool call when an Tao Agent OS project has no fresh preflight evidence, which
    forces ``start`` (route + preflight) before mutating files.
 2. Structural proportionality. Skill docs and the post-hoc review gate cannot
    stop a task from ballooning into many new files/layers -- by review time the
@@ -112,7 +112,7 @@ def max_age_seconds() -> int:
 
 
 def opts_in(path: Path) -> bool:
-    """True when this directory marks a project that uses AgentPlaybook."""
+    """True when this directory marks a project that uses Tao Agent OS."""
     if (path / STATE_DIR).is_dir():
         return True
     for name in OPT_IN_FILES:
@@ -127,7 +127,7 @@ def opts_in(path: Path) -> bool:
 
 
 def find_project_root(cwd: Path) -> Path | None:
-    """Nearest ancestor (including cwd) that opts into AgentPlaybook."""
+    """Nearest ancestor (including cwd) that opts into Tao Agent OS."""
     for candidate in (cwd, *cwd.parents):
         if opts_in(candidate):
             return candidate
@@ -183,7 +183,7 @@ def deny_reason(root: Path, session_id: str = "") -> str:
     else:
         cause = f"Preflight evidence at {preflight} does not satisfy the workflow entry gate."
     return (
-        "AgentPlaybook: run the workflow start hook before editing files in this "
+        "Tao Agent OS: run the workflow start hook before editing files in this "
         f"project. {cause} "
         f"Run `{stable_launcher_path()} start --project "
         f"{root} --rules <AGENTPLAYBOOK_ROOT> --command <route> --request \"<user "
@@ -350,7 +350,7 @@ def record_new_file(state: Path, key: str) -> None:
 
 def sprawl_deny_reason(count: int, budget: int, ack: Path, target: Path, root: Path) -> str:
     return (
-        f"AgentPlaybook proportionality gate: this task has already created {count} new "
+        f"Tao Agent OS proportionality gate: this task has already created {count} new "
         f"source file(s) in {root.name} (budget {budget}); creating {target.name} would exceed "
         "it. Turning a task into many files, layers, or abstractions burns tokens and review "
         "time. Collapse the change into fewer files, or -- if each new file protects a concrete "
@@ -408,7 +408,7 @@ def decide(payload: dict) -> int:
         return allow()
     root = find_edit_project_root(payload, cwd)
     if root is None:
-        # Not an AgentPlaybook project; never block ordinary editing.
+        # Not an Tao Agent OS project; never block ordinary editing.
         return allow()
     session_id = str(payload.get("session_id") or "")
     if not workflow_entry_allows(root, session_id):

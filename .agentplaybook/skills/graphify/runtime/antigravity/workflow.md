@@ -9,4 +9,4 @@ description: Run the project's canonical Graphify skill
 2. Apply that canonical workflow from the project root with the user's current
    Graphify arguments.
 3. Keep this file limited to AGY invocation; update shared behavior only in the
-   canonical skill through AgentPlaybook setup.
+   canonical skill through Tao Agent OS setup.

@@ -11,7 +11,7 @@ from workflow_common import (
 
 
 def print_markdown(route: dict[str, object]) -> None:
-    print("# AgentPlaybook Workflow Route")
+    print("# Tao Agent OS Workflow Route")
     print()
     print(f"Command: `{route['command']}`")
     if route["platform"]:

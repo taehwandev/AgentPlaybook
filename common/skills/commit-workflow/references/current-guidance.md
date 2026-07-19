@@ -8,7 +8,7 @@ type: ai-generated
 
 Use before creating commits, regardless of git client, IDE, CLI, or AI tool.
 
-For AgentPlaybook-routed work, clear local commit requests must use the
+For work routed through Tao Agent OS, clear local commit requests must use the
 lightweight `commit` route, or `git_commit` when the runtime uses that label.
 Do not route a clear commit request through the general `task`, `review`, or
 `triage` routes. The commit route exists to avoid running implementation gates

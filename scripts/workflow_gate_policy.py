@@ -1,4 +1,4 @@
-"""Automatic workflow gates shared by AgentPlaybook routes."""
+"""Automatic workflow gates shared by Tao Agent OS routes."""
 
 from __future__ import annotations
 

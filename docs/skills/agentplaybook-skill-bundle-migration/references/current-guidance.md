@@ -4,9 +4,9 @@ status: review
 type: human-reviewed-needed
 ---
 
-# AgentPlaybook Skill Bundle Migration
+# Tao Agent OS Skill Bundle Migration
 
-Use this as the source of truth for maintaining AgentPlaybook's skill-bundle
+Use this as the source of truth for maintaining Tao Agent OS's skill-bundle
 layout. The canonical guidance shape is now `SKILL.md` entrypoints with scoped
 `references/` files. Flat `.md` paths are not part of the normal target layout.
 
@@ -17,7 +17,7 @@ this file owns the bundle layout contract.
 
 ## Goal
 
-AgentPlaybook loads like a skill library:
+Tao Agent OS loads like a skill library:
 
 ```text
 <area>/skills/<skill-name>/SKILL.md

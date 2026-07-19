@@ -6,7 +6,7 @@ type: ai-generated
 
 # Browser Runtime Testing
 
-Use when routed to `common/skills/browser-runtime-testing/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/browser-runtime-testing/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

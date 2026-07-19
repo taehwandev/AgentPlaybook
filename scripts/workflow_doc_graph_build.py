@@ -1,4 +1,4 @@
-"""Build the local AgentPlaybook document graph."""
+"""Build the local Tao Agent OS document graph."""
 
 from __future__ import annotations
 

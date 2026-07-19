@@ -14,7 +14,7 @@ in the same pass or point them back to `AGENTS.md`; do not create duplicate
 runtime-specific files only for this block.
 
 ```text
-Shared AgentPlaybook library:
+Shared Tao Agent OS library:
 <AGENTPLAYBOOK_ROOT>/AGENTS.md
 <AGENTPLAYBOOK_ROOT>/index.md
 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
@@ -29,10 +29,10 @@ target repo or the request does not name one clear repo, run
 starting or relaunching the runtime with that selected repo as the primary
 workspace. For Codex, use `codex -C <TARGET_REPO>`; add
 `--add-dir <AGENTPLAYBOOK_ROOT>` only when the task needs the shared
-AgentPlaybook root in the session workspace. Repo instruction files define
+Tao Agent OS root in the session workspace. Repo instruction files define
 behavior; runtime launch options define filesystem scope. Explicitly read the
 current target project's
-instruction file for this runtime before using AgentPlaybook: Codex-style
+instruction file for this runtime before using Tao Agent OS: Codex-style
 agents read `AGENTS.md`, Claude reads `CLAUDE.md` when
 present, Codex-specific setups read `CODEX.md` when present,
 Gemini/Antigravity/AGY reads `AGENTS.md`, and generic agents read their
@@ -49,7 +49,7 @@ repo was written, pass it as `workspace scope checkpoint=<evidence>`,
 `scope expansion checkpoint=<evidence>`, or
 `cross-repo scope checkpoint=<evidence>`.
 Use the shared index only to select the smallest relevant document set.
-Do not create repo-local skill documents merely to copy shared AgentPlaybook
+Do not create repo-local skill documents merely to copy shared Tao Agent OS
 behavior. Keep repo-local skills, workflows, wiki pages, or runbooks only when
 they contain product-specific facts, commands, domain policy, or verification
 that cannot be shared safely.
@@ -106,7 +106,7 @@ PRD/ARD or repo-local instruction makes the slice clearly trivial.
 Baseline documentation enforcement (the `documentation` gate always runs and is
 non-empty, `unchanged` needs inspection proof, skipping docs needs recorded user
 approval, and a `triage`/`plan` roadmap needs `product route re-entry` with PRD
-coverage) is enforced centrally by the shared AgentPlaybook finish-check and is
+coverage) is enforced centrally by the shared Tao Agent OS finish-check and is
 identical across Codex, Claude, and Gemini/Antigravity/AGY.
 Do not duplicate or restate these rules in repo-local files; keep only this
 pointer. The source of truth and the exception process are
@@ -122,7 +122,7 @@ to be 🐱🟢 SUCCESS. Use only two cat signal badges in human-visible reports:
 missed, or missing evidence and triggers missed-gate recovery: stop
 finalization, preserve the first failed checkpoint, roll back only dependent
 agent-made changes when safe, and run the retrospective workflow. Improve and
-verify the owning AgentPlaybook doc, hook, validator, or test before resuming
+verify the owning Tao Agent OS doc, hook, validator, or test before resuming
 that checkpoint. One repair cycle is allowed; stop on the same failure or an
 unsafe or ambiguous repair. Do not report any third gate state.
 When the wrapper scripts are available, keep the existing start evidence,

@@ -6,7 +6,7 @@ type: ai-generated
 
 # Change Size Policy
 
-Use when routed to `common/skills/change-size-policy/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/change-size-policy/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

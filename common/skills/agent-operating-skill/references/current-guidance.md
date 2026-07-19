@@ -68,7 +68,7 @@ Use this before implementation, review, refactoring, debugging, documentation, o
 12. For work-producing routes, record a cycle contract before editing: cycle
     type, input/source scope, allowed and forbidden changes, acceptance or
     verification method, stop condition, and checkpoint or next cycle.
-13. Use `index.md` to load only relevant AgentPlaybook cards.
+13. Use `index.md` to load only relevant Tao Agent OS cards.
 14. Use the route manifest's `parallel_execution.phases` before treating gates
     as a serial checklist. Parallelize independent read-only orientation when
     the runtime supports it: selected document reads, file searches, stack

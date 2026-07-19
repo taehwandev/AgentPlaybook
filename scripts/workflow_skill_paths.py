@@ -1,4 +1,4 @@
-"""Canonical AgentPlaybook skill-bundle paths."""
+"""Canonical Tao Agent OS skill-bundle paths."""
 
 from __future__ import annotations
 

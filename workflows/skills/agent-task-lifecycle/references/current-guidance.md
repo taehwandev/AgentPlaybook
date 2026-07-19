@@ -31,7 +31,7 @@ or task-specific workflow to load next.
 
 ## Agentic Run State
 
-AgentPlaybook supports agentic coding by making the active agent's state,
+Tao Agent OS supports agentic coding by making the active agent's state,
 delegation decision, evidence, and recovery point explicit. Runtime-specific
 agents, subagents, or external launchers can use this state to continue,
 delegate, review, and recover work without guessing what already happened.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve shared AgentPlaybook workflow routes.
+"""Resolve shared Tao Agent OS workflow routes.
 
 This CLI does not run project commands. It produces the document route and
 gates an agent should use before it executes work in a target repository.
@@ -36,7 +36,7 @@ from workflow_validate import validate
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Resolve AgentPlaybook workflow routes.")
+    parser = argparse.ArgumentParser(description="Resolve Tao Agent OS workflow routes.")
     subparsers = parser.add_subparsers(dest="action", required=True)
 
     route = subparsers.add_parser("route", help="Print a workflow route manifest.")

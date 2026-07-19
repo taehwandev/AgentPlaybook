@@ -1,4 +1,4 @@
-"""Workspace policy helpers shared by AgentPlaybook hooks."""
+"""Workspace policy helpers shared by Tao Agent OS hooks."""
 
 from __future__ import annotations
 

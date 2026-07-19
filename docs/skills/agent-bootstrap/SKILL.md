@@ -4,9 +4,9 @@ status: review
 type: ai-generated
 ---
 
-# AgentPlaybook Agent Bootstrap
+# Tao Agent OS Agent Bootstrap
 
-Use when routed to `docs/skills/agent-bootstrap/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `docs/skills/agent-bootstrap/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

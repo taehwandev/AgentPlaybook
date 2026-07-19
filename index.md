@@ -52,9 +52,9 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Blog/article draft workspace, publishing-target separation, and shared
   writing source-of-truth:
   `common/skills/writing-workspace/SKILL.md`
-- AgentPlaybook card anatomy, anti-rationalization, red flags, and evidence
+- Tao Agent OS card anatomy, anti-rationalization, red flags, and evidence
   sections: `common/skills/agent-skill-card-anatomy/SKILL.md`
-- AgentPlaybook skill bundle migration, `SKILL.md` plus `references/`
+- Tao Agent OS skill bundle migration, `SKILL.md` plus `references/`
   structure, and duplicate source-of-truth cleanup:
   `docs/skills/agentplaybook-skill-bundle-migration/SKILL.md`
 - Architecture choice/change: `common/skills/architecture-selection/SKILL.md`
@@ -205,7 +205,7 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
   `<AGENTPLAYBOOK_LAUNCHER> workflow list`
 - Lifecycle aliases supported by the workflow router: `spec`, `plan`, `build`,
   `test`, `review`, `webperf`, `code-simplify`, and `ship`. These aliases map
-  to AgentPlaybook routes and must not replace the router with a second active
+  to Tao Agent OS routes and must not replace the router with a second active
   command framework.
 - Canonical lifecycle start (once per task):
   `<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>"`

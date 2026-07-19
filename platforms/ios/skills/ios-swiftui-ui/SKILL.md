@@ -6,7 +6,7 @@ type: ai-generated
 
 # iOS SwiftUI UI
 
-Use when routed to `platforms/ios/skills/ios-swiftui-ui/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/ios/skills/ios-swiftui-ui/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

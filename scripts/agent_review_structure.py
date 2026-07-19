@@ -1,4 +1,4 @@
-"""Read-only structure checks for the AgentPlaybook review hook."""
+"""Read-only structure checks for the Tao Agent OS review hook."""
 
 from __future__ import annotations
 

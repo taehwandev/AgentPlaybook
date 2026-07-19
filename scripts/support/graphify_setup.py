@@ -1,4 +1,4 @@
-"""Public Graphify setup facade used by AgentPlaybook entrypoints."""
+"""Public Graphify setup facade used by Tao Agent OS entrypoints."""
 
 from __future__ import annotations
 

@@ -6,7 +6,7 @@ type: ai-generated
 
 # Android ViewModel And State
 
-Use when routed to `platforms/android/skills/android-viewmodel-state/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/android/skills/android-viewmodel-state/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

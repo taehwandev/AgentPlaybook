@@ -324,7 +324,7 @@ class RuntimeSetupTests(unittest.TestCase):
             self.assertIn(f"Bash({command} *)", entries)
 
     def test_python_edit_permissions_cover_script_style_repos(self) -> None:
-        # AgentPlaybook ships no packaging manifest, so manifest-only detection
+        # Tao Agent OS ships no packaging manifest, so manifest-only detection
         # would leave its own 181 *.py files without an edit permission.
         self.assertIn("Edit(**/*.py)", detect_project_permissions(ROOT))
 
@@ -372,7 +372,7 @@ class RuntimeSetupTests(unittest.TestCase):
 
     def test_agy_runtime_bridge_requires_project_discovery_entry(self) -> None:
         required = [
-            "If the runtime starts outside the target repo or the target repo is not explicit, run AgentPlaybook agent-entry.py or project-discover.py before project work.",
+            "If the runtime starts outside the target repo or the target repo is not explicit, run Tao Agent OS agent-entry.py or project-discover.py before project work.",
             "If project discovery returns ambiguous or not_found, ask the user for the target project before routing, editing, testing, committing, or reporting completion.",
         ]
         block = _agy_runtime_bridge_block(ROOT)

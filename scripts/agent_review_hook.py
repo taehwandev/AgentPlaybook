@@ -1,4 +1,4 @@
-"""Review-hook execution for AgentPlaybook."""
+"""Review-hook execution for Tao Agent OS."""
 
 from __future__ import annotations
 

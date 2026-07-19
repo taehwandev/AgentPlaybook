@@ -1,4 +1,4 @@
-"""Gate ledger helpers for the AgentPlaybook hook CLI."""
+"""Gate ledger helpers for the Tao Agent OS hook CLI."""
 
 from __future__ import annotations
 

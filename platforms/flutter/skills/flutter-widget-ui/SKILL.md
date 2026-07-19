@@ -6,7 +6,7 @@ type: ai-generated
 
 # Flutter Widget UI
 
-Use when routed to `platforms/flutter/skills/flutter-widget-ui/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/flutter/skills/flutter-widget-ui/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

@@ -6,7 +6,7 @@ type: ai-generated
 
 # Product Architecture Delivery Workflow
 
-Use when routed to `workflows/skills/product-architecture-delivery/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `workflows/skills/product-architecture-delivery/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

@@ -6,7 +6,7 @@ type: ai-generated
 
 # iOS State And Concurrency
 
-Use when routed to `platforms/ios/skills/ios-state-concurrency/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/ios/skills/ios-state-concurrency/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

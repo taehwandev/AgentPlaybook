@@ -6,7 +6,7 @@ type: ai-generated
 
 # Reusable Code Design
 
-Use when routed to `common/skills/reusable-code-design/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/reusable-code-design/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

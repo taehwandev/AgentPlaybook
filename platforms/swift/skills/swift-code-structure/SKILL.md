@@ -6,7 +6,7 @@ type: ai-generated
 
 # Swift Code Structure
 
-Use when routed to `platforms/swift/skills/swift-code-structure/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/swift/skills/swift-code-structure/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

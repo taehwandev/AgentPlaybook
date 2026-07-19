@@ -6,7 +6,7 @@ type: ai-generated
 
 # Flutter Security
 
-Use when routed to `platforms/flutter/skills/flutter-security/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/flutter/skills/flutter-security/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

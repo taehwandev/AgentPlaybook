@@ -17,7 +17,7 @@ def merge_codex_prefix_rules(
     original = target.read_text() if target.exists() else ""
     block = "\n".join([
         "# agentplaybook-hooks:begin",
-        "# Managed by AgentPlaybook setup. Keep narrow; do not replace with broad python3 rules.",
+        "# Managed by Tao Agent OS setup. Keep narrow; do not replace with broad python3 rules.",
         *entries,
         "# agentplaybook-hooks:end",
         "",

@@ -64,7 +64,7 @@
     <text x="0" y="0" font-family="'Outfit', 'Inter', sans-serif" font-weight="700" font-size="20" fill="#2bfd93" letter-spacing="4">AGENTPLAYBOOK</text>
 
     <!-- Title -->
-    <text x="0" y="80" font-family="'Outfit', 'Inter', sans-serif" font-weight="800" font-size="72" fill="url(#textGrad)" letter-spacing="-2">AgentPlaybook</text>
+    <text x="0" y="80" font-family="'Outfit', 'Inter', sans-serif" font-weight="800" font-size="72" fill="url(#textGrad)" letter-spacing="-2">Tao Agent OS</text>
 
     <!-- Subtitle -->
     <text x="0" y="140" font-family="'Inter', sans-serif" font-weight="500" font-size="22" fill="#949eb4">Smart shared discipline for AI coding agents.</text>

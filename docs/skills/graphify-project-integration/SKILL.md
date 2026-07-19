@@ -11,13 +11,13 @@ requires_docs:
 
 # Graphify Project Integration
 
-Use when AgentPlaybook is installed in a target repository, when Graphify is
+Use when Tao Agent OS is installed in a target repository, when Graphify is
 missing or incomplete there, or when a workflow must prove that the target
 project's graph, canonical skill, and runtime links are ready.
 
 ## Use When
 
-- Applying AgentPlaybook to a repository that should use Graphify.
+- Applying Tao Agent OS to a repository that should use Graphify.
 - Installing or repairing project-local Graphify skills, rules, workflows, or hooks.
 - A route mentions Graphify, a project graph, or a missing `graphify-out/graph.json`.
 - An agent appears to skip Graphify because the CLI, skill document, integration, or graph is absent.
@@ -68,7 +68,7 @@ collapsed into one `.agentplaybook` owner.
    rules or hook files do not substitute for the canonical skill document.
 4. Build the initial graph from the target root using the installed skill flow.
 5. If project docs explicitly cite source paths but the graph omitted those
-   edges, run the AgentPlaybook deterministic document-link repair; it must not
+   edges, run the Tao Agent OS deterministic document-link repair; it must not
    invent semantic relationships or replace extraction.
 6. Run a small `graphify query` smoke check against the target graph.
 7. Record all seven readiness fields in the workflow gate evidence.
@@ -77,7 +77,7 @@ collapsed into one `.agentplaybook` owner.
 
 | Rationalization | Required response |
 | --- | --- |
-| "The shared AgentPlaybook graph is enough." | Build and verify the target repository's own graph. |
+| "The shared Tao Agent OS graph is enough." | Build and verify the target repository's own graph. |
 | "The rule file mentions Graphify." | Read the canonical `.agentplaybook` `SKILL.md`; a rule or hook is only integration wiring. |
 | "Each runtime needs its own copy." | Keep runtime mechanics in wiring and resolve all shared skill content to the one canonical bundle. |
 | "There is no graph, so I will use grep." | Install/repair Graphify or report the readiness gate failure; do not silently bypass it. |
@@ -103,7 +103,7 @@ collapsed into one `.agentplaybook` owner.
 - Do not mark readiness from file presence alone; include a query smoke check.
 - Do not commit generated graph outputs without the target repo's tracking policy review.
 - Do not edit runtime links as if they were independent skills; update the
-  canonical bundle through AgentPlaybook setup.
+  canonical bundle through Tao Agent OS setup.
 
 ## Stop If
 

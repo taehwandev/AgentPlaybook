@@ -1,4 +1,4 @@
-"""Build runtime permission entries for AgentPlaybook scripts."""
+"""Build runtime permission entries for Tao Agent OS scripts."""
 
 from __future__ import annotations
 
@@ -257,7 +257,7 @@ def _legacy_entrypoint_path_variants(script: Path, project_root: Path | None = N
             _double_quote(f"${{HOME}}/{suffix}"),
         ]
     # Add $AGENTPLAYBOOK_HOME variants for the scripts/ relative path.
-    # AGENTPLAYBOOK_HOME points to the AgentPlaybook root, so the relative
+    # AGENTPLAYBOOK_HOME points to the Tao Agent OS root, so the relative
     # path from root is scripts/<name> — not the same suffix as from HOME.
     ap_rel = f"scripts/{script.name}"
     variants += [

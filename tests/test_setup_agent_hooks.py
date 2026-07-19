@@ -1061,7 +1061,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 )
 
         self.assertEqual(0, result.returncode)
-        self.assertIn("AgentPlaybook hook skipped", result.stderr)
+        self.assertIn("Tao Agent OS hook skipped", result.stderr)
 
     def test_stable_launcher_blocks_by_default_when_alias_is_unsupported(self) -> None:
         # Without the opt-in flag, a misconfigured or misspelled hook alias
@@ -1086,7 +1086,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 )
 
         self.assertNotEqual(0, result.returncode)
-        self.assertIn("unsupported AgentPlaybook script alias", result.stderr)
+        self.assertIn("unsupported Tao Agent OS script alias", result.stderr)
 
     def test_stable_launcher_supports_agent_hook_subcommand_aliases(self) -> None:
         with tempfile.TemporaryDirectory() as temp_home:
@@ -1104,7 +1104,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 )
 
         self.assertEqual(0, result.returncode)
-        self.assertNotIn("unsupported AgentPlaybook script alias: start", result.stderr)
+        self.assertNotIn("unsupported Tao Agent OS script alias: start", result.stderr)
         self.assertIn("--request-classified", result.stdout)
 
     def test_stable_launcher_supports_gate_batch_alias(self) -> None:
@@ -1123,7 +1123,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                 )
 
         self.assertEqual(0, result.returncode)
-        self.assertNotIn("unsupported AgentPlaybook script alias: gate-batch", result.stderr)
+        self.assertNotIn("unsupported Tao Agent OS script alias: gate-batch", result.stderr)
         self.assertIn("--gate-record", result.stdout)
 
     def test_stable_launcher_supports_optional_skill_feedback_alias(self) -> None:
@@ -1149,7 +1149,7 @@ class SetupAgentHooksTests(unittest.TestCase):
                     )
 
             self.assertEqual(0, result.returncode)
-            self.assertNotIn(f"unsupported AgentPlaybook script alias: {alias}", result.stderr)
+            self.assertNotIn(f"unsupported Tao Agent OS script alias: {alias}", result.stderr)
             self.assertIn(option, result.stdout)
 
     def test_external_project_claude_settings_are_excluded_locally(self) -> None:

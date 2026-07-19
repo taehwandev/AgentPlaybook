@@ -6,7 +6,7 @@ type: ai-generated
 
 # CI/CD And Automation
 
-Use when routed to `common/skills/ci-cd-automation/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/ci-cd-automation/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

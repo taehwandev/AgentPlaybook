@@ -6,7 +6,7 @@ type: ai-generated
 
 # Web Deployment Versioning
 
-Use when routed to `common/skills/web-deployment-versioning/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/web-deployment-versioning/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

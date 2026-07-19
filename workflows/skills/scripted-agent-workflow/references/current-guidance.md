@@ -22,7 +22,7 @@ repo.
 
 ## Agentic Control Plane
 
-The workflow script is the agentic coding control plane for AgentPlaybook. It
+The workflow script is the agentic coding control plane for Tao Agent OS. It
 gives the active agent a route manifest, required documents, required gates,
 run-state expectations, delegation policy, and evidence policy so Codex, Claude
 Code, Gemini CLI, GitHub Copilot coding agent, Cursor, Aider, Devin, Replit
@@ -485,7 +485,7 @@ instructions, or the requirement to read every routed `required_docs` entry
 before edits.
 
 The route/search layer uses the repository-pinned Wikimap source for
-deterministic, incremental section retrieval over AgentPlaybook guidance. It
+deterministic, incremental section retrieval over Tao Agent OS guidance. It
 runs only `update --no-map` and `search --json`; do not wire Wikimap install,
 hook, migration, semantic-note, source-editing, or Graphify-import commands into
 the workflow. The ignored `.wikimap/` SQLite index is disposable. The pinned
@@ -655,7 +655,7 @@ a generic `classified`, `done`, `handled`, `clarified`, or `no blockers`
 marker.
 `agent-finish-check.py` requires evidence for every route gate, runs
 `workflow.py validate`, runs `git diff --check`, uses the task-local VibeGuard
-audit cache when both the target project git state and AgentPlaybook rules git
+audit cache when both the target project git state and Tao Agent OS rules git
 state are unchanged. Failed VibeGuard invocations must not be cached; rerun the
 tool after transient failures. Finish-check writes
 `<TARGET_REPO>/.agentplaybook/finish.json`.
@@ -691,7 +691,7 @@ If the agent missed any required gate:
 5. If finish-check sets `retrospective_required` or the hook/gate returns
    `FAIL`, run the canonical
    `workflows/skills/retrospective-learning/SKILL.md` repair cycle. Improve the
-   owning AgentPlaybook guidance, hook, validator, or test and verify that
+   owning Tao Agent OS guidance, hook, validator, or test and verify that
    improvement. A lesson candidate or correction-plan note alone is
    insufficient. For finish-check evidence failures, the improvement must make
    the validator's required evidence fields clear and testable.

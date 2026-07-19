@@ -1,4 +1,4 @@
-"""Run local AgentPlaybook Python entrypoints without spawning Python again."""
+"""Run local Tao Agent OS Python entrypoints without spawning Python again."""
 
 from __future__ import annotations
 

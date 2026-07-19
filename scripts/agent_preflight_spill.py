@@ -1,4 +1,4 @@
-"""Spill label helpers for AgentPlaybook preflight."""
+"""Spill label helpers for Tao Agent OS preflight."""
 
 from __future__ import annotations
 

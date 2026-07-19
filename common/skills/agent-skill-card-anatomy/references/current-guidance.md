@@ -7,7 +7,7 @@ agentplaybook_card_contract: strict
 
 # Agent Skill Card Anatomy
 
-Use when creating, updating, or reviewing an AgentPlaybook common card,
+Use when creating, updating, or reviewing an Tao Agent OS common card,
 workflow, platform card, product-pattern card, or agent-facing template.
 
 The goal is to make each card executable by an agent: the card should say when
@@ -100,7 +100,7 @@ source-of-truth rules. For duplicate guidance cleanup, also read
 ## Do Not
 
 - Do not copy a third-party skill, vendor workflow, or repo-local policy
-  wholesale into shared AgentPlaybook guidance.
+  wholesale into shared Tao Agent OS guidance.
 - Do not add a new card when an existing card should be tightened or linked.
 - Do not create separate "quick reference", "changelog", or auxiliary docs for
   a card unless the route explicitly needs a reference file.
@@ -120,7 +120,7 @@ source-of-truth rules. For duplicate guidance cleanup, also read
 ## Verification
 
 For document-only changes, run the repository's workflow validation and a diff
-sanity check. For strict AgentPlaybook cards, validation should confirm
+sanity check. For strict Tao Agent OS cards, validation should confirm
 frontmatter and the required action sections.
 
 When a route, concern, or command should load the card, add or update workflow

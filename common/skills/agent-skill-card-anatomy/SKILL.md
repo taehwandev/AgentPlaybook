@@ -6,7 +6,7 @@ type: ai-generated
 
 # Agent Skill Card Anatomy
 
-Use when creating, updating, splitting, or reviewing AgentPlaybook common
+Use when creating, updating, splitting, or reviewing Tao Agent OS common
 cards, workflow cards, platform cards, product-pattern cards, or agent-facing
 templates.
 

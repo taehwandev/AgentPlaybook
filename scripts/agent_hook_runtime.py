@@ -1,4 +1,4 @@
-"""Runtime helpers shared by the AgentPlaybook hook CLI."""
+"""Runtime helpers shared by the Tao Agent OS hook CLI."""
 
 from __future__ import annotations
 
@@ -139,7 +139,7 @@ def hook_failure_policy(success: bool, repair_cycle: int) -> tuple[dict[str, Any
             "resume_scope": RESUME_SCOPE,
         }, [
             "recovery request: diagnose every failure, run an actionable retrospective for this "
-            "failed scope, improve the owning AgentPlaybook doc, hook, validator, or test, and "
+            "failed scope, improve the owning Tao Agent OS doc, hook, validator, or test, and "
             "verify that repair outside the hook. Create a structural receipt with the "
             "repair-verify hook, then pass its path with --repair-cycle 1, --repair-target, "
             "--repair-evidence, and --resume-checkpoint before resuming the original task",

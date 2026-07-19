@@ -265,7 +265,7 @@ def print_dispatch_manifest(manifest: Mapping[str, object], output_format: str) 
     assert isinstance(profile, Mapping)
     capsule = manifest["handoff_state"]["execution_capsule"]
     assert isinstance(capsule, Mapping)
-    print("# AgentPlaybook Codex Handoff\n")
+    print("# Tao Agent OS Codex Handoff\n")
     print(f"- Work kind: `{profile['work_kind']}`")
     print(f"- Codex model: `{profile['codex_model']}`")
     print(f"- Reasoning effort: `{profile['reasoning_effort']}`")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify AgentPlaybook gate evidence before final report, commit, or handoff."""
+"""Verify Tao Agent OS gate evidence before final report, commit, or handoff."""
 
 from __future__ import annotations
 

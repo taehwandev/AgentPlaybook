@@ -862,7 +862,7 @@ change is necessary to make the split correct.
 ## Android Skill Source Coverage
 
 When an Android task touches one of these surfaces, apply the corresponding
-source-specific guidance in addition to this AgentPlaybook card. Do not copy
+source-specific guidance in addition to this Tao Agent OS card. Do not copy
 external skill files into the repo by default; distill the rule into the task
 plan and cite the source when reporting. This section is a summary; the complete
 source document list lives in `android-external-skill-source-coverage.md`.

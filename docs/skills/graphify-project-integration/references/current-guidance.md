@@ -34,7 +34,7 @@ The canonical project skill is:
   .graphify_version
 ```
 
-AgentPlaybook setup stages the provider-neutral Graphify bundle away from the
+Tao Agent OS setup stages the provider-neutral Graphify bundle away from the
 target, converts runtime-specific delegation wording into one runtime-neutral
 flow, and atomically replaces this directory. Stock Graphify project installers
 must not be run directly over the final runtime links because their copy and
@@ -60,13 +60,13 @@ Codex, Claude, and Antigravity/AGY share this content. `AGENTS.md` and
 `CLAUDE.md` must not retain separate Graphify explanation sections. Runtime
 locations contain only discovery links or machine configuration; AGY's required
 rule/workflow files are themselves links to runtime adapters stored inside the
-canonical bundle. This applies the AgentPlaybook invariant `one reusable rule =
+canonical bundle. This applies the Tao Agent OS invariant `one reusable rule =
 one canonical owner`; see
 `docs/skills/agentplaybook-skill-bundle-migration/references/source-of-truth-ownership.md`.
 
 ## Target Setup
 
-For one explicit target, AgentPlaybook setup includes Graphify by default:
+For one explicit target, Tao Agent OS setup includes Graphify by default:
 
 ```bash
 python3 <AGENTPLAYBOOK_ROOT>/scripts/setup-agent-hooks.py --target <TARGET_REPO>
@@ -112,7 +112,7 @@ graph from the target root.
 
 Read the canonical `SKILL.md` once for the task. Confirm that every enabled
 runtime directory is a symlink whose resolved target is the canonical directory
-inside the same repository. Do not treat an AgentPlaybook card,
+inside the same repository. Do not treat a Tao Agent OS card,
 AGENTS/CLAUDE section, rule, workflow, hook, or the Graphify report as a
 substitute. Do not accept copied runtime bundles even when their hashes match;
 matching copies can drift on the next update.
@@ -159,7 +159,7 @@ removed by the same migration commit.
 
 ## Version-Control Policy
 
-AgentPlaybook setup creates an allowlist boundary for `.agentplaybook`.
+Tao Agent OS setup creates an allowlist boundary for `.agentplaybook`.
 
 Commit these project assets:
 

@@ -4,16 +4,16 @@ status: review
 type: human-reviewed-needed
 ---
 
-# Use AgentPlaybook Prompt
+# Use Tao Agent OS Prompt
 
 Paste this into Claude, Gemini/Antigravity/AGY, Codex, or another AI coding
-agent when the target repo is not yet wired to AgentPlaybook or when you want a
-one-shot task to follow AgentPlaybook explicitly.
+agent when the target repo is not yet wired to Tao Agent OS or when you want a
+one-shot task to follow Tao Agent OS explicitly.
 
 Replace the placeholders before sending.
 
 ```text
-Use AgentPlaybook for this task.
+Use Tao Agent OS for this task.
 
 Target repo:
 <TARGET_REPO_OR_CURRENT_DIRECTORY>
@@ -21,7 +21,7 @@ Target repo:
 Task:
 <TASK>
 
-AgentPlaybook root:
+Tao Agent OS root:
 <AGENTPLAYBOOK_ROOT>
 
 VibeGuard human docs:
@@ -50,11 +50,11 @@ Rules:
    If a response exposed those background details, do not finish with an
    apology-only message. Repair the action path or stop with the specific
    blocker.
-2. Do not assume this runtime automatically loaded AgentPlaybook. Explicitly
+2. Do not assume this runtime automatically loaded Tao Agent OS. Explicitly
    read <AGENTPLAYBOOK_ROOT>/AGENTS.md. Let the start hook route the smallest
    required document set; open <AGENTPLAYBOOK_ROOT>/index.md only for a simple
    answer-only lookup or an explicitly accepted routing fallback.
-3. Do not copy the whole AgentPlaybook library into this repo. Link only the
+3. Do not copy the whole Tao Agent OS library into this repo. Link only the
    relevant root, index, workflow script, and selected cards. If you edit
    committed repo-local instruction files, use a portable root reference such
    as ${AGENTPLAYBOOK_HOME} or a repo-relative pinned path like
@@ -128,7 +128,7 @@ Rules:
 9. If any required gate was not executed, stop before final report, commit,
    release, or handoff. Roll back only dependent agent-made changes after the
    failed checkpoint when safe, preserve user-owned changes, and run the
-   retrospective workflow. Improve and verify the canonical AgentPlaybook doc,
+   retrospective workflow. Improve and verify the canonical Tao Agent OS doc,
    hook, validator, or test before resuming that checkpoint. Allow one repair
    cycle only; stop if the same failure remains or the repair is unsafe or
    ambiguous.

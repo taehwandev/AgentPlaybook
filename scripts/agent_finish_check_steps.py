@@ -1,4 +1,4 @@
-"""Step functions for AgentPlaybook finish checks."""
+"""Step functions for Tao Agent OS finish checks."""
 
 from __future__ import annotations
 

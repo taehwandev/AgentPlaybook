@@ -6,7 +6,7 @@ type: ai-generated
 
 # Android Module Structure
 
-Use when routed to `platforms/android/skills/android-module-structure/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `platforms/android/skills/android-module-structure/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

@@ -6,7 +6,7 @@ type: ai-generated
 
 # Dependency Policy
 
-Use when routed to `common/skills/dependency-policy/SKILL.md` or when work needs this AgentPlaybook guidance area.
+Use when routed to `common/skills/dependency-policy/SKILL.md` or when work needs this Tao Agent OS guidance area.
 
 ## Read
 

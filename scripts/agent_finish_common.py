@@ -1,4 +1,4 @@
-"""Shared helpers for AgentPlaybook finish checks."""
+"""Shared helpers for Tao Agent OS finish checks."""
 
 from __future__ import annotations
 

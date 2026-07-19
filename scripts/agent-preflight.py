@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create executable preflight evidence for AgentPlaybook tasks."""
+"""Create executable preflight evidence for Tao Agent OS tasks."""
 
 from __future__ import annotations
 

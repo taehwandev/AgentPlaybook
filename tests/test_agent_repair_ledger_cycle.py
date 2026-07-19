@@ -182,7 +182,7 @@ class RepairLedgerCycleTests(unittest.TestCase):
         self.assertEqual("verified_playbook_improvement", policy["recovery_required"])
         joined_details = " ".join(details)
         self.assertIn("actionable retrospective", joined_details)
-        self.assertIn("AgentPlaybook doc, hook, validator, or test", joined_details)
+        self.assertIn("Tao Agent OS doc, hook, validator, or test", joined_details)
         self.assertIn("--repair-cycle 1", joined_details)
         self.assertIn("--resume-checkpoint", joined_details)
 

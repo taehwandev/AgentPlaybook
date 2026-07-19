@@ -30,7 +30,7 @@ external Android and Compose skill repositories.
 ## Decision Rule
 
 Use the external source as coverage and version-sensitive evidence. Use local
-AgentPlaybook cards as the durable rule source. Update AgentPlaybook only when
+Tao Agent OS cards as the durable rule source. Update Tao Agent OS only when
 the source lesson is reusable across Android projects and can be stated without
 copying vendor-specific prose, sample code, or release-note detail.
 
@@ -52,7 +52,7 @@ copying vendor-specific prose, sample code, or release-note detail.
 
 ## Do Not
 
-- Do not vendor full external skill text into AgentPlaybook.
+- Do not vendor full external skill text into Tao Agent OS.
 - Do not treat a matching file count as sufficient source coverage. Coverage
   requires the local source maps to name the extra decisions and reference
   groups inside each upstream skill.
@@ -76,7 +76,7 @@ copying vendor-specific prose, sample code, or release-note detail.
 - Re-run the source manifest comparison against the local snapshots when
   refreshing source coverage.
 - Run `python3 scripts/check_android_external_skill_manifest.py` from the
-  AgentPlaybook root when the local source snapshots are available.
+  Tao Agent OS root when the local source snapshots are available.
 - Confirm the split source-map references still cover all 63 upstream
   `SKILL.md` entrypoints and the reference groups that affect implementation or
   verification.

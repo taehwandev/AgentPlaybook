@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the three essential AgentPlaybook hooks.
+"""Run the three essential Tao Agent OS hooks.
 
 Hooks intentionally expose only two outcomes: SUCCESS or FAIL. Details explain
 why, but callers should treat any non-zero exit as blocking.
@@ -472,7 +472,7 @@ def _add_gate_arguments(parser: argparse.ArgumentParser) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run essential AgentPlaybook hooks.",
+        description="Run essential Tao Agent OS hooks.",
         allow_abbrev=False,
     )
     _add_common_arguments(parser)
