@@ -177,6 +177,25 @@ class ClaudePreToolGateTests(unittest.TestCase):
             self.assertEqual(0, code)
             self.assertEqual("", out)
 
+    def test_edit_is_gated_by_the_project_that_owns_the_file(self) -> None:
+        # Regression: the gate resolved the project from cwd, so a session
+        # sitting in one project could edit another project's files on the first
+        # project's start. Observed live on a writing workspace.
+        with tempfile.TemporaryDirectory() as tmp:
+            here = _opt_in_project(Path(tmp) / "here")
+            there = _opt_in_project(Path(tmp) / "there")
+            _write_preflight(here, "s1")  # start ran here, not there
+
+            code, out = _decide({
+                "tool_name": "Write",
+                "cwd": str(here),
+                "session_id": "s1",
+                "tool_input": {"file_path": str(there / "draft.md")},
+            })
+
+            self.assertEqual(0, code)
+            self.assertEqual("deny", json.loads(out)["hookSpecificOutput"]["permissionDecision"])
+
     def test_gate_never_writes_evidence(self) -> None:
         # `start` is the only writer of workflow-entry proof. A gate that can
         # write it can fabricate it, which is how the first bypass happened.

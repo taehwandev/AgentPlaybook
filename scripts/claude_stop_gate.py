@@ -53,6 +53,8 @@ FINISH_NAME = "finish.json"
 SESSION_MARKER_DIR = "claude-pretool-gate"
 EDIT_ACTIVITY_SUFFIX = ".edited"
 BLOCKED_SUFFIX = ".stop-blocked"
+# Written by the PreToolUse gate; see session_projects().
+SESSION_PROJECT_DIR = "claude-session-projects"
 # Written by `finish`; see session_finished() for why finish.json alone is not enough.
 FINISHED_SUFFIX = ".finished"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
@@ -166,6 +168,29 @@ def session_finished(root: Path, session_id: str) -> bool:
     return recorded_session_id(payload) == session_id
 
 
+def session_projects(session_id: str, cwd_root: Path | None) -> list[Path]:
+    """Every project this session edited, not just the one it happens to sit in.
+
+    A stop happens once, with one cwd, but a session can edit files across
+    several projects. Checking only the cwd project let an edited project stop
+    unverified: the cwd project had a finish, so the gate allowed the stop while
+    another project's work had never been reviewed.
+    """
+    roots: list[Path] = []
+    if cwd_root is not None:
+        roots.append(cwd_root)
+    index = Path.home() / STATE_DIR / SESSION_PROJECT_DIR / safe_session_id(session_id)
+    try:
+        recorded = index.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        recorded = []
+    for line in recorded:
+        candidate = Path(line.strip())
+        if line.strip() and candidate not in roots:
+            roots.append(candidate)
+    return roots
+
+
 def block_reason(root: Path) -> str:
     launcher = stable_launcher_path()
     return (
@@ -193,18 +218,17 @@ def decide(payload: dict) -> int:
         cwd = Path(payload.get("cwd") or os.getcwd()).resolve()
     except OSError:
         return allow()
-    root = find_project_root(cwd)
-    if root is None:
-        return allow()
     session_id = str(payload.get("session_id") or "")
     if not session_id:
         return allow()
-    if session_finished(root, session_id):
-        return allow()
-    if not has_unreported_edits(root, session_id):
-        return allow()
-    record_block(root, session_id)
-    return block(block_reason(root))
+    for root in session_projects(session_id, find_project_root(cwd)):
+        if session_finished(root, session_id):
+            continue
+        if not has_unreported_edits(root, session_id):
+            continue
+        record_block(root, session_id)
+        return block(block_reason(root))
+    return allow()
 
 
 def main() -> int:

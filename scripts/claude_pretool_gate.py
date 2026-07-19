@@ -56,6 +56,8 @@ SPRAWL_ACK_SUFFIX = ".sprawl-ack"
 # Shared with claude_stop_gate.py, which blocks a stop when an editing session
 # has no passing finish.
 EDIT_ACTIVITY_SUFFIX = ".edited"
+# User-global, because the Stop gate must find projects outside its own cwd.
+SESSION_PROJECT_DIR = "claude-session-projects"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
 OPT_IN_TOKEN = "agentplaybook"
 DEFAULT_MAX_AGE_SECONDS = 8 * 60 * 60
@@ -241,6 +243,33 @@ def record_edit_activity(root: Path, session_id: str) -> None:
         pass
 
 
+def session_projects_index(session_id: str) -> Path:
+    """Per-session list of every project this session edited.
+
+    The Stop gate runs once, with one cwd, but a session can edit files in
+    several projects. Without this index it only ever checks the cwd project and
+    lets an edited-but-unverified project stop silently.
+    """
+    return Path.home() / STATE_DIR / SESSION_PROJECT_DIR / safe_session_id(session_id)
+
+
+def record_session_project(root: Path, session_id: str) -> None:
+    index = session_projects_index(session_id)
+    line = str(root)
+    try:
+        existing = index.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        existing = []
+    if line in existing:
+        return
+    try:
+        index.parent.mkdir(parents=True, exist_ok=True)
+        with index.open("a", encoding="utf-8") as handle:
+            handle.write(line + "\n")
+    except OSError:
+        pass
+
+
 def new_file_budget() -> int:
     raw = os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET", "").strip()
     if not raw:
@@ -263,6 +292,27 @@ def write_target_path(payload: dict, cwd: Path) -> Path | None:
     if not target.is_absolute():
         target = cwd / target
     return target
+
+
+def find_edit_project_root(payload: dict, cwd: Path) -> Path | None:
+    """Resolve the project that owns the file being edited, not just the cwd.
+
+    A session's working directory and the file it edits are often different
+    projects: this gate let a whole article get rewritten in a writing workspace
+    while the cwd sat in another repo, so the writing project's own `start` was
+    never required and its edits were recorded against the wrong project. The
+    Stop gate then asked the cwd project for a finish, found one, and allowed a
+    stop that left the edited project unverified.
+
+    The target path decides. cwd stays as the fallback for tools that report no
+    file path.
+    """
+    target = write_target_path(payload, cwd)
+    if target is not None:
+        root = find_project_root(target.parent)
+        if root is not None:
+            return root
+    return find_project_root(cwd)
 
 
 def is_relative_to(path: Path, root: Path) -> bool:
@@ -356,7 +406,7 @@ def decide(payload: dict) -> int:
         cwd = Path(cwd_raw).resolve()
     except OSError:
         return allow()
-    root = find_project_root(cwd)
+    root = find_edit_project_root(payload, cwd)
     if root is None:
         # Not an AgentPlaybook project; never block ordinary editing.
         return allow()
@@ -367,6 +417,7 @@ def decide(payload: dict) -> int:
     if sprawl_reason:
         return deny(sprawl_reason)
     record_edit_activity(root, session_id)
+    record_session_project(root, session_id)
     return allow()
 
 

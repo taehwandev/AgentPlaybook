@@ -190,6 +190,21 @@ class ClaudeStopGateTests(unittest.TestCase):
             self.assertEqual("", quiet)
             self.assertTrue(_blocked(rearmed))
 
+    def test_stop_checks_every_project_the_session_edited(self) -> None:
+        # Regression: the Stop gate only looked at the cwd project. With a
+        # finish there, it allowed a stop while another edited project had none.
+        with tempfile.TemporaryDirectory() as tmp:
+            here = _opt_in_project(Path(tmp) / "here")
+            there = _opt_in_project(Path(tmp) / "there")
+            _record_edit(here, "s1")
+            gate.finished_marker(here, "s1").write_text("", encoding="utf-8")
+            _record_edit(there, "s1")
+
+            with patch.object(gate, "session_projects", lambda sid, cwd_root: [here, there]):
+                _, out = _decide(_payload(here, "s1"))
+
+        self.assertTrue(_blocked(out))
+
     def test_stop_hook_active_never_blocks_again(self) -> None:
         # The gate already blocked once and the model continued; blocking a
         # second time would trap the session in a loop.
