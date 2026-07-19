@@ -111,6 +111,91 @@ class ClaudePreToolGateTests(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertEqual("deny", json.loads(out)["hookSpecificOutput"]["permissionDecision"])
 
+    def _write_new_source(self, project: Path, session: str, relative: str) -> tuple[int, str]:
+        return _decide(
+            {
+                "tool_name": "Write",
+                "cwd": str(project),
+                "session_id": session,
+                "tool_input": {"file_path": relative},
+            }
+        )
+
+    def test_new_source_files_up_to_budget_are_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _write_preflight(project)
+            for index in range(5):
+                code, out = self._write_new_source(project, "sp", f"src/file{index}.py")
+                self.assertEqual(0, code)
+                self.assertEqual("", out, f"file{index} should be allowed")
+
+    def test_new_source_file_past_budget_is_denied(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _write_preflight(project)
+            for index in range(5):
+                self._write_new_source(project, "sp", f"src/file{index}.py")
+            code, out = self._write_new_source(project, "sp", "src/file5.py")
+        self.assertEqual(0, code)
+        decision = json.loads(out)["hookSpecificOutput"]
+        self.assertEqual("deny", decision["permissionDecision"])
+        self.assertIn("proportionality gate", decision["permissionDecisionReason"])
+
+    def test_ack_file_unlocks_further_new_source_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _write_preflight(project)
+            for index in range(5):
+                self._write_new_source(project, "sp", f"src/file{index}.py")
+            ack = project / ".agentplaybook" / "claude-pretool-gate" / "sp.sprawl-ack"
+            ack.parent.mkdir(parents=True, exist_ok=True)
+            ack.write_text("each file owns a distinct platform adapter\n", encoding="utf-8")
+            code, out = self._write_new_source(project, "sp", "src/file5.py")
+        self.assertEqual(0, code)
+        self.assertEqual("", out)
+
+    def test_non_source_new_files_are_never_counted(self) -> None:
+        # Doc/content sprawl (e.g. a writing workspace) must not be blocked.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _write_preflight(project)
+            for index in range(12):
+                code, out = self._write_new_source(project, "sp", f"drafts/post{index}.md")
+                self.assertEqual("", out, f"markdown draft {index} must be allowed")
+
+    def test_overwriting_existing_source_file_is_not_counted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _write_preflight(project)
+            existing = project / "src" / "existing.py"
+            existing.parent.mkdir(parents=True, exist_ok=True)
+            existing.write_text("value = 1\n", encoding="utf-8")
+            # Fill the budget with new files, then overwrite the existing one.
+            for index in range(5):
+                self._write_new_source(project, "sp", f"src/new{index}.py")
+            code, out = self._write_new_source(project, "sp", "src/existing.py")
+        self.assertEqual(0, code)
+        self.assertEqual("", out)
+
+    def test_new_file_budget_can_be_disabled_with_zero(self) -> None:
+        import os as _os
+
+        previous = _os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET")
+        _os.environ["AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET"] = "0"
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                project = _opt_in_project(Path(tmp))
+                _write_preflight(project)
+                for index in range(20):
+                    code, out = self._write_new_source(project, "sp", f"src/file{index}.py")
+                    self.assertEqual("", out)
+        finally:
+            if previous is None:
+                _os.environ.pop("AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET", None)
+            else:
+                _os.environ["AGENTPLAYBOOK_CLAUDE_GATE_NEW_FILE_BUDGET"] = previous
+
 
 class ClaudePreToolGateSetupTests(unittest.TestCase):
     def test_merge_installs_pre_tool_use_group(self) -> None:
