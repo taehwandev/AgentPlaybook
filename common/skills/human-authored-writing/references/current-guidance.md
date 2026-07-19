@@ -26,6 +26,7 @@ Do not wait until after writing to load this card. For writing tasks, this card 
 - Two or three nearby voice samples when available, such as existing docs, posts, release notes, emails, or the user's own draft fragments.
 - When a draft continues a series, inspect the actually published predecessor or use the author's confirmed publication history before stating what the earlier piece introduced. A local draft may contain later additions that were never published.
 - For Korean author voice work, inspect phrase-level habits as well as endings: connective frames, concrete maintenance wording, preferred technical nouns, translation-like metaphors, and phrases the user explicitly rejected.
+- Treat negative voice evidence as first-class evidence. When the author says they do not use a word, metaphor, or explanatory frame, record that rejection for the current writing task and scan the whole artifact for the same phrase and semantic pattern before finalizing.
 - The configured writing workspace when drafting blog posts, articles, essays, or publishable long-form prose.
 - Repo-local writing, brand, accessibility, localization, disclosure, or public discovery rules when the text is user-facing.
 - Required disclosure rules for academic, legal, workplace, regulated, or public-authorship contexts.
@@ -48,6 +49,7 @@ When in doubt, preserve meaning over style. If a more natural sentence would cha
 - Keep edits conservative. If a rewrite would change more than roughly one third of the text, report the risk and offer a focused pass instead of silently replacing the piece.
 - Do not trade comprehension for brevity. Remove repetition and filler, but keep the first-use definition and whichever actor, action, location, reason, or example the intended reader needs to understand the claim without hidden project context.
 - Treat confusion from the author or an intended reader as evidence of semantic over-compression, even when the sentence is grammatical and technically accurate. Repair the missing explanation instead of defending the shorthand.
+- Prefer a visible actor and action over abstract operational nouns or metaphors when the author's samples use concrete language. Keep a required technical term when accuracy needs it, but explain what a person or system actually does instead of asking the reader to translate the abstraction.
 - Make uncertainty visible. If the draft lacks substance, sources, or a real point of view, say that style cleanup cannot fix the underlying gap.
 
 ## Reader-Comprehension Boundary
@@ -55,6 +57,30 @@ When in doubt, preserve meaning over style. If a more natural sentence would cha
 Concision removes words the reader does not need. Over-compression removes the context the writer already knows but the reader does not. Judge the edit by what the intended reader can reconstruct, not by sentence length.
 
 For example, "Keep shared rules at the root and module rules close to the code" is compact but assumes the reader already knows which root, which rules, and why location matters. A usable explanation would say: "Put rules that apply to every task in the repository's root instruction file. Put rules used only by one module in that module's own documentation so someone changing that module can find and update its guidance with the code."
+
+## Author Paraphrase And Thesis Reset
+
+When the author asks what a sentence means, says the wording is not something
+they would use, or has to supply a clearer paraphrase, treat that as a failed
+voice-and-comprehension check. Do not respond with a synonym swap and continue.
+
+1. Use the author's paraphrase as the strongest available voice evidence while
+   preserving protected facts and technical meaning.
+2. Restate the article's point in one sentence using the author's concrete
+   subject, action, and intended result.
+3. Check the title, opening, section headings, and conclusion against that
+   sentence. If they point to different ideas, repair the article-level thesis
+   before polishing more sentences.
+4. Scan for the same abstraction pattern across the artifact. Typical failures
+   replace an actor and action with vague language about layers, ownership,
+   responsibility, foundations, instability, or a result being "final."
+5. Keep technical labels only where they help the reader. In explanatory prose,
+   follow the label with the smallest concrete statement of who does what and
+   why it matters.
+
+A sentence does not pass this check merely because it is grammatical or
+technically defensible. The intended author and reader must be able to identify
+the subject, action, and result without first translating the abstraction.
 
 ## Workflow
 
@@ -66,11 +92,12 @@ For example, "Keep shared rules at the root and module rules close to the code" 
  6. Audit the draft for specific signals. Note the span, category, severity, and intended edit before rewriting broad sections.
  7. For Korean prose, run a phrase-level voice pass. Check not only honorific endings, but also plausible phrases that the author would not naturally use, such as abstract metaphors, stock AI transitions, or wording the user already flagged as unnatural.
  8. When the author or a reader flags one unclear phrase, scan the whole artifact for analogous shorthand, unexplained terms, omitted actors, and missing causal links before rewriting. Do not repair only the quoted sentence.
- 9. Rewrite only the flagged spans or the smallest paragraph needed for flow. Prefer complete meaning over compression: keep the actors, referents, conditions, and causal links that the reader needs, even when the shorter phrasing sounds smoother.
-10. Run a fidelity check against the original: facts, claims, numbers, names, quotes, citations, ordering, tone, and required format.
-11. Read the result aloud or scan for rhythm: sentence lengths should vary, but the prose should not become choppy, cute, or performatively casual.
-12. Run an "obviously generated" second pass for residual tells: formulaic framing, repetitive transitions, fake balance, unsupported grand claims, chatbot closers, and tidy-but-empty summaries.
-13. Report the categories changed and any places intentionally left unchanged.
+ 9. If the author questions the article's core or supplies a clearer statement of intent, run the thesis-reset process before continuing span-level edits.
+10. Rewrite only the flagged spans or the smallest paragraph needed for flow. Prefer complete meaning over compression: keep the actors, referents, conditions, and causal links that the reader needs, even when the shorter phrasing sounds smoother.
+11. Run a fidelity check against the original: facts, claims, numbers, names, quotes, citations, ordering, tone, and required format.
+12. Read the result aloud or scan for rhythm: sentence lengths should vary, but the prose should not become choppy, cute, or performatively casual.
+13. Run an "obviously generated" second pass for residual tells: formulaic framing, repetitive transitions, fake balance, unsupported grand claims, chatbot closers, and tidy-but-empty summaries.
+14. Report the categories changed and any places intentionally left unchanged.
 
 ## Audit Passes
 
@@ -118,6 +145,7 @@ Use these passes when the writing task is more than a one-line copy edit.
 | "The shorter version is automatically clearer." | Keep the shorter version only when it preserves the reader's ability to identify the actor, condition, and relationship between ideas. Restore needed semantic links before optimizing rhythm. |
 | "The term is accurate, so readers will understand it." | Define unfamiliar or project-specific terms at first use and add the smallest concrete explanation the intended audience needs. Accuracy does not replace context. |
 | "The user flagged only this sentence, so only this sentence needs review." | Repair the sentence, then scan the whole artifact for analogous shorthand and omitted context. Treat the report as evidence of a pattern until the scan shows otherwise. |
+| "The author supplied a clearer paraphrase, so I only need to replace that sentence." | Treat the paraphrase as thesis and voice evidence. Check the title, opening, headings, and conclusion before returning to local edits. |
 | "Detector score is the goal." | Refuse detector-bypass promises; improve clarity, fidelity, voice, and responsible use. |
 | "Every AI tell must be banned everywhere." | Apply genre and channel judgment. Technical docs, legal text, and formal reports can be restrained without sounding robotic. |
 
@@ -173,6 +201,8 @@ Use these passes when the writing task is more than a one-line copy edit.
 - Are unfamiliar and project-specific terms defined at first use?
 - Did any compression remove a qualifier, actor, referent, sequence, or causal link needed to preserve the original meaning?
 - If the author or a reader flagged one unclear phrase, did the review cover analogous shorthand across the whole artifact?
+- If the author rejected a word or explanatory frame, did the review scan both the exact wording and the same abstraction pattern across the artifact?
+- Can the article's point be stated in one sentence from the author's wording, and do the title, opening, headings, and conclusion all support that same point?
 - Did the second pass catch remaining formulaic structure, fake balance, vague authorities, chatbot artifacts, or unsupported confidence?
 - For UI text, forms, localized copy, or accessibility-sensitive text, also load `common/skills/accessibility-i18n/SKILL.md`.
 
