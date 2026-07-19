@@ -19,6 +19,13 @@ REVIEW_SOURCE_FILE_LINE_LIMIT = 500
 REVIEW_FILE_REVIEW_WARNING_LIMIT = 300
 REVIEW_ADDED_LINE_LIMIT = 200
 REVIEW_FUNCTION_LINE_LIMIT = 120
+# The file/block gates above catch a unit that grew too large. They do nothing
+# about the opposite failure: a small task spread across many new files, layers,
+# and abstractions ("dozens of files for a few lines of behavior"). Count new
+# development source files and require structure-review evidence past this limit
+# so sprawl has to be justified per file/abstraction against a present risk. See
+# llm-coding-discipline/references/current-guidance.md#match-structure-to-the-problem-hard-stop.
+REVIEW_NEW_SOURCE_FILE_PRESSURE_LIMIT = 5
 # Test files legitimately run longer than production files (setup, fixtures,
 # one scenario per case), so they get a wider budget instead of the source
 # limit -- but an unbounded exemption is how a single test file grows to
@@ -188,6 +195,9 @@ def structure_review(
         )
         result["failures"].extend(block_failures)
         result["warnings"].extend(block_warnings)
+
+    flag_new_source_file_sprawl(result, discovery["path_metadata"])
+
     result["failures"].extend(
         purpose_failures(
             project,
@@ -218,6 +228,37 @@ def structure_review(
     )
 
     return result
+
+
+def flag_new_source_file_sprawl(
+    result: dict[str, Any],
+    path_metadata: dict[str, dict[str, Any]],
+) -> None:
+    """Require justification when a change spawns many new source files.
+
+    Test, config, generated, and pinned third-party files are already excluded
+    from strict_checked_paths, so this counts only new development source files.
+    """
+    added = [
+        path
+        for path in result["strict_checked_paths"]
+        if path_metadata.get(path, {}).get("status") == "A"
+    ]
+    result["new_source_file_count"] = len(added)
+    result["new_source_file_pressure_limit"] = REVIEW_NEW_SOURCE_FILE_PRESSURE_LIMIT
+    if len(added) <= REVIEW_NEW_SOURCE_FILE_PRESSURE_LIMIT:
+        return
+
+    shown = ", ".join(added[:8])
+    if len(added) > 8:
+        shown += "; ..."
+    result["warnings"].append(
+        f"change adds {len(added)} new development source files ({shown}); "
+        f"new-file review-pressure limit is {REVIEW_NEW_SOURCE_FILE_PRESSURE_LIMIT}; "
+        "structure-review evidence must justify each new file or abstraction against a "
+        "concrete present risk (see Match Structure To The Problem), or the change should "
+        "be collapsed into fewer files"
+    )
 
 
 def changed_source_paths(
