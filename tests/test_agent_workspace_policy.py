@@ -12,7 +12,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from agent_review_structure import changed_source_paths
-from agent_workspace_policy import is_writing_workspace
+from agent_workspace_policy import (
+    is_git_status_review_only,
+    is_non_git_workspace,
+    is_writing_workspace,
+)
 
 
 def load_collect_failures():
@@ -74,6 +78,35 @@ class AgentWorkspacePolicyTests(unittest.TestCase):
             self.assertEqual([], paths)
             self.assertEqual([], discovery["command_errors"])
             self.assertEqual("non_git_writing_workspace", discovery["review_only"])
+
+
+    def test_workspace_root_holding_repos_is_not_itself_a_git_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir)
+            (workspace_root / "some-repo" / ".git").mkdir(parents=True)
+
+            self.assertTrue(is_non_git_workspace(workspace_root))
+            self.assertFalse(is_non_git_workspace(workspace_root / "some-repo"))
+
+    def test_git_status_failure_is_review_only_outside_any_repository(self) -> None:
+        # A path with no repository above it cannot produce git evidence, so the
+        # gate must not demand it. This is what made the gate unsatisfiable for
+        # $HOME and for the ~/git workspace root.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+
+            self.assertTrue(is_git_status_review_only(project, {"returncode": 128}))
+
+    def test_git_status_failure_inside_a_repository_stays_a_real_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            (project / ".git").mkdir()
+
+            self.assertFalse(is_git_status_review_only(project, {"returncode": 128}))
+
+    def test_successful_git_status_is_never_review_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.assertFalse(is_git_status_review_only(Path(temp_dir), {"returncode": 0}))
 
 
 if __name__ == "__main__":

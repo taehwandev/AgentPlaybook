@@ -104,8 +104,11 @@ def finish_with_result(
     output: Path | None,
     payload: dict[str, Any],
     repair_cycle: int,
+    invocation_error: bool = False,
 ) -> int:
-    policy, policy_details = hook_failure_policy(success, repair_cycle)
+    policy, policy_details = hook_failure_policy(
+        success, repair_cycle, invocation_error=invocation_error
+    )
     details = [*details, *policy_details]
     evidence = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -121,7 +124,9 @@ def finish_with_result(
     return 0 if success else 1
 
 
-def hook_failure_policy(success: bool, repair_cycle: int) -> tuple[dict[str, Any], list[str]]:
+def hook_failure_policy(
+    success: bool, repair_cycle: int, *, invocation_error: bool = False
+) -> tuple[dict[str, Any], list[str]]:
     if success:
         next_action = "resume_failed_checkpoint" if repair_cycle else "continue"
         return {
@@ -129,13 +134,27 @@ def hook_failure_policy(success: bool, repair_cycle: int) -> tuple[dict[str, Any
             "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
             "next_action": next_action,
         }, []
+    if invocation_error:
+        # The call was rejected before the lifecycle started, so no checkpoint
+        # failed and none can be repaired. Demanding a repair receipt here is a
+        # deadlock: repair-verify can only build one from a recorded failure,
+        # and this failure never reached the ledger. Fix the call and rerun.
+        return {
+            "repair_cycle": repair_cycle,
+            "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
+            "next_action": "fix_invocation_and_rerun",
+        }, [
+            "invocation request: this call was rejected before any gate ran, so no checkpoint "
+            "failed and there is nothing to repair. Do not run repair-verify; correct the "
+            "reported argument and rerun the same hook",
+        ]
     if repair_cycle < REPAIR_CYCLE_LIMIT:
         return {
             "repair_cycle": repair_cycle,
             "repair_cycle_limit": REPAIR_CYCLE_LIMIT,
             "repair_policy": REPAIR_POLICY,
             "next_action": "retrospective_then_repair_verify_resume",
-            "recovery_required": "verified_playbook_improvement",
+            "recovery_required": "verified_tao_improvement",
             "resume_scope": RESUME_SCOPE,
         }, [
             "recovery request: diagnose every failure, run an actionable retrospective for this "

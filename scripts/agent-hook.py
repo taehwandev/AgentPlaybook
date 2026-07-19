@@ -100,7 +100,22 @@ def start_hook(args: argparse.Namespace) -> int:
         args.output,
         {"preflight": result},
         args.repair_cycle,
+        invocation_error=_is_invocation_error(result),
     )
+
+
+def _is_invocation_error(result: dict[str, Any]) -> bool:
+    """True when preflight rejected the call itself rather than failing a gate.
+
+    argparse exits 2 on a usage error, which happens before any gate runs, so
+    nothing is written to the ledger. Treating that as a gate failure sends the
+    caller into a repair cycle that can never complete, because repair-verify
+    builds its receipt from a recorded failed checkpoint and there is none.
+    """
+    if result.get("returncode") != 2:
+        return False
+    output = f"{result.get('stderr', '')}{result.get('stdout', '')}"
+    return "error: argument" in output or "invalid choice" in output
 
 
 def _hook_summary_from_preflight(path: Path) -> list[str]:
@@ -310,7 +325,7 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
         "--repair-cycle",
         type=repair_cycle,
         default=0,
-        help="0 for normal execution, 1 only after a verified playbook repair",
+        help="0 for normal execution, 1 only after a verified Tao Agent OS repair",
     )
     parser.add_argument("--repair-target", default="")
     parser.add_argument("--repair-evidence", default="")

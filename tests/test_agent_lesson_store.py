@@ -185,7 +185,7 @@ class LessonStoreTests(unittest.TestCase):
                 lesson["required_retrospective_output"],
             )
             self.assertEqual(
-                "improve_playbook_doc_hook_validator_or_test_before_resume",
+                "improve_tao_doc_hook_validator_or_test_before_resume",
                 lesson["repair_rule"],
             )
             self.assertEqual(

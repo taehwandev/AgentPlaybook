@@ -73,7 +73,9 @@ def review_hook(
     )
     checks["structure_review"] = structure
     failures.extend(f"structure review: {failure}" for failure in structure["failures"])
-    failures.extend(structure_evidence_failures(structure, args.structure_review_evidence.strip()))
+    failures.extend(
+        structure_evidence_failures(structure, (args.structure_review_evidence or "").strip())
+    )
 
     diff_check = (
         {
@@ -456,7 +458,7 @@ def review_failure_details(
     details.extend(f"failure detail: {failure}" for failure in failures)
     details.append(
         "required recovery: run an actionable retrospective for this review failure, improve the "
-        "owning playbook doc, hook, validator, or test, and verify that repair outside the hook. "
+        "owning Tao Agent OS doc, hook, validator, or test, and verify that repair outside the hook. "
         "Create a structural receipt with repair-verify, then verify this checkpoint with "
         "--repair-cycle 1 plus the same repair target, receipt path, and resume checkpoint "
         "before resuming the original task"
