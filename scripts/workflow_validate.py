@@ -22,7 +22,8 @@ from workflow_gate_policy import (
     SKILL_FEEDBACK_HOOK,
     SKILL_MAINTENANCE_HOOK,
     SKILL_REVIEW_HOOK,
-    WORK_PRODUCING_COMMANDS,
+    RETROSPECTIVE_CHECK_COMMANDS,
+    RETROSPECTIVE_CHECK_GATE,
     automatic_gates,
 )
 from workflow_parallel_validate import validate_parallel_execution_plan
@@ -115,8 +116,8 @@ def validate_route_contracts() -> list[str]:
             failures.append(f"{command}: route hooks must be a list")
             hooks = []
         hook_names = [hook.get("hook") for hook in hooks if isinstance(hook, dict)]
-        expected_hook_names = ["start", "review", "finish"]
-        if command in WORK_PRODUCING_COMMANDS:
+        expected_hook_names = ["start", "review"]
+        if command in RETROSPECTIVE_CHECK_COMMANDS:
             expected_hook_names.extend(
                 [
                     SKILL_FEEDBACK_HOOK,
@@ -125,6 +126,7 @@ def validate_route_contracts() -> list[str]:
                     SKILL_MAINTENANCE_HOOK,
                 ]
             )
+        expected_hook_names.append("finish")
         if hook_names != expected_hook_names:
             failures.append(f"{command}: route hooks must be {', '.join(expected_hook_names)}")
         hook_required = {
@@ -136,7 +138,7 @@ def validate_route_contracts() -> list[str]:
             failures.append(f"{command}: start hook must be required")
         if hook_required.get("finish") is not True:
             failures.append(f"{command}: finish hook must be required")
-        if command in WORK_PRODUCING_COMMANDS:
+        if command in RETROSPECTIVE_CHECK_COMMANDS:
             for hook_name in (
                 SKILL_FEEDBACK_HOOK,
                 SKILL_CURATE_HOOK,
@@ -146,10 +148,14 @@ def validate_route_contracts() -> list[str]:
                 if hook_required.get(hook_name) is not False:
                     failures.append(f"{command}: {hook_name} hook must be optional")
             feedback_policy = route.get("skill_feedback") or {}
-            if feedback_policy.get("enabled") is not True or feedback_policy.get("blocking") is not False:
-                failures.append(f"{command}: skill feedback must be enabled and non-blocking")
-        elif (route.get("skill_feedback") or {}).get("enabled") is not False:
-            failures.append(f"{command}: non-work route must not enable skill feedback")
+            if feedback_policy.get("enabled") is not True:
+                failures.append(f"{command}: retrospective skill feedback must be enabled")
+            if feedback_policy.get("evaluation_required") is not True:
+                failures.append(f"{command}: retrospective evaluation must be required")
+            if feedback_policy.get("evaluation_gate") != RETROSPECTIVE_CHECK_GATE:
+                failures.append(f"{command}: retrospective evaluation gate is invalid")
+            if feedback_policy.get("blocking") is not False:
+                failures.append(f"{command}: skill observation follow-up must be non-blocking")
         expected_review_required = command in REVIEW_HOOK_REQUIRED_COMMANDS
         if hook_required.get("review") is not expected_review_required:
             failures.append(

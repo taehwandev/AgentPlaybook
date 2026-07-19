@@ -58,6 +58,7 @@ completion. A missing or vague gate is `🐱🔴 FAIL`, not a warning.
 | Tests | The nearest useful automated or manual check ran, or the skip reason and residual risk are explicit. |
 | Security | Secrets, private data, permissions, tenant, billing, and external-state risks were checked when touched. |
 | Release | Packaging, migration, rollout, rollback, and monitoring are covered when release-sensitive work changed. |
+| Learning | The required retrospective check names the skills used and records whether a reusable gap exists; optional observation storage may be deferred without skipping the check. |
 | Report | The final response names what changed, what was verified, what was skipped, and what risk remains. |
 
 ## Common Rationalizations

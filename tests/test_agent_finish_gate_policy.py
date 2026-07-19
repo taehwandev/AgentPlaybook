@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import io
 import importlib.util
 import os
 import subprocess
@@ -9,7 +8,6 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from contextlib import redirect_stderr, redirect_stdout
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -77,6 +75,7 @@ from workflow_gate_policy import (
     MULTI_AGENT_GATE,
     PRODUCT_REENTRY_GATE,
     PRODUCT_REENTRY_COMMANDS,
+    RETROSPECTIVE_CHECK_GATE,
     SKILL_FEEDBACK_HOOK,
     SIDE_EFFECT_AUDIT_GATE,
     SOURCE_DOCS_GATE,
@@ -358,6 +357,19 @@ class FinishGatePolicyTests(unittest.TestCase):
                 ),
             },
             [DOCUMENTATION_IMPACT_GATE, MULTI_AGENT_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_multi_agent_serial_reason_accepts_hyphenated_same_file(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                MULTI_AGENT_GATE: (
+                    "serial/single-agent decision; concrete reason: same-file ownership "
+                    "would overlap; verification: focused review"
+                )
+            },
+            [MULTI_AGENT_GATE],
         )
 
         self.assertEqual([], failures)
@@ -1279,6 +1291,67 @@ class FinishGatePolicyTests(unittest.TestCase):
         )
 
         self.assertTrue(any("missing:" in failure for failure in failures))
+
+    def test_retrospective_check_accepts_no_reusable_gap(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                RETROSPECTIVE_CHECK_GATE: (
+                    "retrospective check; skills checked: retrospective-learning; "
+                    "outcome: no_reusable_gap; observation: not_needed"
+                )
+            },
+            [RETROSPECTIVE_CHECK_GATE],
+        )
+
+        self.assertEqual([], failures)
+
+    def test_retrospective_check_accepts_recorded_or_deferred_gap(self) -> None:
+        for observation in ("recorded", "deferred"):
+            with self.subTest(observation=observation):
+                failures = validate_gate_evidence(
+                    {
+                        RETROSPECTIVE_CHECK_GATE: (
+                            "retrospective check; skills checked: human-authored-writing; "
+                            f"outcome: reusable_gap; observation: {observation}"
+                        )
+                    },
+                    [RETROSPECTIVE_CHECK_GATE],
+                )
+
+                self.assertEqual([], failures)
+
+    def test_retrospective_check_rejects_unrecorded_gap(self) -> None:
+        failures = validate_gate_evidence(
+            {
+                RETROSPECTIVE_CHECK_GATE: (
+                    "retrospective check; skills checked: human-authored-writing; "
+                    "outcome: reusable_gap; observation: not_needed"
+                )
+            },
+            [RETROSPECTIVE_CHECK_GATE],
+        )
+
+        self.assertTrue(any("must record or defer" in failure for failure in failures))
+
+    def test_retrospective_structured_fields_synthesize_valid_evidence(self) -> None:
+        evidence, missing = synthesize_gate_evidence(
+            RETROSPECTIVE_CHECK_GATE,
+            "",
+            {
+                "skills_checked": "retrospective-learning",
+                "outcome": "no_reusable_gap",
+                "observation": "not_needed",
+            },
+        )
+
+        self.assertEqual([], missing)
+        self.assertEqual(
+            [],
+            validate_gate_evidence(
+                {RETROSPECTIVE_CHECK_GATE: evidence},
+                [RETROSPECTIVE_CHECK_GATE],
+            ),
+        )
 
 
 if __name__ == "__main__":

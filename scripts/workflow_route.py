@@ -29,7 +29,8 @@ from workflow_gate_policy import (
     SKILL_FEEDBACK_HOOK,
     SKILL_MAINTENANCE_HOOK,
     SKILL_REVIEW_HOOK,
-    WORK_PRODUCING_COMMANDS,
+    RETROSPECTIVE_CHECK_COMMANDS,
+    RETROSPECTIVE_CHECK_GATE,
     add_automatic_gates,
     automatic_docs,
     skill_feedback_policy,
@@ -388,7 +389,7 @@ def route_gates(command: str, *, graphify_required: bool = False) -> list[str]:
     if command not in REVIEW_HOOK_REQUIRED_COMMANDS or "review hook" in gates:
         return gates
 
-    for anchor in ("commit readiness", "handoff", "report"):
+    for anchor in (RETROSPECTIVE_CHECK_GATE, "commit readiness", "handoff", "report"):
         if anchor in gates:
             gates.insert(gates.index(anchor), "review hook")
             return gates
@@ -411,33 +412,22 @@ def route_hooks(command: str) -> list[dict[str, object]]:
             ),
         },
     ]
-    hooks.extend(
-        [
+    hooks.append(
         {
             "hook": "review",
             "required": review_required,
             "when": _review_hook_timing(review_required),
             "command": _review_hook_command(command),
-        },
-        {
-            "hook": "finish",
-            "required": True,
-            "when": "before final report, commit, release, or handoff",
-            "command": (
-                f"{launcher} finish "
-                "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>"
-            ),
-        },
-        ]
+        }
     )
-    if command in WORK_PRODUCING_COMMANDS:
+    if command in RETROSPECTIVE_CHECK_COMMANDS:
         hooks.append(
             {
                 "hook": SKILL_FEEDBACK_HOOK,
                 "required": False,
                 "when": (
-                    "after a successful work-producing task when a skill actually used in the "
-                    "task produced a structured observation"
+                    "after the required retrospective check records reusable_gap; run before "
+                    "finish when available, or record deferred without failing the task"
                 ),
                 "command": (
                     f"{launcher} {SKILL_FEEDBACK_HOOK} "
@@ -487,6 +477,17 @@ def route_hooks(command: str) -> list[dict[str, object]]:
                 },
             ]
         )
+    hooks.append(
+        {
+            "hook": "finish",
+            "required": True,
+            "when": "after retrospective check and before final report, commit, release, or handoff",
+            "command": (
+                f"{launcher} finish "
+                "--project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT>"
+            ),
+        }
+    )
     return hooks
 
 

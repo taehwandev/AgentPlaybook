@@ -15,12 +15,15 @@ not share a trigger, completion effect, or automation budget.
 | Event | Flow | Completion effect | Detailed reference |
 | --- | --- | --- | --- |
 | A required hook, gate, or finish check fails | Failure repair | Blocking | `failure-repair.md` |
-| A successful task reveals a reusable gap in a skill actually used | Skill observation | Non-blocking | `skill-feedback.md` |
+| Any workflow reaches successful closeout | Retrospective check | Required before finish | `skill-feedback.md` |
+| The check reveals a reusable gap in a skill actually used | Skill observation | Non-blocking | `skill-feedback.md` |
 
 Failure repair protects the current task. It diagnoses the failed checkpoint,
 improves a durable enforcement surface, verifies the repair, and resumes once.
 
-Skill learning improves future tasks through separate stages: observation,
+The closeout check asks whether the skills actually used should change. The
+check is required so a route cannot finish without making that decision. Skill
+learning then improves future tasks through separate stages: observation,
 deterministic curation, bounded review, staged patch, and later canonical
 maintenance. Successful work emits at most one content-free observation tied
 to a skill actually used. It does not create or edit guidance. Missing storage,
@@ -29,24 +32,30 @@ channel and never changes a successful finish result.
 
 ## Ordering
 
-1. Run the required task gates and finish check.
+1. Run the task work, verification, and required review.
 2. If one fails, stop and use failure repair. Do not also treat that failure as
    ordinary successful-task feedback.
-3. If the task succeeds, ask one bounded skill-feedback question. Emit only a
-   reusable, content-free observation tied to a skill actually used; otherwise
-   emit nothing and stop without ceremony.
-4. Let a deterministic curator deduplicate observations by opaque occurrence
+3. Before finish, inspect the skills actually loaded and applied, then record
+   `no_reusable_gap`, `reusable_gap`, or `no_skill_used` on the required
+   `retrospective check` gate.
+4. When the outcome is `reusable_gap`, emit one reusable, content-free
+   observation tied to a skill actually used, or record that observation as
+   deferred when the optional side channel is unavailable.
+5. Run finish. Missing or invalid retrospective-check evidence fails finish;
+   missing observation storage does not.
+6. Let a deterministic curator deduplicate observations by opaque occurrence
    key and queue review only after two distinct observations share the exact
    `skill_id + signal` identity.
-5. Let a separate bounded reviewer choose `no_change` or `staged_patch`.
-6. Apply a staged patch to canonical skill files only in a later bounded
+7. Let a separate bounded reviewer choose `no_change` or `staged_patch`.
+8. Apply a staged patch to canonical skill files only in a later bounded
    maintenance task that satisfies verification and approval policy.
 
 ## Automation Boundary
 
 - Required gates and failure repair remain fail-closed.
-- Skill observation is a best-effort side channel, not a gate and not finish
-  evidence.
+- The `retrospective check` is required finish evidence on every route.
+- Skill observation is a best-effort side channel, not a required hook and not
+  a reason to fail an otherwise completed task.
 - Observation hooks only append allowlisted content-free facts; they never
   decide recurrence, queue review directly, or edit canonical guidance.
 - Curation is deterministic over structured identities and distinct opaque

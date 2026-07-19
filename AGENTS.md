@@ -252,8 +252,10 @@ Wikimap matches are candidate/reference seeds; only route policy or an explicit
 required-doc relation promotes a required document. Hooks do not run search
 logic, read documents for the agent, or mutate the route. The existing `source
 docs` finish evidence records the agent's direct `required_docs` reading and
-applied task-specific takeaway. Target-project code, architecture, and
-relationship analysis remain Graphify responsibilities.
+applied task-specific takeaway. When recording this gate through structured
+`gate` or `gate-batch` input, include the exact fields `required_docs`, `source`,
+and `takeaway`; prose evidence alone does not satisfy the gate. Target-project
+code, architecture, and relationship analysis remain Graphify responsibilities.
 An empty Wikimap result is a terminal `no_matches` no-source outcome, not a
 reason to poll, re-route, or wait; continue with the deterministic
 `required_docs` and record the no-source decision. A route that names a missing
@@ -435,11 +437,13 @@ updatable gate contract and the exception process are the source of truth in
 than self-judging, and load that card in Grill-Me or self-review to check the
 current work before completion.
 
-After a successful work-producing task, ask one bounded question about the
-skills actually used: would changing one of them materially improve a future
-agent's decision or verification? This is `skill feedback`, not a required
-finish gate. If there is no reusable gap, stop without creating a ceremonial
-record. If there is one, the optional `skill-feedback` hook records only a
+Before finish on every route, run the required lightweight `retrospective
+check`: inspect the skills actually loaded and applied, then record
+`no_reusable_gap`, `reusable_gap`, or `no_skill_used` together with the
+observation disposition. The check is required finish evidence; the follow-up
+skill-learning side channel is non-blocking. If there is no reusable gap, do
+not create a ceremonial observation record. If there is one, the optional
+`skill-feedback` hook records only a
 content-free observation for a skill actually used; it does not let the task
 agent declare a patch candidate. Deterministic curation queues review only after
 the same structured signal recurs in distinct opaque runs. A separate bounded

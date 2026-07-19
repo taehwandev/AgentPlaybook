@@ -23,6 +23,7 @@ from agent_finish_gate_doc_test_validators import validate_documentation, valida
 from agent_finish_gate_cycle_validators import (
     validate_cycle_contract,
 )
+from agent_finish_gate_learning_validators import validate_retrospective_check
 from agent_finish_gate_skip_policy import validate_required_gate_not_skipped
 from agent_finish_gate_validators import (
     validate_documentation_impact_evidence,
@@ -48,6 +49,7 @@ SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 AGENTIC_RUN_STATE_GATE = "agentic run state"
 SOURCE_DOCS_GATE = "source docs"
 PRODUCT_REENTRY_GATE = "product route re-entry"
+RETROSPECTIVE_CHECK_GATE = "retrospective check"
 GRAPHIFY_READINESS_GATE = "graphify readiness"
 PLATFORM_SELECTION_GATE = "platform selection"
 REVIEW_READINESS_GATE = "review readiness"
@@ -81,6 +83,7 @@ VALIDATED_GATES = {
     AGENTIC_RUN_STATE_GATE,
     SOURCE_DOCS_GATE,
     PRODUCT_REENTRY_GATE,
+    RETROSPECTIVE_CHECK_GATE,
     GRAPHIFY_READINESS_GATE,
     PLATFORM_SELECTION_GATE,
     REVIEW_READINESS_GATE,
@@ -131,6 +134,12 @@ def validate_gate_evidence(
         )
     if PRODUCT_REENTRY_GATE in required:
         failures.extend(validate_product_reentry_evidence(gate_evidence.get(PRODUCT_REENTRY_GATE, "")))
+    if RETROSPECTIVE_CHECK_GATE in required:
+        failures.extend(
+            validate_retrospective_check(
+                gate_evidence.get(RETROSPECTIVE_CHECK_GATE, "")
+            )
+        )
     if GRAPHIFY_READINESS_GATE in required:
         failures.extend(_validate_graphify_readiness(gate_evidence.get(GRAPHIFY_READINESS_GATE, "")))
     if SOURCE_DOCS_GATE in required and DOCUMENTATION_IMPACT_GATE in required:

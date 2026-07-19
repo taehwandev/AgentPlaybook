@@ -89,9 +89,10 @@ A workflow is complete only when:
 
 ## Essential Hooks
 
-Start with only three required lifecycle hooks plus the optional non-blocking
-skill-learning side channel (`skill-feedback`, `skill-curate`, `skill-review`,
-and `skill-maintenance`). Do not add separate PRD, ARD, docs freshness,
+Start with only three required lifecycle hooks plus one required lightweight
+`retrospective check` route gate and the optional non-blocking skill-learning
+side channel (`skill-feedback`, `skill-curate`, `skill-review`, and
+`skill-maintenance`). Do not add separate PRD, ARD, docs freshness,
 architecture, security, dependency, test, or release hooks unless a repeated
 blocking failure proves that the check cannot live inside one of these three.
 Those concerns belong in route gates, review criteria, or finish evidence first.
@@ -114,9 +115,11 @@ task at `first_failed_checkpoint`. A candidate note alone is not recovery. Stop
 when the same failure recurs after repair, the repair is unsafe or ambiguous,
 source ownership is uncertain, or the one repair cycle is exhausted.
 
-Successful work-producing routes expose separate optional skill-learning hooks.
-`skill-feedback` emits at most one content-free observation for a skill actually
-used by the task and never changes finish status. A later `skill-curate` run
+Every route records whether its actually used skills revealed a reusable gap
+before finish. Missing or vague `retrospective check` evidence fails finish.
+When a gap exists, the optional `skill-feedback` hook emits at most one
+content-free observation for a skill actually used by the task and never
+changes finish status. A later `skill-curate` run
 or the existing bounded maintenance pass queues review after two distinct opaque occurrence
 keys share the exact `skill_id + signal` identity; a separate bounded reviewer
 chooses `no_change` or `staged_patch`. Canonical skill
@@ -129,7 +132,8 @@ capacity defers the side channel without blocking completed work.
 Use the same public states for route gate signals and hook status:
 `🐱🟢 SUCCESS` and `🐱🔴 FAIL`. Do not report any third state.
 
-Required lifecycle hooks are gates, not update engines. The optional
+Required lifecycle hooks and the retrospective check are gates, not update
+engines. The optional
 `skill-feedback` hook may only record allowlisted content-free observation
 metadata. The caller may name only a skill actually used; the hook derives an
 opaque occurrence key from the current preflight run and never stores the raw
@@ -227,9 +231,10 @@ the update.
 - `development-cycle.md`: complete the common build/change/verify/side-effect-audit/handoff cycle.
 - `multi-agent-collaboration.md`: split delegated or parallel agent work with explicit roles, gates, and disjoint write scopes.
 - `multi-perspective-review.md`: review non-trivial work through product, UX, architecture, reliability, security, release, and QA lenses.
-- `retrospective-learning.md`: repair failed work synchronously, and process
-  successful-task skill observations through separate non-blocking curation,
-  review, staging, and later maintenance.
+- `retrospective-learning.md`: require a lightweight skill check before every
+  route finishes, repair failed work synchronously, and process reusable skill
+  observations through separate non-blocking curation, review, staging, and
+  later maintenance.
 - `planning-research.md`: investigate, compare options, and produce an implementation plan or recommendation.
 - `documentation-update.md`: create, review, or restructure docs without duplicating source guidance.
 - `feature-implementation.md`: turn a request into scoped implementation and verification.

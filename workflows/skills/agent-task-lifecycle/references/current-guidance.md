@@ -112,6 +112,9 @@ When a finish gate requires evidence, record the actual decision. At minimum:
 - `alignment brief`, `cycle contract`, and `boundary plan`: state the user
   checkpoint, resolved assumptions or blockers, owned and forbidden scope,
   nearest verification, stop condition, and handoff point.
+- `retrospective check`: name the skills actually loaded and applied, choose
+  `no_reusable_gap`, `reusable_gap`, or `no_skill_used`, and record the
+  observation as `not_needed`, `recorded`, or `deferred`.
 12. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
 13. Decide: make a reasonable assumption when safe; ask only when ambiguity
@@ -137,11 +140,14 @@ When a finish gate requires evidence, record the actual decision. At minimum:
     scope. The restarted attempt must cite or apply the plan.
 20. Review: after meaningful edits, run the route's review hook and inspect the
     final diff, output, or artifact against the request and risks.
-21. Finish: run `~/.agentplaybook/bin/agentplaybook-hook finish` before final report, handoff,
+21. Retrospective check: before finish on every route, inspect the skills
+    actually used and record the structured result. If a reusable gap exists,
+    record or defer one optional content-free skill observation.
+22. Finish: run `~/.agentplaybook/bin/agentplaybook-hook finish` before final report, handoff,
     commit, or release. Use `agent-finish-check.py` directly only as a
     lower-level diagnostic or compatibility fallback when the finish hook is
     unavailable.
-22. Report: state what changed or was found, verification status, skipped
+23. Report: state what changed or was found, verification status, skipped
     checks, and residual risk.
 
 ## Route To

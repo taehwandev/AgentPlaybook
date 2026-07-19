@@ -6,10 +6,10 @@ type: human-reviewed-needed
 
 # Successful-Task Skill Feedback
 
-Use after a successful work-producing task when the completed work, user
-correction, review, or verification exposed a reusable gap in a skill the agent
-actually loaded and applied. This Hermes-inspired flow is best-effort and
-non-blocking:
+Use before finish on every workflow. The closeout check is required; the
+follow-up flow begins only when completed work, user correction, review, or
+verification exposed a reusable gap in a skill the agent actually loaded and
+applied. This Hermes-inspired follow-up is best-effort and non-blocking:
 
 ```text
 observe -> curate -> review -> stage -> maintain
@@ -25,26 +25,41 @@ explicit caps, staging, and verification before canonical writes:
 - <https://hermes-agent.nousresearch.com/docs/user-guide/features/skills/>
 - <https://hermes-agent.nousresearch.com/docs/user-guide/features/curator>
 
-## 1. Observe After Success
+## 1. Evaluate Before Finish
 
-Ask one bounded question: would a future agent materially benefit from changing
-one skill actually used in this task?
+After task verification and review, ask one bounded question: would a future
+agent materially benefit from changing one skill actually used in this task?
 
-- If no, emit nothing. Do not create a no-change record merely to prove
-  reflection.
+- If no, record `outcome: no_reusable_gap` and `observation: not_needed` on the
+  required `retrospective check` gate. Do not create a separate observation.
+- If no skill was loaded and applied, record `outcome: no_skill_used`,
+  `skills_checked: none`, and `observation: not_needed`.
 - If yes, emit at most one allowlisted, content-free observation through the
-  optional `skill-feedback` hook.
+  optional `skill-feedback` hook, then record `outcome: reusable_gap` and
+  `observation: recorded`.
 - The caller may name only a skill actually loaded and applied in the completed
   task. Do not name an unrelated or merely adjacent skill.
 - The hook derives an opaque occurrence key from the current preflight run. It
   never stores the raw run id.
 - If the hook, store, current preflight occurrence, or token budget is
-  unavailable, defer or drop the observation. The completed task remains
-  successful.
+  unavailable, record `observation: deferred`. The completed task remains
+  successful because the evaluation ran even though the side channel did not.
 
 The observation hook only records facts. It does not deduplicate recurrence,
 queue review, ask a model to judge the skill, create a patch, or edit a
 canonical file.
+
+The finish check validates the structured retrospective result. It fails when
+the evaluation is missing or when `reusable_gap` is paired with `not_needed`.
+It does not fail when a valid reusable gap uses `observation: deferred`.
+
+Structured gate fields are:
+
+```text
+skills_checked: <used skill id(s) or none>
+outcome: <no_reusable_gap|reusable_gap|no_skill_used>
+observation: <not_needed|recorded|deferred>
+```
 
 ## Observation Schema
 

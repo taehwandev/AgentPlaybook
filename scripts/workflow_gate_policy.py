@@ -1,4 +1,4 @@
-"""Automatic workflow gates for work-producing routes."""
+"""Automatic workflow gates shared by AgentPlaybook routes."""
 
 from __future__ import annotations
 
@@ -72,6 +72,7 @@ SIDE_EFFECT_AUDIT_GATE = "side-effect audit"
 AGENTIC_RUN_STATE_GATE = "agentic run state"
 SOURCE_DOCS_GATE = "source docs"
 PRODUCT_REENTRY_GATE = "product route re-entry"
+RETROSPECTIVE_CHECK_GATE = "retrospective check"
 SKILL_FEEDBACK_HOOK = "skill-feedback"
 SKILL_CURATE_HOOK = "skill-curate"
 SKILL_REVIEW_HOOK = "skill-review"
@@ -102,11 +103,13 @@ SOURCE_DOCS_COMMANDS = WORK_PRODUCING_COMMANDS | {
     "webperf",
 }
 
+# Every user-visible workflow performs one lightweight retrospective check.
+# The check itself is required; observation storage and later skill maintenance
+# remain a non-blocking side channel.
+RETROSPECTIVE_CHECK_COMMANDS = SOURCE_DOCS_COMMANDS | LIGHTWEIGHT_ANALYSIS_COMMANDS
+
 
 def automatic_gates(command: str) -> list[str]:
-    if command in LIGHTWEIGHT_ANALYSIS_COMMANDS:
-        return []
-
     gates: list[str] = []
     if command in SOURCE_DOCS_COMMANDS:
         gates.append(SOURCE_DOCS_GATE)
@@ -124,6 +127,8 @@ def automatic_gates(command: str) -> list[str]:
         gates.extend(
             [TEST_GATE, BOUNDARY_PLAN_GATE, MULTI_AGENT_GATE, SIDE_EFFECT_AUDIT_GATE]
         )
+    if command in RETROSPECTIVE_CHECK_COMMANDS:
+        gates.append(RETROSPECTIVE_CHECK_GATE)
     return gates
 
 
@@ -145,7 +150,7 @@ def automatic_docs(command: str) -> list[str]:
         docs.append("workflows/skills/documentation-update/SKILL.md")
     if CYCLE_CONTRACT_GATE in gates:
         docs.append("workflows/skills/cycle-contract/SKILL.md")
-    if command in WORK_PRODUCING_COMMANDS:
+    if RETROSPECTIVE_CHECK_GATE in gates:
         docs.append("workflows/skills/retrospective-learning/SKILL.md")
     if PRODUCT_REENTRY_GATE in gates:
         docs.append("common/skills/product-spec-to-implementation/SKILL.md")
@@ -277,6 +282,12 @@ def add_automatic_gates(command: str, gates: list[str]) -> list[str]:
             _insert_before_any(result, gate, anchors=("verify", "verification", "handoff", "commit readiness"))
         elif gate in {DOCUMENTATION_GATE, TEST_GATE}:
             _insert_before_any(result, gate, anchors=("verify", "verification", "handoff", "commit readiness"))
+        elif gate == RETROSPECTIVE_CHECK_GATE:
+            _insert_before_any(
+                result,
+                gate,
+                anchors=("handoff", "report", "commit readiness"),
+            )
         else:
             result.append(gate)
     return result
@@ -299,14 +310,17 @@ def _insert_before_any(gates: list[str], gate: str, anchors: tuple[str, ...]) ->
 
 
 def skill_feedback_policy(command: str) -> dict[str, object]:
-    """Describe successful-task skill learning without turning it into a gate."""
+    """Describe required reflection and non-blocking skill-learning follow-up."""
 
-    enabled = command in WORK_PRODUCING_COMMANDS
+    enabled = command in RETROSPECTIVE_CHECK_COMMANDS
     return {
         "enabled": enabled,
         "mode": "observe_curate_review_stage_maintain",
-        "trigger": "after_successful_work_producing_task",
+        "trigger": "after_task_verification_before_finish",
+        "evaluation_required": enabled,
+        "evaluation_gate": RETROSPECTIVE_CHECK_GATE if enabled else "",
         "blocking": False,
+        "blocking_scope": "observation_storage_and_later_maintenance_only",
         "record_only_when": "actually_used_skill_and_structured_observation",
         "candidate_threshold": DEFAULT_REVIEW_THRESHOLD,
         "curation": "deterministic_distinct_occurrence_threshold",

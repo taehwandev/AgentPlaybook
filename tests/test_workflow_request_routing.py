@@ -77,6 +77,7 @@ from workflow_gate_policy import (
     MULTI_AGENT_GATE,
     PRODUCT_REENTRY_GATE,
     PRODUCT_REENTRY_COMMANDS,
+    RETROSPECTIVE_CHECK_GATE,
     SKILL_FEEDBACK_HOOK,
     SIDE_EFFECT_AUDIT_GATE,
     SOURCE_DOCS_GATE,
@@ -269,7 +270,7 @@ class WorkflowRequestRoutingTests(unittest.TestCase):
         route = resolve_docs("git_commit", None, [], request_classified=True)
 
         self.assertEqual(
-            ["source docs", "review hook", "commit readiness"],
+            ["source docs", "review hook", RETROSPECTIVE_CHECK_GATE, "commit readiness"],
             [gate for gate in route["gates"] if gate != "request intake"],
         )
         self.assertNotIn(AMBIGUITY_GATE, route["gates"])

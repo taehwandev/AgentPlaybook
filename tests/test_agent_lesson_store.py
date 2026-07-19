@@ -77,6 +77,8 @@ from workflow_gate_policy import (
     MULTI_AGENT_GATE,
     PRODUCT_REENTRY_GATE,
     PRODUCT_REENTRY_COMMANDS,
+    RETROSPECTIVE_CHECK_COMMANDS,
+    RETROSPECTIVE_CHECK_GATE,
     SKILL_FEEDBACK_HOOK,
     SIDE_EFFECT_AUDIT_GATE,
     SOURCE_DOCS_GATE,
@@ -288,13 +290,17 @@ class LessonStoreTests(unittest.TestCase):
     def test_finish_check_does_not_process_successful_task_skill_feedback(self) -> None:
         self.assertFalse(hasattr(agent_finish_check, "process_finish_learning"))
 
-    def test_skill_feedback_is_never_a_required_gate_for_work_producing_routes(self) -> None:
-        for command in sorted(WORK_PRODUCING_COMMANDS):
+    def test_every_route_requires_reflection_but_skill_feedback_hook_stays_optional(self) -> None:
+        self.assertEqual(set(COMMANDS), RETROSPECTIVE_CHECK_COMMANDS)
+        for command in sorted(RETROSPECTIVE_CHECK_COMMANDS):
             with self.subTest(command=command):
                 route = resolve_docs(command, None, [], request_classified=True)
-                self.assertNotIn("post-task learning", route["gates"])
-                self.assertFalse(any(item["gate"] == "post-task learning" for item in route["gate_ledger"]))
+                self.assertIn(RETROSPECTIVE_CHECK_GATE, route["gates"])
+                self.assertTrue(
+                    any(item["gate"] == RETROSPECTIVE_CHECK_GATE for item in route["gate_ledger"])
+                )
                 self.assertTrue(route["skill_feedback"]["enabled"])
+                self.assertTrue(route["skill_feedback"]["evaluation_required"])
                 self.assertFalse(route["skill_feedback"]["blocking"])
                 hooks = [hook for hook in route["hooks"] if hook["hook"] == SKILL_FEEDBACK_HOOK]
                 self.assertEqual(1, len(hooks))

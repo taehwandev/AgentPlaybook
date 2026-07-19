@@ -60,6 +60,7 @@ FIELD_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "query_smoke",
     ),
     "multi-agent split decision": ("mode", "reason", "verification"),
+    "retrospective check": ("skills_checked", "outcome", "observation"),
     "side-effect audit": ("scope", "result"),
     "source docs": ("required_docs", "source", "takeaway"),
     "tests": ("check", "result"),
@@ -421,6 +422,14 @@ def synthesize_gate_evidence(
         return (
             "side-effect audit checked final diff; "
             f"scope/risk reviewed: {fields['scope']}; result: {fields['result']}",
+            [],
+        )
+    if gate == "retrospective check":
+        return (
+            "retrospective check; "
+            f"skills checked: {fields['skills_checked']}; "
+            f"outcome: {fields['outcome']}; "
+            f"observation: {fields['observation']}",
             [],
         )
     if gate == "documentation impact":

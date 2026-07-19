@@ -153,10 +153,12 @@ def _print_parallel_execution(plan: dict[str, object]) -> None:
 
 
 def _print_skill_feedback(policy: dict[str, object]) -> None:
-    print("## Successful-Task Skill Learning (Non-Gate)")
+    print("## Retrospective Check and Skill Learning")
     print(f"- Mode: `{policy['mode']}`")
     print(f"- Trigger: `{policy['trigger']}`")
-    print(f"- Blocking: `{str(bool(policy['blocking'])).lower()}`")
+    print(f"- Evaluation required: `{str(bool(policy['evaluation_required'])).lower()}`")
+    print(f"- Evaluation gate: `{policy['evaluation_gate']}`")
+    print(f"- Observation follow-up blocking: `{str(bool(policy['blocking'])).lower()}`")
     print(f"- Review threshold: `{policy['candidate_threshold']}` distinct occurrences")
     print(f"- Curation: `{policy['curation']}`")
     print(f"- Review: `{policy['review']}`")

@@ -77,6 +77,8 @@ from workflow_gate_policy import (
     MULTI_AGENT_GATE,
     PRODUCT_REENTRY_GATE,
     PRODUCT_REENTRY_COMMANDS,
+    RETROSPECTIVE_CHECK_COMMANDS,
+    RETROSPECTIVE_CHECK_GATE,
     SKILL_FEEDBACK_HOOK,
     SIDE_EFFECT_AUDIT_GATE,
     SOURCE_DOCS_GATE,
@@ -219,7 +221,10 @@ class WorkflowCatalogTests(unittest.TestCase):
     def test_analysis_route_stays_lightweight(self) -> None:
         route = resolve_docs("analysis", None, [], request_classified=True)
 
-        self.assertEqual(["request intake", "investigate", "report"], route["gates"])
+        self.assertEqual(
+            ["request intake", "investigate", RETROSPECTIVE_CHECK_GATE, "report"],
+            route["gates"],
+        )
         self.assertEqual(["AGENTS.md"], route["required_docs"])
         parallel = route["parallel_execution"]
         self.assertEqual("serial_lightweight_analysis", parallel["strategy"])
@@ -421,6 +426,7 @@ class WorkflowCatalogTests(unittest.TestCase):
             MULTI_AGENT_GATE,
             AGENTIC_RUN_STATE_GATE,
             SIDE_EFFECT_AUDIT_GATE,
+            RETROSPECTIVE_CHECK_GATE,
         ):
             self.assertIn(gate, route["gates"])
 
@@ -457,12 +463,19 @@ class WorkflowCatalogTests(unittest.TestCase):
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(CYCLE_CONTRACT_GATE), route["gates"].index("implementation"))
         self.assertLess(route["gates"].index(AGENTIC_RUN_STATE_GATE), route["gates"].index(CYCLE_CONTRACT_GATE))
-        self.assertNotIn("post-task learning", route["gates"])
+        self.assertEqual(set(COMMANDS), RETROSPECTIVE_CHECK_COMMANDS)
+        self.assertIn(RETROSPECTIVE_CHECK_GATE, route["gates"])
+        self.assertLess(route["gates"].index("review hook"), route["gates"].index(RETROSPECTIVE_CHECK_GATE))
+        self.assertLess(route["gates"].index(RETROSPECTIVE_CHECK_GATE), route["gates"].index("handoff"))
         self.assertTrue(route["skill_feedback"]["enabled"])
+        self.assertTrue(route["skill_feedback"]["evaluation_required"])
+        self.assertEqual(RETROSPECTIVE_CHECK_GATE, route["skill_feedback"]["evaluation_gate"])
         self.assertFalse(route["skill_feedback"]["blocking"])
         feedback_hooks = [hook for hook in route["hooks"] if hook["hook"] == SKILL_FEEDBACK_HOOK]
         self.assertEqual(1, len(feedback_hooks))
         self.assertFalse(feedback_hooks[0]["required"])
+        hook_names = [hook["hook"] for hook in route["hooks"]]
+        self.assertLess(hook_names.index(SKILL_FEEDBACK_HOOK), hook_names.index("finish"))
 
 
 if __name__ == "__main__":

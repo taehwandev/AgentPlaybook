@@ -230,10 +230,14 @@ forgets them:
   documentation decision, the affected source-of-truth doc path or doc class,
   and the reason the decision matches the behavior, workflow policy, public
   contract, operator action, or durable acceptance criteria changed.
-- `skill-feedback` (optional hook, not a gate): after successful work, ask one
-  bounded question about a skill actually used in the task. Queue only a
-  reusable content-free candidate. Missing feedback or storage failure cannot
-  fail finish, and a repeated candidate becomes separate bounded
+- `retrospective check` (required gate): after verification and review but
+  before finish, inspect the skills actually used and record
+  `no_reusable_gap`, `reusable_gap`, or `no_skill_used` with the observation
+  disposition.
+- `skill-feedback` (optional hook): when the check finds a reusable gap, queue
+  only one reusable content-free observation. Storage failure records
+  `observation: deferred` and cannot fail finish. A repeated candidate becomes
+  separate bounded
   skill-maintenance work rather than an immediate document edit. A failed
   required hook or gate never uses this path; it follows the repair cycle.
 - `gate-batch` validates the complete batch before writing any entry. Structured
