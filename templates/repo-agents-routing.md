@@ -19,7 +19,7 @@ Shared AgentPlaybook library:
 <AGENTPLAYBOOK_ROOT>/index.md
 <AGENTPLAYBOOK_ROOT>/scripts/agent-entry.py
 <AGENTPLAYBOOK_ROOT>/scripts/project-discover.py
-~/.agentplaybook/bin/agentplaybook-hook
+<AGENTPLAYBOOK_LAUNCHER>
 
 Use repo-local instructions first. If this block is being installed into a
 personal or global runtime instructions file, and the runtime starts outside the
@@ -64,7 +64,7 @@ application drill first: add pointer vs merge vs pin; audit-only vs refresh
 with update vs first-time setup; apply now vs prepare instructions only.
 Default to preserving current guardrails and running audit only unless the user
 chooses to refresh the managed block.
-For multi-step tasks, run `~/.agentplaybook/bin/agentplaybook-hook start` once with `--request
+For multi-step tasks, run `<AGENTPLAYBOOK_LAUNCHER> start` once with `--request
 "<USER_REQUEST>"`; it runs workflow routing/preflight and reports the required
 hooks for the route. Do not separately repeat workflow list, classify, route, or
 preflight. Use the start output as the command manifest before selecting task
@@ -87,7 +87,7 @@ verification, delegate automatically without waiting for explicit user
 multi-agent wording. Use Codex native workers, Claude Agent/Task workers, or
 the Gemini/AGY Antigravity agent runner according to the active runtime.
 Otherwise record the concrete serial reason. At each parent-to-worker boundary,
-run `~/.agentplaybook/bin/agentplaybook-hook handoff`; it refreshes the provider-neutral, content-free
+run `<AGENTPLAYBOOK_LAUNCHER> handoff`; it refreshes the provider-neutral, content-free
 execution capsule and validates it once. A ready and valid handoff lets the
 worker reuse the parent's route, preflight, and required-doc manifest and skip
 duplicate startup. An invalid handoff is a successful fallback decision that
@@ -126,8 +126,8 @@ verify the owning AgentPlaybook doc, hook, validator, or test before resuming
 that checkpoint. One repair cycle is allowed; stop on the same failure or an
 unsafe or ambiguous repair. Do not report any third gate state.
 When the wrapper scripts are available, keep the existing start evidence,
-run `~/.agentplaybook/bin/agentplaybook-hook review` after the scoped diff is ready, and run
-`~/.agentplaybook/bin/agentplaybook-hook finish` before final report, commit, release, or handoff. Pass
+run `<AGENTPLAYBOOK_LAUNCHER> review` after the scoped diff is ready, and run
+`<AGENTPLAYBOOK_LAUNCHER> finish` before final report, commit, release, or handoff. Pass
 evidence for every route gate to the finish check. The wrappers write local
 evidence under
 `.agentplaybook/`; this directory is runtime evidence and should usually be
@@ -179,7 +179,7 @@ Editing safety: <AGENTPLAYBOOK_ROOT>/common/skills/agent-editing-safety/SKILL.md
 Worktree hygiene: <AGENTPLAYBOOK_ROOT>/common/skills/worktree-hygiene/SKILL.md
 Defensive boundaries: <AGENTPLAYBOOK_ROOT>/common/skills/defensive-boundaries/SKILL.md
 UI visual verification: <AGENTPLAYBOOK_ROOT>/common/skills/ui-visual-verification/SKILL.md
-Workflow and lifecycle wrapper: ~/.agentplaybook/bin/agentplaybook-hook
+Workflow and lifecycle wrapper: <AGENTPLAYBOOK_LAUNCHER>
   (aliases: workflow, start, handoff, gate, review, finish, agent-entry,
   project-discover, agent-preflight, agent-finish-check, agent-os-status,
   agent-os-watchdog, agent-os-maintenance, workflow-dispatch)

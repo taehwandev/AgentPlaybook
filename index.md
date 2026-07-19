@@ -202,13 +202,13 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 ## Workflow
 
 - Workflow script command list:
-  `~/.agentplaybook/bin/agentplaybook-hook workflow list`
+  `<AGENTPLAYBOOK_LAUNCHER> workflow list`
 - Lifecycle aliases supported by the workflow router: `spec`, `plan`, `build`,
   `test`, `review`, `webperf`, `code-simplify`, and `ship`. These aliases map
   to AgentPlaybook routes and must not replace the router with a second active
   command framework.
 - Canonical lifecycle start (once per task):
-  `~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>"`
+  `<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command <command> --request "<USER_REQUEST>"`
 - After start succeeds, open every route `required_docs` entry directly. Run
   the review hook after meaningful changes and the finish hook before final
   report, commit, release, or handoff.
@@ -238,7 +238,7 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 ## Loading Rule
 
 For any multi-step agent task, start with `workflows/skills/agent-task-lifecycle/SKILL.md`.
-Run `~/.agentplaybook/bin/agentplaybook-hook start` once to classify, route, audit, and create the
+Run `<AGENTPLAYBOOK_LAUNCHER> start` once to classify, route, audit, and create the
 parent evidence. Open every route `required_docs` entry directly before work,
 keep the route gate ledger current, run the review hook after meaningful
 changes, and run the finish hook before final report, commit, release, or
@@ -264,7 +264,7 @@ For PRD-only work, use `workflows/skills/prd-creation/SKILL.md` and select the
 PRD command at the canonical start:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command prd --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 For product or feature work that needs PRD -> ARD -> implementation ->
@@ -272,7 +272,7 @@ verification gates, use `workflows/skills/product-architecture-delivery/SKILL.md
 the product command at the canonical start:
 
 ```text
-~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
+<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command product --request "<USER_REQUEST>" --platform <platform> --concern <concern>
 ```
 
 Use this `product` route, not the lower-level `feature` route, when the request
@@ -297,7 +297,7 @@ knowledge-base, source-grounded/living/generated docs, runbook, onboarding,
 durable architecture, or operational docs that humans and agents will read, also
 use `common/skills/llm-wiki-documentation/SKILL.md`.
 For documentation review, use
-`~/.agentplaybook/bin/agentplaybook-hook start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki`
+`<AGENTPLAYBOOK_LAUNCHER> start --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --command docs-review --request "<USER_REQUEST>" --concern wiki`
 or manually combine `workflows/skills/review-and-commit/SKILL.md`,
 `workflows/skills/documentation-update/SKILL.md`, and `common/skills/llm-wiki-documentation/SKILL.md`.
 For planning, research, comparison, or recommendations before implementation,
