@@ -335,6 +335,91 @@ class AgentReviewStructureTests(unittest.TestCase):
             any("tests/test_oversized.py is a new development source" in failure for failure in result["failures"])
         )
 
+    def test_structure_review_flags_new_source_file_sprawl_and_requires_evidence(self) -> None:
+        # A small task spread across many new files must be justified: the
+        # structure review warns, and the review gate turns that warning into a
+        # required-evidence failure when no structure-review evidence is given.
+        added_files = [f"src/layer{index}/thing{index}.py" for index in range(6)]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            for relative in added_files:
+                source = project / relative
+                source.parent.mkdir(parents=True, exist_ok=True)
+                source.write_text("value = 1\n", encoding="utf-8")
+
+            def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+                if command[:3] == ["git", "rev-parse", "--verify"]:
+                    stdout = "abc\n"
+                elif command[:3] == ["git", "diff", "--name-status"]:
+                    stdout = "".join(f"A\t{relative}\n" for relative in added_files)
+                elif command[:3] == ["git", "diff", "--numstat"]:
+                    stdout = "".join(f"1\t0\t{relative}\n" for relative in added_files)
+                elif command[:2] == ["git", "ls-files"]:
+                    stdout = ""
+                else:
+                    stdout = ""
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": stdout,
+                    "stderr": "",
+                }
+
+            result = structure_review(project, 500, 120, run_command)
+
+        self.assertEqual(6, result["new_source_file_count"])
+        self.assertTrue(
+            any("6 new development source files" in warning for warning in result["warnings"])
+        )
+        # Missing structure-review evidence must escalate the warning to a failure.
+        self.assertTrue(structure_evidence_failures(result, ""))
+        # A justification clears the gate.
+        self.assertEqual(
+            [],
+            structure_evidence_failures(
+                result,
+                "each new file owns a distinct platform adapter required by the change",
+            ),
+        )
+
+    def test_structure_review_allows_a_few_new_source_files(self) -> None:
+        added_files = ["src/feature/model.py", "src/feature/service.py"]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            for relative in added_files:
+                source = project / relative
+                source.parent.mkdir(parents=True, exist_ok=True)
+                source.write_text("value = 1\n", encoding="utf-8")
+
+            def run_command(command: list[str], cwd: Path) -> dict[str, object]:
+                if command[:3] == ["git", "rev-parse", "--verify"]:
+                    stdout = "abc\n"
+                elif command[:3] == ["git", "diff", "--name-status"]:
+                    stdout = "".join(f"A\t{relative}\n" for relative in added_files)
+                elif command[:3] == ["git", "diff", "--numstat"]:
+                    stdout = "".join(f"1\t0\t{relative}\n" for relative in added_files)
+                elif command[:2] == ["git", "ls-files"]:
+                    stdout = ""
+                else:
+                    stdout = ""
+                return {
+                    "command": command,
+                    "cwd": str(cwd),
+                    "returncode": 0,
+                    "stdout": stdout,
+                    "stderr": "",
+                }
+
+            result = structure_review(project, 500, 120, run_command)
+
+        self.assertEqual(2, result["new_source_file_count"])
+        self.assertFalse(
+            any("new development source files" in warning for warning in result["warnings"])
+        )
+
     def test_structure_review_does_not_run_oversized_block_check_on_test_files(self) -> None:
         # Tests remain exempt from the per-block/function span check -- a long
         # setup or scenario method is a normal test shape, unlike a long

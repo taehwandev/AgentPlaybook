@@ -53,7 +53,8 @@ completion. A missing or vague gate is `🐱🔴 FAIL`, not a warning.
 | Scope | Unrelated refactors, generated files, dependency changes, release changes, and user-owned dirty files are excluded or explicitly explained. |
 | Requirements | Known facts, assumptions, open decisions, and non-goals are visible when behavior is non-trivial. |
 | Architecture | New or changed boundaries have owners, allowed imports, forbidden imports, callers, and nearest verification when relevant. |
-| Code | Implementation follows local style, avoids speculative abstractions, and keeps responsibilities reviewable. |
+| Proportionality | The change matches the size of the task. A simple request is a small diff to existing files, not a spread of new files, interfaces, layers, or indirection. Every new file or abstraction names the concrete present risk it protects; otherwise it is collapsed. |
+| Code | Implementation follows local style, avoids speculative abstractions and boilerplate, and keeps responsibilities reviewable. |
 | Docs | Durable behavior, workflow policy, public contract, operator action, or acceptance-criteria changes are reflected in the relevant docs, or the unchanged/not-applicable decision names the checked doc path/class and reason. |
 | Tests | The nearest useful automated or manual check ran, or the skip reason and residual risk are explicit. |
 | Security | Secrets, private data, permissions, tenant, billing, and external-state risks were checked when touched. |
@@ -70,6 +71,7 @@ completion. A missing or vague gate is `🐱🔴 FAIL`, not a warning.
 | "I did not see a PRD, so none exists." | Search the expected PRD/spec/ARD/source-of-truth locations and record the no-source result before implementation. |
 | "Only docs changed." | Still run frontmatter, link, route, or diff checks when available. |
 | "The remaining issue is unrelated." | State the unrelated dirty file or failing check and why it is out of scope. |
+| "More files and layers make it cleaner / more flexible." | Match structure to the task. Justify each new file or abstraction against a concrete present risk, or collapse the change into fewer files. |
 | "The hook warned but the work is fine." | A required gate or hook failure must be recovered before completion. |
 
 ## Red Flags
@@ -79,6 +81,8 @@ completion. A missing or vague gate is `🐱🔴 FAIL`, not a warning.
 - The diff includes lockfiles, generated files, release config, or unrelated
   source files not mentioned in the request.
 - A high-risk change has only format, lint, typecheck, or screenshot evidence.
+- A simple task produced many new files, interfaces, or layers with no present
+  risk named for each — over-engineered sprawl that burns tokens and review time.
 - The task used a broad assumption but never showed the user the possible
   mismatch.
 - A review or finish hook failed and the agent moved to summary anyway.
