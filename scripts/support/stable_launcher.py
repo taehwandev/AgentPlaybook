@@ -119,6 +119,7 @@ SCRIPT_ALIASES = {
     "agent-os-maintenance": "agent-os-maintenance.py",
     "workflow-dispatch": "workflow_dispatch.py",
     "workflow-dispatch-launch": "workflow_dispatch_launch.py",
+    "claude-pretool-gate": "claude_pretool_gate.py",
 }
 HOOK_ALIASES = {
     "start",

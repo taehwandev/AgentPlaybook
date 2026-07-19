@@ -162,6 +162,19 @@ For Claude, `setup-agent-hooks.py` installs a stable user-level launcher at
 `~/.agentplaybook/agentplaybook-root`. Rerun setup after moving or migrating
 AgentPlaybook so the pointer is refreshed without changing the Claude hook
 command.
+
+Claude's runtime bridge is otherwise advisory: unlike the Codex prefix rule,
+prose alone does not stop a file edit when the agent skipped `start`. To make
+workflow entry enforceable rather than optional, `setup-agent-hooks.py` also
+installs a Claude `PreToolUse` gate (`agentplaybook-hook claude-pretool-gate`,
+matcher `Edit|Write|MultiEdit|NotebookEdit`). The gate denies a file-edit tool
+call when the nearest AgentPlaybook project (a directory with `.agentplaybook/`
+or an instruction file naming AgentPlaybook) has no fresh `preflight.json`,
+which forces the agent to run `start` before mutating files. After fresh
+evidence exists the gate marks the session and steps aside. It is fail-open:
+non-edit tools, non-AgentPlaybook directories, and any unexpected error allow
+the call, so the gate can never brick ordinary editing. Tune the freshness
+window with `AGENTPLAYBOOK_CLAUDE_GATE_MAX_AGE_SECONDS` (default 8 hours).
 When executing AgentPlaybook wrapper commands from an agent runtime, replace
 `<AGENTPLAYBOOK_ROOT>` with the resolved absolute path. Do not leave `$HOME`,
 `${HOME}`, `~`, or a relative path in the executable command.

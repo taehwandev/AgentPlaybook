@@ -23,6 +23,8 @@ _CLASSIFICATION_EVIDENCE = (
     "Claude UserPromptSubmit hook records safe request-intake evidence for "
     "workflow label setup; no prompt content is passed."
 )
+_PRETOOL_GATE_MATCHER = "Edit|Write|MultiEdit|NotebookEdit"
+_PRETOOL_GATE_ALIAS = "claude-pretool-gate"
 
 
 def configure_claude(
@@ -61,6 +63,12 @@ def configure_claude(
     else:
         status = _remove_claude_user_prompt_submit(target, dry_run)
     results.append({"tool": "claude", "hook": "UserPromptSubmit_spill_bridge", "status": status, "path": str(target)})
+
+    gate_cmd = (
+        f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 {quote(str(launcher_path))} {_PRETOOL_GATE_ALIAS}"
+    )
+    status = _merge_claude_pre_tool_gate(target, gate_cmd, dry_run)
+    results.append({"tool": "claude", "hook": "PreToolUse_workflow_gate", "status": status, "path": str(target)})
 
     cleanup_entries = claude_legacy_permission_entries(scripts_dir)
     if not spill_available:
@@ -107,6 +115,44 @@ def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) 
         "hooks": [{"type": "command", "command": command, "timeout": 5}],
     })
     hooks["UserPromptSubmit"] = cleaned
+    config["hooks"] = hooks
+    write_json(target, config)
+    return "installed"
+
+
+def _is_managed_claude_pre_tool_gate_command(command: str) -> bool:
+    return _PRETOOL_GATE_ALIAS in command
+
+
+def _merge_claude_pre_tool_gate(target: Path, command: str, dry_run: bool) -> str:
+    config = read_json(target)
+    hooks = config.get("hooks", {})
+    groups: list = hooks.get("PreToolUse", [])
+
+    has_managed_command = False
+    for group in groups:
+        for hook in group.get("hooks", []):
+            hook_command = hook.get("command", "")
+            if hook_command == command and group.get("matcher") == _PRETOOL_GATE_MATCHER:
+                return "ok"
+            if _is_managed_claude_pre_tool_gate_command(hook_command):
+                has_managed_command = True
+
+    if dry_run:
+        return "would_update" if has_managed_command else "missing"
+
+    cleaned = [
+        group for group in groups
+        if not any(
+            _is_managed_claude_pre_tool_gate_command(hook.get("command", ""))
+            for hook in group.get("hooks", [])
+        )
+    ]
+    cleaned.append({
+        "matcher": _PRETOOL_GATE_MATCHER,
+        "hooks": [{"type": "command", "command": command, "timeout": 10}],
+    })
+    hooks["PreToolUse"] = cleaned
     config["hooks"] = hooks
     write_json(target, config)
     return "installed"
