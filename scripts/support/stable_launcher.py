@@ -120,6 +120,7 @@ SCRIPT_ALIASES = {
     "workflow-dispatch": "workflow_dispatch.py",
     "workflow-dispatch-launch": "workflow_dispatch_launch.py",
     "claude-pretool-gate": "claude_pretool_gate.py",
+    "claude-stop-gate": "claude_stop_gate.py",
 }
 HOOK_ALIASES = {
     "start",

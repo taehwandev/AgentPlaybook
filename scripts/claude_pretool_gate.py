@@ -22,6 +22,12 @@ Contract (Claude Code PreToolUse hook):
 - Prints a ``permissionDecision`` JSON object to allow or deny.
 - Only file-edit tools are gated; everything else and every unexpected error
   fails open (exit 0, no output) so the gate can never brick ordinary editing.
+
+Requires a Claude Code that puts ``CLAUDE_CODE_SESSION_ID`` in the Bash
+subprocess environment (v2.1.128-v2.1.136, Week 19 2026), because that is what
+lets the ``start`` hook stamp the session the gate checks. On an older build the
+stamp is always absent and every edit is denied; set ``AGENTPLAYBOOK_CLAUDE_GATE=0``
+to turn the gate off there.
 """
 
 from __future__ import annotations
@@ -47,6 +53,9 @@ PREFLIGHT_NAME = "preflight.json"
 SESSION_MARKER_DIR = "claude-pretool-gate"
 NEW_FILE_STATE_SUFFIX = ".newfiles"
 SPRAWL_ACK_SUFFIX = ".sprawl-ack"
+# Shared with claude_stop_gate.py, which blocks a stop when an editing session
+# has no passing finish.
+EDIT_ACTIVITY_SUFFIX = ".edited"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
 OPT_IN_TOKEN = "agentplaybook"
 DEFAULT_MAX_AGE_SECONDS = 8 * 60 * 60
@@ -62,6 +71,11 @@ SOURCE_SUFFIXES = {
     ".java", ".js", ".jsx", ".kt", ".kts", ".m", ".mjs", ".mm", ".php", ".py",
     ".rb", ".rs", ".sass", ".scss", ".svelte", ".swift", ".ts", ".tsx", ".vue",
 }
+
+
+def gate_enabled() -> bool:
+    """Escape hatch for runtimes that cannot supply a session id."""
+    return os.environ.get("AGENTPLAYBOOK_CLAUDE_GATE", "").strip() != "0"
 
 
 def allow() -> int:
@@ -165,8 +179,9 @@ def workflow_entry_allows(root: Path, session_id: str) -> bool:
     resumed days later on its original evidence.
     """
     if not session_id:
-        # No session to attribute; freshness is the only signal left.
-        return evidence_is_fresh(root)
+        # Nothing to attribute the evidence to. Falling back to freshness here
+        # would reopen the original bypass on any payload missing a session.
+        return False
     return recorded_session_id(root) == session_id and evidence_is_fresh(root)
 
 
@@ -181,6 +196,23 @@ def recorded_session_id(root: Path) -> str:
         return ""
     recorded = runtime_session.get("session_id")
     return recorded if isinstance(recorded, str) else ""
+
+
+def record_edit_activity(root: Path, session_id: str) -> None:
+    """Note that this session actually mutated files.
+
+    This is an activity record, not gate-passing proof -- the distinction that
+    matters here. Writing proof is what let an earlier version of this gate
+    fabricate its own workflow entry; writing "this session edited something" is
+    only what the Stop gate needs to know a missing finish is worth blocking on.
+    A read-only session never gets this marker and is never blocked at Stop.
+    """
+    marker = root / STATE_DIR / SESSION_MARKER_DIR / (safe_session_id(session_id) + EDIT_ACTIVITY_SUFFIX)
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("", encoding="utf-8")
+    except OSError:
+        pass
 
 
 def new_file_budget() -> int:
@@ -288,6 +320,8 @@ def sprawl_deny(tool: str, payload: dict, root: Path, cwd: Path, session_id: str
 
 
 def decide(payload: dict) -> int:
+    if not gate_enabled():
+        return allow()
     tool = payload.get("tool_name")
     if tool not in EDIT_TOOLS:
         return allow()
@@ -306,6 +340,7 @@ def decide(payload: dict) -> int:
     sprawl_reason = sprawl_deny(tool, payload, root, cwd, session_id)
     if sprawl_reason:
         return deny(sprawl_reason)
+    record_edit_activity(root, session_id)
     return allow()
 
 

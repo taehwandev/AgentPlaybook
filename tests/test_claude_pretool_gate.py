@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -145,6 +146,32 @@ class ClaudePreToolGateTests(unittest.TestCase):
 
             self.assertEqual(0, code)
             self.assertEqual("deny", json.loads(out)["hookSpecificOutput"]["permissionDecision"])
+
+    def test_payload_without_a_session_id_is_denied(self) -> None:
+        # Falling back to freshness here would reopen the original bypass for
+        # any payload that omits the session.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _write_preflight(project, "s1")
+
+            code, out = _decide({"tool_name": "Write", "cwd": str(project), "session_id": ""})
+
+            self.assertEqual(0, code)
+            self.assertEqual("deny", json.loads(out)["hookSpecificOutput"]["permissionDecision"])
+
+    def test_env_kill_switch_disables_the_gate(self) -> None:
+        # Escape hatch for a Claude Code older than the release that put
+        # CLAUDE_CODE_SESSION_ID in the Bash subprocess environment.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+
+            with patch.dict("os.environ", {"AGENTPLAYBOOK_CLAUDE_GATE": "0"}):
+                code, out = _decide(
+                    {"tool_name": "Write", "cwd": str(project), "session_id": "s1"}
+                )
+
+            self.assertEqual(0, code)
+            self.assertEqual("", out)
 
     def test_gate_never_writes_evidence(self) -> None:
         # `start` is the only writer of workflow-entry proof. A gate that can

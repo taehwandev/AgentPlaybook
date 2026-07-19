@@ -12,6 +12,7 @@ from typing import Any
 
 from agent_delegation_plan import read_delegation_plan
 from agent_global_lessons import write_retrospective_candidate
+from agent_runtime_session import runtime_session
 from agent_finish_check_steps import (
     check_preflight_vibeguard,
     check_request_intake,
@@ -278,6 +279,11 @@ def main() -> int:
         retrospective_lesson=retrospective_lesson,
         failures=failures,
     )
+    # Stamp the producing session so the Stop gate can tell a finish from this
+    # session apart from one this project happens to have on disk. Only a clean
+    # finish counts; recording a failed run would let it satisfy the gate.
+    if not failures:
+        result["runtime_session"] = runtime_session()
     write_json(output_path, result)
     print_result(output_path, required_gates, overall, result)
 

@@ -26,6 +26,7 @@ _CLASSIFICATION_EVIDENCE = (
 )
 _PRETOOL_GATE_MATCHER = "Edit|Write|MultiEdit|NotebookEdit"
 _PRETOOL_GATE_ALIAS = "claude-pretool-gate"
+_STOP_GATE_ALIAS = "claude-stop-gate"
 
 
 def configure_claude(
@@ -70,6 +71,12 @@ def configure_claude(
     )
     status = _merge_claude_pre_tool_gate(target, gate_cmd, dry_run)
     results.append({"tool": "claude", "hook": "PreToolUse_workflow_gate", "status": status, "path": str(target)})
+
+    stop_cmd = (
+        f"AGENTPLAYBOOK_HOOK_SOFT_FAIL=1 {quote(str(launcher_path))} {_STOP_GATE_ALIAS}"
+    )
+    status = _merge_claude_stop_gate(target, stop_cmd, dry_run)
+    results.append({"tool": "claude", "hook": "Stop_finish_gate", "status": status, "path": str(target)})
 
     cleanup_entries = claude_legacy_permission_entries(scripts_dir)
     if not spill_available:
@@ -128,6 +135,47 @@ def _merge_claude_user_prompt_submit(target: Path, command: str, dry_run: bool) 
 
 def _is_managed_claude_pre_tool_gate_command(command: str) -> bool:
     return _PRETOOL_GATE_ALIAS in command
+
+
+def _is_managed_claude_stop_gate_command(command: str) -> bool:
+    return _STOP_GATE_ALIAS in command
+
+
+def _merge_claude_stop_gate(target: Path, command: str, dry_run: bool) -> str:
+    """Install the Stop gate without disturbing unrelated user Stop hooks."""
+    config = read_json(target)
+    hooks = config.get("hooks", {})
+    if not isinstance(hooks, dict):
+        hooks = {}
+    groups = hooks.get("Stop", [])
+    if not isinstance(groups, list):
+        groups = []
+
+    has_managed_command = False
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        for hook in group.get("hooks", []):
+            if not isinstance(hook, dict):
+                continue
+            hook_command = hook.get("command", "")
+            if hook_command == command:
+                return "ok"
+            if _is_managed_claude_stop_gate_command(hook_command):
+                has_managed_command = True
+
+    if dry_run:
+        return "would_update" if has_managed_command else "missing"
+
+    cleaned = _remove_managed_hook_objects(groups, _is_managed_claude_stop_gate_command)
+    cleaned.append({
+        "matcher": "",
+        "hooks": [{"type": "command", "command": command, "timeout": 10}],
+    })
+    hooks["Stop"] = cleaned
+    config["hooks"] = hooks
+    write_json(target, config)
+    return "installed"
 
 
 def _merge_claude_pre_tool_gate(target: Path, command: str, dry_run: bool) -> str:

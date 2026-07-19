@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""Claude Code Stop gate for AgentPlaybook.
+
+The PreToolUse gate forces `start` before the first edit, but nothing forced the
+other end of the lifecycle. `review` and `finish` were enforced only by the model
+remembering to run them, which is exactly the kind of rule a model skips under
+load: a session could edit files all the way to a final report with no review
+evidence and no gate ledger, and the work would look finished.
+
+This gate closes that end. When a session edited files in an AgentPlaybook
+project and has no passing `finish` from that same session, stopping is blocked
+once, with the commands needed to resolve it.
+
+Contract (Claude Code Stop hook):
+- Reads a JSON payload from stdin with ``session_id``, ``cwd``, and
+  ``stop_hook_active``.
+- Prints ``{"decision": "block", "reason": ...}`` to keep the session going, or
+  nothing to let it stop.
+- ``stop_hook_active`` means this gate already blocked once and the model
+  continued; blocking again would loop, so that case always allows.
+- Every unexpected error allows the stop. A gate that can trap a session is
+  worse than one that misses a finish.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+try:  # Never fail to load; used for the message and the session lookup.
+    from agent_runtime_session import recorded_session_id
+    from support.stable_launcher import stable_launcher_path
+except ImportError:  # pragma: no cover - exercised only on a broken install
+    def stable_launcher_path() -> Path:
+        return Path.home() / ".agentplaybook" / "bin" / "agentplaybook-hook"
+
+    def recorded_session_id(payload: object) -> str:
+        if not isinstance(payload, dict):
+            return ""
+        session = payload.get("runtime_session")
+        if not isinstance(session, dict):
+            return ""
+        recorded = session.get("session_id")
+        return recorded if isinstance(recorded, str) else ""
+
+STATE_DIR = ".agentplaybook"
+FINISH_NAME = "finish.json"
+SESSION_MARKER_DIR = "claude-pretool-gate"
+EDIT_ACTIVITY_SUFFIX = ".edited"
+OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
+OPT_IN_TOKEN = "agentplaybook"
+
+
+def allow() -> int:
+    """No output means Claude is free to stop."""
+    return 0
+
+
+def block(reason: str) -> int:
+    print(json.dumps({"decision": "block", "reason": reason}))
+    return 0
+
+
+def safe_session_id(session_id: str) -> str:
+    cleaned = "".join(ch for ch in session_id if ch.isalnum() or ch in "-_")
+    return cleaned or "unknown-session"
+
+
+def opts_in(path: Path) -> bool:
+    if (path / STATE_DIR).is_dir():
+        return True
+    for name in OPT_IN_FILES:
+        try:
+            head = (path / name).read_text(encoding="utf-8", errors="ignore")[:8192]
+        except OSError:
+            continue
+        if OPT_IN_TOKEN in head.lower():
+            return True
+    return False
+
+
+def find_project_root(cwd: Path) -> Path | None:
+    for candidate in (cwd, *cwd.parents):
+        if opts_in(candidate):
+            return candidate
+        if candidate == candidate.parent:
+            break
+    return None
+
+
+def edit_activity_marker(root: Path, session_id: str) -> Path:
+    return root / STATE_DIR / SESSION_MARKER_DIR / (safe_session_id(session_id) + EDIT_ACTIVITY_SUFFIX)
+
+
+def session_edited(root: Path, session_id: str) -> bool:
+    """True when the PreToolUse gate let this session through to an edit.
+
+    This is an activity record, not gate-passing proof: it says the session
+    mutated files, which is what makes a missing finish worth blocking on. A
+    read-only session is never blocked.
+    """
+    return edit_activity_marker(root, session_id).exists()
+
+
+def session_finished(root: Path, session_id: str) -> bool:
+    """True when a passing `finish` ran in this session.
+
+    `finish` stamps its session only when it records no failures, so a failed
+    finish leaves this gate closed instead of counting as completion.
+    """
+    try:
+        payload = json.loads((root / STATE_DIR / FINISH_NAME).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return recorded_session_id(payload) == session_id
+
+
+def block_reason(root: Path) -> str:
+    launcher = stable_launcher_path()
+    return (
+        "AgentPlaybook: this session edited files but has no passing finish check. "
+        "Record the remaining route gates with `gate` or `gate-batch`, then run "
+        f"`{launcher} review --project {root} --rules <AGENTPLAYBOOK_ROOT> "
+        "--review-scope working-tree --review-outcome <pass|findings> ...` and "
+        f"`{launcher} finish --project {root} --rules <AGENTPLAYBOOK_ROOT>`. "
+        "If finish reports failures, repair them instead of reporting completion. "
+        "Set AGENTPLAYBOOK_CLAUDE_STOP_GATE=0 to disable this gate."
+    )
+
+
+def gate_enabled() -> bool:
+    return os.environ.get("AGENTPLAYBOOK_CLAUDE_STOP_GATE", "").strip() != "0"
+
+
+def decide(payload: dict) -> int:
+    if not gate_enabled():
+        return allow()
+    # Already blocked once for this stop; blocking again would loop forever.
+    if payload.get("stop_hook_active"):
+        return allow()
+    try:
+        cwd = Path(payload.get("cwd") or os.getcwd()).resolve()
+    except OSError:
+        return allow()
+    root = find_project_root(cwd)
+    if root is None:
+        return allow()
+    session_id = str(payload.get("session_id") or "")
+    if not session_id:
+        return allow()
+    if not session_edited(root, session_id):
+        return allow()
+    if session_finished(root, session_id):
+        return allow()
+    return block(block_reason(root))
+
+
+def main() -> int:
+    try:
+        raw = sys.stdin.read()
+        if not raw.strip():
+            return allow()
+        payload = json.loads(raw)
+        if not isinstance(payload, dict):
+            return allow()
+        return decide(payload)
+    except Exception:
+        # Any unexpected failure must let the session stop.
+        return allow()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
