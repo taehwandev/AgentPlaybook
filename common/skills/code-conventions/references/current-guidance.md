@@ -156,6 +156,14 @@ decisions.
 ## Check
 
 - Can a reviewer name the responsibility of this unit in one sentence?
+- Does the change match the size of the task? A simple request should be a small
+  diff to existing files, not new files, interfaces, layers, or indirection. Each
+  new file or abstraction must protect a concrete present risk. See
+  `Match Structure To The Problem` in
+  `../../llm-coding-discipline/references/current-guidance.md`.
+- Does every line carry information a reader needs, or is it ceremony a language
+  or framework idiom would remove? See `Avoid Boilerplate` in
+  `../../llm-coding-discipline/references/current-guidance.md`.
 - Can the behavior be tested without booting unrelated systems?
 - Is shared code genuinely reusable, or did it only move duplication behind a
   flag-heavy API?
