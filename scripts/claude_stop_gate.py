@@ -18,6 +18,9 @@ Contract (Claude Code Stop hook):
   nothing to let it stop.
 - ``stop_hook_active`` means this gate already blocked once and the model
   continued; blocking again would loop, so that case always allows.
+- Blocking is once per batch of edits, not once per stop. A session that stops
+  again to ask the user something is not blocked twice for the same work, and
+  any further edit re-arms the gate.
 - Every unexpected error allows the stop. A gate that can trap a session is
   worse than one that misses a finish.
 """
@@ -49,6 +52,7 @@ STATE_DIR = ".agentplaybook"
 FINISH_NAME = "finish.json"
 SESSION_MARKER_DIR = "claude-pretool-gate"
 EDIT_ACTIVITY_SUFFIX = ".edited"
+BLOCKED_SUFFIX = ".stop-blocked"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
 OPT_IN_TOKEN = "agentplaybook"
 
@@ -94,14 +98,43 @@ def edit_activity_marker(root: Path, session_id: str) -> Path:
     return root / STATE_DIR / SESSION_MARKER_DIR / (safe_session_id(session_id) + EDIT_ACTIVITY_SUFFIX)
 
 
-def session_edited(root: Path, session_id: str) -> bool:
-    """True when the PreToolUse gate let this session through to an edit.
+def blocked_marker(root: Path, session_id: str) -> Path:
+    return root / STATE_DIR / SESSION_MARKER_DIR / (safe_session_id(session_id) + BLOCKED_SUFFIX)
 
-    This is an activity record, not gate-passing proof: it says the session
-    mutated files, which is what makes a missing finish worth blocking on. A
-    read-only session is never blocked.
+
+def marker_mtime(marker: Path) -> float | None:
+    try:
+        return marker.stat().st_mtime
+    except OSError:
+        return None
+
+
+def has_unreported_edits(root: Path, session_id: str) -> bool:
+    """True when this session edited files the gate has not blocked on yet.
+
+    A stop is not always a completion report -- a session also stops to ask the
+    user a question, and blocking that just costs a round trip without adding
+    enforcement. The gate cannot read intent, but it can avoid repeating itself:
+    it blocks once per batch of edits, and any further edit re-arms it.
+
+    Recording that the gate blocked is safe in a way recording workflow entry
+    was not. This marker can only ever make the gate quieter about work it has
+    already reported; it can never stand in for a finish.
     """
-    return edit_activity_marker(root, session_id).exists()
+    edited = marker_mtime(edit_activity_marker(root, session_id))
+    if edited is None:
+        return False
+    blocked = marker_mtime(blocked_marker(root, session_id))
+    return blocked is None or edited > blocked
+
+
+def record_block(root: Path, session_id: str) -> None:
+    marker = blocked_marker(root, session_id)
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("", encoding="utf-8")
+    except OSError:
+        pass
 
 
 def session_finished(root: Path, session_id: str) -> bool:
@@ -150,10 +183,11 @@ def decide(payload: dict) -> int:
     session_id = str(payload.get("session_id") or "")
     if not session_id:
         return allow()
-    if not session_edited(root, session_id):
-        return allow()
     if session_finished(root, session_id):
         return allow()
+    if not has_unreported_edits(root, session_id):
+        return allow()
+    record_block(root, session_id)
     return block(block_reason(root))
 
 

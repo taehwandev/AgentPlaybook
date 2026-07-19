@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -43,8 +44,14 @@ def _opt_in_project(base: Path) -> Path:
     return project
 
 
-def _record_edit(project: Path, session_id: str) -> None:
-    gate.edit_activity_marker(project, session_id).write_text("", encoding="utf-8")
+def _record_edit(project: Path, session_id: str, *, newer_than: Path | None = None) -> None:
+    marker = gate.edit_activity_marker(project, session_id)
+    marker.write_text("", encoding="utf-8")
+    if newer_than is not None:
+        # Filesystem timestamp granularity can tie these two writes; the gate
+        # compares them, so make the ordering explicit rather than racy.
+        stamp = newer_than.stat().st_mtime + 1
+        os.utime(marker, (stamp, stamp))
 
 
 def _write_finish(project: Path, session_id: str | None = None) -> None:
@@ -114,6 +121,33 @@ class ClaudeStopGateTests(unittest.TestCase):
 
         self.assertEqual(0, code)
         self.assertEqual("", out)
+
+    def test_second_stop_without_new_edits_is_not_blocked_again(self) -> None:
+        # A stop is not always a completion report: a session also stops to ask
+        # the user a question. Blocking that a second time costs a round trip
+        # and adds no enforcement, since the gate already reported the work.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _record_edit(project, "s1")
+
+            _, first = _decide(_payload(project, "s1"))
+            _, second = _decide(_payload(project, "s1"))
+
+            self.assertTrue(_blocked(first))
+            self.assertEqual("", second)
+
+    def test_further_edits_rearm_the_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _record_edit(project, "s1")
+            _decide(_payload(project, "s1"))
+
+            _, quiet = _decide(_payload(project, "s1"))
+            _record_edit(project, "s1", newer_than=gate.blocked_marker(project, "s1"))
+            _, rearmed = _decide(_payload(project, "s1"))
+
+            self.assertEqual("", quiet)
+            self.assertTrue(_blocked(rearmed))
 
     def test_stop_hook_active_never_blocks_again(self) -> None:
         # The gate already blocked once and the model continued; blocking a
