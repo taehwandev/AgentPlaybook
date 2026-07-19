@@ -439,10 +439,13 @@ current work before completion.
 
 Before finish on every route, run the required lightweight `retrospective
 check`: inspect the skills actually loaded and applied, then record
-`no_reusable_gap`, `reusable_gap`, or `no_skill_used` together with the
-observation disposition. The check is required finish evidence; the follow-up
-skill-learning side channel is non-blocking. If there is no reusable gap, do
-not create a ceremonial observation record. If there is one, the optional
+the exact fields `skills_checked`, `outcome`, and `observation`. `outcome` is
+`no_reusable_gap`, `reusable_gap`, or `no_skill_used`; `observation` is
+`not_needed`, `recorded`, or `deferred`. Pair `no_reusable_gap` and
+`no_skill_used` with `not_needed`, and pair `reusable_gap` with `recorded` or
+`deferred`. The check is required finish evidence; the follow-up skill-learning
+side channel is non-blocking. If there is no reusable gap, do not create a
+ceremonial observation record. If there is one, the optional
 `skill-feedback` hook records only a
 content-free observation for a skill actually used; it does not let the task
 agent declare a patch candidate. Deterministic curation queues review only after
@@ -456,6 +459,14 @@ budget justify them. The detailed decision and privacy rules are owned by
 
 Before final report, commit, release, or handoff, record every remaining route
 gate with explicit structured status, then run the read-only finish hook:
+
+For structured `ambiguity check` evidence, record `blocker_status`,
+`assumptions`, and `decision`; only `none` or `resolved` plus `proceed` may
+pass. For structured `alignment brief` evidence, record
+`shared_understanding`, `possible_differences`, `assumptions`, and
+`checkpoint=user_visible_before_edits`. Existing finish-valid prose remains
+compatible. The canonical decision rules live in
+`workflows/skills/ambiguity-gate/SKILL.md`.
 
 ```text
 ~/.agentplaybook/bin/agentplaybook-hook gate-batch --project <TARGET_REPO> --rules <AGENTPLAYBOOK_ROOT> --gate-record '[{"gate":"orient","status":"SUCCESS","evidence":"<evidence>"},{"gate":"scope","status":"SUCCESS","evidence":"<evidence>"},{"gate":"act","status":"SUCCESS","evidence":"<evidence>"},{"gate":"verify","status":"SUCCESS","evidence":"<evidence>"},{"gate":"report","status":"SUCCESS","evidence":"<evidence>"}]'

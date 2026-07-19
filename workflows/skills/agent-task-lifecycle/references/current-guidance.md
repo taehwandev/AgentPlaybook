@@ -109,12 +109,17 @@ When a finish gate requires evidence, record the actual decision. At minimum:
 - `documentation impact` and `documentation`: state the artifact class, the
   updated/created/unchanged/not-applicable decision, affected path or class,
   and why the durable behavior or acceptance criteria require that result.
-- `alignment brief`, `cycle contract`, and `boundary plan`: state the user
-  checkpoint, resolved assumptions or blockers, owned and forbidden scope,
+- `ambiguity check`: use `blocker_status`, `assumptions`, and `decision`.
+  `blocker_status` must be `none` or `resolved`; `decision` must be `proceed`.
+- `alignment brief`: use `shared_understanding`, `possible_differences`,
+  `assumptions`, and `checkpoint`. `checkpoint` must be
+  `user_visible_before_edits`.
+- `cycle contract` and `boundary plan`: state the owned and forbidden scope,
   nearest verification, stop condition, and handoff point.
-- `retrospective check`: name the skills actually loaded and applied, choose
-  `no_reusable_gap`, `reusable_gap`, or `no_skill_used`, and record the
-  observation as `not_needed`, `recorded`, or `deferred`.
+- `retrospective check`: use `skills_checked`, `outcome`, and `observation`.
+  `outcome` must be `no_reusable_gap`, `reusable_gap`, or `no_skill_used`;
+  `observation` must be `not_needed`, `recorded`, or `deferred`, using the
+  pairing defined by the retrospective-learning skill.
 12. Inspect: read existing code, docs, tests, commands, and current user changes
    before editing or judging.
 13. Decide: make a reasonable assumption when safe; ask only when ambiguity

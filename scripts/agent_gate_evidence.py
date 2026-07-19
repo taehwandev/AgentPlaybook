@@ -37,6 +37,13 @@ CAPSULE_BINDING_FIELD = "execution_capsule_binding"
 
 FIELD_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "agentic run state": ("state", "transition", "evidence", "checkpoint", "blockers"),
+    "alignment brief": (
+        "shared_understanding",
+        "possible_differences",
+        "assumptions",
+        "checkpoint",
+    ),
+    "ambiguity check": ("blocker_status", "assumptions", "decision"),
     "boundary plan": ("scope", "verification"),
     "cycle contract": (
         "cycle_type",
@@ -74,6 +81,7 @@ MULTI_AGENT_PARALLEL_FIELDS = (
     "integration_owner",
 )
 MULTI_AGENT_SERIAL_MODES = {"serial", "single-agent", "single agent"}
+PROSE_COMPATIBLE_STRUCTURED_GATES = {"ambiguity check", "alignment brief"}
 
 
 def _sibling_evidence_path(evidence_path: Path, default_filename: str, suffix: str) -> Path:
@@ -380,6 +388,11 @@ def synthesize_gate_evidence(
     missing = missing_structured_gate_fields(gate, evidence, fields)
     if missing:
         return "", missing
+    if gate in PROSE_COMPATIBLE_STRUCTURED_GATES and evidence.strip() and any(
+        not fields.get(field, "").strip()
+        for field in FIELD_REQUIREMENTS[gate]
+    ):
+        return evidence, []
     if gate == "cycle contract":
         return (
             f"cycle_type={fields['cycle_type']}; input_scope={fields['input_scope']}; "
@@ -395,6 +408,37 @@ def synthesize_gate_evidence(
             f"run state: {fields['state']}; next transition: {fields['transition']}; "
             f"gate/command/check evidence: {fields['evidence']}; "
             f"checkpoint: {fields['checkpoint']}; blocker status: {fields['blockers']}",
+            [],
+        )
+    if gate == "ambiguity check":
+        failures: list[str] = []
+        blocker_status = fields["blocker_status"].strip().lower()
+        decision = fields["decision"].strip().lower()
+        if blocker_status not in {"none", "resolved"}:
+            failures.append(
+                "ambiguity check blocker_status must be none or resolved"
+            )
+        if decision != "proceed":
+            failures.append("ambiguity check decision must be proceed")
+        if failures:
+            return "", failures
+        return (
+            "ambiguity check; no blockers or blockers resolved: "
+            f"{blocker_status}; explicit safe assumptions: {fields['assumptions']}; "
+            f"clarified decision: {decision}",
+            [],
+        )
+    if gate == "alignment brief":
+        checkpoint = fields["checkpoint"].strip().lower()
+        if checkpoint != "user_visible_before_edits":
+            return "", [
+                "alignment brief checkpoint must be user_visible_before_edits"
+            ]
+        return (
+            f"alignment brief; shared understanding: {fields['shared_understanding']}; "
+            f"possible differences: {fields['possible_differences']}; "
+            f"unsupported assumptions/unknowns: {fields['assumptions']}; "
+            "user-visible checkpoint before edits: user_visible_before_edits",
             [],
         )
     if gate == "boundary plan":
@@ -494,6 +538,9 @@ def missing_structured_gate_fields(
     fields: dict[str, str],
 ) -> list[str]:
     """Return the complete structured-field requirement for one gate record."""
+
+    if gate in PROSE_COMPATIBLE_STRUCTURED_GATES and evidence.strip():
+        return []
 
     missing = [
         field

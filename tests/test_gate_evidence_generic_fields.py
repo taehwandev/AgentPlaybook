@@ -113,6 +113,102 @@ class GenericGateEvidenceTests(unittest.TestCase):
 
             _validate_records_before_write(args, preflight, records)
 
+    def test_gate_write_accepts_structured_ambiguity_and_alignment_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            args = SimpleNamespace(project=Path(temp_dir))
+            preflight = {
+                "route": {
+                    "gates": ["ambiguity check", "alignment brief"],
+                    "required_docs": [],
+                }
+            }
+            records = [
+                {
+                    "gate": "ambiguity check",
+                    "status": "SUCCESS",
+                    "fields": {
+                        "blocker_status": "none",
+                        "assumptions": "only reversible local wording changes",
+                        "decision": "proceed",
+                    },
+                },
+                {
+                    "gate": "alignment brief",
+                    "status": "SUCCESS",
+                    "fields": {
+                        "shared_understanding": "strengthen all failed evidence contracts",
+                        "possible_differences": "keep detailed rules in owning skills",
+                        "assumptions": "no product behavior changes",
+                        "checkpoint": "user_visible_before_edits",
+                    },
+                },
+            ]
+
+            _validate_records_before_write(args, preflight, records)
+
+    def test_gate_write_rejects_unresolved_structured_ambiguity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            args = SimpleNamespace(project=Path(temp_dir))
+            preflight = {
+                "route": {
+                    "gates": ["ambiguity check"],
+                    "required_docs": [],
+                }
+            }
+            records = [
+                {
+                    "gate": "ambiguity check",
+                    "status": "SUCCESS",
+                    "fields": {
+                        "blocker_status": "unresolved",
+                        "assumptions": "none",
+                        "decision": "proceed",
+                    },
+                }
+            ]
+
+            with self.assertRaisesRegex(ValueError, "blocker_status"):
+                _validate_records_before_write(args, preflight, records)
+
+    def test_gate_write_reports_all_batch_contract_failures_together(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            args = SimpleNamespace(project=Path(temp_dir))
+            preflight = {
+                "route": {
+                    "gates": [
+                        "source docs",
+                        "ambiguity check",
+                        "alignment brief",
+                        "retrospective check",
+                    ],
+                    "required_docs": [],
+                }
+            }
+            records = [
+                {"gate": "source docs", "status": "SUCCESS", "fields": {}},
+                {"gate": "ambiguity check", "status": "SUCCESS", "fields": {}},
+                {"gate": "alignment brief", "status": "SUCCESS", "fields": {}},
+                {
+                    "gate": "retrospective check",
+                    "status": "SUCCESS",
+                    "fields": {
+                        "skills_checked": "retrospective-learning",
+                        "outcome": "guidance_updated",
+                        "observation": "captured",
+                    },
+                },
+            ]
+
+            with self.assertRaises(ValueError) as context:
+                _validate_records_before_write(args, preflight, records)
+
+            message = str(context.exception)
+            self.assertIn("source docs missing required fields", message)
+            self.assertIn("ambiguity check missing required fields", message)
+            self.assertIn("alignment brief missing required fields", message)
+            self.assertIn("retrospective check outcome", message)
+            self.assertIn("retrospective check observation", message)
+
     def test_source_docs_record_binds_route_manifest_before_validation_and_write(self) -> None:
         # Given a routed agent that read a non-empty required-doc manifest,
         # when it records source-doc evidence without self-declaring that

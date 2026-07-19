@@ -216,6 +216,7 @@ def _validate_records_before_write(
     required_gates = [str(gate) for gate in (route.get("gates") or [])]
     gate_evidence: dict[str, str] = {}
     validates_delegation_plan = False
+    failures: list[str] = []
 
     for record in records:
         if str(record.get("status") or "SUCCESS") != "SUCCESS":
@@ -229,10 +230,11 @@ def _validate_records_before_write(
         )
         missing = missing_structured_gate_fields(gate, evidence, fields)
         if missing:
-            raise ValueError(
+            failures.append(
                 f"structured gate record for {gate} missing required fields: "
                 + ", ".join(missing)
             )
+            continue
 
         if gate == "documentation" and fields.get("decision", "").strip().lower() == "updated":
             target_failures = required_doc_target_failures(
@@ -240,7 +242,8 @@ def _validate_records_before_write(
                 route=route,
             )
             if target_failures:
-                raise ValueError("; ".join(target_failures))
+                failures.extend(target_failures)
+                continue
 
         synthesized, synthesis_failures = synthesize_gate_evidence(
             gate,
@@ -248,28 +251,30 @@ def _validate_records_before_write(
             fields,
         )
         if synthesis_failures:
-            raise ValueError(
+            failures.append(
                 f"structured gate record for {gate} is incomplete: "
                 + ", ".join(synthesis_failures)
             )
+            continue
         gate_evidence[gate] = synthesized or evidence
         if gate == MULTI_AGENT_GATE or gate in MULTI_AGENT_ROUTE_GATES:
             validates_delegation_plan = True
 
-    semantic_failures = validate_gate_evidence(
-        gate_evidence,
-        list(gate_evidence),
-        route=route,
+    failures.extend(
+        validate_gate_evidence(
+            gate_evidence,
+            list(gate_evidence),
+            route=route,
+        )
     )
-    if semantic_failures:
-        raise ValueError("; ".join(semantic_failures))
 
-    if not validates_delegation_plan:
-        return
-    plan_failures = validate_delegation_plan_evidence(
-        required_gates,
-        gate_evidence,
-        read_delegation_plan(args.project),
-    )
-    if plan_failures:
-        raise ValueError("; ".join(plan_failures))
+    if validates_delegation_plan:
+        failures.extend(
+            validate_delegation_plan_evidence(
+                required_gates,
+                gate_evidence,
+                read_delegation_plan(args.project),
+            )
+        )
+    if failures:
+        raise ValueError("; ".join(dict.fromkeys(failures)))

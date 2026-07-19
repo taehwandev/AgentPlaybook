@@ -27,9 +27,12 @@ automation boundary.
 3. Keep failure repair inside the bounded repair-and-resume cycle.
 4. After task verification and review, but before finish, inspect the skills
    actually loaded and applied and complete the required `retrospective check`.
-5. Record exactly one check outcome: `no_reusable_gap`, `reusable_gap`, or
-   `no_skill_used`. When the outcome is `reusable_gap`, record or defer at most
-   one content-free observation tied to an actually used skill.
+5. Record the exact fields `skills_checked`, `outcome`, and `observation`.
+   `outcome` must be `no_reusable_gap`, `reusable_gap`, or `no_skill_used`.
+   `observation` must be `not_needed`, `recorded`, or `deferred`.
+   Pair `no_reusable_gap` and `no_skill_used` with `not_needed`; pair
+   `reusable_gap` with `recorded` or `deferred`. A reusable gap may produce at
+   most one content-free observation tied to an actually used skill.
 6. Keep observation storage, curation, review, staging, and later canonical
    maintenance separate and non-blocking. They remain outside required finish
    gates even though the retrospective check itself is required.
