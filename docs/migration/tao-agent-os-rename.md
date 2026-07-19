@@ -40,7 +40,7 @@ Three commits on `fix/cross-project-gate`:
 2. **Display name** — 627 prose occurrences across 247 files, plus 23 GitHub URLs
    that still pointed at the pre-rename repository slug and only resolved through
    GitHub's redirect.
-3. **Identifiers** — every remaining token: the `AGENTPLAYBOOK_*` environment set
+3. **Identifiers** — every remaining token: the legacy environment-variable set
    became `TAO_*` across 23 distinct variables, the state directory became
    `.tao`, the launcher became `tao-hook`, the root pointer became `tao-root`,
    the bridge marker became `tao-runtime-bridge`, the permission identifier
@@ -62,8 +62,15 @@ role separately before estimating the work.
 
 ## Host-side migration
 
-The repository no longer contains the old name, but a machine that installed an
-earlier version still has the old state directory and launcher. To migrate:
+Tracked repository content no longer carries the old name, with one deliberate
+exception: this section. A migration guide has to name what is being migrated
+from, so the commands below spell out the old paths literally. Treat every
+occurrence of the retired name in this file as data, not as branding, and
+exclude this file when auditing for remnants.
+
+Two things outside tracked content may still retain it: ignored local runtime
+evidence written before the rename, and machines that installed an earlier
+version. To migrate those installations:
 
 ```bash
 # 1. Close every agent session first. A running session holds the launcher path
@@ -81,20 +88,45 @@ for d in ~/git/*/; do
   python3 ~/git/tao-agent-os/scripts/setup-agent-hooks.py --skip-graphify --target "$d"
 done
 
-# 4. Move each project's local state directory.
+# 4. Move each project's local state directory. Use `git mv` where the directory
+#    is tracked, because a plain `mv` leaves that repository dirty and the rename
+#    then needs its own commit there.
 for d in ~/git/*/.agentplaybook; do
-  [ -e "$d" ] && mv "$d" "$(dirname "$d")/.tao"
+  [ -e "$d" ] || continue
+  repo="$(dirname "$d")"
+  if git -C "$repo" ls-files --error-unmatch "$d" >/dev/null 2>&1; then
+    git -C "$repo" mv .agentplaybook .tao
+  else
+    mv "$d" "$repo/.tao"
+  fi
 done
 ```
+
+Step 4 crosses repository boundaries. Each project whose `.agentplaybook` was
+tracked needs its own commit before the rename is real there; the loop stages the
+move but deliberately does not commit on your behalf.
 
 Verify:
 
 ```bash
 cat ~/.tao/tao-root                                  # must print ~/git/tao-agent-os
-cd ~/git/tao-agent-os && python3 -m unittest discover -s tests   # 592 pass
+cd ~/git/tao-agent-os && python3 -m unittest discover -s tests   # all pass
+python3 ~/git/tao-agent-os/scripts/setup-agent-hooks.py --check   # all runtimes report OK
+
+# Remnant check across the active runtime stores. Must return nothing.
 grep -rl "agentplaybook\|AGENTPLAYBOOK" ~/.claude/settings.json ~/.claude/CLAUDE.md \
-  ~/.codex/rules ~/.gemini/config/config.json 2>/dev/null        # must return nothing
+  ~/.codex/rules ~/.codex/config.toml ~/.gemini/config/config.json \
+  ~/.gemini/antigravity-cli/settings.json 2>/dev/null
 ```
+
+`setup-agent-hooks.py --check` confirms the managed Tao entries are present; it
+does not look for legacy ones. The two checks answer different questions, so run
+both.
+
+The active runtime permission stores are part of the zero-remnant check. The
+Codex and AGY stores were cleaned only after their canonical Tao entries were
+verified, then the runtime-scoped installers were rerun to restore the complete
+managed entry set without restoring the legacy values.
 
 A transitional symlink at the old state-directory path pointing to `~/.tao` keeps
 an already-running session alive across the move. It has to be deleted once those
@@ -102,14 +134,29 @@ sessions restart, or the old name survives in the one place that still resolves.
 
 ## Still open
 
-- Domain `tao.thdev.app`: the documentation now references the new host, but the
-  DNS record and the GitHub Pages CNAME do not exist yet, so published links are
-  ahead of reality until someone creates them. Neither step can be done by an
-  agent.
-- Legacy allow-entries in the runtime permission stores still name the old
-  absolute path — 82 in the Codex rules file, 81 in the AGY config. They are
-  allow rules, so a stale one never matches and never blocks; they are dead
-  weight rather than breakage. Setup does not prune them.
+- Domain `tao.thdev.app`: DNS now resolves, and `docs/CNAME` on this branch has
+  been updated to the new host. What is still outstanding is publication —
+  `origin/main` continues to carry the old host in `docs/CNAME`, so GitHub Pages
+  serves the old domain until this branch merges. Check the real state with
+  `cat docs/CNAME` against `git show origin/main:docs/CNAME`.
+- Active runtime permission stores were cleaned on 2026-07-19. Codex rules,
+  Codex project and hook state, both AGY permission stores, the AGY trusted
+  workspace list, and the current Claude settings all returned zero legacy
+  matches. Runtime-scoped setup checks passed afterward. Historical backups and
+  session records remain a separate archival cleanup decision; they are not
+  active configuration.
+- Sibling repositories: seven projects under `~/git` still track a
+  `.agentplaybook/` directory — 13 paths each, all of it the Graphify skill
+  install rather than Tao state. Step 4 above stages the rename, but each repo
+  needs its own commit, so this is seven deliberate changes and not a sweep.
+- Generated Graphify output carries the old name in prose because it was built
+  before the rename — `graphify-out/` in this repo and in `KeyFlow`. It is
+  ignored, derived content; a graph refresh clears it. Nothing reads it as
+  configuration, so it is stale cache rather than a remnant.
+- Ignored runtime evidence under `.tao/` includes filenames like
+  `preflight-agentplaybook-rename-audit.json`. Those encode the *task slug* a
+  session was given, not the product name, and they are immutable run records.
+  Leave them.
 - Blog series (5 files under `~/Documents/KeyFlowVault/writing`) refers to the
   project by the old name. The published parts are a historical record; decide
   per file whether to update or leave.
