@@ -38,6 +38,10 @@ def _decide(payload: dict) -> tuple[int, str]:
     return code, buffer.getvalue()
 
 
+def _reason(out: str) -> str:
+    return json.loads(out)["hookSpecificOutput"]["permissionDecisionReason"]
+
+
 def _opt_in_project(base: Path) -> Path:
     project = base / "proj"
     (project / ".agentplaybook").mkdir(parents=True)
@@ -184,6 +188,31 @@ class ClaudePreToolGateTests(unittest.TestCase):
             _decide({"tool_name": "Write", "cwd": str(project), "session_id": "sX"})
 
             self.assertEqual(before, sorted(p.name for p in state.rglob("*")))
+
+    def test_deny_reason_names_the_actual_cause(self) -> None:
+        # Each cause has a different fix. Reporting "no fresh evidence" for a
+        # preflight that is present and fresh sends the reader hunting for a
+        # missing file instead of rerunning start.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            payload = {"tool_name": "Write", "cwd": str(project), "session_id": "s1"}
+
+            _, missing = _decide(payload)
+            self.assertIn("No preflight evidence", _reason(missing))
+
+            _write_preflight(project)
+            _, unstamped = _decide(payload)
+            self.assertIn("records no runtime session", _reason(unstamped))
+            self.assertIn("CLAUDE_CODE_SESSION_ID", _reason(unstamped))
+
+            _write_preflight(project, "another-session")
+            _, foreign = _decide(payload)
+            self.assertIn("belongs to a different session", _reason(foreign))
+
+            _write_preflight(project, "s1")
+            _age_preflight(project, gate.DEFAULT_MAX_AGE_SECONDS + 60)
+            _, stale = _decide(payload)
+            self.assertIn("older than the freshness window", _reason(stale))
 
     def test_deny_reason_uses_resolved_absolute_launcher_path(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

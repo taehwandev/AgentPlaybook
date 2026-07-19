@@ -153,10 +153,36 @@ def safe_session_id(session_id: str) -> str:
     return cleaned or "unknown-session"
 
 
-def deny_reason(root: Path) -> str:
+def deny_reason(root: Path, session_id: str = "") -> str:
+    """Explain the denial in terms of what is actually wrong with the evidence.
+
+    Reporting "no fresh evidence" when a stamped-but-foreign or unstamped
+    preflight is sitting right there sends the reader looking for a missing
+    file. Each cause has a different fix, so each gets its own sentence.
+    """
+    preflight = root / STATE_DIR / PREFLIGHT_NAME
+    recorded = recorded_session_id(root)
+    if evidence_mtime(root) is None:
+        cause = f"No preflight evidence at {preflight}."
+    elif not evidence_is_fresh(root):
+        cause = f"Preflight evidence at {preflight} is older than the freshness window."
+    elif not recorded:
+        cause = (
+            f"Preflight evidence at {preflight} records no runtime session, so it "
+            "cannot prove start ran in this session. This happens when the start hook "
+            "ran without CLAUDE_CODE_SESSION_ID in its environment; rerunning start "
+            "from a Bash tool call records it."
+        )
+    elif session_id and recorded != session_id:
+        cause = (
+            f"Preflight evidence at {preflight} belongs to a different session, so it "
+            "proves nothing about this one."
+        )
+    else:
+        cause = f"Preflight evidence at {preflight} does not satisfy the workflow entry gate."
     return (
         "AgentPlaybook: run the workflow start hook before editing files in this "
-        f"project. No fresh preflight evidence at {root / STATE_DIR / PREFLIGHT_NAME}. "
+        f"project. {cause} "
         f"Run `{stable_launcher_path()} start --project "
         f"{root} --rules <AGENTPLAYBOOK_ROOT> --command <route> --request \"<user "
         "request>\"`, read the route required_docs, then retry the edit. Set "
@@ -336,7 +362,7 @@ def decide(payload: dict) -> int:
         return allow()
     session_id = str(payload.get("session_id") or "")
     if not workflow_entry_allows(root, session_id):
-        return deny(deny_reason(root))
+        return deny(deny_reason(root, session_id))
     sprawl_reason = sprawl_deny(tool, payload, root, cwd, session_id)
     if sprawl_reason:
         return deny(sprawl_reason)

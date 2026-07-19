@@ -363,6 +363,14 @@ def write_early_bridge_failure(
     }
     write_json(evidence_path, evidence)
     print(f"Preflight evidence: {evidence_path}")
+    if not runtime_session():
+        # Silently writing an empty session leaves the Claude gate denying every
+        # edit later, far from the cause. Say it here, where start can be rerun.
+        print(
+            "WARNING: no runtime session id in this environment; the Claude edit gate "
+            "will deny edits until start runs with CLAUDE_CODE_SESSION_ID set.",
+            file=sys.stderr,
+        )
     print(f"FAIL: {failure}", file=sys.stderr)
     return 1
 
@@ -475,6 +483,14 @@ def run_preflight(args: argparse.Namespace, playbook_root: Path) -> int:
             failures.append(f"preflight gate ledger initialization failed: {error}")
 
     print(f"Preflight evidence: {evidence_path}")
+    if not runtime_session():
+        # Silently writing an empty session leaves the Claude gate denying every
+        # edit later, far from the cause. Say it here, where start can be rerun.
+        print(
+            "WARNING: no runtime session id in this environment; the Claude edit gate "
+            "will deny edits until start runs with CLAUDE_CODE_SESSION_ID set.",
+            file=sys.stderr,
+        )
     if route_payload:
         print(f"Route: {route_payload.get('command')} gates={route_payload.get('gates')}")
     print(f"VibeGuard overall: {vibeguard['overall']['status']}")
