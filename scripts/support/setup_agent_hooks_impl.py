@@ -20,6 +20,7 @@ from support.graphify_setup import (
 from support.permission_entries import (
     claude_legacy_permission_entries,
     claude_project_permission_entries,
+    codex_legacy_prefix_rule_entries,
     codex_prefix_rule_entries,
 )
 from support.project_type_detection import detect_project_permissions
@@ -91,11 +92,16 @@ def main() -> None:
     selected_runtimes = set(args.runtime)
     spill_available = _has_spill_setup_helper()
     results: list[dict] = []
-    launcher_configured = False
-
-    if _runtime_selected("claude", selected_runtimes) and _has_claude():
+    configure_claude_runtime = _runtime_selected("claude", selected_runtimes) and _has_claude()
+    configure_codex_runtime = _runtime_selected("codex", selected_runtimes) and _has_codex()
+    configure_agy_runtime = _runtime_selected("agy", selected_runtimes) and _has_agy()
+    launcher_configured = any(
+        (configure_claude_runtime, configure_codex_runtime, configure_agy_runtime)
+    )
+    if launcher_configured:
         results += ensure_stable_launcher(ROOT, dry_run)
-        launcher_configured = True
+
+    if configure_claude_runtime:
         results += configure_claude(
             dry_run,
             root=ROOT,
@@ -104,10 +110,10 @@ def main() -> None:
             spill_available=spill_available,
         )
 
-    if _runtime_selected("codex", selected_runtimes) and _has_codex():
+    if configure_codex_runtime:
         results += configure_codex(dry_run, root=ROOT)
 
-    if _runtime_selected("agy", selected_runtimes) and _has_agy():
+    if configure_agy_runtime:
         results += configure_agy(
             dry_run,
             root=ROOT,
@@ -236,7 +242,13 @@ def configure_codex(dry_run: bool, *, root: Path) -> list[dict]:
         required_phrases=runtime_bridge_required_phrases("Codex", "AGENTS.md"),
     )
     rules_target = Path.home() / ".codex" / "rules" / "default.rules"
-    rules_status = merge_codex_prefix_rules(rules_target, codex_prefix_rule_entries(SCRIPTS_DIR), dry_run)
+    scripts_dir = root / "scripts"
+    rules_status = merge_codex_prefix_rules(
+        rules_target,
+        codex_prefix_rule_entries(scripts_dir),
+        dry_run,
+        cleanup_entries=codex_legacy_prefix_rule_entries(scripts_dir),
+    )
     return [
         {
             "tool": "codex",
@@ -262,8 +274,8 @@ def configure_external_project(
 ) -> list[dict]:
     """Install AgentPlaybook + project-type-specific permissions for an external project.
 
-    Combines the standard project-level entries (AgentPlaybook scripts, git -C
-    wildcards) with entries detected from the project's build toolchain (Swift,
+    Combines portable project-level git and verification entries with entries
+    detected from the project's build toolchain (Swift,
     Node.js, Gradle, Rust, Go, Python) so that any parameter combination is
     covered after a single install run.
     """

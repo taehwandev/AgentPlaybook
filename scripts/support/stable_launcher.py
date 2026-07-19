@@ -201,6 +201,7 @@ def _find_root():
         [
             Path.home() / ".agent-playbook",
             Path.home() / "AgentPlaybook",
+            Path.home() / "git" / "AgentPlaybook",
             Path.home() / "Documents" / "KeyFlowVault" / "AgentPlaybook",
             Path.home() / "GitHub" / "AgentPlaybook",
         ]

@@ -13,7 +13,7 @@ from agent_project_types import INSTRUCTION_FILES, PROJECT_MARKERS, ProjectCandi
 from workflow_common import unique
 
 
-DEFAULT_SEARCH_ROOT_NAMES = ("Documents", "Developer", "GitHub", "Projects", "Downloads")
+DEFAULT_SEARCH_ROOT_NAMES = ("Documents", "Developer", "GitHub", "git", "Projects", "Downloads")
 GENERIC_PROJECT_NAMES = {
     "app",
     "api",
