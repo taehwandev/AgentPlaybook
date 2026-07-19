@@ -53,6 +53,8 @@ FINISH_NAME = "finish.json"
 SESSION_MARKER_DIR = "claude-pretool-gate"
 EDIT_ACTIVITY_SUFFIX = ".edited"
 BLOCKED_SUFFIX = ".stop-blocked"
+# Written by `finish`; see session_finished() for why finish.json alone is not enough.
+FINISHED_SUFFIX = ".finished"
 OPT_IN_FILES = ("AGENTS.md", "CLAUDE.md", "CODEX.md")
 OPT_IN_TOKEN = "agentplaybook"
 
@@ -137,12 +139,26 @@ def record_block(root: Path, session_id: str) -> None:
         pass
 
 
+def finished_marker(root: Path, session_id: str) -> Path:
+    return root / STATE_DIR / SESSION_MARKER_DIR / (safe_session_id(session_id) + FINISHED_SUFFIX)
+
+
 def session_finished(root: Path, session_id: str) -> bool:
     """True when a passing `finish` ran in this session.
 
-    `finish` stamps its session only when it records no failures, so a failed
-    finish leaves this gate closed instead of counting as completion.
+    `finish` writes a per-session record, and only when it found no failures, so
+    a failed finish leaves this gate closed instead of counting as completion.
+
+    The per-session record exists because `finish.json` is a single shared file:
+    any later finish -- another runtime, another session, a re-verification run
+    -- overwrites it and erases the proof that this session completed. Stamping
+    the session inside that file was not enough; observed live when a Codex
+    re-verification run replaced a passing Claude finish and this gate then
+    blocked completed work. The shared file is still accepted as a fallback for
+    a finish written before the per-session record existed.
     """
+    if finished_marker(root, session_id).exists():
+        return True
     try:
         payload = json.loads((root / STATE_DIR / FINISH_NAME).read_text(encoding="utf-8"))
     except (OSError, ValueError):

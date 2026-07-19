@@ -22,6 +22,13 @@ assert _SPEC and _SPEC.loader
 gate = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(gate)
 
+_FINISH_SPEC = importlib.util.spec_from_file_location(
+    "agent_finish_check_under_test", ROOT / "scripts" / "agent-finish-check.py"
+)
+assert _FINISH_SPEC and _FINISH_SPEC.loader
+finish_check = importlib.util.module_from_spec(_FINISH_SPEC)
+_FINISH_SPEC.loader.exec_module(finish_check)
+
 from support.claude_setup import _merge_claude_stop_gate
 from support.setup_config_files import read_json
 
@@ -121,6 +128,40 @@ class ClaudeStopGateTests(unittest.TestCase):
 
         self.assertEqual(0, code)
         self.assertEqual("", out)
+
+    def test_per_session_record_survives_a_clobbered_finish_file(self) -> None:
+        # Regression, observed live: a Codex re-verification run overwrote
+        # finish.json, erasing the stamp from a passing Claude finish, and this
+        # gate then blocked work that was properly completed.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _record_edit(project, "s1")
+            gate.finished_marker(project, "s1").write_text("", encoding="utf-8")
+            _write_finish(project)  # another agent's finish, no session stamp
+
+            code, out = _decide(_payload(project, "s1"))
+
+        self.assertEqual(0, code)
+        self.assertEqual("", out)
+
+    def test_finish_writes_the_per_session_record(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+
+            finish_check.record_session_finished(
+                project, {"runtime": "claude", "session_id": "s1"}
+            )
+
+            self.assertTrue(gate.finished_marker(project, "s1").exists())
+
+    def test_finish_records_nothing_without_a_session(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+
+            finish_check.record_session_finished(project, {})
+
+            marker_dir = project / ".agentplaybook" / gate.SESSION_MARKER_DIR
+            self.assertEqual([], list(marker_dir.iterdir()))
 
     def test_second_stop_without_new_edits_is_not_blocked_again(self) -> None:
         # A stop is not always a completion report: a session also stops to ask

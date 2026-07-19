@@ -195,6 +195,29 @@ def _report_finish_failures(
     return 1
 
 
+def record_session_finished(project: Path, session: dict[str, Any]) -> None:
+    """Leave a per-session record that this session finished cleanly.
+
+    `finish.json` is one shared file. A later finish -- another runtime, another
+    session, a re-verification run -- overwrites it, which erases the proof that
+    *this* session completed and leaves the Claude Stop gate blocking work that
+    was properly finished. Stamping the session was not enough on its own; the
+    record has to be one that a later run cannot clobber.
+    """
+    session_id = session.get("session_id") if isinstance(session, dict) else None
+    if not session_id:
+        return
+    safe = "".join(ch for ch in str(session_id) if ch.isalnum() or ch in "-_")
+    if not safe:
+        return
+    marker = project / ".agentplaybook" / "claude-pretool-gate" / f"{safe}.finished"
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("", encoding="utf-8")
+    except OSError:
+        pass
+
+
 def main() -> int:
     playbook_root = Path(__file__).resolve().parents[1]
     args = build_parser(playbook_root).parse_args()
@@ -285,6 +308,8 @@ def main() -> int:
     if not failures:
         result["runtime_session"] = runtime_session()
     write_json(output_path, result)
+    if not failures:
+        record_session_finished(project, result["runtime_session"])
     print_result(output_path, required_gates, overall, result)
 
     return _report_finish_failures(
