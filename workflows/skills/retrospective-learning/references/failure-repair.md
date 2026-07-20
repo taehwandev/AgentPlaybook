@@ -36,6 +36,14 @@ because a temporary instruction edit was reverted, keep the canonical restored
 document and regenerate the start/preflight capsule before resuming. Never
 reintroduce stale temporary guidance merely to match an earlier capsule hash.
 
+If an authorized concurrent writer advances `HEAD` or changes a required
+guidance document after startup, treat the capsule mismatch as real stale-input
+evidence rather than reverting the concurrent change. Re-read the current
+required guidance, revalidate the original task against the current worktree,
+regenerate the start/preflight capsule, and resume at the failed checkpoint.
+Record the observed old and current revisions in local evidence; do not weaken
+the capsule hash check or reuse evidence bound to the earlier revision.
+
 ## Executable Contract
 
 ```text
