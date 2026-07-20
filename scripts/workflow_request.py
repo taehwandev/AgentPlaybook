@@ -65,14 +65,62 @@ EXPLICIT_UNRESOLVED_PATTERNS = (
     r"\bnot\s+(?:yet\s+)?(?:answered|clarified|resolved)\b",
     r"\bstill\s+(?:needs?|requires?)\s+(?:clarification|questions?|answers?|resolution)\b",
     r"\bstill\s+(?:ambiguous|unclear|unresolved)\b",
-    r"(?<!\bno\s)\bunresolved\b",
     r"\bpending\s+(?:clarification|questions?|answers?|resolution)\b",
-    r"(?<!\bno\s)\bopen\s+(?:questions?|blockers?)\b",
-    r"(?<!\bno\s)\bblockers?\s+(?:remain|pending|open|unresolved)\b",
     r"\b아직\b.*(?:모호|불명확|불확실|미정|질문|확인|해결)",
     r"\b미해결\b",
     r"\b해결\s*(?:안|되지\s*않)",
 )
+# These three phrases mean the opposite of unresolved once a negator applies to
+# them, so they cannot live in EXPLICIT_UNRESOLVED_PATTERNS as bare matches.
+# The negator is not always the token immediately to the left, which is all a
+# fixed-width lookbehind such as `(?<!\bno\s)` can inspect: in a coordinated
+# clause ("no open questions or blockers remain") the "no" sits several tokens
+# earlier and was missed, so a sentence asserting that nothing is outstanding
+# was read as proof that blockers remain. Scan leftward across the whole clause
+# for the negator instead.
+NEGATABLE_UNRESOLVED_PATTERNS = (
+    r"\bunresolved\b",
+    r"\bopen\s+(?:questions?|blockers?)\b",
+    r"\bblockers?\s+(?:remain|pending|open|unresolved)\b",
+)
+# A negator only covers its own clause. Punctuation and contrastive
+# conjunctions end it, so "no docs changed, blockers remain" and "no open
+# questions but blockers remain" still register as genuinely unresolved.
+_UNRESOLVED_CLAUSE_BOUNDARY_RE = re.compile(
+    r"[.;:,()\[\]\n]|\b(?:but|however|though|although|yet|except|whereas)\b"
+)
+_UNRESOLVED_NEGATOR_RE = re.compile(r"\b(?:no|none|zero|without)\b")
+# Korean negation is post-positional ("블로커 없음"), so it is searched to the
+# right of the phrase within the same clause rather than to the left.
+_UNRESOLVED_KOREAN_NEGATOR_RE = re.compile(r"없")
+
+
+def _clause_bounds(text: str, start: int, end: int) -> tuple[int, int]:
+    """Return the clause span containing text[start:end]."""
+    clause_start = 0
+    for boundary in _UNRESOLVED_CLAUSE_BOUNDARY_RE.finditer(text, 0, start):
+        clause_start = boundary.end()
+    tail = _UNRESOLVED_CLAUSE_BOUNDARY_RE.search(text, end)
+    clause_end = tail.start() if tail else len(text)
+    return clause_start, clause_end
+
+
+def _has_explicit_unresolved_signal(text: str) -> bool:
+    return _matches(EXPLICIT_UNRESOLVED_PATTERNS, text) or _has_unnegated_unresolved_signal(text)
+
+
+def _has_unnegated_unresolved_signal(text: str) -> bool:
+    for pattern in NEGATABLE_UNRESOLVED_PATTERNS:
+        for match in re.finditer(pattern, text):
+            clause_start, clause_end = _clause_bounds(text, match.start(), match.end())
+            if _UNRESOLVED_NEGATOR_RE.search(text, clause_start, match.start()):
+                continue
+            if _UNRESOLVED_KOREAN_NEGATOR_RE.search(text, match.end(), clause_end):
+                continue
+            return True
+    return False
+
+
 CLASSIFICATION_RESOLVED_PATTERNS = (
     r"\bclear-exact\b",
     r"\bclear-scoped\b",
@@ -620,7 +668,7 @@ def classification_evidence_blocks_work(evidence: str) -> bool:
     normalized = " ".join(evidence.strip().lower().split())
     if not normalized:
         return True
-    if _matches(EXPLICIT_UNRESOLVED_PATTERNS, normalized):
+    if _has_explicit_unresolved_signal(normalized):
         return True
     return not _has_resolution_signal(normalized)
 
@@ -629,7 +677,7 @@ def _commit_evidence_allows_work(command: str, evidence: str) -> bool:
     if command not in {"commit", "git_commit"}:
         return False
     normalized = " ".join(evidence.strip().lower().split())
-    if not normalized or _matches(EXPLICIT_UNRESOLVED_PATTERNS, normalized):
+    if not normalized or _has_explicit_unresolved_signal(normalized):
         return False
     return _has_commit_action(evidence)
 
@@ -638,7 +686,7 @@ def _release_evidence_allows_work(command: str, evidence: str) -> bool:
     if command not in {"release", "ship"}:
         return False
     normalized = " ".join(evidence.strip().lower().split())
-    if not normalized or _matches(EXPLICIT_UNRESOLVED_PATTERNS, normalized):
+    if not normalized or _has_explicit_unresolved_signal(normalized):
         return False
     has_release_action = _matches(RELEASE_ACTION_PATTERNS, evidence, re.IGNORECASE)
     enough_context_without_action = _release_scope_signal_count(evidence) >= 3
@@ -666,7 +714,7 @@ def classification_evidence_requires_clarification(evidence: str) -> bool:
     if not normalized:
         return False
     has_unresolved_signal = _matches(UNRESOLVED_CLARIFICATION_PATTERNS, normalized)
-    has_explicit_unresolved = _matches(EXPLICIT_UNRESOLVED_PATTERNS, normalized)
+    has_explicit_unresolved = _has_explicit_unresolved_signal(normalized)
     return has_explicit_unresolved or (has_unresolved_signal and not _has_resolution_signal(normalized))
 
 

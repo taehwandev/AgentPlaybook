@@ -956,6 +956,56 @@ class FinishGatePolicyTests(unittest.TestCase):
 
         self.assertEqual([], failures)
 
+    def test_documentation_impact_accepts_negated_durable_change_list(self) -> None:
+        # Negated durable-change statements must read as negated. Scrubbing the
+        # no-durable reasons as plain substrings failed two ways: a shorter
+        # entry deleted the prefix of a longer one and left an orphaned verb
+        # ("no workflow policy changed" -> " changed") that paired with any
+        # later noun, and only the first item of a coordinated "no A, B, or C
+        # changed" list was ever removed.
+        for reason in (
+            "no durable behavior, no public contract, no operator action, "
+            "no acceptance criteria, no workflow policy changed; "
+            "workflow_gate_policy.py already documents the retrospective-check "
+            "requirement the script was fixed to match",
+            "no durable behavior, public contract, workflow policy, or "
+            "acceptance criteria changed",
+        ):
+            with self.subTest(reason=reason):
+                failures = validate_gate_evidence(
+                    {
+                        DOCUMENTATION_IMPACT_GATE: (
+                            "pre-code/pre-edit artifact selection: workflow card; "
+                            "impact decision: not applicable; reason: " + reason
+                        )
+                    },
+                    [DOCUMENTATION_IMPACT_GATE],
+                )
+
+                self.assertEqual([], failures)
+
+        # Claiming no-docs while naming a real durable change must still fail.
+        for reason in (
+            "no durable behavior; updated the public contract and revised "
+            "acceptance criteria",
+            "no durable behavior, updated the public contract",
+            "no durable behavior but we changed the workflow policy",
+        ):
+            with self.subTest(durable=reason):
+                failures = validate_gate_evidence(
+                    {
+                        DOCUMENTATION_IMPACT_GATE: (
+                            "pre-code/pre-edit artifact selection: workflow card; "
+                            "impact decision: not applicable; reason: " + reason
+                        )
+                    },
+                    [DOCUMENTATION_IMPACT_GATE],
+                )
+
+                self.assertTrue(
+                    any("cannot use not-applicable/no-docs" in failure for failure in failures)
+                )
+
     def test_documentation_impact_rejects_no_docs_for_requirements_change(self) -> None:
         failures = validate_gate_evidence(
             {

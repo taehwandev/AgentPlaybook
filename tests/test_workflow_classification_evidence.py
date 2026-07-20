@@ -442,6 +442,37 @@ class ClassificationEvidenceTests(unittest.TestCase):
             )
         )
 
+    def test_coordinated_negation_of_blockers_does_not_block_work(self) -> None:
+        # A negator does not have to be the token immediately left of the
+        # phrase it negates. In a coordinated clause the "no" sits several
+        # tokens earlier, and a fixed-width lookbehind could not see it, so
+        # evidence stating that nothing is outstanding was read as proof that
+        # blockers remain.
+        self.assertIsNone(
+            classified_route_block_reason(
+                "bugfix",
+                "scope clarified: no open questions or blockers remain",
+            )
+        )
+
+        self.assertIsNone(
+            classified_route_block_reason(
+                "bugfix",
+                "scope clarified: no unresolved questions or open blockers",
+            )
+        )
+
+        # A genuine assertion that work is still outstanding must still block,
+        # including when an unrelated earlier clause happens to contain "no".
+        for unresolved in (
+            "scope clarified: blockers remain",
+            "scope clarified: two blockers remain open",
+            "scope clarified: no docs changed, blockers remain",
+            "scope clarified: no open questions but blockers remain",
+        ):
+            with self.subTest(unresolved=unresolved):
+                self.assertIsNotNone(classified_route_block_reason("bugfix", unresolved))
+
     def test_question_resolution_route_allows_unresolved_classification_evidence(self) -> None:
         gate_signals: list[dict[str, str]] = []
         missed_gates: list[str] = []

@@ -316,9 +316,59 @@ def _unchanged_evidence_is_grounded(text: str) -> bool:
     )
 
 
+# A change verb, used both to detect a durable claim and to spot the point
+# where a coordinated list stops being part of a negated span.
+_CHANGE_VERB = r"(?:changed?|updated?|added?|removed?|revised?|created?|new)"
+# A negator governs everything up to the end of its clause, so the whole span
+# it covers is masked before durable-change matching runs. Scrubbing the
+# negated phrases as plain substrings instead was wrong twice over:
+#   (a) it was order-dependent -- the shorter "no workflow policy" ran before
+#       the longer "no workflow policy changed" and deleted its prefix, leaving
+#       an orphaned " changed" that then paired with any unrelated noun later
+#       in the sentence; and
+#   (b) it only ever removed the first item of a coordinated list, so "no A, B,
+#       or C changed" left B and C reading as positive assertions of change.
+# Masking the negator's clause handles both, and the remaining substring scrub
+# (longest phrase first, so no entry can shadow another) still covers the
+# reasons that carry no leading negator, such as "mechanical" or "answer-only".
+_DURABLE_NEGATOR_RE = re.compile(r"\b(?:no|without)\b")
+# Punctuation and contrastive conjunctions end a negated clause. A comma or
+# "and"/"or" normally continues a coordinated list inside the same negation,
+# but when it introduces a change verb or a new determined subject it starts a
+# fresh positive assertion ("not applicable, updated the public contract"),
+# which must stay visible to the durable-change patterns.
+_DURABLE_NEGATION_END_RE = re.compile(
+    r"[.;()\[\]\n]"
+    r"|\b(?:but|however|though|although|yet|except|whereas)\b"
+    r"|(?:,|\band\b|\bor\b)\s+(?:" + _CHANGE_VERB + r"\b|(?:the|a|an|this|that|we|i)\b)"
+)
+# Korean negation is post-positional ("동작 변경 없음"), so its scope is masked
+# backwards from the negator to the start of the clause.
+_DURABLE_KOREAN_NEGATOR_RE = re.compile(r"없(?:음|이|는|다|었|습니다)?")
+_DURABLE_KOREAN_CLAUSE_START_RE = re.compile(r"[.;:,()\[\]\n]")
+
+
+def _mask_negated_spans(text: str) -> str:
+    chars = list(text)
+
+    def blank(start: int, end: int) -> None:
+        for index in range(start, end):
+            chars[index] = " "
+
+    for match in _DURABLE_NEGATOR_RE.finditer(text):
+        end_match = _DURABLE_NEGATION_END_RE.search(text, match.end())
+        blank(match.start(), end_match.start() if end_match else len(text))
+    for match in _DURABLE_KOREAN_NEGATOR_RE.finditer(text):
+        clause_start = 0
+        for boundary in _DURABLE_KOREAN_CLAUSE_START_RE.finditer(text, 0, match.start()):
+            clause_start = boundary.end()
+        blank(clause_start, match.end())
+    return "".join(chars)
+
+
 def _has_durable_doc_change_signal(text: str) -> bool:
-    searchable = text
-    for phrase in NO_DURABLE_DOC_REASONS:
+    searchable = _mask_negated_spans(text)
+    for phrase in sorted(NO_DURABLE_DOC_REASONS, key=len, reverse=True):
         searchable = searchable.replace(phrase, "")
     return any(re.search(pattern, searchable) for pattern in DURABLE_DOC_CHANGE_PATTERNS)
 
