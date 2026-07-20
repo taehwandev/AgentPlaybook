@@ -21,12 +21,11 @@ from support.setup_config_files import merge_permissions_allow, quote, read_json
 # filename. Keying on the launcher name means a renamed launcher stops matching
 # the entry installed under the old name, so the stale hook survives and the
 # runtime ends up invoking both.
+# Matches both the current advisory command and the retired --request-classified
+# spelling, so an install that predates the advisory route is replaced instead of
+# left running beside it.
 _BASELINE_COMMAND_RE = re.compile(
-    r"(?:workflow\.py.*route|workflow\s+route).*triage.*--request-classified"
-)
-_CLASSIFICATION_EVIDENCE = (
-    "Claude UserPromptSubmit hook records safe request-intake evidence for "
-    "workflow label setup; no prompt content is passed."
+    r"(?:workflow\.py.*route|workflow\s+route).*triage.*(?:--advisory|--request-classified)"
 )
 _PRETOOL_GATE_MATCHER = "Edit|Write|MultiEdit|NotebookEdit"
 _PRETOOL_GATE_ALIAS = "claude-pretool-gate"
@@ -42,11 +41,16 @@ def configure_claude(
     spill_available: bool = True,
 ) -> list[dict]:
     target = Path.home() / ".claude" / "settings.json"
+    # This hook fires on every prompt and never sees the prompt text, so it has
+    # no request to classify and nothing to assert about intake. It used to say
+    # --request-classified, which claimed the request was already resolved and
+    # was exactly the self-asserting bypass that flag no longer allows. The
+    # advisory route emits the same listing and label context while satisfying
+    # no downstream gate.
     baseline_cmd = (
         f"TAO_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude {quote(str(launcher_path))}"
         " workflow"
-        " route triage --request-classified"
-        f" --classification-evidence {quote(_CLASSIFICATION_EVIDENCE)}"
+        " route triage --advisory"
     )
     results = []
 

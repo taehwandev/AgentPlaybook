@@ -56,7 +56,7 @@ from agent_review_hook import review_hook, review_vibeguard_command, workflow_va
 from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
-from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
+from support.claude_setup import _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
 from support.runtime_bridge import (
     CODEX_DISPATCH_BRIDGE_PHRASE,
@@ -298,6 +298,11 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
                 "workflow-setup",
                 "--project",
                 str(ROOT),
+                # --request-classified no longer suppresses classification, so the
+                # real request must be supplied; the concern still has to come out
+                # of the classification evidence, which is where the scope is named.
+                "--request",
+                "apply the confirmed change in scripts/workflow_doc_surfaces.py",
                 "--request-classified",
                 "--classification-evidence",
                 "answered direct question; separate actionable clear-scoped Graphify project install and readiness workflow",

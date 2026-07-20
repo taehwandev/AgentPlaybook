@@ -56,7 +56,7 @@ from agent_review_hook import review_hook, review_vibeguard_command, workflow_va
 from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
-from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
+from support.claude_setup import _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
 from support.runtime_bridge import (
     CODEX_DISPATCH_BRIDGE_PHRASE,
@@ -535,6 +535,9 @@ class ClassificationEvidenceTests(unittest.TestCase):
         self.assertEqual(2, missing.returncode)
         self.assertIn("--classification-evidence", missing.stderr)
 
+        # Evidence alone is no longer enough. Without a parent capsule there is
+        # nothing to exempt and no request to classify, so this must fail loudly
+        # rather than sail through an unevaluated route_block_reason(cmd, None).
         supplied = subprocess.run(
             [
                 sys.executable,
@@ -554,18 +557,52 @@ class ClassificationEvidenceTests(unittest.TestCase):
             check=False,
         )
 
-        self.assertEqual(0, supplied.returncode, supplied.stderr)
-        route = json.loads(supplied.stdout)
+        self.assertEqual(2, supplied.returncode)
+        self.assertIn("ready and valid execution capsule", supplied.stderr)
+        self.assertIn('--request "<USER_REQUEST>"', supplied.stderr)
+        self.assertIn("--advisory", supplied.stderr)
+
+        # The same route with the real request text classifies and proceeds.
+        with_request = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "route",
+                "review",
+                "--project",
+                str(ROOT),
+                "--request",
+                "review the pending changes in scripts/workflow.py",
+                "--request-classified",
+                "--classification-evidence",
+                "direct question was answered and user asked for review",
+                "--format",
+                "json",
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(0, with_request.returncode, with_request.stderr)
+        route = json.loads(with_request.stdout)
         self.assertTrue(route["request_classified"])
         self.assertEqual("direct question was answered and user asked for review", route["classification_evidence"])
 
-    def test_classified_confirmation_uses_evidence_instead_of_reclassifying_reply(self) -> None:
+    def test_classified_confirmation_needs_a_capsule_to_skip_reclassifying(self) -> None:
+        # A short confirmation is only exempt from reclassification when a
+        # parent capsule proves a parent resolved the request; see
+        # ClassifiedExemptionCapsuleTests for the capsule-backed true positive.
         completed = subprocess.run(
             [
                 sys.executable,
                 str(ROOT / "scripts" / "workflow.py"),
                 "route",
                 "review",
+                "--project",
+                str(ROOT),
                 "--request",
                 "응",
                 "--request-classified",
@@ -581,8 +618,8 @@ class ClassificationEvidenceTests(unittest.TestCase):
             check=False,
         )
 
-        self.assertEqual(0, completed.returncode, completed.stderr)
-        self.assertTrue(json.loads(completed.stdout)["request_classified"])
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("needs clarification before route `review`", completed.stderr)
 
     def test_request_classified_unresolved_ambiguity_cannot_open_work_route(self) -> None:
         for evidence in (
@@ -605,6 +642,10 @@ class ClassificationEvidenceTests(unittest.TestCase):
                         str(ROOT / "scripts" / "workflow.py"),
                         "route",
                         "feature",
+                        # The request now always classifies; the evidence check
+                        # is what has to reject these, not a skipped classifier.
+                        "--request",
+                        "update the login screen button in src/login.tsx",
                         "--request-classified",
                         "--classification-evidence",
                         evidence,
@@ -627,6 +668,8 @@ class ClassificationEvidenceTests(unittest.TestCase):
         triage = subprocess.run(
             base_command + [
                 "triage",
+                "--request",
+                "make it better",
                 "--request-classified",
                 "--classification-evidence",
                 "vague-action grill_me: true needs clarification",
@@ -655,6 +698,8 @@ class ClassificationEvidenceTests(unittest.TestCase):
                 resolved = subprocess.run(
                     base_command + [
                         "feature",
+                        "--request",
+                        "update the login screen button in src/login.tsx",
                         "--request-classified",
                         "--classification-evidence",
                         evidence,
@@ -713,6 +758,225 @@ class ClassificationEvidenceTests(unittest.TestCase):
         )
 
         self.assertTrue(any("unresolved issue" in failure for failure in failures))
+
+
+class ClassifiedExemptionCapsuleTests(unittest.TestCase):
+    """`--request-classified` is honored only with a valid parent capsule.
+
+    The flag used to be self-asserting: passing it skipped `classify_request`,
+    which left `route_block_reason(command, None)` returning immediately. The
+    clarify-first/Grill-Me check was not satisfied, it was never evaluated, so
+    any caller could open any work route by describing itself as classified.
+    """
+
+    # Real user request that opened the session where this defect was found.
+    GRILL_ME_REQUEST = "agent를 만들었는데 이게 실제로 잘 동작하는지 검증해줄래?"
+    WORKER_ACKNOWLEDGEMENT = "응"
+    RESOLVED_EVIDENCE = "answered direct question; separate actionable clear-scoped review"
+
+    def setUp(self) -> None:
+        self.temporary_directory = tempfile.TemporaryDirectory()
+        root = Path(self.temporary_directory.name)
+        self.project = root / "project"
+        self.rules = root / "rules"
+        self._init_repository(self.project, {"app.txt": "app\n"})
+        self._init_repository(self.rules, {"guide.md": "# Guide\n"})
+        self.route = {
+            "command": "review",
+            "platform": None,
+            "concerns": [],
+            "docs": ["guide.md"],
+            "required_docs": ["guide.md"],
+            "reference_docs": [],
+            "gates": ["verify"],
+            "missing": [],
+            "blocking": [],
+        }
+        self.evidence_path = self.project / ".tao" / "preflight.json"
+        self.evidence_path.parent.mkdir(parents=True, exist_ok=True)
+        self.evidence_path.write_text(
+            json.dumps(
+                {
+                    "project": str(self.project.resolve()),
+                    "rules": str(self.rules.resolve()),
+                    "request_intake": {
+                        "request": self.WORKER_ACKNOWLEDGEMENT,
+                        "request_classified": True,
+                        "classification_evidence": self.RESOLVED_EVIDENCE,
+                    },
+                    "route": self.route,
+                }
+            ),
+            encoding="utf-8",
+        )
+        self._write_ledger()
+
+    def tearDown(self) -> None:
+        self.temporary_directory.cleanup()
+
+    def _create_parent_capsule(self) -> None:
+        from agent_execution_capsule import refresh_execution_capsule
+
+        capsule = refresh_execution_capsule(
+            self.project, self.rules, self.evidence_path, self.route
+        )
+        self.assertEqual("ready", capsule["phase"])
+
+    def _route(self, *extra: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "route",
+                "review",
+                "--project",
+                str(self.project),
+                "--rules",
+                str(self.rules),
+                "--format",
+                "json",
+                *extra,
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+    def test_valid_parent_capsule_still_skips_reclassifying_a_short_reply(self) -> None:
+        # The case the exemption exists for: a worker holds only "응" as request
+        # identity, and reclassifying it would falsely reopen Grill-Me after the
+        # parent already resolved the request. This must keep working.
+        self.assertTrue(classify_request(self.WORKER_ACKNOWLEDGEMENT)["grill_me"])
+        self._create_parent_capsule()
+
+        completed = self._route(
+            "--request",
+            self.WORKER_ACKNOWLEDGEMENT,
+            "--request-classified",
+            "--classification-evidence",
+            self.RESOLVED_EVIDENCE,
+        )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertTrue(json.loads(completed.stdout)["request_classified"])
+
+    def test_without_a_parent_capsule_the_classifier_runs_on_the_request(self) -> None:
+        self.assertTrue(classify_request(self.WORKER_ACKNOWLEDGEMENT)["grill_me"])
+
+        completed = self._route(
+            "--request",
+            self.WORKER_ACKNOWLEDGEMENT,
+            "--request-classified",
+            "--classification-evidence",
+            self.RESOLVED_EVIDENCE,
+        )
+
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("needs clarification before route `review`", completed.stderr)
+        self.assertIn("grill_me: true", completed.stderr)
+
+    def test_real_grill_me_request_cannot_be_waved_through_by_the_flag(self) -> None:
+        classification = classify_request(self.GRILL_ME_REQUEST)
+        self.assertEqual("vague-action", classification["clarity"])
+        self.assertTrue(classification["grill_me"])
+
+        completed = self._route(
+            "--request",
+            self.GRILL_ME_REQUEST,
+            "--request-classified",
+            "--classification-evidence",
+            "scope clarified: blockers resolved, no blockers remain.",
+        )
+
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("Grill-Me", completed.stderr)
+
+    def test_classified_without_a_request_or_capsule_is_rejected(self) -> None:
+        # The silent hole: route_block_reason(command, None) returned instantly,
+        # so this combination bypassed every check while looking like a pass.
+        completed = self._route(
+            "--request-classified",
+            "--classification-evidence",
+            "scope clarified: blockers resolved, no blockers remain.",
+        )
+
+        self.assertEqual(2, completed.returncode)
+        self.assertEqual("", completed.stdout.strip())
+        self.assertIn("ready and valid execution capsule", completed.stderr)
+        self.assertIn('--request "<USER_REQUEST>"', completed.stderr)
+        self.assertIn("--advisory", completed.stderr)
+
+    def test_advisory_route_lists_docs_without_asserting_request_intake(self) -> None:
+        completed = self._route("--advisory")
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        route = json.loads(completed.stdout)
+        self.assertTrue(route["advisory"])
+        self.assertFalse(route["request_classified"])
+        self.assertEqual("", route["classification_evidence"])
+        self.assertTrue(
+            any("satisfies no downstream gate" in note for note in route["notes"])
+        )
+
+    def test_advisory_cannot_be_combined_with_request_classified(self) -> None:
+        completed = self._route(
+            "--advisory",
+            "--request-classified",
+            "--classification-evidence",
+            "scope clarified: blockers resolved.",
+        )
+
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("cannot be combined", completed.stderr)
+
+    def _write_ledger(self) -> None:
+        from agent_route_state import preflight_evidence_sha256, route_fingerprint
+
+        ledger_path = gate_evidence_path_for_preflight(self.evidence_path)
+        ledger_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "created_at": "2026-07-14T00:00:00+00:00",
+                    "preflight_evidence": str(self.evidence_path),
+                    "preflight_evidence_sha256": preflight_evidence_sha256(self.evidence_path),
+                    "route_fingerprint": route_fingerprint(self.route),
+                    "entries": [
+                        {
+                            "created_at": "2026-07-14T00:00:00+00:00",
+                            "gate": "request intake",
+                            "status": "SUCCESS",
+                            "source": "start",
+                            "evidence": "preflight request intake completed",
+                            "fields": {"classification_evidence": self.RESOLVED_EVIDENCE},
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def _init_repository(self, path: Path, files: dict) -> None:
+        path.mkdir(parents=True)
+        (path / ".gitignore").write_text(".tao/\n", encoding="utf-8")
+        for relative, content in files.items():
+            (path / relative).write_text(content, encoding="utf-8")
+        for command in (
+            ("init", "-q"),
+            ("config", "user.email", "tests@example.invalid"),
+            ("config", "user.name", "Tao Agent OS Tests"),
+            ("add", "-A"),
+            ("commit", "-qm", "initial"),
+        ):
+            subprocess.run(
+                ["git", *command],
+                cwd=path,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
 
 
 if __name__ == "__main__":

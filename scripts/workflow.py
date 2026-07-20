@@ -21,12 +21,14 @@ from workflow_dispatch import (
     execute_dispatch_manifest,
     print_dispatch_manifest,
 )
+from workflow_classified_exemption import (
+    classified_intake_decision,
+    parent_evidence_path,
+)
 from workflow_request import (
-    classified_route_block_reason,
     classify_request,
     infer_concerns_from_request,
     print_classification,
-    route_block_reason,
 )
 from workflow_output import print_markdown
 from workflow_route import resolve_docs
@@ -68,6 +70,23 @@ def build_parser() -> argparse.ArgumentParser:
     route.add_argument(
         "--classification-evidence",
         help="Required with --request-classified; describes the prior classification or answer-first handling.",
+    )
+    route.add_argument("--rules", type=Path, default=ROOT)
+    route.add_argument(
+        "--parent-evidence",
+        type=Path,
+        help=(
+            "Parent preflight evidence whose execution capsule may honor "
+            "--request-classified. Defaults to <project>/.tao/preflight.json."
+        ),
+    )
+    route.add_argument(
+        "--advisory",
+        action="store_true",
+        help=(
+            "Print the document listing and label context without asserting request "
+            "intake. An advisory route satisfies no downstream gate."
+        ),
     )
     route.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
@@ -171,45 +190,59 @@ def print_request_classification(args: argparse.Namespace) -> int:
 
 
 def print_route(args: argparse.Namespace) -> int:
+    advisory = bool(getattr(args, "advisory", False))
+    if advisory and args.request_classified:
+        print(
+            "Route --advisory does not assert request intake, so it cannot be combined "
+            "with --request-classified. Drop one of the two flags.",
+            file=sys.stderr,
+        )
+        return 2
     if args.request_classified and not args.classification_evidence:
         print(
             "Route --request-classified requires --classification-evidence so request intake cannot be skipped silently.",
             file=sys.stderr,
         )
         return 2
-    # A classified handoff deliberately keeps the original request for identity
-    # binding, even when that text is a short confirmation such as "yes".  Its
-    # classification evidence, not a second classification of that reply, is
-    # the authority for opening the selected work route.
-    request_classification = (
-        None
-        if args.request_classified
-        else (classify_request(args.request) if args.request else None)
-    )
-    if not request_classification and not args.request_classified:
-        print(
-            "Route requires request intake evidence. Pass --request \"<USER_REQUEST>\" "
-            "or --request-classified after answering/classifying the current request.",
-            file=sys.stderr,
+    project_root = Path(args.project).resolve() if args.project else None
+    if advisory:
+        # An advisory route only lists documents and writes label context. It
+        # never claims the request was classified, so it must not reach the
+        # intake decision at all.
+        request_classification = None
+    else:
+        request_classification, block_reason = classified_intake_decision(
+            args.command,
+            args.request,
+            args.request_classified,
+            args.classification_evidence or "",
+            project=project_root,
+            rules=getattr(args, "rules", None),
+            parent_evidence=parent_evidence_path(
+                project_root, getattr(args, "parent_evidence", None)
+            ),
         )
-        return 2
+        if block_reason:
+            print(block_reason, file=sys.stderr)
+            if request_classification:
+                print(
+                    f"Classification: {request_classification['clarity']} / "
+                    f"response_mode: {request_classification['response_mode']} / "
+                    f"grill_me: {str(request_classification['grill_me']).lower()}",
+                    file=sys.stderr,
+                )
+            return 2
 
-    block_reason = route_block_reason(args.command, request_classification)
-    if not block_reason and args.request_classified:
-        block_reason = classified_route_block_reason(args.command, args.classification_evidence or "")
-    if block_reason:
-        print(block_reason, file=sys.stderr)
-        if request_classification:
-            print(
-                f"Classification: {request_classification['clarity']} / "
-                f"response_mode: {request_classification['response_mode']} / "
-                f"grill_me: {str(request_classification['grill_me']).lower()}",
-                file=sys.stderr,
-            )
-        return 2
-
-    intent_text = args.request or args.classification_evidence or ""
+    intent_text = "" if advisory else (args.request or args.classification_evidence or "")
     inferred_concerns = infer_concerns_from_request(intent_text)
+    if args.request_classified and args.classification_evidence and args.request:
+        # Classification evidence describes the resolved scope, and it used to be
+        # the only intent text available. Now that a request is always required
+        # alongside the flag, keep inferring concerns from the evidence too so a
+        # scope named only there does not silently drop its route concern.
+        inferred_concerns = unique(
+            [*inferred_concerns, *infer_concerns_from_request(args.classification_evidence)]
+        )
     concerns = unique([*args.concern, *inferred_concerns])
     newly_inferred = [concern for concern in inferred_concerns if concern not in args.concern]
 
@@ -222,8 +255,17 @@ def print_route(args: argparse.Namespace) -> int:
         classification_evidence=args.classification_evidence or "",
         request_text=intent_text,
         surface_paths=args.surface_path,
-        project_root=Path(args.project).resolve() if args.project else None,
+        project_root=project_root,
     )
+    if advisory:
+        route["advisory"] = True
+        notes = route.get("notes")
+        if isinstance(notes, list):
+            notes.append(
+                "Advisory listing only: this route asserted no request intake and "
+                "satisfies no downstream gate. Rerun with `--request \"<USER_REQUEST>\"` "
+                "before editing, reviewing, or reporting completion."
+            )
     if newly_inferred:
         route["inferred_concerns"] = newly_inferred
         notes = route.get("notes")
@@ -244,18 +286,6 @@ def print_dispatch(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 2
-    request_classification = (
-        None if args.request_classified else classify_request(args.request)
-    )
-    block_reason = (
-        classified_route_block_reason(args.command, args.classification_evidence)
-        if args.request_classified
-        else route_block_reason(args.command, request_classification)
-    )
-    if block_reason:
-        print(block_reason, file=sys.stderr)
-        return 2
-
     project = Path(args.project).resolve()
     rules = args.rules.expanduser().resolve()
     evidence_path = (
@@ -263,6 +293,19 @@ def print_dispatch(args: argparse.Namespace) -> int:
         if args.evidence
         else project / ".tao" / "preflight.json"
     )
+    request_classification, block_reason = classified_intake_decision(
+        args.command,
+        args.request,
+        args.request_classified,
+        args.classification_evidence,
+        project=project,
+        rules=rules,
+        parent_evidence=evidence_path,
+    )
+    if block_reason:
+        print(block_reason, file=sys.stderr)
+        return 2
+
     parent_identity_matches = _preflight_identity_matches(
         evidence_path,
         project=project,

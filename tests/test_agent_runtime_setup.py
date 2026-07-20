@@ -57,7 +57,6 @@ from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
 from support.claude_setup import (
-    _CLASSIFICATION_EVIDENCE,
     _merge_claude_pre_tool_gate,
     _merge_claude_user_prompt_submit,
 )
@@ -167,7 +166,7 @@ class RuntimeSetupTests(unittest.TestCase):
         else:
             os.environ["TAO_STATE_HOME"] = self._old_state_home
 
-    def test_claude_user_prompt_hook_requires_classification_evidence(self) -> None:
+    def test_claude_user_prompt_hook_replaces_request_classified_install(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "settings.json"
             old_command = (
@@ -186,8 +185,7 @@ class RuntimeSetupTests(unittest.TestCase):
             }))
             new_command = (
                 f"TAO_HOOK_SOFT_FAIL=1 SPILL_AI_TOOL=claude '{stable_launcher_path()}' workflow "
-                "route triage --request-classified --classification-evidence "
-                f"'{_CLASSIFICATION_EVIDENCE}'"
+                "route triage --advisory"
             )
 
             status = _merge_claude_user_prompt_submit(target, new_command, dry_run=False)

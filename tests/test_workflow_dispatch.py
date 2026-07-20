@@ -56,7 +56,7 @@ from agent_review_hook import review_hook, review_vibeguard_command, workflow_va
 from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
-from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
+from support.claude_setup import _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
 from support.runtime_bridge import (
     CODEX_DISPATCH_BRIDGE_PHRASE,
@@ -480,7 +480,11 @@ class WorkflowDispatchTests(unittest.TestCase):
                 partial_result_id="partial-1",
                 request_classified=True,
                 classification_evidence="clear-scoped task blockers resolved",
-                request_classification={"work_kind": "task", "classification": "clear"},
+                request_classification={
+                    "clarity": "clear-scoped",
+                    "question_drill": False,
+                    "recommended_route": "task",
+                },
                 route={"required_docs": ["AGENTS.md"], "gates": []},
             )
             self.assertEqual("partial-1", manifest["partial_result_id"])
@@ -676,7 +680,13 @@ class WorkflowDispatchTests(unittest.TestCase):
 
         execute.assert_called_once()
 
-    def test_dispatch_accepts_parent_classification_for_answered_question(self) -> None:
+    def test_dispatch_self_asserted_classification_cannot_open_a_question_request(self) -> None:
+        # --request-classified used to replace the classifier's verdict with a
+        # regex over free text the caller wrote about itself, so a direct
+        # question could open a work route just by claiming it was answered.
+        # Without a valid parent capsule the classifier's verdict now stands;
+        # a caller with a genuinely separate actionable request must dispatch
+        # that request's text, not the question it already answered.
         args = build_parser().parse_args(
             [
                 "dispatch",
@@ -692,7 +702,7 @@ class WorkflowDispatchTests(unittest.TestCase):
         )
 
         with patch("workflow.execute_dispatch_manifest") as execute:
-            self.assertEqual(0, print_dispatch(args))
+            self.assertEqual(2, print_dispatch(args))
 
         execute.assert_not_called()
 
@@ -942,7 +952,9 @@ class WorkflowDispatchTests(unittest.TestCase):
             )
 
     def test_dispatch_reuses_classified_parent_only_for_exact_request_and_evidence(self) -> None:
-        request = "apply the resolved runtime workflow change"
+        # Both requests must classify cleanly on their own: --request-classified
+        # no longer suppresses classification without a valid parent capsule.
+        request = "apply the resolved runtime workflow change in scripts/workflow_route.py"
         classification = "answered direct question; separate actionable clear-scoped workflow setup"
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
@@ -999,7 +1011,10 @@ class WorkflowDispatchTests(unittest.TestCase):
                 self.assertEqual(
                     0,
                     print_dispatch(
-                        dispatch_args("a different resolved workflow change", classification)
+                        dispatch_args(
+                            "a different resolved workflow change in scripts/workflow_catalog.py",
+                            classification,
+                        )
                     ),
                 )
             self.assertFalse(build.call_args.kwargs["parent_context_reusable"])

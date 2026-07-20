@@ -54,7 +54,7 @@ from agent_review_hook import review_hook, review_vibeguard_command, workflow_va
 from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
-from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
+from support.claude_setup import _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
 from support.runtime_bridge import (
     CODEX_DISPATCH_BRIDGE_PHRASE,
@@ -161,7 +161,12 @@ class FinishGatePolicyTests(unittest.TestCase):
             CONCERNS["documentation"],
         )
 
-    def test_preflight_keeps_resolved_classification_for_short_confirmation(self) -> None:
+    def test_preflight_reclassifies_short_confirmation_without_a_parent_capsule(self) -> None:
+        # --request-classified is honored only when a valid parent execution
+        # capsule proves a parent already resolved the request. Preflight has no
+        # such capsule here, so "응" is classified like any other request and its
+        # Grill-Me verdict stands. The capsule-backed true positive lives in
+        # tests/test_workflow_classification_evidence.py.
         args = SimpleNamespace(
             command="refactor",
             request="응",
@@ -177,10 +182,30 @@ class FinishGatePolicyTests(unittest.TestCase):
 
         route, error, returncode = agent_preflight.route_payload(args, {})
 
-        self.assertEqual("", error)
-        self.assertEqual(0, returncode)
-        self.assertIsNotNone(route)
-        self.assertEqual("refactor", route["command"])
+        self.assertIsNone(route)
+        self.assertEqual(2, returncode)
+        self.assertIn("needs clarification before route `refactor`", error)
+
+    def test_preflight_classified_without_request_or_capsule_is_rejected(self) -> None:
+        # Today's fall-through returned None for the classification and then
+        # sailed through route_block_reason(command, None) without blocking.
+        args = SimpleNamespace(
+            command="refactor",
+            request=None,
+            request_classified=True,
+            classification_evidence="scope clarified: blockers resolved.",
+            platform=[],
+            concern=[],
+            surface_path=[],
+            project=ROOT,
+        )
+
+        route, error, returncode = agent_preflight.route_payload(args, {})
+
+        self.assertIsNone(route)
+        self.assertEqual(2, returncode)
+        self.assertIn("ready and valid execution capsule", error)
+        self.assertIn('--request "<USER_REQUEST>"', error)
 
     def test_analysis_preflight_routes_once_and_defers_capsule_creation(self) -> None:
         route = resolve_docs("analysis", None, [], request_classified=True)

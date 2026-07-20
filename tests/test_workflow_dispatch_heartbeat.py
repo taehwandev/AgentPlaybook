@@ -25,7 +25,11 @@ class DispatchHeartbeatTests(unittest.TestCase):
                 work_kind="analysis",
                 request_classified=True,
                 classification_evidence="clear-scoped analysis blockers resolved",
-                request_classification={"work_kind": "analysis", "classification": "clear"},
+                request_classification={
+                    "clarity": "clear-scoped",
+                    "question_drill": False,
+                    "recommended_route": "task",
+                },
                 route={"required_docs": ["AGENTS.md"], "gates": []},
             )
             self.assertEqual(0, manifest["heartbeat_interval_seconds"])

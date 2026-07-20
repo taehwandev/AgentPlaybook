@@ -31,12 +31,11 @@ from agent_workspace_policy import is_git_status_review_only, non_git_writing_wo
 from workflow_catalog import COMMANDS, CONCERNS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import unique
 from workflow_doc_surfaces import git_status_surface_paths
-from workflow_request import (
-    classified_route_block_reason,
-    classify_request,
-    infer_concerns_from_request,
-    route_block_reason,
+from workflow_classified_exemption import (
+    classified_intake_decision,
+    parent_evidence_path,
 )
+from workflow_request import infer_concerns_from_request
 from workflow_route import resolve_docs
 
 
@@ -115,6 +114,8 @@ def route_command(args: argparse.Namespace, tao_root: Path) -> list[str]:
             command.extend(["--request", args.request])
     else:
         command.extend(["--request", args.request])
+    if getattr(args, "parent_evidence", None):
+        command.extend(["--parent-evidence", str(args.parent_evidence)])
     for platform in args.platform:
         command.extend(["--platform", platform])
     for concern in args.concern:
@@ -162,24 +163,22 @@ def route_payload(
             "Route --request-classified requires --classification-evidence so request intake cannot be skipped silently.",
             2,
         )
-    # A caller that supplies resolved classification evidence may retain a
+    # A worker that supplies resolved classification evidence may retain only a
     # short acknowledgement as request identity.  Reclassifying that text here
-    # can reopen clarification/Grill-Me after the parent already resolved it.
-    request_classification = (
-        None
-        if args.request_classified
-        else (classify_request(args.request) if args.request else None)
+    # can reopen clarification/Grill-Me after the parent already resolved it --
+    # but only a ready and valid parent capsule proves such a parent exists.
+    project_root = args.project.expanduser().resolve()
+    request_classification, block_reason = classified_intake_decision(
+        args.command,
+        args.request,
+        args.request_classified,
+        args.classification_evidence or "",
+        project=project_root,
+        rules=getattr(args, "rules", None),
+        parent_evidence=parent_evidence_path(
+            project_root, getattr(args, "parent_evidence", None)
+        ),
     )
-    if not request_classification and not args.request_classified:
-        return (
-            None,
-            "Route requires request intake evidence. Pass --request \"<USER_REQUEST>\" "
-            "or --request-classified after answering/classifying the current request.",
-            2,
-        )
-    block_reason = route_block_reason(args.command, request_classification)
-    if not block_reason and args.request_classified:
-        block_reason = classified_route_block_reason(args.command, args.classification_evidence or "")
     if block_reason:
         stderr = block_reason
         if request_classification:
@@ -193,6 +192,14 @@ def route_payload(
 
     intent_text = args.request or args.classification_evidence or ""
     inferred_concerns = infer_concerns_from_request(intent_text)
+    if args.request_classified and args.classification_evidence and args.request:
+        # Classification evidence describes the resolved scope, and it used to be
+        # the only intent text available. Now that a request is always required
+        # alongside the flag, keep inferring concerns from the evidence too so a
+        # scope named only there does not silently drop its route concern.
+        inferred_concerns = unique(
+            [*inferred_concerns, *infer_concerns_from_request(args.classification_evidence)]
+        )
     concerns = unique([*args.concern, *inferred_concerns])
     newly_inferred = [concern for concern in inferred_concerns if concern not in args.concern]
     surface_paths = unique(
@@ -262,6 +269,14 @@ def build_parser(tao_root: Path) -> argparse.ArgumentParser:
     parser.add_argument("--project", type=Path, default=Path.cwd())
     parser.add_argument("--rules", type=Path, default=tao_root)
     parser.add_argument("--evidence", type=Path)
+    parser.add_argument(
+        "--parent-evidence",
+        type=Path,
+        help=(
+            "parent preflight evidence whose execution capsule may honor "
+            "--request-classified; defaults to <project>/.tao/preflight.json"
+        ),
+    )
     parser.add_argument(
         "--worker-reservation-token",
         default="",

@@ -27,6 +27,10 @@ from workflow_dispatch_profiles import (
 )
 from agent_capability_policy import READ_ONLY_WORK_KINDS, capability_profile, validate_capability_profile
 from agent_os_api import api_contract_manifest, runtime_adapter_contract, validate_runtime_adapter_contract
+from workflow_classified_exemption import (
+    parent_capsule_exemption,
+    parent_evidence_path,
+)
 from workflow_request import (
     classified_route_block_reason,
     classify_request,
@@ -62,11 +66,18 @@ def build_dispatch_manifest(
     """Create an inspectable dispatch decision for one bounded task stage."""
 
     classification = dict(request_classification or classify_request(request))
+    lexical_project = project.expanduser().absolute()
+    project = project.expanduser().resolve()
+    rules = (rules or Path(__file__).resolve().parents[1]).expanduser().resolve()
+    parent_evidence = _parent_evidence_path(project, evidence_path)
     _raise_if_request_is_blocked(
         command,
         classification,
         request_classified=request_classified,
         classification_evidence=classification_evidence,
+        project=project,
+        rules=rules,
+        evidence_path=parent_evidence,
     )
     selected_kind, profile, sandbox_mode, execution_mode, same_profile, selection_reason = (
         _select_execution_context(
@@ -80,10 +91,6 @@ def build_dispatch_manifest(
             isolation_required=isolation_required,
         )
     )
-    lexical_project = project.expanduser().absolute()
-    project = project.expanduser().resolve()
-    rules = (rules or Path(__file__).resolve().parents[1]).expanduser().resolve()
-    parent_evidence = _parent_evidence_path(project, evidence_path)
     handoff_state = build_handoff_state(
         command=command,
         project=project,
@@ -159,12 +166,28 @@ def _raise_if_request_is_blocked(
     *,
     request_classified: bool,
     classification_evidence: str,
+    project: Path | None = None,
+    rules: Path | None = None,
+    evidence_path: Path | None = None,
 ) -> None:
-    reason = (
-        classified_route_block_reason(command, classification_evidence)
-        if request_classified
-        else route_block_reason(command, classification)
-    )
+    """Block a dispatch whose request was never actually resolved.
+
+    ``--request-classified`` used to replace the classifier's verdict with a
+    regex over free text the caller wrote about itself. Dispatch always has the
+    real request in hand, so the classifier's verdict is dropped only when a
+    ready and valid parent capsule proves a parent already resolved it.
+    """
+
+    exempt = False
+    if request_classified:
+        exempt, _reason = parent_capsule_exemption(
+            project,
+            rules,
+            parent_evidence_path(project, evidence_path),
+        )
+    reason = route_block_reason(command, None if exempt else classification)
+    if not reason and request_classified:
+        reason = classified_route_block_reason(command, classification_evidence)
     if reason:
         raise ValueError(reason)
 

@@ -56,7 +56,7 @@ from agent_review_hook import review_hook, review_vibeguard_command, workflow_va
 from agent_review_structure import structure_review
 from agent_vibeguard_cache import cached_vibeguard
 from support.agy_setup import AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES, _agy_runtime_bridge_block
-from support.claude_setup import _CLASSIFICATION_EVIDENCE, _merge_claude_user_prompt_submit
+from support.claude_setup import _merge_claude_user_prompt_submit
 from support.permission_entries import agy_permission_entries, claude_permission_entries, codex_prefix_rule_entries
 from support.runtime_bridge import (
     CODEX_DISPATCH_BRIDGE_PHRASE,
@@ -825,8 +825,10 @@ class RepairLedgerCycleTests(unittest.TestCase):
                 "--request-classified",
                 "--classification-evidence",
                 "clear-scoped: rehearsal bug reproduced with exact scope; no blockers; scope clarified",
+                # The request must classify cleanly on its own: --request-classified
+                # no longer suppresses classification without a parent capsule.
                 "--request",
-                "regression rehearsal",
+                "fix the stale ledger hash in scripts/agent_gate_evidence.py",
             ]
             with patch.object(sys, "argv", start_argv):
                 start_exit = agent_hook.main()
