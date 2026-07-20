@@ -96,13 +96,13 @@ def test_gate_validation_success(temp_dir: str) -> None:
         {"gate": "product route re-entry", "evidence": "no new product work and no implementation proposed; triage only."},
         {"gate": "route recommendation", "evidence": "test"},
         {
-            "gate": "graphify readiness",
+            "gate": "retrospective check",
             "fields": {
-                "cli": "success", "skill_doc": "success", "runtime_links": "success",
-                "git_ownership": "success", "project_integration": "success",
-                "graph": "success", "query_smoke": "success"
+                "skills_checked": "request-triage, retrospective-learning",
+                "outcome": "no_reusable_gap",
+                "observation": "not_needed",
             },
-            "evidence": "Verified Graphify readiness."
+            "evidence": "skills checked: request-triage, retrospective-learning; outcome: no_reusable_gap; observation: not_needed",
         },
     ]
     for data in gates_data:
