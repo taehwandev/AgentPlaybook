@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -57,6 +58,20 @@ def _record_edit(project: Path, session_id: str, *, newer_than: Path | None = No
     if newer_than is not None:
         # Filesystem timestamp granularity can tie these two writes; the gate
         # compares them, so make the ordering explicit rather than racy.
+        stamp = newer_than.stat().st_mtime + 1
+        os.utime(marker, (stamp, stamp))
+
+
+def _age(marker: Path, seconds: float) -> None:
+    """Backdate a marker so later real writes are unambiguously newer."""
+    stamp = time.time() - seconds
+    os.utime(marker, (stamp, stamp))
+
+
+def _record_finish(project: Path, session_id: str, *, newer_than: Path | None = None) -> None:
+    marker = gate.finished_marker(project, session_id)
+    marker.write_text("", encoding="utf-8")
+    if newer_than is not None:
         stamp = newer_than.stat().st_mtime + 1
         os.utime(marker, (stamp, stamp))
 
@@ -143,6 +158,69 @@ class ClaudeStopGateTests(unittest.TestCase):
 
         self.assertEqual(0, code)
         self.assertEqual("", out)
+
+    def test_edits_after_a_finish_rearm_the_gate(self) -> None:
+        # Regression, observed live: session b834fc2b had `.edited` more than an
+        # hour after `.finished` and no `.stop-blocked` marker at all. The
+        # finished marker was treated as a permanent pass, so one passing finish
+        # made the gate silent for the rest of the session -- a whole second
+        # task could be edited to completion and never gated again.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _record_finish(project, "s1")
+            _record_edit(project, "s1", newer_than=gate.finished_marker(project, "s1"))
+
+            code, out = _decide(_payload(project, "s1"))
+
+        self.assertEqual(0, code)
+        self.assertTrue(_blocked(out))
+        self.assertIn("finish", json.loads(out)["reason"])
+
+    def test_finish_after_its_edits_still_allows_the_stop(self) -> None:
+        # The finish vouches for every edit that already existed when it ran.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _record_edit(project, "s1")
+            _record_finish(project, "s1", newer_than=gate.edit_activity_marker(project, "s1"))
+
+            code, out = _decide(_payload(project, "s1"))
+
+        self.assertEqual(0, code)
+        self.assertEqual("", out)
+
+    def test_shared_finish_fallback_is_also_time_aware(self) -> None:
+        # The finish.json fallback exists for finishes written before per-session
+        # markers, so it must age the same way rather than becoming a loophole.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _write_finish(project, "s1")
+            _record_edit(project, "s1", newer_than=project / ".tao" / "finish.json")
+
+            _, out = _decide(_payload(project, "s1"))
+
+        self.assertTrue(_blocked(out))
+
+    def test_a_second_task_after_a_finish_is_gated_once(self) -> None:
+        # End to end: finish the first task, edit again, and the gate must block
+        # exactly once for the new batch -- not never, and not on every stop.
+        # Markers are dated into the past so the block this records lands after
+        # them, the way it does when the events are actually spaced out in time.
+        with tempfile.TemporaryDirectory() as tmp:
+            project = _opt_in_project(Path(tmp))
+            _record_edit(project, "s1")
+            _age(gate.edit_activity_marker(project, "s1"), 300)
+            _record_finish(project, "s1")
+            _age(gate.finished_marker(project, "s1"), 200)
+
+            _, after_finish = _decide(_payload(project, "s1"))
+            _record_edit(project, "s1")
+            _age(gate.edit_activity_marker(project, "s1"), 100)
+            _, second_task = _decide(_payload(project, "s1"))
+            _, asking_a_question = _decide(_payload(project, "s1"))
+
+            self.assertEqual("", after_finish)
+            self.assertTrue(_blocked(second_task))
+            self.assertEqual("", asking_a_question)
 
     def test_finish_writes_the_per_session_record(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

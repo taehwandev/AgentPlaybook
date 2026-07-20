@@ -146,7 +146,7 @@ def finished_marker(root: Path, session_id: str) -> Path:
 
 
 def session_finished(root: Path, session_id: str) -> bool:
-    """True when a passing `finish` ran in this session.
+    """True when a passing `finish` vouches for this session's current edits.
 
     `finish` writes a per-session record, and only when it found no failures, so
     a failed finish leaves this gate closed instead of counting as completion.
@@ -158,14 +158,34 @@ def session_finished(root: Path, session_id: str) -> bool:
     re-verification run replaced a passing Claude finish and this gate then
     blocked completed work. The shared file is still accepted as a fallback for
     a finish written before the per-session record existed.
+
+    A finish can only vouch for work that already existed when it ran. Treating
+    the marker as a permanent pass made the gate go silent for the rest of the
+    session: one passing finish, then a whole second task's edits, and the gate
+    never armed again. Observed live -- a session with `.edited` more than an
+    hour after `.finished` and no `.stop-blocked` marker at all. A finish older
+    than the newest edit activity is stale for those edits, so the gate re-arms
+    and `has_unreported_edits()` decides whether to block once for them.
     """
-    if finished_marker(root, session_id).exists():
-        return True
-    try:
-        payload = json.loads((root / STATE_DIR / FINISH_NAME).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    finished = marker_mtime(finished_marker(root, session_id))
+    if finished is None:
+        finished = shared_finish_mtime(root, session_id)
+    if finished is None:
         return False
-    return recorded_session_id(payload) == session_id
+    edited = marker_mtime(edit_activity_marker(root, session_id))
+    return edited is None or edited <= finished
+
+
+def shared_finish_mtime(root: Path, session_id: str) -> float | None:
+    """Timestamp of the shared finish record, only when it names this session."""
+    path = root / STATE_DIR / FINISH_NAME
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if recorded_session_id(payload) != session_id:
+        return None
+    return marker_mtime(path)
 
 
 def session_projects(session_id: str, cwd_root: Path | None) -> list[Path]:
