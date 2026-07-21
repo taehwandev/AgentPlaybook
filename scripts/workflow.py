@@ -55,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=sorted(set(CONCERNS) | {key[1] for key in PLATFORM_CONCERNS}),
         help="Affected concern. Can be repeated.",
     )
-    route.add_argument("--request", help="Current user request text. Required unless --request-classified is used.")
+    route.add_argument("--request", help="Current user request text. Required for every non-advisory route.")
     route.add_argument(
         "--surface-path",
         action="append",
@@ -65,11 +65,17 @@ def build_parser() -> argparse.ArgumentParser:
     route.add_argument(
         "--request-classified",
         action="store_true",
-        help="Assert the current request was already classified or answered before routing.",
+        help=(
+            "Delegated-worker only: reuse request intake from a ready, valid, "
+            "matching parent execution capsule."
+        ),
     )
     route.add_argument(
         "--classification-evidence",
-        help="Required with --request-classified; describes the prior classification or answer-first handling.",
+        help=(
+            "Required with --request-classified; describes the matching parent's "
+            "resolved classification or answer-first handling."
+        ),
     )
     route.add_argument("--rules", type=Path, default=ROOT)
     route.add_argument(
@@ -118,8 +124,19 @@ def _add_dispatch_parser(subparsers: argparse._SubParsersAction) -> None:
     )
     dispatch.add_argument("command", choices=sorted(COMMANDS), help="Task command profile.")
     dispatch.add_argument("--request", required=True, help="Current user request text.")
-    dispatch.add_argument("--request-classified", action="store_true")
-    dispatch.add_argument("--classification-evidence", default="")
+    dispatch.add_argument(
+        "--request-classified",
+        action="store_true",
+        help=(
+            "Delegated-worker only: reuse request intake from a ready, valid, "
+            "matching parent execution capsule."
+        ),
+    )
+    dispatch.add_argument(
+        "--classification-evidence",
+        default="",
+        help="Resolved-scope evidence from that matching parent.",
+    )
     dispatch.add_argument("--project", default=".", help="Target project root for the delegated Codex task.")
     dispatch.add_argument("--rules", type=Path, default=ROOT)
     dispatch.add_argument("--evidence", type=Path)

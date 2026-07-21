@@ -862,6 +862,50 @@ class ClassifiedExemptionCapsuleTests(unittest.TestCase):
         self.assertEqual(0, completed.returncode, completed.stderr)
         self.assertTrue(json.loads(completed.stdout)["request_classified"])
 
+    def test_parent_capsule_cannot_exempt_a_different_request(self) -> None:
+        self._create_parent_capsule()
+
+        completed = self._route(
+            "--request",
+            self.GRILL_ME_REQUEST,
+            "--request-classified",
+            "--classification-evidence",
+            "scope clarified: blockers resolved, no blockers remain.",
+        )
+
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("Grill-Me", completed.stderr)
+
+    def test_parent_capsule_cannot_exempt_a_different_route(self) -> None:
+        self._create_parent_capsule()
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "workflow.py"),
+                "route",
+                "build",
+                "--project",
+                str(self.project),
+                "--rules",
+                str(self.rules),
+                "--format",
+                "json",
+                "--request",
+                self.WORKER_ACKNOWLEDGEMENT,
+                "--request-classified",
+                "--classification-evidence",
+                self.RESOLVED_EVIDENCE,
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("needs clarification before route `build`", completed.stderr)
+
     def test_without_a_parent_capsule_the_classifier_runs_on_the_request(self) -> None:
         self.assertTrue(classify_request(self.WORKER_ACKNOWLEDGEMENT)["grill_me"])
 

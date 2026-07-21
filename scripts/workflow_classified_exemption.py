@@ -44,7 +44,8 @@ MISSING_REQUEST_INTAKE_REASON = (
 
 NO_INTAKE_REASON = (
     'Route requires request intake evidence. Pass --request "<USER_REQUEST>" '
-    "or --request-classified after answering/classifying the current request."
+    "with the real current request. Only a delegated worker whose matching "
+    "parent capsule is ready and valid may also use --request-classified."
 )
 
 
@@ -72,9 +73,18 @@ def classified_intake_decision(
         route_block_reason,
     )
 
+    if request_classified and not request:
+        return None, MISSING_REQUEST_INTAKE_REASON
+
     exempt = False
     if request_classified:
-        exempt, _reason = parent_capsule_exemption(project, rules, parent_evidence)
+        exempt, _reason = parent_capsule_exemption(
+            project,
+            rules,
+            parent_evidence,
+            command=command,
+            request=request,
+        )
 
     if not exempt and not request:
         # Without a capsule the flag proves nothing, so there is nothing left to
@@ -109,6 +119,9 @@ def parent_capsule_exemption(
     project: Path | None,
     rules: Path | None,
     parent_evidence: Path | None,
+    *,
+    command: str,
+    request: str | None,
 ) -> tuple[bool, str]:
     """Return whether a ready and valid parent capsule honors the exemption.
 
@@ -136,9 +149,20 @@ def parent_capsule_exemption(
     if not capsule:
         return False, f"no parent execution capsule at {capsule_path}"
 
-    route = _parent_route(parent_evidence)
-    if route is None:
+    preflight = _parent_preflight(parent_evidence)
+    route = preflight.get("route") if isinstance(preflight, dict) else None
+    if not isinstance(route, dict):
         return False, f"parent preflight evidence has no route manifest: {parent_evidence}"
+    if str(route.get("command") or "") != command:
+        return False, "current workflow command does not match the parent execution capsule"
+    request_intake = preflight.get("request_intake")
+    parent_request = (
+        str(request_intake.get("request") or "")
+        if isinstance(request_intake, dict)
+        else ""
+    )
+    if not request or request != parent_request:
+        return False, "current request does not match the parent execution capsule"
 
     try:
         failures = validate_execution_capsule(
@@ -155,12 +179,9 @@ def parent_capsule_exemption(
     return True, ""
 
 
-def _parent_route(parent_evidence: Path) -> dict[str, Any] | None:
+def _parent_preflight(parent_evidence: Path) -> dict[str, Any] | None:
     try:
         payload = json.loads(parent_evidence.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    if not isinstance(payload, dict):
-        return None
-    route = payload.get("route")
-    return route if isinstance(route, dict) else None
+    return payload if isinstance(payload, dict) else None

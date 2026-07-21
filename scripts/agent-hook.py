@@ -112,10 +112,25 @@ def _is_invocation_error(result: dict[str, Any]) -> bool:
     caller into a repair cycle that can never complete, because repair-verify
     builds its receipt from a recorded failed checkpoint and there is none.
     """
-    if result.get("returncode") != 2:
-        return False
     output = f"{result.get('stderr', '')}{result.get('stdout', '')}"
-    return "error: argument" in output or "invalid choice" in output
+    if result.get("returncode") == 2:
+        return "error: argument" in output or "invalid choice" in output
+    if result.get("returncode") != 1 or "workflow route failed:" not in output:
+        return False
+    # Request intake can reject a work route before a route manifest or gate
+    # ledger exists.  That is an invocation to correct, not a failed checkpoint
+    # that repair-verify could bind to.  Sending it into the repair cycle creates
+    # an impossible receipt deadlock.
+    return any(
+        marker in output.lower()
+        for marker in (
+            "needs clarification before route",
+            "current request is a direct question",
+            "classification evidence does not prove work can start",
+            "route requires request intake evidence",
+            "broad app/product/feature work",
+        )
+    )
 
 
 def _hook_summary_from_preflight(path: Path) -> list[str]:
@@ -350,7 +365,10 @@ def _add_start_arguments(parser: argparse.ArgumentParser) -> None:
     start.add_argument(
         "--request-classified",
         action="store_true",
-        help="mark the request as already resolved; also pass --request so handoffs can reuse its capsule",
+        help=(
+            "delegated-worker only: reuse request intake from a ready, valid, "
+            "matching parent capsule; also pass the exact bound --request"
+        ),
     )
     start.add_argument("--classification-evidence", default="")
     start.add_argument("--platform", action="append", default=[])
@@ -581,8 +599,9 @@ def main() -> int:
             parser.error("start --request-classified requires --classification-evidence")
         if not args.request:
             parser.error(
-                "start requires --request; for resolved requests, keep --request and add "
-                "--request-classified with --classification-evidence"
+                "start requires --request with the real current request; only a delegated "
+                "worker with a matching parent capsule may additionally use "
+                "--request-classified"
             )
         return start_hook(args)
     if args.hook == "review":

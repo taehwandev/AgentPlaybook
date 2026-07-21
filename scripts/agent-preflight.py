@@ -242,15 +242,15 @@ def build_parser(tao_root: Path) -> argparse.ArgumentParser:
         "--request-classified",
         action="store_true",
         help=(
-            "use only after request classification or answer-first handling; "
-            "also pass --request so classified handoffs can reuse the capsule"
+            "delegated-worker only: reuse request intake from a ready, valid, "
+            "matching parent capsule; also pass the exact bound --request"
         ),
     )
     parser.add_argument(
         "--classification-evidence",
         help=(
-            "required with --request-classified; describes the prior "
-            "classification or answer-first handling"
+            "required with --request-classified; describes the matching parent's "
+            "resolved classification or answer-first handling"
         ),
     )
     parser.add_argument("--platform", action="append", choices=sorted(PLATFORMS), default=[])
@@ -532,8 +532,8 @@ def main() -> int:
             "--request-classified requires --classification-evidence so request "
             "intake cannot be skipped silently"
         )
-    if not args.request and not args.request_classified:
-        parser.error("preflight requires --request or --request-classified")
+    if not args.request:
+        parser.error("preflight requires --request with the real current request")
     try:
         return run_preflight(args, tao_root)
     except ValueError as error:

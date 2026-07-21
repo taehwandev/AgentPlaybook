@@ -72,6 +72,7 @@ def build_dispatch_manifest(
     parent_evidence = _parent_evidence_path(project, evidence_path)
     _raise_if_request_is_blocked(
         command,
+        request,
         classification,
         request_classified=request_classified,
         classification_evidence=classification_evidence,
@@ -162,6 +163,7 @@ def build_dispatch_manifest(
 
 def _raise_if_request_is_blocked(
     command: str,
+    request: str,
     classification: Mapping[str, object],
     *,
     request_classified: bool,
@@ -184,6 +186,8 @@ def _raise_if_request_is_blocked(
             project,
             rules,
             parent_evidence_path(project, evidence_path),
+            command=command,
+            request=request,
         )
     reason = route_block_reason(command, None if exempt else classification)
     if not reason and request_classified:
