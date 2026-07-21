@@ -9,17 +9,57 @@ ANDROID_EXTERNAL_SKILL_DOCS = (
     "platforms/android/skills/android-external-skill-source-coverage/SKILL.md",
     "platforms/android/skills/source-coverage/SKILL.md",
 )
+
+# The android-module-structure bundle is split into topic siblings so a route
+# can select the boundary, layout, entry-contract, build, split, or review
+# material it actually needs instead of the whole 46 KB card.  Naming a
+# reference directly is already how `ANDROID_PERSISTENCE_DOCS` reaches
+# `android-datastore.md`: `resolve_guidance_docs` rewrites only `SKILL.md`
+# entrypoints and passes any other path through untouched.  The entrypoint
+# stays in the module/structure lists so it keeps resolving to the slimmed
+# `current-guidance.md`, which still carries the always-applicable core rules.
+ANDROID_MODULE_STRUCTURE_DOC = "platforms/android/skills/android-module-structure/SKILL.md"
+_ANDROID_MODULE_REFS = "platforms/android/skills/android-module-structure/references"
+ANDROID_MODULE_BOUNDARY_DOC = f"{_ANDROID_MODULE_REFS}/module-boundaries.md"
+ANDROID_MODULE_LAYOUT_DOC = f"{_ANDROID_MODULE_REFS}/module-layout.md"
+ANDROID_MODULE_COMPOSE_ENTRY_DOC = f"{_ANDROID_MODULE_REFS}/compose-entry-contracts.md"
+ANDROID_MODULE_DI_DOC = f"{_ANDROID_MODULE_REFS}/di-build-logic.md"
+ANDROID_MODULE_SPLIT_DOC = f"{_ANDROID_MODULE_REFS}/split-and-migration.md"
+ANDROID_MODULE_SKILL_SOURCE_DOC = f"{_ANDROID_MODULE_REFS}/skill-source-coverage.md"
+ANDROID_MODULE_REVIEW_DOC = f"{_ANDROID_MODULE_REFS}/review-checklist.md"
+
 ANDROID_COMPOSE_DOCS = (
     "platforms/android/skills/android-compose-ui/SKILL.md",
     "platforms/android/skills/android-review/SKILL.md",
     *ANDROID_EXTERNAL_SKILL_DOCS,
 )
+# Compose and UI work that crosses a module boundary needs the Compose-capable
+# API rules and the entry-contract completion packet; `performance` does not,
+# so it keeps the plain Compose set.
+ANDROID_COMPOSE_BOUNDARY_DOCS = (
+    *ANDROID_COMPOSE_DOCS,
+    ANDROID_MODULE_COMPOSE_ENTRY_DOC,
+)
 ANDROID_STRUCTURE_DOCS = (
-    "platforms/android/skills/android-module-structure/SKILL.md",
+    ANDROID_MODULE_STRUCTURE_DOC,
+    ANDROID_MODULE_BOUNDARY_DOC,
+    ANDROID_MODULE_LAYOUT_DOC,
+    ANDROID_MODULE_SPLIT_DOC,
+    ANDROID_MODULE_REVIEW_DOC,
+    *ANDROID_EXTERNAL_SKILL_DOCS,
+)
+# `dependency` covers both dependency direction between modules and Android
+# dependency injection, so it takes the layout and DI pieces rather than the
+# boundary-artifact and split material.
+ANDROID_DEPENDENCY_DOCS = (
+    ANDROID_MODULE_STRUCTURE_DOC,
+    ANDROID_MODULE_LAYOUT_DOC,
+    ANDROID_MODULE_DI_DOC,
+    "platforms/android/skills/android-review/SKILL.md",
     *ANDROID_EXTERNAL_SKILL_DOCS,
 )
 ANDROID_PLATFORM_SURFACE_DOCS = (
-    "platforms/android/skills/android-module-structure/SKILL.md",
+    ANDROID_MODULE_STRUCTURE_DOC,
     "platforms/android/skills/android-review/SKILL.md",
     *ANDROID_EXTERNAL_SKILL_DOCS,
 )
@@ -32,7 +72,9 @@ ANDROID_PERSISTENCE_DOCS = (
 PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
     ("android", "architecture"): (
         "platforms/android/skills/android-architecture/SKILL.md",
-        "platforms/android/skills/android-module-structure/SKILL.md",
+        ANDROID_MODULE_STRUCTURE_DOC,
+        ANDROID_MODULE_BOUNDARY_DOC,
+        ANDROID_MODULE_LAYOUT_DOC,
         *ANDROID_EXTERNAL_SKILL_DOCS,
     ),
     ("android", "security"): (
@@ -40,14 +82,20 @@ PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
         "platforms/android/skills/android-review/SKILL.md",
         *ANDROID_EXTERNAL_SKILL_DOCS,
     ),
-    ("android", "compose"): ANDROID_COMPOSE_DOCS,
+    ("android", "compose"): ANDROID_COMPOSE_BOUNDARY_DOCS,
     ("android", "performance"): ANDROID_COMPOSE_DOCS,
+    ("android", "api"): (
+        ANDROID_MODULE_STRUCTURE_DOC,
+        ANDROID_MODULE_COMPOSE_ENTRY_DOC,
+        ANDROID_MODULE_BOUNDARY_DOC,
+        *ANDROID_EXTERNAL_SKILL_DOCS,
+    ),
     ("android", "state"): (
         "platforms/android/skills/android-viewmodel-state/SKILL.md",
         "platforms/android/skills/android-compose-ui/SKILL.md",
         *ANDROID_EXTERNAL_SKILL_DOCS,
     ),
-    ("android", "ui"): ANDROID_COMPOSE_DOCS,
+    ("android", "ui"): ANDROID_COMPOSE_BOUNDARY_DOCS,
     ("android", "testing"): (
         "platforms/android/skills/android-review/SKILL.md",
         *ANDROID_EXTERNAL_SKILL_DOCS,
@@ -56,17 +104,27 @@ PLATFORM_CONCERNS: Dict[Tuple[str, str], Tuple[str, ...]] = {
         "platforms/android/skills/android-review/SKILL.md",
         *ANDROID_EXTERNAL_SKILL_DOCS,
     ),
-    ("android", "skills"): ANDROID_EXTERNAL_SKILL_DOCS,
-    ("android", "skill"): ANDROID_EXTERNAL_SKILL_DOCS,
+    ("android", "skills"): (*ANDROID_EXTERNAL_SKILL_DOCS, ANDROID_MODULE_SKILL_SOURCE_DOC),
+    ("android", "skill"): (*ANDROID_EXTERNAL_SKILL_DOCS, ANDROID_MODULE_SKILL_SOURCE_DOC),
     ("android", "structure"): ANDROID_STRUCTURE_DOCS,
     ("android", "module"): ANDROID_STRUCTURE_DOCS,
     ("android", "background"): ("platforms/android/skills/android-background-work/SKILL.md",),
     ("android", "cache"): ANDROID_PERSISTENCE_DOCS,
     ("android", "persistence"): ANDROID_PERSISTENCE_DOCS,
     ("android", "devtools"): ANDROID_PLATFORM_SURFACE_DOCS,
-    ("android", "dependency"): ANDROID_PLATFORM_SURFACE_DOCS,
+    ("android", "dependency"): ANDROID_DEPENDENCY_DOCS,
+    ("android", "config"): (
+        ANDROID_MODULE_STRUCTURE_DOC,
+        ANDROID_MODULE_DI_DOC,
+        *ANDROID_EXTERNAL_SKILL_DOCS,
+    ),
     ("android", "release"): ANDROID_PLATFORM_SURFACE_DOCS,
-    ("android", "migration"): ANDROID_PLATFORM_SURFACE_DOCS,
+    ("android", "migration"): (
+        ANDROID_MODULE_STRUCTURE_DOC,
+        ANDROID_MODULE_SPLIT_DOC,
+        "platforms/android/skills/android-review/SKILL.md",
+        *ANDROID_EXTERNAL_SKILL_DOCS,
+    ),
     ("android", "platform"): ANDROID_PLATFORM_SURFACE_DOCS,
     ("kmp", "security"): ("platforms/kmp/skills/kmp-security/SKILL.md",),
     ("kmp", "compose"): ("platforms/kmp/skills/kmp-compose-ui/SKILL.md",),

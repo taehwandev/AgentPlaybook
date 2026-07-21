@@ -104,6 +104,21 @@
       "platforms/web/skills/web-review/SKILL.md",
       "common/skills/ui-visual-verification/SKILL.md",
       "common/skills/performance-verification/SKILL.md"
+    ],
+    "android_module_di_build": [
+      "platforms/android/skills/android-module-structure/references/current-guidance.md",
+      "platforms/android/skills/android-module-structure/references/di-build-logic.md",
+      "platforms/android/skills/android-module-structure/references/module-layout.md"
+    ],
+    "android_module_boundaries": [
+      "platforms/android/skills/android-module-structure/references/current-guidance.md",
+      "platforms/android/skills/android-module-structure/references/module-boundaries.md",
+      "platforms/android/skills/android-module-structure/references/module-layout.md",
+      "platforms/android/skills/android-module-structure/references/review-checklist.md"
+    ],
+    "android_module_compose_entry": [
+      "platforms/android/skills/android-module-structure/references/current-guidance.md",
+      "platforms/android/skills/android-module-structure/references/compose-entry-contracts.md"
     ]
   },
   "request_intents": [
@@ -585,6 +600,98 @@
         "web_ui"
       ],
       "reason": "React or TSX choices require React UI, web structure, state/data, design-system, accessibility, visual, and performance context."
+    },
+    {
+      "name": "android_module_di_build_logic",
+      "commands": [
+        "feature",
+        "task",
+        "build",
+        "refactor",
+        "review",
+        "code-simplify"
+      ],
+      "platforms": [
+        "android"
+      ],
+      "request_any": [
+        "\\bhilt\\b",
+        "\\bdagger\\b",
+        "\\bmetro\\b",
+        "convention plugin",
+        "build-logic",
+        "\\bbuildlogic\\b",
+        "multibinding",
+        "@IntoSet",
+        "@IntoMap",
+        "dependency injection",
+        "\\bDI graph\\b",
+        "컨벤션 플러그인",
+        "의존성 주입"
+      ],
+      "doc_sets": [
+        "android_module_di_build"
+      ],
+      "reason": "Android DI and Gradle convention-plugin work needs the build-logic and DI placement rules plus the module layout they bind against."
+    },
+    {
+      "name": "android_module_boundary_split",
+      "commands": [
+        "feature",
+        "task",
+        "build",
+        "refactor",
+        "review",
+        "code-simplify",
+        "plan"
+      ],
+      "platforms": [
+        "android"
+      ],
+      "request_any": [
+        "package boundary",
+        "module boundary",
+        "boundary note",
+        "\\bapi/impl\\b",
+        "api and impl",
+        "\\bassertions module\\b",
+        "gradle module",
+        "feature module",
+        "extract .* module",
+        "모듈 경계",
+        "패키지 경계"
+      ],
+      "doc_sets": [
+        "android_module_boundaries"
+      ],
+      "reason": "Android module and package boundary work needs the boundary artifact, layout, and review checklist rules."
+    },
+    {
+      "name": "android_module_compose_entry_contract",
+      "commands": [
+        "feature",
+        "task",
+        "build",
+        "refactor",
+        "review"
+      ],
+      "platforms": [
+        "android"
+      ],
+      "request_any": [
+        "compose entry",
+        "composable entry",
+        "route entry",
+        "entry contract",
+        "entrypoint interface",
+        "ComposeRouteEntry",
+        "NavEntry",
+        "entry provider"
+      ],
+      "doc_sets": [
+        "android_module_compose_entry"
+      ],
+      "reason": "Compose and Activity entry-contract work needs the Compose-capable API boundary rules and the entry contract completion packet."
     }
   ],
   "path_surfaces": [
@@ -844,6 +951,19 @@
         "common/skills/human-authored-writing/SKILL.md"
       ],
       "reason": "Shared Tao Agent OS documentation changes need documentation update, source-driven, and writing guidance."
+    },
+    {
+      "name": "android_module_structure_bundle",
+      "patterns": [
+        "platforms/android/skills/android-module-structure/references/**",
+        "platforms/android/skills/android-module-structure/**"
+      ],
+      "docs": [
+        "platforms/android/skills/android-module-structure/SKILL.md",
+        "platforms/android/skills/android-module-structure/references/module-boundaries.md",
+        "platforms/android/skills/android-module-structure/references/module-layout.md"
+      ],
+      "reason": "Changes inside the android-module-structure bundle must keep the boundary and layout rules consistent with the entrypoint."
     }
   ]
 }
