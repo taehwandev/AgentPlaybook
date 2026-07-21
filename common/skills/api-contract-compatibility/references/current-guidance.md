@@ -37,6 +37,19 @@ what clients, tests, docs, integrations, and users can rely on.
   adapters, fakes, or tests to implement unrelated operations to satisfy one
   broad API surface.
 
+## Request And Response Models
+
+- Use separate request and response types. A request is owned by the caller
+  producing the write and contains only fields that are transmitted.
+- Model a response after the received server or transport shape. Do not hide a
+  missing required response field with a default value.
+- Apply display fallbacks after transport mapping in domain or UI policy, not
+  in the response DTO.
+- Keep transport DTOs out of domain, entity, UI, and other public contracts
+  unless the transport type is intentionally the public wire contract.
+- Keep read/response and write/request models and mapping paths separate; do
+  not reuse one direction's mapper as the other direction's contract.
+
 ## Compatibility Questions
 
 - Which released client versions or external integrations depend on this shape?
