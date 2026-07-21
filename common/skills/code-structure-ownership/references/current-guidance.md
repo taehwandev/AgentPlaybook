@@ -43,6 +43,21 @@ Use this order:
    behavior.
 6. Define public exports last; exports should be narrower than the
    implementation and grouped by contract family.
+7. Inspect the executable review budgets before implementation: function or
+   block size, per-file added lines, exported-owner count, changed-path limit,
+   and any repo-local structure rules. When a new scaffold is entirely
+   untracked, define one or more owned review pathspecs up front so starter
+   examples and unrelated generated surfaces do not contaminate the task
+   review. Split the implementation plan before writing code when its planned
+   unit already exceeds a configured budget.
+
+Before coding, enumerate every planned top-level export per runtime file exactly
+as the review hook will count it. Exported type aliases, interfaces, option or
+handle contracts, constants, classes, components, and functions are all public
+owners; a type-only export is not invisible to the ownership budget. When the
+list has more than one owner, keep a support type file-private when it has one
+caller, or move an independently importable contract or behavior into its own
+purpose-named file before implementation.
 
 For non-trivial code work, the structure packet should include:
 
@@ -55,6 +70,7 @@ allowed imports:
 forbidden imports:
 callers/tests:
 nearest verification:
+review budget and owned pathspec:
 ```
 
 Treat this packet as a pre-code gate. If an agent cannot name the owner,
@@ -190,6 +206,65 @@ pulling unrelated helpers or production implementation dependencies.
 Keep a small one-file helper only when the roles are inseparable, have one real
 caller, and can be reviewed in one pass. Once callers, responsibilities, or
 verification paths differ, split the file before adding more behavior.
+
+### Change-Resilient Authored Content
+
+Apply the ownership drill to presentations, tutorials, onboarding flows,
+wizards, catalogs, timelines, static reports, scripted demos, and other ordered
+content that is rendered in more than one mode. These surfaces are not safely
+structured when the prose lives in one file but counts, durations, headings,
+navigation bounds, or semantic visual labels are repeated in components and
+tests.
+
+Prefer one typed authored-content root with multiple derived projections:
+
+```text
+typed authored config -> pure derived metadata -> stage/read/overview/timer
+```
+
+- The authored config owns durable facts: title or thesis, ordered items,
+  item copy, notes, links, semantic visual labels, and per-item duration.
+- Pure derivation owns counts, total duration, progress bounds, timer
+  thresholds, and labels that are mathematical or grammatical projections of
+  those facts.
+- Keep the derived model boundary subject to the same one-owner rule as runtime
+  behavior. If a definition, derived metadata shape, timer policy, and completed
+  presentation are independently named public contracts, give each contract a
+  separate owner file even when one factory composes all four. Relatedness is
+  not a reason to create a multi-owner type bucket.
+- Rendering, navigation, timer, overview, print, and read-mode consumers import
+  the config or its derived metadata. They must not retype the same facts as
+  local constants or display strings.
+- Reused copy has one semantic owner. Reference the same field or canonical
+  constant instead of copying the literal into another item, header, metadata
+  block, or test.
+- Meaning-bearing visual text belongs with the authored item when changing the
+  narrative should change that text. Reusable scenery, layout, motion, and
+  styling primitives stay in rendering or style owners.
+- Adding, removing, reordering, or retiming an item should normally change the
+  authored config only. A consumer should change only when its behavior or
+  presentation contract changes, not to synchronize a stale count or duration.
+
+When a fixed global budget is intentionally independent from the sum of item
+durations, encode both facts explicitly and validate their relationship. Do not
+silently let a timer policy, agenda label, and item durations drift apart.
+
+Tests should check invariants and projections rather than duplicate product
+facts or parse source text. Useful checks include unique stable ids, valid
+ordering, item-duration sum versus the declared budget, derived count and timer
+values, and confirmation that every rendering mode consumes the same ordered
+collection. A test that hard-codes the same count or duration without deriving
+it from the canonical config protects the duplication instead of the product.
+
+Keep a single authored file while it has one owner and remains reviewable.
+When volume creates review pressure, split by a stable act, chapter, section,
+locale, or ownership boundary and aggregate those parts through one canonical
+ordered export. Do not default to one file per slide, step, or item, and do not
+introduce a CMS or runtime editor when the content is static and developer-owned.
+
+For these surfaces, extend the structure packet with the authored-content
+owner, derivation owner, rendering projections, invariants, and the expected
+change path for copy edits, reordering, and retiming.
 
 ### Contract Family Split
 
