@@ -196,12 +196,25 @@ task with the target repo's local commands. Read every route `required_docs`
 entry directly before work. Direct `workflow.py route` and `agent-preflight.py`
 invocations are lower-level diagnostic or compatibility fallbacks only when the
 start hook is unavailable; never run them as a second startup sequence. The
-start hook must always receive the current user request. After that request was
-classified or answered, keep `--request "<USER_REQUEST>"` and add
-`--request-classified --classification-evidence "<evidence>"`; this binds later
-handoffs to the matching parent capsule. Do not use
-`--request-classified` to bypass direct-question, ambiguity, or Grill-Me
-handling. Classification evidence that still says `vague-action`,
+start hook must always receive the current user request. A top-level or
+first-touch agent passes `--request "<USER_REQUEST>"` with the real request and
+lets the classifier decide; when it returns clarify-first or Grill-Me, run that
+protocol rather than routing around it. A delegated worker may add
+`--request-classified --classification-evidence "<evidence>"` only when the
+ready and valid parent capsule binds that reuse to the earlier intake. Without
+that capsule the flag is not honored and the classifier runs on `--request` as
+for any other caller; `--request-classified` with neither a request nor a
+capsule is rejected. The flag is not a same-session root override: when the user
+gives a terse follow-up, pass
+a context-complete `--request` that preserves the verbatim follow-up and names
+the already-established scope, without `--request-classified` unless the
+capsule proof exists. If the established scope cannot be stated safely, route
+through `triage` or `ambiguity`. Do not use `--request-classified` to bypass
+direct-question, ambiguity, or Grill-Me handling. A caller that only needs the
+document listing and label context and is asserting no request intake uses
+`--advisory`, which satisfies no downstream gate; work must be re-routed with a
+real `--request` before editing, reviewing, or reporting completion.
+Classification evidence that still says `vague-action`,
 `broad-product`, `risky-unclear`, `direct-question`, `answer_first`,
 `clarify_first`, `ambiguous`, `unclear`, `grill_me: true`, or
 `question_drill: true` and their obvious hyphen/space variants must route only
@@ -504,6 +517,9 @@ Missing preflight evidence, missing finish-check evidence, or missing gate
 evidence is non-compliant even when the final code or documentation appears
 correct. `agent-preflight.py --request-classified` must include
 `--classification-evidence`; otherwise request intake is treated as skipped.
+Evidence alone is not sufficient: the flag is honored only when a ready and
+valid parent execution capsule backs it, and the requestless form is rejected.
+Otherwise the classifier runs on `--request` as for any other caller.
 For required gates, a skip, not-applicable, unable-to-run, deferred, or
 follow-up reason is not completion unless that gate explicitly allows that
 outcome and the evidence names the allowed reason. Evidence that names an

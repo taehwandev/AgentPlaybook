@@ -247,7 +247,7 @@ class RuntimeSetupTests(unittest.TestCase):
                 self.assertEqual(1, commands.count(new_command))
                 self.assertTrue(any(group.get("matcher") == matcher for group in groups))
 
-    def test_preflight_warns_for_claude_hook_without_classification_evidence(self) -> None:
+    def test_preflight_warns_for_retired_claude_classified_hook(self) -> None:
         config = {
             "hooks": {
                 "UserPromptSubmit": [
@@ -269,7 +269,7 @@ class RuntimeSetupTests(unittest.TestCase):
 
         warnings = _claude_spill_warnings(config, Path("/tmp/tao-agent-os"))
 
-        self.assertTrue(any("--classification-evidence" in warning for warning in warnings))
+        self.assertTrue(any("--advisory" in warning for warning in warnings))
 
     def test_setup_permissions_include_new_workflow_helpers(self) -> None:
         entry_list = codex_prefix_rule_entries(ROOT / "scripts")

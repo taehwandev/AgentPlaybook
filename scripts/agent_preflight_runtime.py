@@ -18,11 +18,11 @@ from support.runtime_bridge import runtime_bridge_required_phrases
 from support.stable_launcher import stable_launcher_issue
 
 
-BASELINE_HOOK_RE = re.compile(
-    r"(?:workflow\.py.*route|tao-hook.*workflow.*route).*triage.*--request-classified"
+MANAGED_HOOK_RE = re.compile(
+    r"(?:workflow\.py.*route|tao-hook.*workflow.*route).*triage.*(?:--advisory|--request-classified)"
 )
-CLASSIFIED_HOOK_EVIDENCE_RE = re.compile(
-    r"(?:workflow\.py.*route|tao-hook.*workflow.*route).*triage.*--request-classified.*--classification-evidence"
+ADVISORY_HOOK_RE = re.compile(
+    r"(?:workflow\.py.*route|tao-hook.*workflow.*route).*triage.*--advisory"
 )
 AGY_RUNTIME_BRIDGE_PATH = Path.home() / ".antigravity" / "AGENTS.md"
 AGY_RUNTIME_BRIDGE_REQUIRED_PHRASES = runtime_bridge_required_phrases("Antigravity", "AGENTS.md")
@@ -128,11 +128,11 @@ def _claude_spill_warnings(config: dict[str, Any], tao_root: Path) -> list[str]:
         h.get("command", "")
         for g in groups
         for h in g.get("hooks", [])
-        if BASELINE_HOOK_RE.search(h.get("command", ""))
+        if MANAGED_HOOK_RE.search(h.get("command", ""))
         and "SPILL_AI_TOOL=claude" in h.get("command", "")
     ]
-    has_classification_evidence = any(
-        CLASSIFIED_HOOK_EVIDENCE_RE.search(command)
+    has_advisory_route = any(
+        ADVISORY_HOOK_RE.search(command)
         for command in managed_commands
     )
     if not managed_commands:
@@ -140,10 +140,10 @@ def _claude_spill_warnings(config: dict[str, Any], tao_root: Path) -> list[str]:
             "Claude Code UserPromptSubmit Spill workflow label hook is missing. "
             f"Run: python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
         )
-    elif not has_classification_evidence:
+    elif not has_advisory_route:
         warnings.append(
             "Claude Code UserPromptSubmit Spill workflow label hook is missing "
-            "--classification-evidence. Run: "
+            "--advisory. Run: "
             f"python3 {tao_root / 'scripts' / 'setup-agent-hooks.py'}"
         )
     spill_tool = config.get("env", {}).get("SPILL_AI_TOOL", "")

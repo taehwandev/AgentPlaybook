@@ -153,7 +153,10 @@ Rules:
     Finish is read-only: it accepts no inline gate evidence and never mutates
     the ledger while validating completion.
     Missing wrapper evidence or missing route gate evidence is non-compliant.
-    If `--request-classified` is used, include `--classification-evidence`.
+    If `--request-classified` is used, include `--classification-evidence`. The
+    flag is honored only for a delegated worker backed by a ready and valid
+    parent execution capsule; otherwise pass `--request "<USER_REQUEST>"` and
+    let the classifier run.
     Work routes require resolved-scope evidence such as `clear-scoped`,
     `answered ... separate actionable`, or `blockers resolved`; weak markers
     such as `classified`, `done`, `clarified`, or `no blockers` are not

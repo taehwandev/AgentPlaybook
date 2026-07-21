@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sys
 import tempfile
 import unittest
@@ -49,6 +50,60 @@ class RuntimeExecutionCapsuleBridgeTests(unittest.TestCase):
                 self.assertIn("worker-specific evidence paths", block)
                 self.assertNotIn("docs-read", block.lower())
                 self.assertNotIn("receipt", block.lower())
+
+    def test_start_bridge_never_teaches_unconditional_request_classified(self) -> None:
+        # The flag is honored only for a delegated worker whose parent left a
+        # ready and valid capsule; every other caller is classified normally and
+        # the requestless form is rejected outright. The bridge is the source
+        # installed into each runtime's instruction file, so an imperative that
+        # reads "after classifying, attach --request-classified" walks every
+        # top-level agent into a rejected route. Pin the condition to the
+        # sentence that introduces the flag: guidance that names the flag far
+        # away from its precondition is what caused that failure.
+        for runtime_name, instruction_file in (
+            ("Codex", "AGENTS.md"),
+            ("Claude", "CLAUDE.md"),
+            ("Antigravity", "AGENTS.md"),
+        ):
+            with self.subTest(runtime=runtime_name):
+                block = runtime_bridge_block(ROOT, runtime_name, instruction_file)
+                introducing = [
+                    sentence
+                    for sentence in re.split(r"(?<=[.;])\s+", block)
+                    if "--request-classified" in sentence
+                ]
+
+                self.assertTrue(
+                    introducing,
+                    "the bridge no longer mentions --request-classified at all",
+                )
+                for sentence in introducing:
+                    # "only as/when/for" has to bind the act of adding the flag.
+                    # The reverted text also said "capsule", but only inside a
+                    # trailing rationale ("reuse only the matching capsule")
+                    # hanging off an unconditional imperative, so a bare
+                    # substring check for the word does not catch the defect.
+                    self.assertRegex(
+                        sentence,
+                        r"--request-classified[^.;]*\bonly\s+(?:as|when|for)\b",
+                        "the bridge instructs attaching --request-classified unconditionally; "
+                        "the precondition must bind the instruction itself: "
+                        f"{sentence!r}",
+                    )
+                    self.assertIn(
+                        "capsule",
+                        sentence.lower(),
+                        "the bridge instructs attaching --request-classified without naming "
+                        f"the parent-capsule condition in the same sentence: {sentence!r}",
+                    )
+
+                normalized = " ".join(block.split())
+                self.assertIn("let the classifier decide", normalized)
+                self.assertNotIn(
+                    "For a classified or answered request, keep passing the current "
+                    "--request and add --request-classified",
+                    normalized,
+                )
 
     def test_codex_dispatch_is_conditional_and_does_not_require_a_fresh_process(self) -> None:
         codex_block = runtime_bridge_block(ROOT, "Codex", "AGENTS.md")

@@ -47,9 +47,12 @@ AUTO_DELEGATION_BRIDGE_PHRASE = (
 )
 RUNTIME_START_BRIDGE_PHRASE = (
     "For multi-step work, run Tao Agent OS agent-hook.py start once; do not separately repeat "
-    "workflow list, classify, route, or preflight. For a classified or answered request, keep "
-    "passing the current --request and add --request-classified with --classification-evidence "
-    "so delegated workers can safely reuse only the matching capsule."
+    "workflow list, classify, route, or preflight. Pass --request with the real user request and "
+    "let the classifier decide; if it returns clarify-first or Grill-Me, run that protocol instead "
+    "of routing around it. Add --request-classified with --classification-evidence only as a "
+    "delegated worker whose parent left a ready and valid execution capsule bound to the same "
+    "exact request and workflow command; without that matching capsule the flag is not honored, "
+    "the classifier runs anyway, and the requestless form is rejected."
 )
 RUNTIME_FINISH_BRIDGE_PHRASE = (
     "For multi-step work, run Tao Agent OS agent-hook.py finish before final report, commit, "

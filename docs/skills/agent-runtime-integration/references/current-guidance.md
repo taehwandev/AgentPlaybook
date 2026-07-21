@@ -584,11 +584,15 @@ Claude:
   `Bash(/absolute/home/.tao/bin/tao-hook *)`. Do not
   approve or document broad `python3`, relative `scripts/<name>.py`, or
   argument-specific variants for shared wrappers.
-- The managed Claude `UserPromptSubmit` workflow label hook must not call
-  `workflow route ... --request-classified` without `--classification-evidence`.
-  That hook is allowed to use a safe generic classification evidence string
-  only when it routes to `triage` for local label context and must not pass
-  prompt content. Work routes must use resolved-scope evidence such as
+- The managed Claude `UserPromptSubmit` workflow label hook uses
+  `workflow route triage --advisory`. That hook fires on every prompt and never
+  sees the prompt text, so it has no request to classify: `--advisory` emits the
+  document listing and label context while asserting no request intake and
+  satisfying no downstream gate. It must not pass prompt content, and it must
+  not use `--request-classified`, which is honored only for a delegated worker
+  backed by a ready and valid parent execution capsule bound to the same exact
+  request and workflow command. Work routes must use
+  resolved-scope evidence such as
   `clear-scoped`, `answered ... separate actionable`, or `blockers resolved`;
   `classified`, `done`, `handled`, `clarified`, or `no blockers` is not enough
   by itself. `setup-agent-hooks.py` should replace stale managed Claude hooks

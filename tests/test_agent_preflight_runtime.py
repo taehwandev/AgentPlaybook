@@ -10,7 +10,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from agent_preflight_runtime import _missing_allow_entries
+from agent_preflight_runtime import _claude_spill_warnings, _missing_allow_entries
 
 
 class MissingAllowEntriesTests(unittest.TestCase):
@@ -71,6 +71,52 @@ class MissingAllowEntriesTests(unittest.TestCase):
 
         self.assertEqual(["Bash(missing-one)", "Bash(missing-two)"], missing)
         self.assertLess(elapsed, 0.05, f"expected a near-instant set lookup, took {elapsed:.3f}s")
+
+
+class ClaudeSpillHookTests(unittest.TestCase):
+    def test_current_advisory_hook_is_recognized(self) -> None:
+        config = {
+            "env": {"SPILL_AI_TOOL": "claude"},
+            "hooks": {
+                "UserPromptSubmit": [
+                    {
+                        "hooks": [
+                            {
+                                "command": (
+                                    "SPILL_AI_TOOL=claude tao-hook workflow route "
+                                    "triage --advisory"
+                                )
+                            }
+                        ]
+                    }
+                ]
+            },
+        }
+
+        self.assertEqual([], _claude_spill_warnings(config, ROOT))
+
+    def test_retired_classified_hook_is_reported_for_migration(self) -> None:
+        config = {
+            "env": {"SPILL_AI_TOOL": "claude"},
+            "hooks": {
+                "UserPromptSubmit": [
+                    {
+                        "hooks": [
+                            {
+                                "command": (
+                                    "SPILL_AI_TOOL=claude tao-hook workflow route triage "
+                                    "--request-classified --classification-evidence safe"
+                                )
+                            }
+                        ]
+                    }
+                ]
+            },
+        }
+
+        warnings = _claude_spill_warnings(config, ROOT)
+
+        self.assertTrue(any("--advisory" in warning for warning in warnings))
 
 
 if __name__ == "__main__":

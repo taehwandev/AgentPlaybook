@@ -45,15 +45,28 @@ performs request intake, routing, and preflight as one lifecycle entry:
 <TAO_LAUNCHER> start --project <TARGET_REPO> --rules <TAO_ROOT> --command <command> --request "<USER_REQUEST>" [--platform <platform>] [--concern <concern>]
 ```
 
-The start hook requires the current request with `--request`. After the request
-was already classified or answered, keep `--request` and add
-`--request-classified` plus `--classification-evidence` with the prior
-classification, answer-first handling, or user-visible alignment checkpoint.
-Direct `agent-hook.py start --request-classified` without both the current
-request and classification evidence is a workflow failure. If the request is a direct
-question, the script blocks routing so the agent answers before editing or
-running project commands. Work routes require evidence that proves the request
-is actionable, such as `clear-exact`, `clear-scoped`, `answered ... separate
+The start hook requires the current request with `--request`.
+`--request-classified` is a proof-carrying delegation exemption, not a
+same-session root override: add it with `--classification-evidence` only when a
+ready and valid parent capsule binds the worker to the same exact request and
+workflow command from the prior intake. A capsule for another request or route
+grants no exemption. Without that matching capsule, the classifier
+intentionally evaluates `--request` and free-text evidence cannot wave a vague
+request through. For a terse root-session
+follow-up, pass a context-complete request that preserves the verbatim follow-up
+and names the already-established scope, for example `검증해줘 — continuation
+scope: verify the required-document receipt change completed in the immediately
+preceding task`. If the scope cannot be carried forward safely, use `triage` or
+`ambiguity` instead. Direct `agent-hook.py start --request-classified` without
+the current request, evidence, and valid parent capsule is a workflow failure,
+and the form with neither a request nor a capsule is rejected outright. A caller
+that only needs the document listing and label context and asserts no intake
+uses `--advisory`; it satisfies no downstream gate, so work must be re-routed
+with a real `--request` before editing, reviewing, or reporting completion.
+If the request is a direct question, the script blocks routing so the agent
+answers before editing or running project commands. Work routes with a valid
+delegation exemption still require evidence that proves the request is
+actionable, such as `clear-exact`, `clear-scoped`, `answered ... separate
 actionable`, or `blockers resolved`; weak evidence such as `classified` or
 `done` is not sufficient. Generic resolution markers such as `clarified` or
 `no blockers` are also insufficient unless they name the resolved scope,
@@ -63,11 +76,13 @@ A short follow-up approval may continue an already settled discussion. The
 classifier recognizes an explicit referential approval such as “그럼 그건
 수정해줘” or “Then apply the agreed change” as `clear-scoped` when it has a
 clear continuation cue and an action verb. A bare “진행해”/“수정해줘” remains
-`vague-action` and must still go through triage. The agent must carry the
-previous scope forward in `--classification-evidence` (for example,
-`clear-scoped continuation; previous scope resolved; user approval confirmed;
-no scope expansion; blockers resolved`); unresolved or open-question markers
-continue to block work routes.
+`vague-action`; without a valid parent capsule, carry the previous scope in the
+context-complete `--request` rather than relying on
+`--classification-evidence`. A delegated worker with valid capsule proof must
+also carry the prior resolved scope in `--classification-evidence` (for
+example, `clear-scoped continuation; previous scope resolved; user approval
+confirmed; no scope expansion; blockers resolved`); unresolved or
+open-question markers continue to block work routes.
 
 The start hook classifies the request and records the recommended route,
 whether the Grill-Me protocol is needed, response mode, and a short reason. Use
@@ -650,6 +665,8 @@ It also records a content-free summary of accepted and promoted global lessons
 from `~/.tao/` when that local store exists.
 When `--request-classified` is used, it must also record
 `--classification-evidence`; otherwise request intake is treated as skipped.
+That evidence alone does not honor the flag: a ready and valid parent execution
+capsule must back it, or the classifier evaluates `--request` as usual.
 For work routes, that evidence must include a resolved-scope signal rather than
 a generic `classified`, `done`, `handled`, `clarified`, or `no blockers`
 marker.

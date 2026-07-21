@@ -243,8 +243,11 @@ the retrospective workflow before final report, commit, release, or handoff.
   before routing. If it reports `grill_me: true` or legacy
   `question_drill: true`, use `triage` or `ambiguity` and a Grill-Me
   `/grilling` session before work.
-- Use `--request-classified` only after the direct question was answered or the
-  ambiguity was actually resolved. Evidence that still says `vague-action`,
+- Use `--request-classified` only as a delegated worker whose parent left a
+  ready and valid execution capsule, and only after the direct question was
+  answered or the ambiguity was actually resolved. Without that capsule the flag
+  is not honored and the classifier runs on `--request` as for any other caller.
+  Evidence that still says `vague-action`,
   `broad-product`, `risky-unclear`, `direct-question`, `answer_first`,
   `clarify_first`, `ambiguous`, `unclear`, `grill_me: true`, or
   `question_drill: true` and their obvious hyphen/space variants must not open

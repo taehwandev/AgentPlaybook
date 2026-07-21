@@ -138,7 +138,10 @@ evidence or missing route gate evidence is
 non-compliant even when the final files look correct. VibeGuard `Needs review`
 must be reported explicitly and can pass the finish check only with an
 `--allow-vibeguard-review` reason. `--request-classified` must include
-`--classification-evidence`; work routes require resolved-scope evidence such
+`--classification-evidence` and is honored only for a delegated worker backed by
+a ready and valid parent execution capsule; every other caller passes
+`--request "<USER_REQUEST>"` and lets the classifier run. Work routes require
+resolved-scope evidence such
 as `clear-scoped`, `answered ... separate actionable`, or `blockers resolved`,
 not weak markers such as `classified`, `done`, `clarified`, or `no blockers`.
 If a request asks for Grill-Me or classification returns `grill_me: true`,
