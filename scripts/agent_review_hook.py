@@ -116,6 +116,15 @@ def review_hook(
     )
 
     if not failures:
+        evidence_path = args.evidence if args.evidence else args.project / ".tao" / "preflight.json"
+        record_successful_review_workflow_validation(
+            args.project,
+            args.rules,
+            evidence_path,
+            checks["workflow_validate"],
+            checks["diff_check"],
+            review_scope,
+        )
         record_review_gate(args, checks)
     else:
         record_review_failure(args, failures)
@@ -173,14 +182,6 @@ def record_review_workflow_validation(
     checks["workflow_validate"] = validate
     if validate["returncode"] != 0:
         failures.append(workflow_validate_failure_detail(validate))
-        return
-    evidence_path = args.evidence if args.evidence else args.project / ".tao" / "preflight.json"
-    record_successful_review_workflow_validation(
-        args.project,
-        args.rules,
-        evidence_path,
-        validate,
-    )
 
 
 def record_review_vibeguard(

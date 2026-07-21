@@ -17,7 +17,7 @@ from agent_vibeguard_cache import cached_vibeguard
 from agent_workspace_policy import is_writing_workspace, non_git_writing_workspace_note
 
 
-REVIEW_VALIDATION_SCHEMA_VERSION = 2
+REVIEW_VALIDATION_SCHEMA_VERSION = 3
 REVIEW_VALIDATION_FILENAME = "review-workflow-validation.json"
 
 
@@ -29,7 +29,8 @@ def run_final_checks(
     gate_signals: list[dict[str, str]],
     failures: list[str],
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], str]:
-    validate = reusable_review_workflow_validation(project, rules) or run_workflow_validate(tao_root)
+    review_validation = reusable_review_workflow_validation(project, rules)
+    validate = review_validation or run_workflow_validate(tao_root)
     diff_check = (
         {
             "command": ["git", "diff", "--check"],
@@ -41,7 +42,22 @@ def run_final_checks(
             "review_note": non_git_writing_workspace_note(project),
         }
         if is_writing_workspace(project)
-        else run_command(["git", "diff", "--check"], project)
+        else (
+            {
+                "command": [],
+                "cwd": str(project),
+                "returncode": 0,
+                "stdout": "",
+                "stderr": "",
+                "skipped": True,
+                "review_note": (
+                    "current successful review diff check: "
+                    f"{review_validation['diff_check']['review_scope']}"
+                ),
+            }
+            if review_validation
+            else run_command(["git", "diff", "--check"], project)
+        )
     )
     vibeguard = cached_vibeguard(
         project=project,
@@ -106,10 +122,17 @@ def record_successful_review_workflow_validation(
     rules: Path,
     evidence_path: Path,
     validate: dict[str, Any],
+    diff_check: dict[str, Any],
+    review_scope: str,
 ) -> None:
-    """Persist a successful review validation with its exact source snapshot."""
+    """Persist successful review checks with their exact source snapshot."""
 
-    if validate.get("returncode") != 0 or not evidence_path.is_file():
+    if (
+        validate.get("returncode") != 0
+        or diff_check.get("returncode") != 0
+        or not review_scope.strip()
+        or not evidence_path.is_file()
+    ):
         return
     try:
         project_git, rules_git = git_states_for_paths(project, rules)
@@ -124,6 +147,10 @@ def record_successful_review_workflow_validation(
             "project_git": project_git,
             "rules_git": rules_git,
             "workflow_validate": {"returncode": 0},
+            "diff_check": {
+                "returncode": 0,
+                "review_scope": review_scope.strip(),
+            },
         },
     )
 
@@ -156,6 +183,7 @@ def reusable_review_workflow_validation(project: Path, rules: Path) -> dict[str,
         "stderr": "",
         "reused": True,
         "source": "review",
+        "diff_check": record["diff_check"],
     }
 
 
@@ -170,6 +198,7 @@ def _valid_review_validation_record(record: dict[str, Any]) -> bool:
         "project_git",
         "rules_git",
         "workflow_validate",
+        "diff_check",
     }:
         return False
     if record.get("schema_version") != REVIEW_VALIDATION_SCHEMA_VERSION:
@@ -190,4 +219,13 @@ def _valid_review_validation_record(record: dict[str, Any]) -> bool:
             "worktree_signature",
         }:
             return False
-    return record.get("workflow_validate") == {"returncode": 0}
+    if record.get("workflow_validate") != {"returncode": 0}:
+        return False
+    diff_check = record.get("diff_check")
+    return (
+        isinstance(diff_check, dict)
+        and set(diff_check) == {"returncode", "review_scope"}
+        and diff_check.get("returncode") == 0
+        and isinstance(diff_check.get("review_scope"), str)
+        and bool(diff_check["review_scope"].strip())
+    )

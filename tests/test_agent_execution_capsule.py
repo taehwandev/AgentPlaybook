@@ -340,6 +340,8 @@ class ExecutionCapsuleTests(unittest.TestCase):
             self.rules,
             self.evidence_path,
             {"returncode": 0},
+            {"returncode": 0},
+            "pathspec: docs/example.md",
         )
 
         with patch(
@@ -358,9 +360,9 @@ class ExecutionCapsuleTests(unittest.TestCase):
             return_value={"returncode": 0, "overall": {"status": "Ready"}},
         ), patch(
             "agent_finish_final_checks.run_command",
-            return_value={"returncode": 0, "stdout": "", "stderr": ""},
+            side_effect=AssertionError("finish must reuse the current review diff check"),
         ):
-            validate, _, _, _ = run_final_checks(
+            validate, diff_check, _, _ = run_final_checks(
                 ROOT,
                 self.project,
                 self.rules,
@@ -369,6 +371,8 @@ class ExecutionCapsuleTests(unittest.TestCase):
                 [],
             )
         self.assertTrue(validate["reused"])
+        self.assertTrue(diff_check["skipped"])
+        self.assertIn("pathspec: docs/example.md", diff_check["review_note"])
 
         (self.project / "app.txt").write_text("changed\n", encoding="utf-8")
         self.assertIsNone(reusable_review_workflow_validation(self.project, self.rules))
