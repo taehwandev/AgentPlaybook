@@ -84,6 +84,7 @@ Pick the smallest relevant document set. Repo-local guidance wins over this shar
 - Android state/data: `platforms/android/skills/android-state-data/SKILL.md`
 - Android DataStore persistence reference: `platforms/android/skills/android-state-data/references/android-datastore.md`
 - Android background work: `platforms/android/skills/android-background-work/SKILL.md`
+- Android memory and lifecycle ownership: `platforms/android/skills/android-memory-lifecycle/SKILL.md`
 - Android security: `platforms/android/skills/android-security/SKILL.md`
 - Android review: `platforms/android/skills/android-review/SKILL.md`
 - KMP architecture: `platforms/kmp/skills/kmp-architecture/SKILL.md`

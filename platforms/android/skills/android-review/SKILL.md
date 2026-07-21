@@ -11,6 +11,8 @@ Use when routed to `platforms/android/skills/android-review/SKILL.md` or when wo
 ## Read
 
 - `references/current-guidance.md` for the detailed guidance for this skill.
+- `../android-memory-lifecycle/SKILL.md` when resource ownership, cleanup, or
+  lifecycle-sensitive work is reviewed.
 - Related `SKILL.md` entrypoints named by the reference before loading their detailed references.
 
 ## Process

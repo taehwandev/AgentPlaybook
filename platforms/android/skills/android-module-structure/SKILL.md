@@ -11,6 +11,8 @@ Use when routed to `platforms/android/skills/android-module-structure/SKILL.md` 
 ## Read
 
 - `references/current-guidance.md` for the detailed guidance for this skill.
+- `references/feature-package-structure.md` when deciding feature flow package
+  boundaries or auditing a proposed package split.
 - Related `SKILL.md` entrypoints named by the reference before loading their detailed references.
 
 ## Process

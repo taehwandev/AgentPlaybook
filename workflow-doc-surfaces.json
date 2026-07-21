@@ -12,6 +12,7 @@
       "platforms/android/skills/android-viewmodel-state/SKILL.md",
       "platforms/android/skills/android-state-data/SKILL.md",
       "platforms/android/skills/android-review/SKILL.md",
+      "platforms/android/skills/android-memory-lifecycle/SKILL.md",
       "platforms/android/skills/android-external-skill-source-coverage/SKILL.md",
       "platforms/android/skills/source-coverage/SKILL.md",
       "platforms/android/skills/source-coverage/references/external-source-distillation.md",
@@ -291,7 +292,12 @@
       "request_any": [
         "jetpack\\s+compose",
         "compose",
-        "\\ucef4\\ud3ec\\uc988"
+        "\\ucef4\\ud3ec\\uc988",
+        "lifecycle",
+        "memory\\s+leak",
+        "resource\\s+cleanup",
+        "\\ub77c\\uc774\\ud504\\uc0ac\\uc774\\ud074",
+        "\\uba54\\ubaa8\\ub9ac"
       ],
       "doc_sets": [
         "android_compose_ui"

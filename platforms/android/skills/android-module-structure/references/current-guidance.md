@@ -775,6 +775,12 @@ Forbidden edges:
 
 ## Feature Package Layout
 
+Before applying a package template, choose the flow root from the owner and
+dependency direction rather than from type names. Use the focused gate in
+[`feature-package-structure.md`](feature-package-structure.md) to classify the
+flow and audit the split; the layout below remains a vocabulary of possible
+owners, not a required directory tree.
+
 Inside a feature implementation module, prefer packages that reveal behavior and
 dependency direction:
 
@@ -796,6 +802,10 @@ For small screens, keeping `Route`, `Screen`, `UiState`, and preview support in
 one package is fine. Use `preview/` only for shared deterministic states or
 design-system-owned examples; one-off stateless UI preview placement follows
 `../../android-compose-ui/references/current-guidance.md`.
+
+Do not create one of these subpackages merely because a type has that name. A
+new boundary needs a caller, owner, dependency, release, or test seam that can
+be verified; otherwise keep the owners together and record the audit result.
 
 ## Repository Package Layout
 

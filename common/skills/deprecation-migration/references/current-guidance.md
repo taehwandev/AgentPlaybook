@@ -67,6 +67,16 @@ artifacts, runtime entrypoints, and tests no longer depend on it.
 Do not use a migration as an excuse for a broad rewrite. Keep each slice small
 enough to prove compatibility and rollback or forward-fix behavior.
 
+## Copy-First Behavioral Migration
+
+For a behavior-preserving replacement, keep the original path intact while the
+new path is introduced. Copy or implement the replacement first, then compare
+it with the old behavior or contract. Switch callers in small, reviewable
+slices only after parity is established. Delete the old path in a separate
+change, after references and callers are gone and the removal has explicit
+approval. Do not combine replacement, caller cutover, and legacy deletion into
+one unverified diff.
+
 ## Workspace Root Relocation
 
 Treat a developer workspace root rename as a coordinated migration across all

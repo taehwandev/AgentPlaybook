@@ -22,6 +22,21 @@ production-like failure.
 - matching platform architecture or review card from `index.md`
 - security, persistence, API contract, or product-pattern cards when affected
 
+## Feedback Loop And Hypothesis Discipline
+
+For difficult, flaky, or performance-related failures, build a fast,
+deterministic pass/fail feedback loop before investigating causes. Write three
+to five ranked, falsifiable hypotheses and test one variable at a time. Put the
+regression check at the seam that exercises the real failure; if no such seam
+exists, record that architecture gap instead of accepting false confidence.
+Remove temporary logs, probes, and harnesses, then rerun the original loop.
+
+For non-deterministic failures, optimize for reproduction rate rather than a
+perfect one-shot reproduction. Repeat or stress the trigger until the signal is
+reliable enough to test against, while keeping the observation and input
+controlled. A failing loop that is fast and repeatable is more useful than a
+slow, broad smoke check.
+
 ## Steps
 
 1. Reproduce or capture the failure with the smallest reliable command, log, or
@@ -39,6 +54,11 @@ production-like failure.
    boundary.
 9. Report reproduction, root cause, changed behavior, observability impact,
    verification, and remaining risk.
+
+After the fix, remove tagged temporary instrumentation and throwaway harnesses,
+rerun the original loop and regression check, and record the architectural gap
+when no correct test seam existed. The final explanation should name the
+confirmed hypothesis so the next diagnosis can start from evidence.
 
 ## Verification
 
