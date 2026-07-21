@@ -242,20 +242,47 @@ skill cards, agent instruction files, UI-capable platform work, and shared
 Tao Agent OS docs. Request-intent rules may match the route command, selected
 platform, request text, and reusable document sets; for example screen, list,
 favorites, or explicit framework choices on Android, Application, Flutter, iOS,
-KMP, Swift, and Web promote the matching UI, state, structure, review, visual
-verification, and performance guidance. `workflow.py route` automatically
-extracts path-like references from `--request`, and `agent-preflight.py` also
-adds paths from `git status --short --untracked-files=all`. Use
+KMP, Swift, and Web surface the matching UI, state, structure, review, visual
+verification, and performance guidance, of which the best-matched cards are
+promoted and the rest stay reachable in `reference_docs`. `workflow.py route`
+automatically extracts path-like references from `--request`, and
+`agent-preflight.py` also adds paths from
+`git status --short --untracked-files=all`. Use
 `--surface-path <path>` only when a launcher already knows an in-scope path that
 does not appear in the request or current git status. Surface promotion may
-move a document from `reference_docs` to `required_docs`; it never replaces
-repo-local instructions or the normal route command/profile selection.
+move a document from `reference_docs` to `required_docs`; it is best-effort
+under the selection budget below, and it never replaces repo-local instructions
+or the normal route command/profile selection.
 The router also builds a local document graph from Markdown links, canonical
 skill-bundle entrypoints, and `workflow-doc-surfaces.json` document sets. Natural
 language search should find seed docs; the graph then follows nearby relations
 so agents see connected guidance without the user naming every keyword. Loose
 graph relations become `reference_docs`; only explicit required relations such
 as frontmatter `requires_docs` may promote an additional doc to `required_docs`.
+
+`required_docs` names the document that holds a skill's actual rules, not a
+pointer to it. Most `<skill>/SKILL.md` entrypoints are generated stubs whose
+only content is a link to `references/current-guidance.md`; the router replaces
+such an entrypoint with that reference. An entrypoint carrying guidance of its
+own is kept alongside its reference, and an entrypoint with no reference on disk
+is kept unchanged. Core is the deliberate exception: its entrypoints are never
+resolved, because the operating-skill reference is large and identical on every
+route while AGENTS.md already states the always-on operating contract. Open
+`common/skills/agent-operating-skill/references/current-guidance.md` from
+`reference_docs` when the task turns on operating-skill detail.
+
+Required-document selection is bounded. Beyond the always-required core, the
+router fills a byte budget and a document cap in priority order: the command's
+own skill, then documents matched to this request's text and touched paths, then
+the selected platform card set, then the contracts of the gates the route will
+enforce, then general code-work discipline. Selection stops at the budget rather
+than skipping a document that does not fit, so the most specific match is never
+starved by a smaller, less relevant one. Surface and graph promotion are
+therefore best-effort: a relevant document may legitimately remain in
+`reference_docs`, and it must still be opened when the task touches it. Gates
+that reject work, namely the review hook and the multi-agent split decision,
+always keep their contract document in `required_docs` and are never dropped by
+the budget; a route may not enforce a gate whose contract it withheld.
 
 Natural-language document discovery is a router responsibility, not a hook
 responsibility. The router/search layer uses the repository-pinned Wikimap

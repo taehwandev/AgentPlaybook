@@ -154,8 +154,10 @@ the update.
   `git status` paths, so agents do not need the user to name every relevant
   skill card explicitly. UI-capable platform work such as Android Compose,
   Application desktop UI, Flutter widgets, iOS SwiftUI/UIKit, KMP Compose,
-  Swift design-system UI, and Web React UI must promote the matching UI, state,
-  structure, review, visual verification, and performance guidance.
+  Swift design-system UI, and Web React UI must surface the matching UI, state,
+  structure, review, visual verification, and performance guidance. Selection
+  into `required_docs` is bounded by a byte budget and a document cap, so the
+  best-matched cards are promoted and the rest stay in `reference_docs`.
   Natural-language document discovery stays in the router/search layer. The
   pinned Wikimap adapter refreshes an ignored local index and supplies exact
   section/line candidates; explicit workflow facets and
