@@ -12,6 +12,7 @@ from typing import Any
 
 from agent_lesson_store import upsert_retrospective_candidate
 from agent_skill_retention import skill_learning_summary
+from support.global_state import STATE_HOME_ENV, global_state_dir
 from workflow_common import (
     REPAIR_CYCLE_LIMIT,
     REPAIR_POLICY,
@@ -20,14 +21,14 @@ from workflow_common import (
 )
 
 SCHEMA_VERSION = 1
-STATE_HOME_ENV = "TAO_STATE_HOME"
 SAFE_SLUG_RE = re.compile(r"[^a-z0-9_]+")
 LESSON_STATUSES = ("accepted", "promoted")
 
 
 def state_home() -> Path:
-    override = os.environ.get(STATE_HOME_ENV, "").strip()
-    return Path(override).expanduser() if override else Path.home() / ".tao"
+    # Single definition, shared with the gates' global-vs-project discriminator
+    # so the two can never disagree about which directory is the global install.
+    return global_state_dir()
 
 
 def lesson_summary(limit: int = 10) -> dict[str, Any]:

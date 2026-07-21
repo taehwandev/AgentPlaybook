@@ -35,9 +35,13 @@ from pathlib import Path
 try:  # Never fail to load; used for the message and the session lookup.
     from agent_runtime_session import recorded_session_id
     from support.stable_launcher import stable_launcher_path
+    from support.global_state import is_project_state_dir
 except ImportError:  # pragma: no cover - exercised only on a broken install
     def stable_launcher_path() -> Path:
         return Path.home() / ".tao" / "bin" / "tao-hook"
+
+    def is_project_state_dir(path: Path) -> bool:
+        return path.is_dir() and path.resolve() != (Path.home() / ".tao").resolve()
 
     def recorded_session_id(payload: object) -> str:
         if not isinstance(payload, dict):
@@ -77,7 +81,9 @@ def safe_session_id(session_id: str) -> str:
 
 
 def opts_in(path: Path) -> bool:
-    if (path / STATE_DIR).is_dir():
+    # Must stay identical to claude_pretool_gate.opts_in; both delegate the
+    # global-vs-project question to support.global_state so they cannot drift.
+    if is_project_state_dir(path / STATE_DIR):
         return True
     for name in OPT_IN_FILES:
         try:

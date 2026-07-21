@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import io
 import json
@@ -363,6 +364,169 @@ class ClaudeStopGateTests(unittest.TestCase):
             self.assertEqual("installed", first)
             self.assertEqual("ok", second)
             self.assertEqual(after_first, target.read_text())
+
+
+_PRETOOL_SPEC = importlib.util.spec_from_file_location(
+    "claude_pretool_gate_global_state_test", ROOT / "scripts" / "claude_pretool_gate.py"
+)
+assert _PRETOOL_SPEC and _PRETOOL_SPEC.loader
+pretool = importlib.util.module_from_spec(_PRETOOL_SPEC)
+_PRETOOL_SPEC.loader.exec_module(pretool)
+
+_PREFLIGHT_SPEC = importlib.util.spec_from_file_location(
+    "agent_preflight_global_state_test", ROOT / "scripts" / "agent-preflight.py"
+)
+assert _PREFLIGHT_SPEC and _PREFLIGHT_SPEC.loader
+agent_preflight = importlib.util.module_from_spec(_PREFLIGHT_SPEC)
+_PREFLIGHT_SPEC.loader.exec_module(agent_preflight)
+
+from support.global_state import STATE_HOME_ENV
+
+
+def _make_global_state_dir(home: Path) -> Path:
+    """Build a .tao that looks like the global install, not project state."""
+    state = home / ".tao"
+    (state / "bin").mkdir(parents=True)
+    (state / "bin" / "tao-hook").write_text("#!/usr/bin/env python3\n")
+    (state / "tao-root").write_text("/somewhere/tao-agent-os\n")
+    (state / "projects.json").write_text("{}")
+    (state / "claude-session-projects").mkdir()
+    return state
+
+
+class GlobalInstallIsNotAProjectTests(unittest.TestCase):
+    """`.tao` names both the global install and per-project state.
+
+    Both gates classified any directory containing a `.tao` as a project, so the
+    home directory hosting the global install always classified as one. A
+    harness write under `$HOME` (Claude's plan mode writes `~/.claude/plans/*.md`)
+    then registered `$HOME` as a session project, and the Stop gate demanded a
+    finish for `$HOME` that can never pass -- auditing `~` dies on `~/.Trash`.
+    """
+
+    def setUp(self) -> None:
+        self._old_state_home = os.environ.get(STATE_HOME_ENV)
+
+    def tearDown(self) -> None:
+        if self._old_state_home is None:
+            os.environ.pop(STATE_HOME_ENV, None)
+        else:
+            os.environ[STATE_HOME_ENV] = self._old_state_home
+
+    def test_global_install_directory_does_not_classify_as_a_project(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            state = _make_global_state_dir(home)
+            os.environ[STATE_HOME_ENV] = str(state)
+
+            self.assertFalse(gate.opts_in(home))
+            self.assertFalse(pretool.opts_in(home))
+
+    def test_global_markers_win_even_when_state_home_points_elsewhere(self) -> None:
+        # A relocated or differently-rooted install must still be recognised, so
+        # the discriminator cannot rely on the environment alone.
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            _make_global_state_dir(home)
+            os.environ[STATE_HOME_ENV] = str(Path(tmp) / "elsewhere" / ".tao")
+
+            self.assertFalse(gate.opts_in(home))
+            self.assertFalse(pretool.opts_in(home))
+
+    def test_real_project_state_still_classifies(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            os.environ[STATE_HOME_ENV] = str(_make_global_state_dir(home))
+
+            project = home / "git" / "repo"
+            state = project / ".tao"
+            state.mkdir(parents=True)
+            (state / "preflight.json").write_text("{}")
+
+            self.assertTrue(gate.opts_in(project))
+            self.assertTrue(pretool.opts_in(project))
+
+    def test_fresh_project_without_state_still_opts_in_by_marker_file(self) -> None:
+        # A repo that has never run `start` has no .tao yet; the opt-in file is
+        # what must keep working, or a fresh project can never begin.
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            os.environ[STATE_HOME_ENV] = str(_make_global_state_dir(home))
+
+            project = home / "git" / "fresh"
+            project.mkdir(parents=True)
+            (project / "AGENTS.md").write_text("# Tao Agent OS project\n")
+
+            self.assertFalse((project / ".tao").exists())
+            self.assertTrue(gate.opts_in(project))
+            self.assertTrue(pretool.opts_in(project))
+
+    def test_harness_plan_path_does_not_register_home_as_a_session_project(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            state = _make_global_state_dir(home)
+            os.environ[STATE_HOME_ENV] = str(state)
+            plans = home / ".claude" / "plans"
+            plans.mkdir(parents=True)
+
+            with patch.object(pretool.Path, "home", staticmethod(lambda: home)):
+                self.assertIsNone(pretool.find_project_root(plans))
+                buffer = io.StringIO()
+                with redirect_stdout(buffer):
+                    code = pretool.decide(
+                        {
+                            "tool_name": "Write",
+                            "cwd": str(home),
+                            "session_id": "harness-session",
+                            "tool_input": {"file_path": str(plans / "x.md")},
+                        }
+                    )
+                index = pretool.session_projects_index("harness-session")
+
+            self.assertEqual(0, code)
+            self.assertEqual("", buffer.getvalue())
+            self.assertFalse(index.exists())
+
+    def test_project_scoped_state_cannot_be_written_to_the_global_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            os.environ[STATE_HOME_ENV] = str(_make_global_state_dir(home))
+            args = argparse.Namespace(
+                evidence=None,
+                project=home,
+                worker_reservation_token="",
+                parent_evidence=None,
+            )
+
+            with self.assertRaises(ValueError) as caught:
+                agent_preflight.resolve_evidence_path(args, home)
+
+            self.assertIn("global Tao Agent OS install directory", str(caught.exception))
+
+    def test_project_scoped_state_is_allowed_for_a_project_without_state_yet(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            os.environ[STATE_HOME_ENV] = str(_make_global_state_dir(home))
+            project = home / "git" / "fresh"
+            project.mkdir(parents=True)
+            args = argparse.Namespace(
+                evidence=None,
+                project=project,
+                worker_reservation_token="",
+                parent_evidence=None,
+            )
+
+            self.assertEqual(
+                project / ".tao" / "preflight.json",
+                agent_preflight.resolve_evidence_path(args, project),
+            )
 
 
 if __name__ == "__main__":

@@ -28,6 +28,7 @@ from agent_preflight_spill import write_spill_label
 from agent_vibeguard_cache import cached_vibeguard
 from agent_worker_evidence import claim_worker_reservation
 from agent_workspace_policy import is_git_status_review_only, non_git_writing_workspace_note
+from support.global_state import project_scoped_state_error
 from workflow_catalog import COMMANDS, CONCERNS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import unique
 from workflow_doc_surfaces import git_status_surface_paths
@@ -287,6 +288,13 @@ def build_parser(tao_root: Path) -> argparse.ArgumentParser:
 
 def resolve_evidence_path(args: argparse.Namespace, project: Path) -> Path:
     _enforce_worker_environment(args)
+    # Project-scoped state must land in a project. Silently creating it
+    # elsewhere is what put a 54 KB preflight.json in the global ~/.tao and left
+    # the Stop gate demanding a finish for $HOME. A missing .tao is fine -- a
+    # fresh repo has none yet; only the global install directory is refused.
+    scope_error = project_scoped_state_error(project)
+    if scope_error:
+        raise ValueError(scope_error)
     if not args.evidence:
         return project / ".tao" / "preflight.json"
     requested = args.evidence.expanduser().absolute()

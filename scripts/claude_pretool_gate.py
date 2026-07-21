@@ -40,9 +40,13 @@ from pathlib import Path
 
 try:  # The gate must never fail to load; the import is only used for a message.
     from support.stable_launcher import stable_launcher_path
+    from support.global_state import is_project_state_dir
 except ImportError:  # pragma: no cover - exercised only on a broken install
     def stable_launcher_path() -> Path:
         return Path.home() / ".tao" / "bin" / "tao-hook"
+
+    def is_project_state_dir(path: Path) -> bool:
+        return path.is_dir() and path.resolve() != (Path.home() / ".tao").resolve()
 
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 # Only Write creates a file from nothing; Edit/MultiEdit require an existing
@@ -112,8 +116,12 @@ def max_age_seconds() -> int:
 
 
 def opts_in(path: Path) -> bool:
-    """True when this directory marks a project that uses Tao Agent OS."""
-    if (path / STATE_DIR).is_dir():
+    """True when this directory marks a project that uses Tao Agent OS.
+
+    The global install lives in a ``.tao`` too, so directory existence alone
+    would classify ``$HOME`` as a project -- see support.global_state.
+    """
+    if is_project_state_dir(path / STATE_DIR):
         return True
     for name in OPT_IN_FILES:
         candidate = path / name
