@@ -719,6 +719,19 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
         )
 
         self.assertIn("doc_graph_matches", route)
+        # A markdown-link graph neighbor reaches the agent as a reference doc.
+        # `local-tools` anchors this property independently of OVERSIZED_DOC_BYTES:
+        # it is a small file, so it demonstrates graph-neighbor exposure on its own
+        # merits rather than as a side effect of a size demotion.  This assertion
+        # should outlive the guard.
+        neighbours = {match["path"] for match in route["doc_graph_matches"]}
+        self.assertIn("common/skills/local-tools/SKILL.md", neighbours)
+        self.assertIn("common/skills/local-tools/SKILL.md", route["reference_docs"])
+        # The original anchor, restored: the oversized scripted-agent-workflow
+        # reference is held out of required_docs by OVERSIZED_DOC_BYTES and stays
+        # reachable as a reference.  This pins the guard's observable effect on a
+        # real route, so it will fail loudly if the guard is removed again before
+        # that document is split.
         self.assertIn(
             "workflows/skills/scripted-agent-workflow/references/current-guidance.md",
             route["reference_docs"],

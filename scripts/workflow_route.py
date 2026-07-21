@@ -393,12 +393,22 @@ CODE_WORK_COMMANDS_REQUIRING_DISCIPLINE = {
 REQUIRED_DOC_BUDGET_BYTES = 30_000
 MAX_REQUIRED_DOCS = 9
 
-# A single reference larger than this would monopolise the route's mandatory
-# reading -- the Android Compose and module-structure references are 38 KB and
-# 47 KB, several times the size of the whole rest of a typical required set.
-# Forcing one of those into every matching route recreates the over-reading
-# problem this change exists to fix, just in a different shape, so oversized
-# documents stay in `reference_docs` where the agent can still reach them.
+# STOPGAP -- not a permanent policy.  A single reference larger than this would
+# monopolise the route's mandatory reading: admitting one exhausts
+# REQUIRED_DOC_BUDGET_BYTES on its own and stops selection, dropping every
+# lower-ranked card that would otherwise have fit.  Oversized documents stay in
+# `reference_docs`, where the agent can still reach them.
+#
+# The real fix is to split an oversized reference into separately routable topic
+# siblings, as `platforms/android/skills/android-module-structure` now is -- every
+# piece of that bundle is under 11 KB and routes on its own concern, so this guard
+# never touches it.  Two routable references still trip the guard:
+#
+#   workflows/skills/scripted-agent-workflow/references/current-guidance.md  (~46 KB)
+#   docs/skills/agent-runtime-integration/references/current-guidance.md     (~41 KB)
+#
+# Split those two the same way and this constant, its use in the selection loop
+# below, and the bundle-size tests can all be deleted.
 OVERSIZED_DOC_BYTES = 40_000
 
 
