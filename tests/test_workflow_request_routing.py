@@ -66,6 +66,8 @@ from support.runtime_bridge import (
 )
 from support.stable_launcher import stable_launcher_path
 from workflow_catalog import COMMANDS, CONCERNS, SPILL_ACTION_LABELS
+from workflow_doc_resolution import resolve_guidance_docs
+from workflow_route import CORE_REQUIRED_DOCS
 from workflow_gate_policy import (
     AGENTIC_RUN_STATE_GATE,
     AMBIGUITY_GATE,
@@ -145,6 +147,18 @@ _AGENT_HOOK_SPEC.loader.exec_module(agent_hook)
 
 def route_doc(path: str) -> str:
     return canonical_doc_path(path)
+def required_doc(path: str) -> str:
+    """The document a route actually requires for a guidance area.
+
+    Thin `SKILL.md` entrypoints resolve to `references/current-guidance.md`,
+    which is where the rules live; entrypoints with content of their own, and
+    skills with no reference, stay as they are. Core docs are exempt from
+    resolution in the router, so they are exempt here too.
+    """
+    canonical = canonical_doc_path(path)
+    if canonical in {canonical_doc_path(doc) for doc in CORE_REQUIRED_DOCS}:
+        return canonical
+    return resolve_guidance_docs(ROOT, [canonical])[-1]
 
 
 class WorkflowRequestRoutingTests(unittest.TestCase):
@@ -278,9 +292,11 @@ class WorkflowRequestRoutingTests(unittest.TestCase):
         self.assertNotIn(CYCLE_CONTRACT_GATE, route["gates"])
         self.assertNotIn(BOUNDARY_PLAN_GATE, route["gates"])
         self.assertNotIn(MULTI_AGENT_GATE, route["gates"])
-        self.assertIn(route_doc("workflows/skills/review-and-commit/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/commit-workflow/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/code-review/SKILL.md"), route["reference_docs"])
+        self.assertIn(required_doc("workflows/skills/review-and-commit/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("common/skills/commit-workflow/SKILL.md"), route["required_docs"])
+        # The commit route enforces the review hook, so its code-review contract
+        # is now required reading rather than optional context.
+        self.assertIn(required_doc("common/skills/code-review/SKILL.md"), route["required_docs"])
         self.assertIn(route_doc("common/skills/worktree-hygiene/SKILL.md"), route["reference_docs"])
 
     def test_commit_explicit_concern_still_escalates_required_docs(self) -> None:
@@ -295,7 +311,7 @@ class WorkflowRequestRoutingTests(unittest.TestCase):
         )
 
         self.assertIn(
-            route_doc("common/skills/testing/SKILL.md"),
+            required_doc("common/skills/testing/SKILL.md"),
             route["required_docs"],
         )
 
@@ -308,8 +324,8 @@ class WorkflowRequestRoutingTests(unittest.TestCase):
 
         route = resolve_docs("docs", None, ["branch"], request_classified=True)
 
-        self.assertIn(route_doc("common/skills/branch-strategy/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/worktree-hygiene/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("common/skills/branch-strategy/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("common/skills/worktree-hygiene/SKILL.md"), route["required_docs"])
 
     def test_preflight_rejects_invalid_concern_like_workflow_route_cli(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

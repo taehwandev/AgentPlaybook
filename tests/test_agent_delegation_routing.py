@@ -59,6 +59,28 @@ def valid_delegation_plan() -> dict[str, object]:
     }
 
 
+def guidance_area(path: str) -> str:
+    """The skill bundle a document belongs to, entrypoint or reference alike."""
+    canonical = canonical_doc_path(path)
+    for suffix in ("/references/current-guidance.md", "/SKILL.md"):
+        if canonical.endswith(suffix):
+            return canonical[: -len(suffix)]
+    return canonical
+
+
+def routed_areas(route: dict) -> set[str]:
+    """Guidance areas the route puts in front of the agent, required or not.
+
+    Required-doc membership is budget-bounded, so a surface match that fires
+    may leave its lower-ranked areas in `reference_docs` rather than
+    `required_docs`. Both are routed; only the first is mandatory reading.
+    """
+    return {
+        guidance_area(doc)
+        for doc in [*route["required_docs"], *route["reference_docs"]]
+    }
+
+
 class DelegationEvidenceTests(unittest.TestCase):
     def test_parallel_gate_reports_all_structured_fields_in_one_pass(self) -> None:
         missing = missing_structured_gate_fields(

@@ -66,6 +66,8 @@ from support.runtime_bridge import (
 )
 from support.stable_launcher import stable_launcher_path
 from workflow_catalog import COMMANDS, CONCERNS, SPILL_ACTION_LABELS
+from workflow_doc_resolution import resolve_guidance_docs
+from workflow_route import CORE_REQUIRED_DOCS
 from workflow_gate_policy import (
     AGENTIC_RUN_STATE_GATE,
     AMBIGUITY_GATE,
@@ -146,6 +148,40 @@ _AGENT_HOOK_SPEC.loader.exec_module(agent_hook)
 
 def route_doc(path: str) -> str:
     return canonical_doc_path(path)
+def required_doc(path: str) -> str:
+    """The document a route actually requires for a guidance area.
+
+    Thin `SKILL.md` entrypoints resolve to `references/current-guidance.md`,
+    which is where the rules live; entrypoints with content of their own, and
+    skills with no reference, stay as they are. Core docs are exempt from
+    resolution in the router, so they are exempt here too.
+    """
+    canonical = canonical_doc_path(path)
+    if canonical in {canonical_doc_path(doc) for doc in CORE_REQUIRED_DOCS}:
+        return canonical
+    return resolve_guidance_docs(ROOT, [canonical])[-1]
+
+
+def guidance_area(path: str) -> str:
+    """The skill bundle a document belongs to, entrypoint or reference alike."""
+    canonical = canonical_doc_path(path)
+    for suffix in ("/references/current-guidance.md", "/SKILL.md"):
+        if canonical.endswith(suffix):
+            return canonical[: -len(suffix)]
+    return canonical
+
+
+def routed_areas(route: dict) -> set[str]:
+    """Guidance areas the route puts in front of the agent, required or not.
+
+    Required-doc membership is budget-bounded, so a surface match that fires
+    may leave its lower-ranked areas in `reference_docs` rather than
+    `required_docs`. Both are routed; only the first is mandatory reading.
+    """
+    return {
+        guidance_area(doc)
+        for doc in [*route["required_docs"], *route["reference_docs"]]
+    }
 
 
 class WorkflowCatalogTests(unittest.TestCase):
@@ -304,10 +340,10 @@ class WorkflowCatalogTests(unittest.TestCase):
     def test_release_route_requires_versioning_skill_doc(self) -> None:
         route = resolve_docs("release", None, [], request_classified=True)
 
-        self.assertIn(route_doc("workflows/skills/release-readiness/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/release-deployment/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/release-versioning/SKILL.md"), route["required_docs"])
-        self.assertNotIn(route_doc("common/skills/release-versioning/SKILL.md"), route["reference_docs"])
+        self.assertIn(required_doc("workflows/skills/release-readiness/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("common/skills/release-deployment/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("common/skills/release-versioning/SKILL.md"), route["required_docs"])
+        self.assertNotIn(required_doc("common/skills/release-versioning/SKILL.md"), route["reference_docs"])
 
     def test_tag_concern_requires_release_and_git_safety_skill_docs(self) -> None:
         expected_docs = (
@@ -325,7 +361,7 @@ class WorkflowCatalogTests(unittest.TestCase):
         route = resolve_docs("release", None, ["tag"], request_classified=True)
         for doc in expected_docs:
             with self.subTest(required_doc=doc):
-                self.assertIn(route_doc(doc), route["required_docs"])
+                self.assertIn(required_doc(doc), route["required_docs"])
 
     def test_release_versioning_forbids_four_digit_year_calver_tags(self) -> None:
         guidance = (ROOT / "common/skills/release-versioning/references/current-guidance.md").read_text(
@@ -448,14 +484,14 @@ class WorkflowCatalogTests(unittest.TestCase):
         self.assertEqual("same_failure_after_repair_or_unsafe_repair", route["stop_condition"])
         for legacy_field in ("attempt_limit", "retry_limit", "retry_scope"):
             self.assertNotIn(legacy_field, route)
-        self.assertIn(route_doc("common/skills/code-conventions/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/llm-coding-discipline/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/agent-editing-safety/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/testing/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("common/skills/code-conventions/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("common/skills/llm-coding-discipline/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("common/skills/agent-editing-safety/SKILL.md"), routed_areas(route))
+        self.assertIn(required_doc("common/skills/testing/SKILL.md"), route["required_docs"])
         self.assertIn(route_doc("workflows/skills/ambiguity-gate/SKILL.md"), route["reference_docs"])
         self.assertIn(route_doc("workflows/skills/cycle-contract/SKILL.md"), route["reference_docs"])
         self.assertIn(route_doc("workflows/skills/product-architecture-delivery/SKILL.md"), route["reference_docs"])
-        self.assertNotIn(route_doc("workflows/skills/product-architecture-delivery/SKILL.md"), route["required_docs"])
+        self.assertNotIn(required_doc("workflows/skills/product-architecture-delivery/SKILL.md"), route["required_docs"])
         self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index(AMBIGUITY_GATE))
         self.assertLess(route["gates"].index(SOURCE_DOCS_GATE), route["gates"].index(DOCUMENTATION_IMPACT_GATE))
         self.assertLess(route["gates"].index(DOCUMENTATION_IMPACT_GATE), route["gates"].index("implementation"))

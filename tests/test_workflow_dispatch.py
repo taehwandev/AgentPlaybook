@@ -66,6 +66,8 @@ from support.runtime_bridge import (
 )
 from support.stable_launcher import stable_launcher_path
 from workflow_catalog import COMMANDS, CONCERNS, SPILL_ACTION_LABELS
+from workflow_doc_resolution import resolve_guidance_docs
+from workflow_route import CORE_REQUIRED_DOCS
 from workflow_gate_policy import (
     AGENTIC_RUN_STATE_GATE,
     AMBIGUITY_GATE,
@@ -144,6 +146,40 @@ _AGENT_HOOK_SPEC.loader.exec_module(agent_hook)
 
 def route_doc(path: str) -> str:
     return canonical_doc_path(path)
+def required_doc(path: str) -> str:
+    """The document a route actually requires for a guidance area.
+
+    Thin `SKILL.md` entrypoints resolve to `references/current-guidance.md`,
+    which is where the rules live; entrypoints with content of their own, and
+    skills with no reference, stay as they are. Core docs are exempt from
+    resolution in the router, so they are exempt here too.
+    """
+    canonical = canonical_doc_path(path)
+    if canonical in {canonical_doc_path(doc) for doc in CORE_REQUIRED_DOCS}:
+        return canonical
+    return resolve_guidance_docs(ROOT, [canonical])[-1]
+
+
+def guidance_area(path: str) -> str:
+    """The skill bundle a document belongs to, entrypoint or reference alike."""
+    canonical = canonical_doc_path(path)
+    for suffix in ("/references/current-guidance.md", "/SKILL.md"):
+        if canonical.endswith(suffix):
+            return canonical[: -len(suffix)]
+    return canonical
+
+
+def routed_areas(route: dict) -> set[str]:
+    """Guidance areas the route puts in front of the agent, required or not.
+
+    Required-doc membership is budget-bounded, so a surface match that fires
+    may leave its lower-ranked areas in `reference_docs` rather than
+    `required_docs`. Both are routed; only the first is mandatory reading.
+    """
+    return {
+        guidance_area(doc)
+        for doc in [*route["required_docs"], *route["reference_docs"]]
+    }
 
 
 class WorkflowDispatchTests(unittest.TestCase):
@@ -1154,7 +1190,7 @@ class WorkflowDispatchTests(unittest.TestCase):
             "workflows/skills/agent-handoff-continuation/SKILL.md",
             "common/skills/local-tools/SKILL.md",
         ):
-            self.assertIn(route_doc(doc), route["required_docs"])
+            self.assertIn(guidance_area(doc), routed_areas(route))
 
     def test_codex_runtime_bridge_requires_stage_profile_dispatch(self) -> None:
         codex_required = runtime_bridge_required_phrases("Codex", "AGENTS.md")

@@ -66,6 +66,8 @@ from support.runtime_bridge import (
 )
 from support.stable_launcher import stable_launcher_path
 from workflow_catalog import COMMANDS, CONCERNS, SPILL_ACTION_LABELS
+from workflow_doc_resolution import resolve_guidance_docs
+from workflow_route import CORE_REQUIRED_DOCS
 from workflow_gate_policy import (
     AGENTIC_RUN_STATE_GATE,
     AMBIGUITY_GATE,
@@ -144,6 +146,40 @@ _AGENT_HOOK_SPEC.loader.exec_module(agent_hook)
 
 def route_doc(path: str) -> str:
     return canonical_doc_path(path)
+def required_doc(path: str) -> str:
+    """The document a route actually requires for a guidance area.
+
+    Thin `SKILL.md` entrypoints resolve to `references/current-guidance.md`,
+    which is where the rules live; entrypoints with content of their own, and
+    skills with no reference, stay as they are. Core docs are exempt from
+    resolution in the router, so they are exempt here too.
+    """
+    canonical = canonical_doc_path(path)
+    if canonical in {canonical_doc_path(doc) for doc in CORE_REQUIRED_DOCS}:
+        return canonical
+    return resolve_guidance_docs(ROOT, [canonical])[-1]
+
+
+def guidance_area(path: str) -> str:
+    """The skill bundle a document belongs to, entrypoint or reference alike."""
+    canonical = canonical_doc_path(path)
+    for suffix in ("/references/current-guidance.md", "/SKILL.md"):
+        if canonical.endswith(suffix):
+            return canonical[: -len(suffix)]
+    return canonical
+
+
+def routed_areas(route: dict) -> set[str]:
+    """Guidance areas the route puts in front of the agent, required or not.
+
+    Required-doc membership is budget-bounded, so a surface match that fires
+    may leave its lower-ranked areas in `reference_docs` rather than
+    `required_docs`. Both are routed; only the first is mandatory reading.
+    """
+    return {
+        guidance_area(doc)
+        for doc in [*route["required_docs"], *route["reference_docs"]]
+    }
 
 
 class WorkflowDocSurfacesTests(unittest.TestCase):
@@ -182,15 +218,19 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             project_root=ROOT,
         )
 
-        self.assertEqual(
-            [
-                route_doc("AGENTS.md"),
-                route_doc("common/skills/agent-operating-skill/SKILL.md"),
-                route_doc("workflows/skills/review-and-commit/SKILL.md"),
-                route_doc("common/skills/commit-workflow/SKILL.md"),
-            ],
-            route["required_docs"],
-        )
+        # The contract under test is that dirty-path surfaces stay optional on a
+        # commit route -- not the exact required-doc list, which is now bounded
+        # by budget and so no longer a fixed set.
+        for doc in (
+            "AGENTS.md",
+            "common/skills/agent-operating-skill/SKILL.md",
+            "workflows/skills/review-and-commit/SKILL.md",
+            "common/skills/commit-workflow/SKILL.md",
+        ):
+            self.assertIn(required_doc(doc), route["required_docs"])
+
+        for surface_path in surface_paths:
+            self.assertNotIn(required_doc(surface_path), route["required_docs"])
         self.assertIn(
             route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"),
             route["reference_docs"],
@@ -251,8 +291,8 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             surface_paths=["scripts/workflow_route.py"],
         )
 
-        self.assertIn(route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/ci-cd-automation/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("workflows/skills/scripted-agent-workflow/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("common/skills/ci-cd-automation/SKILL.md"), routed_areas(route))
         self.assertIn("doc_surface_matches", route)
         self.assertTrue(any(match["name"] == "workflow_router" for match in route["doc_surface_matches"]))
 
@@ -268,9 +308,9 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
                 project_root=project,
             )
 
-        self.assertIn(route_doc("docs/skills/agent-bootstrap/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("docs/skills/graphify-project-integration/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/llm-wiki-documentation/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("docs/skills/agent-bootstrap/SKILL.md"), routed_areas(route))
+        self.assertIn(required_doc("docs/skills/graphify-project-integration/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("common/skills/llm-wiki-documentation/SKILL.md"), routed_areas(route))
         self.assertEqual(False, route["target_project_graphify"]["ready"])
         self.assertIn("graphify readiness", route["gates"])
         self.assertTrue(any(match["name"] == "target_project_graphify" for match in route["doc_surface_matches"]))
@@ -284,8 +324,8 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             surface_paths=["scripts/support/setup_agent_hooks_impl.py"],
         )
 
-        self.assertIn(route_doc("docs/skills/agent-bootstrap/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("docs/skills/graphify-project-integration/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("docs/skills/agent-bootstrap/SKILL.md"), routed_areas(route))
+        self.assertIn(required_doc("docs/skills/graphify-project-integration/SKILL.md"), route["required_docs"])
         self.assertIn("graphify readiness", route["gates"])
         self.assertTrue(any(match["name"] == "graphify_integration" for match in route["doc_surface_matches"]))
 
@@ -321,8 +361,8 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
         self.assertIn("graphify", route["inferred_concerns"])
         self.assertIn("graphify readiness", route["gates"])
         self.assertIn(
-            route_doc("docs/skills/graphify-project-integration/SKILL.md"),
-            route["required_docs"],
+            guidance_area("docs/skills/graphify-project-integration/SKILL.md"),
+            routed_areas(route),
         )
 
     def test_graphify_readiness_gate_requires_all_structured_fields(self) -> None:
@@ -374,8 +414,8 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             request_text="`scripts/workflow_route.py` 수정해줘",
         )
 
-        self.assertIn(route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/ci-cd-automation/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("workflows/skills/scripted-agent-workflow/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("common/skills/ci-cd-automation/SKILL.md"), routed_areas(route))
 
     def test_test_path_surface_promotes_testing_docs_to_required_docs(self) -> None:
         route = resolve_docs(
@@ -386,8 +426,8 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             surface_paths=["tests/test_workflow_routing.py"],
         )
 
-        self.assertIn(route_doc("common/skills/testing/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/verification-policy/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("common/skills/testing/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("common/skills/verification-policy/SKILL.md"), routed_areas(route))
 
     def test_surface_helpers_extract_request_and_git_status_paths(self) -> None:
         self.assertIn(
@@ -429,10 +469,10 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
         )
 
         self.assertIn(
-            route_doc("docs/skills/tao-skill-bundle-migration/SKILL.md"),
-            route["required_docs"],
+            guidance_area("docs/skills/tao-skill-bundle-migration/SKILL.md"),
+            routed_areas(route),
         )
-        self.assertIn(route_doc("common/skills/agent-skill-card-anatomy/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("common/skills/agent-skill-card-anatomy/SKILL.md"), route["required_docs"])
         self.assertTrue(
             any(match["name"] == "skill_bundle_structure_cleanup" for match in route["doc_surface_matches"])
         )
@@ -507,13 +547,13 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             ),
         )
 
-        self.assertIn(route_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("platforms/android/skills/android-viewmodel-state/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("platforms/android/skills/android-state-data/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/ui-visual-verification/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("platforms/android/skills/android-viewmodel-state/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("platforms/android/skills/android-state-data/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("common/skills/ui-visual-verification/SKILL.md"), routed_areas(route))
         self.assertIn(
-            "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
-            route["required_docs"],
+            guidance_area("platforms/android/skills/source-coverage/references/compose-performance-source-map.md"),
+            routed_areas(route),
         )
         self.assertTrue(any(match["name"] == "android_compose_ui_feature" for match in route["doc_surface_matches"]))
 
@@ -526,16 +566,16 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             request_text="Compose로 작성하겠다고 정했으면 목록 화면을 구현해줘",
         )
 
-        self.assertIn(route_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("platforms/android/skills/android-external-skill-source-coverage/SKILL.md"), route["required_docs"])
-        self.assertIn("platforms/android/skills/source-coverage/SKILL.md", route["required_docs"])
+        self.assertIn(required_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("platforms/android/skills/android-external-skill-source-coverage/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("platforms/android/skills/source-coverage/SKILL.md"), routed_areas(route))
         self.assertIn(
-            "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
-            route["required_docs"],
+            guidance_area("platforms/android/skills/source-coverage/references/compose-performance-source-map.md"),
+            routed_areas(route),
         )
         self.assertIn(
-            "platforms/android/skills/source-coverage/references/chrisbanes-source-map.md",
-            route["required_docs"],
+            guidance_area("platforms/android/skills/source-coverage/references/chrisbanes-source-map.md"),
+            routed_areas(route),
         )
 
     def test_android_compose_path_promotes_compose_docs_without_request_keyword(self) -> None:
@@ -547,11 +587,11 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             surface_paths=["app/src/main/java/com/example/home/HomeScreen.kt"],
         )
 
-        self.assertIn(route_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("platforms/android/skills/android-review/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("platforms/android/skills/android-compose-ui/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("platforms/android/skills/android-review/SKILL.md"), routed_areas(route))
         self.assertIn(
-            "platforms/android/skills/source-coverage/references/compose-performance-source-map.md",
-            route["required_docs"],
+            guidance_area("platforms/android/skills/source-coverage/references/compose-performance-source-map.md"),
+            routed_areas(route),
         )
         self.assertTrue(any(match["name"] == "android_compose_paths" for match in route["doc_surface_matches"]))
 
@@ -607,9 +647,9 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             request_text="훅은 보완이고 자연어 검색 가능한 문서 라우팅을 강화해줘",
         )
 
-        self.assertIn(route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/task-intake-effort-routing/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/source-driven-development/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("workflows/skills/scripted-agent-workflow/SKILL.md"), routed_areas(route))
+        self.assertIn(required_doc("common/skills/task-intake-effort-routing/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("common/skills/source-driven-development/SKILL.md"), routed_areas(route))
         self.assertTrue(any(match["name"] == "natural_language_doc_routing" for match in route["doc_surface_matches"]))
         self.assertEqual("wikimap", route["document_search"]["backend"])
         self.assertTrue(route["document_search"]["candidates"])
@@ -661,12 +701,12 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
             request_text="기획변경인데 예상 문서 정리가 누락되는 경우를 막아줘",
         )
 
-        self.assertIn(route_doc("common/skills/doc-conventions/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("workflows/skills/documentation-update/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/product-spec-to-implementation/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/source-driven-development/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("common/skills/definition-of-done/SKILL.md"), route["required_docs"])
-        self.assertIn(route_doc("workflows/skills/scripted-agent-workflow/SKILL.md"), route["required_docs"])
+        self.assertIn(required_doc("common/skills/doc-conventions/SKILL.md"), route["required_docs"])
+        self.assertIn(guidance_area("workflows/skills/documentation-update/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("common/skills/product-spec-to-implementation/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("common/skills/source-driven-development/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("common/skills/definition-of-done/SKILL.md"), routed_areas(route))
+        self.assertIn(guidance_area("workflows/skills/scripted-agent-workflow/SKILL.md"), routed_areas(route))
         self.assertTrue(any(match["name"] == "planning_change_documentation" for match in route["doc_surface_matches"]))
 
     def test_route_exposes_document_graph_neighbors_as_reference_docs(self) -> None:
@@ -765,9 +805,9 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
                 )
 
                 for doc in docs:
-                    self.assertIn(route_doc(doc), route["required_docs"])
-                self.assertIn(route_doc("common/skills/ui-visual-verification/SKILL.md"), route["required_docs"])
-                self.assertIn(route_doc("common/skills/performance-verification/SKILL.md"), route["required_docs"])
+                    self.assertIn(guidance_area(doc), routed_areas(route))
+                self.assertIn(guidance_area("common/skills/ui-visual-verification/SKILL.md"), routed_areas(route))
+                self.assertIn(guidance_area("common/skills/performance-verification/SKILL.md"), routed_areas(route))
 
     def test_server_platform_does_not_receive_ui_surface_docs(self) -> None:
         route = resolve_docs(
@@ -779,8 +819,8 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
         )
 
         self.assertNotIn("doc_surface_matches", route)
-        self.assertNotIn(route_doc("common/skills/ui-visual-verification/SKILL.md"), route["required_docs"])
-        self.assertNotIn(route_doc("platforms/web/skills/web-react-ui/SKILL.md"), route["required_docs"])
+        self.assertNotIn(required_doc("common/skills/ui-visual-verification/SKILL.md"), route["required_docs"])
+        self.assertNotIn(required_doc("platforms/web/skills/web-react-ui/SKILL.md"), route["required_docs"])
 
     def test_self_selected_ui_frameworks_promote_platform_docs(self) -> None:
         cases = [
@@ -838,7 +878,7 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
                     request_text=request,
                 )
 
-                self.assertIn(route_doc(doc), route["required_docs"])
+                self.assertIn(guidance_area(doc), routed_areas(route))
                 self.assertTrue(any(match["name"] == match_name for match in route["doc_surface_matches"]))
 
     def test_ui_path_surfaces_promote_platform_docs_without_cross_platform_leak(self) -> None:
@@ -903,8 +943,8 @@ class WorkflowDocSurfacesTests(unittest.TestCase):
                     surface_paths=[path],
                 )
 
-                self.assertIn(route_doc(expected_doc), route["required_docs"])
-                self.assertNotIn(route_doc(absent_doc), route["required_docs"])
+                self.assertIn(required_doc(expected_doc), route["required_docs"])
+                self.assertNotIn(required_doc(absent_doc), route["required_docs"])
                 self.assertTrue(any(match["name"] == match_name for match in route["doc_surface_matches"]))
 
 

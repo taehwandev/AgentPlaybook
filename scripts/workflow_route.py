@@ -25,6 +25,7 @@ from workflow_common import (
 )
 from workflow_doc_graph import expand_doc_matches, graph_required_docs
 from workflow_gate_policy import (
+    MULTI_AGENT_GATE,
     SKILL_CURATE_HOOK,
     SKILL_FEEDBACK_HOOK,
     SKILL_MAINTENANCE_HOOK,
@@ -35,6 +36,7 @@ from workflow_gate_policy import (
     automatic_docs,
     skill_feedback_policy,
 )
+from workflow_doc_resolution import doc_size, resolve_guidance_docs
 from workflow_doc_surfaces import infer_surface_docs
 from workflow_parallel import parallel_execution_plan
 from workflow_search import SearchOutcome, search_docs_outcome
@@ -158,7 +160,12 @@ def resolve_docs(
 
     routed_docs = unique(canonical_doc_path(doc) for doc in docs)
     required_docs = route_required_docs(command, platform, concerns, profile.docs, [*surface_docs, *graph_required])
-    reference_docs = [doc for doc in routed_docs if doc not in set(required_docs)]
+    # Every routed document stays reachable in exactly one of the two lists.
+    # Filtering out entrypoints whose reference was promoted would read better,
+    # but it breaks the invariant that `required_docs | reference_docs` covers
+    # everything the router resolved, which callers rely on.
+    required_set = set(required_docs)
+    reference_docs = [doc for doc in routed_docs if doc not in required_set]
     manifest_docs = unique([*routed_docs, *required_docs])
     missing = [doc for doc in manifest_docs if not (ROOT / doc).exists()]
     document_resolution = _document_resolution(
@@ -341,6 +348,60 @@ def _document_resolution(
     }
 
 
+# Gate -> guidance mapping for gates that `automatic_docs` does not own.  The
+# review hook is added by `route_gates`, not by `automatic_gates`, so its
+# contract document was never reachable from the gate spine.  That is the gap
+# that let a route enforce the hook's structure-evidence labels while never
+# putting the document defining those labels in front of the agent.
+# Gates that actively judge the agent's submission, mapped to the document
+# defining the evidence each one demands.  These are guaranteed for any route
+# that enforces the gate and are never dropped by the byte budget: a route that
+# enforces a gate while withholding its contract is precisely the defect this
+# change exists to fix, where the review hook rejected work for labelled
+# structure evidence the route never put in front of the agent.
+GUARANTEED_GATE_DOCS = {
+    "review hook": "workflows/skills/review-and-commit/SKILL.md",
+    MULTI_AGENT_GATE: "workflows/skills/multi-agent-collaboration/SKILL.md",
+}
+
+REVIEW_HOOK_GATE_DOCS = (
+    GUARANTEED_GATE_DOCS["review hook"],
+    "common/skills/code-review/SKILL.md",
+)
+
+CODE_WORK_COMMANDS_REQUIRING_DISCIPLINE = {
+    "build",
+    "bugfix",
+    "code-simplify",
+    "feature",
+    "product",
+    "refactor",
+    "task",
+    "workflow-setup",
+}
+
+# Selection budget.  Resolving entrypoints to references multiplies the bytes
+# behind each required doc roughly fivefold, so membership can no longer be a
+# union of every list that mentions the command.  These caps keep a route's
+# mandatory reading near its previous byte cost while the documents behind it
+# carry actual rules.  Docs that do not fit stay reachable as `reference_docs`.
+#
+# The budget covers only the *selectable* tiers.  `CORE_REQUIRED_DOCS` is
+# exempt: AGENTS.md alone is ~41 KB, and charging it against the budget would
+# let the operating contract crowd out the documents actually matched to this
+# request.  Total mandatory reading is therefore roughly core + this budget.
+REQUIRED_DOC_BUDGET_BYTES = 30_000
+MAX_REQUIRED_DOCS = 9
+
+# A single reference larger than this would monopolise the route's mandatory
+# reading -- the Android Compose and module-structure references are 38 KB and
+# 47 KB, several times the size of the whole rest of a typical required set.
+# Forcing one of those into every matching route recreates the over-reading
+# problem this change exists to fix, just in a different shape, so oversized
+# documents stay in `reference_docs` where the agent can still reach them.
+OVERSIZED_DOC_BYTES = 40_000
+
+
 def route_required_docs(
     command: str,
     platform: Optional[str],
@@ -354,27 +415,116 @@ def route_required_docs(
     if command == "analysis":
         return ["AGENTS.md"]
 
-    docs: list[str] = [*CORE_REQUIRED_DOCS, *COMMAND_REQUIRED_DOCS.get(command, profile_docs)]
+    gates = set(route_gates(command))
 
-    if command in {"build", "bugfix", "code-simplify", "feature", "product", "refactor", "task", "workflow-setup"}:
-        docs.extend(CODE_WORK_REQUIRED_DOCS)
+    # Tiers are ordered by how directly the document is tied to something this
+    # route actually activates.  Everything above the budget line becomes
+    # required; everything below stays available as `reference_docs`.
+    tiers: list[list[str]] = []
 
-    if platform:
-        docs.extend(PLATFORMS[platform])
+    # 1. What the route *is*: its own command skill.
+    tiers.append(list(COMMAND_REQUIRED_DOCS.get(command, profile_docs)))
 
-    for concern in concerns:
-        docs.extend(CONCERNS.get(concern, ()))
-        if platform:
-            docs.extend(PLATFORM_CONCERNS.get((platform, concern), ()))
-
-    # A local commit request reviews work that has already been implemented.
-    # Keep dirty-path guidance discoverable in reference_docs, but do not turn
-    # every touched code/test/doc surface back into mandatory implementation
-    # reading.  Explicit concerns remain required above and can still escalate
-    # a risky commit deliberately.
+    # 2. What this particular request touches.  Surface and graph docs are
+    #    matched against the request text and the actual dirty paths, so they
+    #    are more specific than both the platform card set below -- which is
+    #    identical for every route on that platform -- and the gate spine, which
+    #    is identical for every route of this command.  An Android UI request
+    #    needs the Compose card ahead of the generic Android card set.
+    #    A local commit request reviews work that has already been implemented,
+    #    so its dirty-path guidance stays in reference_docs rather than becoming
+    #    mandatory implementation reading.
     if command not in LIGHTWEIGHT_SURFACE_REFERENCE_COMMANDS:
-        docs.extend(surface_docs or [])
-    return unique(canonical_doc_path(doc) for doc in docs)
+        tiers.append(list(surface_docs or []))
+
+    # 4. The platform card set the route selected.
+    tiers.append(list(PLATFORMS[platform]) if platform else [])
+
+    # 5. What the route will enforce: the gates it runs, mapped to the documents
+    #    that define their evidence contracts.
+    gate_docs = list(automatic_docs(command))
+    if "review hook" in gates:
+        gate_docs.extend(REVIEW_HOOK_GATE_DOCS)
+    tiers.append(gate_docs)
+
+    # 6. General code-work discipline, for routes that produce code.
+    if command in CODE_WORK_COMMANDS_REQUIRING_DISCIPLINE:
+        tiers.append(list(CODE_WORK_REQUIRED_DOCS))
+
+    # The operating contract is not subject to the budget: every route must
+    # read it, and a route with no required docs at all would make the source
+    # docs gate vacuous.
+    #
+    # Core deliberately keeps its entrypoints rather than resolving to
+    # references.  The operating-skill reference is ~22 KB and identical for
+    # every route, so promoting it would spend more than half the guidance
+    # budget on the one document that is never specific to the request -- the
+    # exact trade this change exists to reverse.  AGENTS.md already carries the
+    # always-on operating contract, and the reference stays in `reference_docs`.
+    selected = unique(canonical_doc_path(doc) for doc in CORE_REQUIRED_DOCS)
+
+    # The review hook is not a passive gate: it actively rejects submissions
+    # that omit its labelled structure evidence.  A route that enforces the hook
+    # must therefore deliver the document defining those labels, and that
+    # delivery cannot be subject to the byte budget -- letting a budget drop it
+    # is exactly the failure this change was written to fix, where the hook
+    # rejected work for a contract the route never put in front of the agent.
+    guaranteed = [
+        doc for gate, doc in GUARANTEED_GATE_DOCS.items() if gate in gates
+    ]
+    selected.extend(
+        doc
+        for doc in unique(
+            resolve_guidance_docs(ROOT, [canonical_doc_path(doc) for doc in guaranteed])
+        )
+        if doc not in selected
+    )
+
+    # Concerns the caller named are also exempt.  An operator writing "branch"
+    # or "security" is stating the risk directly, and silently demoting that to
+    # optional context is the worst failure available here: the route would
+    # answer a specific, explicit request with generic reading.  Concern card
+    # lists are short, so this does not reopen the union-of-everything problem.
+    named: list[str] = []
+    for concern in concerns:
+        named.extend(CONCERNS.get(concern, ()))
+        if platform:
+            named.extend(PLATFORM_CONCERNS.get((platform, concern), ()))
+    selected.extend(
+        doc
+        for doc in unique(
+            resolve_guidance_docs(ROOT, [canonical_doc_path(doc) for doc in named])
+        )
+        if doc not in selected
+    )
+
+    used = 0
+
+    # Selection is a strict prefix of the priority order.  The budget *stops*
+    # selection rather than skipping over individual documents: skipping would
+    # invert the ranking, because references vary from 2 KB to 47 KB and the
+    # most specific match is often the largest.  A compose request would then
+    # drop the 38 KB Compose card and admit smaller, less relevant cards behind
+    # it.  The document that crosses the budget is admitted before stopping, so
+    # the highest-priority match is never starved and overshoot is bounded to
+    # one document.
+    for tier in tiers:
+        candidates = unique(
+            resolve_guidance_docs(ROOT, [canonical_doc_path(doc) for doc in tier])
+        )
+        for doc in candidates:
+            if doc in selected:
+                continue
+            if len(selected) >= MAX_REQUIRED_DOCS or used >= REQUIRED_DOC_BUDGET_BYTES:
+                return selected
+            size = doc_size(ROOT, doc)
+            if size > OVERSIZED_DOC_BYTES:
+                # Skipping here is the one place ranking is not honoured; the
+                # document stays reachable as a reference.
+                continue
+            selected.append(doc)
+            used += size
+    return selected
 
 
 def route_gates(command: str, *, graphify_required: bool = False) -> list[str]:
