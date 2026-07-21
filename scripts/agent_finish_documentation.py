@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from agent_execution_capsule_docs import validated_required_doc_update_receipt
 from agent_gate_evidence import SCHEMA_VERSION, gate_evidence_path_for_preflight, read_gate_evidence_ledger
 from agent_route_state import preflight_evidence_sha256, required_docs_for_route, route_fingerprint
 
@@ -14,27 +15,33 @@ def documented_required_doc_updates(
     *,
     evidence_path: Path,
     route: dict[str, Any],
-) -> set[str]:
-    """Return required docs explicitly declared as updated final artifacts."""
+) -> dict[str, dict[str, str]]:
+    """Return exact required-doc updates backed by trusted final-byte receipts."""
 
     required_docs = set(required_docs_for_route(route))
-    if not required_docs:
-        return set()
+    if not required_docs or "documentation" not in set(route.get("gates") or []):
+        return {}
     ledger = read_gate_evidence_ledger(gate_evidence_path_for_preflight(evidence_path))
     if not _ledger_matches_route(ledger, evidence_path, route):
-        return set()
-    updates: set[str] = set()
+        return {}
+    updates: dict[str, dict[str, str]] = {}
     for entry in ledger.get("entries", []):
-        if not isinstance(entry, dict) or entry.get("status") != "SUCCESS":
+        if not isinstance(entry, dict):
             continue
         if str(entry.get("gate") or "") != "documentation":
             continue
         fields = {str(key): str(value) for key, value in (entry.get("fields") or {}).items()}
+        target = fields.get("target", "").strip()
+        if target not in required_docs:
+            continue
+        updates.pop(target, None)
+        if entry.get("status") != "SUCCESS":
+            continue
         if fields.get("decision", "").strip().lower() != "updated":
             continue
-        target = fields.get("target", "").strip()
-        if target in required_docs:
-            updates.add(target)
+        receipt = validated_required_doc_update_receipt(fields)
+        if receipt is not None:
+            updates[target] = receipt
     return updates
 
 

@@ -28,3 +28,7 @@ Use when routed to `workflows/skills/documentation-update/SKILL.md` or when work
 
 - If route wiring changes, confirm the route loads this `SKILL.md` entrypoint.
 - If detailed guidance changes, validate links and frontmatter for `references/current-guidance.md`.
+- If this entrypoint is an intentional route required-doc update, record final
+  documentation evidence for this exact path after editing and record it again
+  if the file changes later. This receipt is available only when the active
+  route itself requires the `documentation` gate.

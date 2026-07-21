@@ -150,6 +150,26 @@ Hard rules the finish-check enforces:
   and accept the PRD, plus an ARD link when structure or module boundaries
   change) before any implementation task or PR.
 
+### Required-document update receipts
+
+A route may require the same workflow card that the current task intentionally
+updates. Keep the pre-edit required-document snapshot immutable. Only a route
+that itself requires the `documentation` gate may mint or consume this
+capability; an extra ledger entry for a gate outside the route grants nothing.
+When a successful structured `documentation` record uses `decision=updated`
+and names one exact route-relative `required_docs` path, the gate writer
+computes a trusted receipt from that snapshot and the current final file. The
+receipt records the baseline hash plus the final hash and byte size;
+caller-supplied hash values are ignored and overwritten.
+
+Finish accepts the intentional update only while the current file still matches
+that recorded final hash and size. Any edit after the documentation evidence
+was recorded must be followed by a new successful documentation record for the
+same exact path. Missing, malformed, stale, combined, or baseline-mismatched
+receipts fail closed. This finish-time exception does not weaken full handoff
+capsule worktree checks, repair-cycle fingerprints, or skill-maintenance
+verification.
+
 ### Where the rules live (do not duplicate per repo)
 
 This card is the single source of truth for the gate rules. The enforcement is

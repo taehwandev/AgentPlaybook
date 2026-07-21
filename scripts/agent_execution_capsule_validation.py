@@ -105,7 +105,7 @@ def validate_source_docs_binding(
     rules: Path,
     evidence_path: Path,
     route: dict[str, Any],
-    documented_updates: set[str] | None = None,
+    documented_updates: dict[str, dict[str, str]] | None = None,
 ) -> list[str]:
     """Validate the pre-edit document snapshot without requiring a clean tree.
 
@@ -153,7 +153,7 @@ def validate_preflight_snapshot(
     evidence_path: Path,
     rules: Path,
     route: dict[str, Any],
-    documented_updates: set[str] | None = None,
+    documented_updates: dict[str, dict[str, str]] | None = None,
 ) -> list[str]:
     """Validate the no-worker source-doc snapshot captured at parent start."""
 

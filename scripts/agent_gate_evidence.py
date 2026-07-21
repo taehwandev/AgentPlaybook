@@ -15,6 +15,7 @@ from agent_execution_capsule_state import (
     preflight_snapshot_binding_fingerprint,
     read_json_object,
 )
+from agent_execution_capsule_docs import bind_required_doc_update_receipt
 from agent_route_state import (
     preflight_evidence_sha256,
     required_docs_for_route,
@@ -186,6 +187,12 @@ def record_many_gate_evidence(
                 gate,
                 _string_fields(record.get("fields") or {}),
                 preflight,
+            )
+            fields = bind_required_doc_update_receipt(
+                evidence_path=evidence_path,
+                gate=gate,
+                status=status,
+                fields=fields,
             )
             capsule_binding = _capsule_binding_for_preflight(evidence_path, preflight)
             if capsule_binding:

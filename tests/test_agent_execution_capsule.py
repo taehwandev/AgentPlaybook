@@ -498,12 +498,17 @@ class ExecutionCapsuleTests(unittest.TestCase):
         self.assertIn("execution capsule required doc hash changed: guide.md", failures)
 
     def test_source_docs_binding_allows_only_an_explicit_required_doc_update(self) -> None:
+        self.route = {**self.route, "gates": ["documentation", "verify"]}
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        preflight["route"] = self.route
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self._write_ledger()
         capsule = refresh_execution_capsule(
             self.project, self.rules, self.evidence_path, self.route
         )
         (self.rules / "guide.md").write_text("# Updated Guide\n", encoding="utf-8")
         preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
-        record_gate_evidence(
+        entry = record_gate_evidence(
             evidence_path=self.evidence_path,
             preflight=preflight,
             gate="documentation",
@@ -511,7 +516,23 @@ class ExecutionCapsuleTests(unittest.TestCase):
                 "decision": "updated",
                 "target": "guide.md",
                 "reason": "the required guide is the intentional task artifact",
+                "baseline_sha256": "0" * 64,
+                "final_sha256": "0" * 64,
             },
+        )
+
+        self.assertEqual("1", entry["fields"]["artifact_receipt_version"])
+        self.assertEqual(
+            capsule["required_docs"][0]["sha256"],
+            entry["fields"]["baseline_sha256"],
+        )
+        self.assertEqual(
+            self._sha256(self.rules / "guide.md"),
+            entry["fields"]["final_sha256"],
+        )
+        self.assertEqual(
+            str((self.rules / "guide.md").stat().st_size),
+            entry["fields"]["final_size_bytes"],
         )
 
         documented_updates = documented_required_doc_updates(
@@ -519,7 +540,10 @@ class ExecutionCapsuleTests(unittest.TestCase):
             route=self.route,
         )
 
-        self.assertEqual({"guide.md"}, documented_updates)
+        self.assertEqual(
+            entry["fields"]["final_sha256"],
+            documented_updates["guide.md"]["final_sha256"],
+        )
         self.assertEqual(
             [],
             validate_source_docs_binding(
@@ -527,6 +551,105 @@ class ExecutionCapsuleTests(unittest.TestCase):
                 self.project,
                 self.rules,
                 self.evidence_path,
+                self.route,
+                documented_updates=documented_updates,
+            ),
+        )
+
+        (self.rules / "guide.md").write_text(
+            "# Changed After Documentation Evidence\n",
+            encoding="utf-8",
+        )
+        failures = validate_source_docs_binding(
+            capsule,
+            self.project,
+            self.rules,
+            self.evidence_path,
+            self.route,
+            documented_updates=documented_updates,
+        )
+
+        self.assertIn(
+            "execution capsule required doc changed after documentation evidence: guide.md",
+            failures,
+        )
+
+    def test_non_route_documentation_gate_cannot_mint_a_required_doc_receipt(self) -> None:
+        capsule = refresh_execution_capsule(
+            self.project, self.rules, self.evidence_path, self.route
+        )
+        (self.rules / "guide.md").write_text("# Updated Guide\n", encoding="utf-8")
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+
+        entry = record_gate_evidence(
+            evidence_path=self.evidence_path,
+            preflight=preflight,
+            gate="documentation",
+            fields={
+                "decision": "updated",
+                "target": "guide.md",
+                "reason": "an extra non-route gate must not grant this capability",
+            },
+        )
+        documented_updates = documented_required_doc_updates(
+            evidence_path=self.evidence_path,
+            route=self.route,
+        )
+
+        self.assertNotIn("artifact_receipt_version", entry["fields"])
+        self.assertEqual({}, documented_updates)
+        self.assertIn(
+            "execution capsule required doc hash changed: guide.md",
+            validate_source_docs_binding(
+                capsule,
+                self.project,
+                self.rules,
+                self.evidence_path,
+                self.route,
+                documented_updates=documented_updates,
+            ),
+        )
+
+    def test_serial_snapshot_binds_an_explicit_required_doc_update_receipt(self) -> None:
+        self.route = {**self.route, "gates": ["source docs", "documentation"]}
+        preflight = json.loads(self.evidence_path.read_text(encoding="utf-8"))
+        preflight["route"] = self.route
+        snapshot = create_preflight_snapshot(
+            self.rules,
+            self.route,
+            preflight.get("request_intake") or {},
+        )
+        preflight["execution_snapshot"] = snapshot
+        self.evidence_path.write_text(json.dumps(preflight), encoding="utf-8")
+        self._write_ledger()
+        (self.rules / "guide.md").write_text("# Serial Update\n", encoding="utf-8")
+
+        entry = record_gate_evidence(
+            evidence_path=self.evidence_path,
+            preflight=preflight,
+            gate="documentation",
+            fields={
+                "decision": "updated",
+                "target": "guide.md",
+                "reason": "the serial task intentionally updates its required guide",
+            },
+        )
+        documented_updates = documented_required_doc_updates(
+            evidence_path=self.evidence_path,
+            route=self.route,
+        )
+
+        self.assertEqual(
+            snapshot["required_docs"][0]["sha256"],
+            entry["fields"]["baseline_sha256"],
+        )
+        self.assertEqual(
+            [],
+            validate_preflight_snapshot(
+                snapshot,
+                self.project,
+                self.evidence_path,
+                self.rules,
                 self.route,
                 documented_updates=documented_updates,
             ),
