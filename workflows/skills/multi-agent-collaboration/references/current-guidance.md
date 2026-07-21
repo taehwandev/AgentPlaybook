@@ -136,6 +136,11 @@ Record the delegation decision before code work:
 - `parallel`: list each worker, run state, owned files/modules, forbidden
   files/modules, input contract, expected output, acceptance checks,
   integration owner, and verification command or manual scenario.
+- `sequential`: several workers dispatched one at a time, each starting only
+  after the previous one returned, so no two writers are ever active together.
+  Record the same per-worker detail as `parallel`. Do not record this as
+  `serial`: real workers ran, and `serial` states that a single agent did the
+  work.
 
 Delegation is not a handoff of responsibility. The lead agent owns the shared
 contract, integration point, review of worker changes, side-effect audit, and
@@ -154,8 +159,9 @@ positive. When automatic eligibility fails, stay on the original work route,
 record its structured serial split decision with the concrete policy reason,
 and do not create a parallel delegation plan.
 
-When work is actually delegated or run in parallel, write a structured local
-plan before workers start:
+When two or more writers are active at the same time, write a structured local
+plan before workers start. The plan coordinates concurrent writers, so a
+`sequential` run does not need one; every other delegated or parallel run does:
 
 ```text
 <TARGET_REPO>/.tao/agent-delegation-plan.json
@@ -194,19 +200,21 @@ keys such as `current_state`, `scope`, or `serial_integration` do not satisfy
 the executable finish contract even when their prose sounds equivalent.
 
 Finish-check treats parallel/subagent evidence or the `multi-agent` route's
-role/write-scope/brief/integration gates as incomplete without this plan. The
+role/write-scope/brief/integration gates as incomplete without this plan. A
+`sequential` split decision is the one exception, and only for the plan itself;
+the route's role/write-scope/brief/integration gates still require it. The
 plan is local runtime evidence; do not commit it unless the repo explicitly
 tracks agent execution artifacts.
 
 Record the structured multi-agent gate fields before workers start. Gate and
 gate-batch hooks reject incomplete `SUCCESS` records before writing them and
-report the complete missing-field set in one pass. For a parallel split, the
-required field names are `mode`, `reason`, `owned_scope`, `forbidden_scope`,
-`contract`, `acceptance`, `integration_owner`, and `verification`. Alias keys
-such as `contract_brief` or `acceptance_checks` do not satisfy the executable
-contract. The same pre-worker record validates the delegation-plan structure so
-schema mistakes are corrected before finish and do not consume the bounded
-repair cycle.
+report the complete missing-field set in one pass. For a parallel or sequential
+split, the required field names are `mode`, `reason`, `owned_scope`,
+`forbidden_scope`, `contract`, `acceptance`, `integration_owner`, and
+`verification`. Alias keys such as `contract_brief` or `acceptance_checks` do
+not satisfy the executable contract. The same pre-worker record validates the
+delegation-plan structure so schema mistakes are corrected before finish and do
+not consume the bounded repair cycle.
 
 ## Agent Briefs
 

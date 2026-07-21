@@ -15,6 +15,7 @@ from agent_execution_capsule_state import (
     preflight_snapshot_binding_fingerprint,
     read_json_object,
 )
+from agent_delegation_plan import SEQUENTIAL_MULTI_AGENT_MARKER
 from agent_execution_capsule_docs import bind_required_doc_update_receipt
 from agent_route_state import (
     preflight_evidence_sha256,
@@ -82,6 +83,19 @@ MULTI_AGENT_PARALLEL_FIELDS = (
     "integration_owner",
 )
 MULTI_AGENT_SERIAL_MODES = {"serial", "single-agent", "single agent"}
+# Several workers, dispatched one at a time, never concurrent. These modes are
+# deliberately absent from MULTI_AGENT_SERIAL_MODES: real workers ran, so the
+# record must still carry the full MULTI_AGENT_PARALLEL_FIELDS brief set. The
+# only thing they are excused is the concurrent-writer delegation plan.
+MULTI_AGENT_SEQUENTIAL_MODES = {
+    "sequential",
+    "serial-multi-agent",
+    "sequential-multi-agent",
+    "serial multi-agent",
+    "sequential multi-agent",
+    "serial-workers",
+    "sequential-workers",
+}
 PROSE_COMPATIBLE_STRUCTURED_GATES = {"ambiguity check", "alignment brief"}
 
 
@@ -460,6 +474,18 @@ def synthesize_gate_evidence(
             return (
                 "serial/single-agent decision; concrete reason: "
                 f"{fields['reason']}; verification: {fields['verification']}",
+                [],
+            )
+        if mode in MULTI_AGENT_SEQUENTIAL_MODES:
+            return (
+                "sequential multi-agent/subagent delegation; "
+                f"{SEQUENTIAL_MULTI_AGENT_MARKER}; concrete reason: {fields['reason']}; "
+                f"owned scope: {fields['owned_scope']}; "
+                f"forbidden scope: {fields['forbidden_scope']}; "
+                f"contract/brief: {fields['contract']}; "
+                f"acceptance checks: {fields['acceptance']}; "
+                f"integration owner: {fields['integration_owner']}; "
+                f"verification: {fields['verification']}",
                 [],
             )
         return (

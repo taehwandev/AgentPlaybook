@@ -26,8 +26,10 @@ PARALLEL_SIGNALS = (
     "워커",
     "분할",
 )
+SEQUENTIAL_MULTI_AGENT_MARKER = "workers ran one at a time (no concurrent writers)"
 SERIAL_SIGNALS = (
     "serial",
+    "sequential",
     "single-agent",
     "single agent",
     "no subagent",
@@ -68,9 +70,21 @@ def evidence_requires_delegation_plan(
     required_gates: list[str],
     gate_evidence: dict[str, str],
 ) -> bool:
+    """Report whether this run must produce a concurrent-writer delegation plan.
+
+    The plan coordinates writers that are active at the same time: its distinct
+    contribution over the split-decision gate record is cross-worker
+    ``owned_scope`` overlap rejection. A run that dispatched several workers one
+    at a time has no concurrent writers to coordinate, so it records the
+    canonical sequential marker instead of a plan. Route gates still win: a route
+    carrying role/write-scope/brief/integration gates always requires the plan.
+    """
+
     if MULTI_AGENT_ROUTE_GATES.intersection(required_gates):
         return True
     text = gate_evidence.get("multi-agent split decision", "").lower()
+    if SEQUENTIAL_MULTI_AGENT_MARKER in text:
+        return False
     parallel = any(signal in text for signal in PARALLEL_SIGNALS)
     serial = any(signal in text for signal in SERIAL_SIGNALS)
     return parallel and not serial

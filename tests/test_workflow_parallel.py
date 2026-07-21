@@ -39,7 +39,11 @@ from agent_gate_evidence import (
     synthesize_gate_evidence,
 )
 from agent_worker_evidence import worker_reservation_matches
-from agent_delegation_plan import validate_delegation_plan_evidence
+from agent_delegation_plan import (
+    SEQUENTIAL_MULTI_AGENT_MARKER,
+    evidence_requires_delegation_plan,
+    validate_delegation_plan_evidence,
+)
 from agent_global_lessons import (
     lesson_summary,
     retrospective_candidate,
@@ -383,6 +387,114 @@ class WorkflowParallelTests(unittest.TestCase):
         )
 
         self.assertEqual([], failures)
+
+    def _multi_worker_fields(self, mode: str, **overrides: str) -> dict[str, str]:
+        """Structured split-decision fields for a genuine two-worker run."""
+
+        fields = {
+            "mode": mode,
+            "reason": "two independent surfaces; worker-b started only after worker-a returned",
+            "owned_scope": "worker-a: scripts/; worker-b: tests/",
+            "forbidden_scope": "worker-a: tests/; worker-b: scripts/",
+            "contract": "shared gate-evidence field names stay fixed",
+            "acceptance": "each worker slice passes its focused check",
+            "integration_owner": "lead agent",
+            "verification": "python3 -m pytest tests/ -q",
+        }
+        fields.update(overrides)
+        return fields
+
+    def test_sequential_multi_worker_split_does_not_require_delegation_plan(self) -> None:
+        """Several workers run one at a time: no concurrent writers to coordinate."""
+
+        evidence, missing = synthesize_gate_evidence(
+            MULTI_AGENT_GATE, "", self._multi_worker_fields("sequential")
+        )
+
+        self.assertEqual([], missing)
+        self.assertFalse(evidence_requires_delegation_plan([], {MULTI_AGENT_GATE: evidence}))
+        self.assertEqual(
+            [], validate_delegation_plan_evidence([MULTI_AGENT_GATE], {MULTI_AGENT_GATE: evidence}, {})
+        )
+
+    def test_concurrent_multi_worker_split_still_requires_delegation_plan(self) -> None:
+        """Workers active at the same time must still produce and pass a plan."""
+
+        evidence, missing = synthesize_gate_evidence(
+            MULTI_AGENT_GATE, "", self._multi_worker_fields("parallel")
+        )
+
+        self.assertEqual([], missing)
+        self.assertTrue(evidence_requires_delegation_plan([], {MULTI_AGENT_GATE: evidence}))
+
+        failures = validate_delegation_plan_evidence([MULTI_AGENT_GATE], {MULTI_AGENT_GATE: evidence}, {})
+
+        self.assertTrue(any("agent-delegation-plan.json" in failure for failure in failures))
+
+    def test_sequential_wording_is_recognized_as_non_concurrent(self) -> None:
+        """`sequential` is a synonym of `serial` and must be recognized as one."""
+
+        self.assertFalse(
+            evidence_requires_delegation_plan(
+                [],
+                {MULTI_AGENT_GATE: "two sequential workers with disjoint write scopes"},
+            )
+        )
+
+    def test_sequential_multi_worker_evidence_never_claims_single_agent(self) -> None:
+        """The stored sentence must stay truthful about how many agents ran."""
+
+        evidence, _ = synthesize_gate_evidence(
+            MULTI_AGENT_GATE, "", self._multi_worker_fields("sequential")
+        )
+
+        self.assertNotIn("single-agent", evidence)
+        self.assertNotIn("single agent", evidence)
+        self.assertIn("multi-agent", evidence)
+        self.assertIn(SEQUENTIAL_MULTI_AGENT_MARKER, evidence)
+
+    def test_sequential_marker_alone_suppresses_delegation_plan(self) -> None:
+        """The canonical marker is the structured signal, independent of prose wording.
+
+        The marker carries a parallel signal (`workers`) and no serial word, so
+        only the explicit marker check can suppress the plan here.
+        """
+
+        evidence = f"delegated to worker-a then worker-b; {SEQUENTIAL_MULTI_AGENT_MARKER}"
+
+        self.assertFalse(evidence_requires_delegation_plan([], {MULTI_AGENT_GATE: evidence}))
+
+    def test_sequential_multi_worker_still_requires_full_worker_brief(self) -> None:
+        """Sequential excuses only the plan, never the per-worker brief fields."""
+
+        evidence, missing = synthesize_gate_evidence(
+            MULTI_AGENT_GATE,
+            "",
+            {
+                "mode": "sequential",
+                "reason": "workers ran one after another",
+                "verification": "python3 -m pytest tests/ -q",
+            },
+        )
+
+        self.assertEqual("", evidence)
+        self.assertEqual(
+            ["owned_scope", "forbidden_scope", "contract", "acceptance", "integration_owner"],
+            missing,
+        )
+
+    def test_multi_agent_route_gates_require_plan_even_for_sequential_split(self) -> None:
+        """Route gates outrank the sequential marker."""
+
+        evidence, _ = synthesize_gate_evidence(
+            MULTI_AGENT_GATE, "", self._multi_worker_fields("sequential")
+        )
+
+        self.assertTrue(
+            evidence_requires_delegation_plan(
+                ["roles", "write scopes"], {MULTI_AGENT_GATE: evidence}
+            )
+        )
 
     def test_multi_agent_route_specific_gates_require_structured_delegation_plan(self) -> None:
         failures = validate_delegation_plan_evidence(
