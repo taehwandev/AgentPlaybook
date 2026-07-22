@@ -1074,6 +1074,26 @@ class FinishGatePolicyTests(unittest.TestCase):
 
         self.assertEqual([], failures)
 
+    def test_documentation_unchanged_allows_multiple_opened_docs_with_plural_coverage(self) -> None:
+        evidence = (
+            "documentation decision: unchanged; docs/product/prd.md and "
+            "docs/product/ard.md were opened and inspected; those already-read "
+            "documents already cover the behavior and acceptance criteria"
+        )
+
+        failures = validate_gate_evidence(
+            {
+                DOCUMENTATION_IMPACT_GATE: (
+                    "before code documentation artifact selection: release note; "
+                    f"impact decision: unchanged; {evidence}"
+                ),
+                DOCUMENTATION_GATE: evidence,
+            },
+            [DOCUMENTATION_IMPACT_GATE, DOCUMENTATION_GATE],
+        )
+
+        self.assertEqual([], failures)
+
     def test_documentation_impact_uses_explicit_updated_decision_before_reason_text(self) -> None:
         failures = validate_gate_evidence(
             {

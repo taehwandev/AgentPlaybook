@@ -49,7 +49,7 @@ EXPLICIT_DOCUMENTATION_DECISION_PATTERN = re.compile(
 )
 
 UNCHANGED_COVERAGE_PHRASES = (
-    "already covered", "already covers", "already documented",
+    "already covered", "already cover", "already covers", "already documented",
     "existing doc", "existing docs", "inspected", "current doc",
     "current docs", "up to date", "still current", "no edit needed",
     "covered by", "coverage:", "covered_by=", "covers the",
@@ -70,7 +70,7 @@ DOC_INSPECTION_PROOF_PHRASES = (
 # The coverage-state claim that pairs with the inspection proof: why the opened
 # doc already reflects the change.
 DOC_COVERAGE_STATE_PHRASES = (
-    "already covered", "already covers", "already documented",
+    "already covered", "already cover", "already covers", "already documented",
     "already contains", "contains the requested", "contains the required",
     "existing doc", "existing docs", "current doc", "current docs",
     "up to date", "still current", "no edit needed", "covered by",
