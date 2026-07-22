@@ -32,6 +32,23 @@ Use after implementation, before handing off or committing.
    make the structure evidence explicit with `owner`, `allowed imports`,
    `forbidden imports`, `callers/tests`, and `verification`; a prose-only
    boundary summary does not satisfy that contract.
+   The hook validates evidence; it does not discover or infer it. Never invoke
+   a bare `review` command for a completed change. Pass the review decision and
+   every route-required evidence field in the same call:
+
+   ```text
+   tao-hook review --project <TARGET_REPO> --rules <TAO_ROOT> \
+     --review-outcome pass \
+     --code-review-evidence "<exact diff and request/rule review>" \
+     --docs-freshness-evidence "<updated or grounded unchanged docs>" \
+     --structure-review-evidence "<runtime size and ownership review>" \
+     --boundary-plan-evidence "<owned scope and nearest verification>" \
+     --side-effect-audit-evidence "<final diff and side-effect audit>"
+   ```
+
+   Omit a field only when `tao-hook review --help` and the active route both
+   confirm it is not required. A missing field is a failed checkpoint, not a
+   prompt for the hook to perform that review.
 3. Confirm boundary-plan evidence exists for code work, or record why the
    change had no code boundary.
 4. Confirm affected docs are updated, or record why no docs changed.
