@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 
@@ -169,9 +170,32 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
             self.assertNotIn("--worker-evidence", result.stdout)
             self.assertIn("must never write the parent ledger", result.stdout)
 
+    @staticmethod
+    def _init_git_repo(project: Path) -> None:
+        """A committed repo lets isolated dispatch add a real worktree at launch."""
+
+        project.mkdir(parents=True, exist_ok=True)
+        (project / ".gitignore").write_text(".tao/\n", encoding="utf-8")
+        (project / "tracked.txt").write_text("tracked\n", encoding="utf-8")
+        for args in (
+            ("init", "-q"),
+            ("config", "user.email", "tests@example.invalid"),
+            ("config", "user.name", "Tao Agent OS Tests"),
+            ("add", "-A"),
+            ("commit", "-qm", "initial"),
+        ):
+            subprocess.run(
+                ["git", *args],
+                cwd=project,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
     def test_handoff_reserved_worker_path_is_consumed_without_second_reservation(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
+            self._init_git_repo(project)
             evidence = project / ".tao" / "preflight.json"
             output = project / "handoff.json"
             result = subprocess.run(
@@ -215,22 +239,26 @@ class RemovedEntrypointMigrationTests(unittest.TestCase):
                 worker_evidence_path=worker_evidence,
                 worker_reservation_token=token,
             )
-            received: list[list[str]] = []
+            # Isolated manifests can no longer be executed through an injected
+            # runner (Fix B); drive the real launch path with only the codex
+            # process mocked so the reservation-token flow is still exercised.
+            real_run = subprocess.run
+
+            def fake_run(command, *args, **kwargs):
+                if command and command[0] == "git":
+                    return real_run(command, *args, **kwargs)
+                return SimpleNamespace(returncode=0)
 
             self.assertTrue(manifest["handoff_state"]["worker_evidence_reserved"])
-            self.assertEqual(
-                17,
-                execute_dispatch_manifest(
-                    manifest,
-                    runner=lambda argv: received.append(argv) or 17,
-                ),
-            )
-            self.assertEqual(1, len(received))
-            self.assertIn(token, received[0][-1])
+            with patch(
+                "workflow_dispatch_launch.subprocess.run", side_effect=fake_run
+            ) as launch:
+                self.assertEqual(0, execute_dispatch_manifest(manifest))
+            self.assertIn(token, launch.call_args.args[0][-1])
 
             self.assertTrue(claim_worker_reservation(worker_evidence.parent, token))
             with self.assertRaisesRegex(ValueError, "does not match"):
-                execute_dispatch_manifest(second_manifest, runner=lambda argv: 0)
+                execute_dispatch_manifest(second_manifest)
 
             with self.assertRaisesRegex(ValueError, "reservation token does not match"):
                 build_dispatch_manifest(

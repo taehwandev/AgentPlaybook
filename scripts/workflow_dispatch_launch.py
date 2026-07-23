@@ -15,6 +15,12 @@ from agent_run_registry import latest_run_id
 from agent_ipc import emit_heartbeat, emit_worker_failure, emit_worker_result
 from agent_scheduler import claim_task, claim_next, choose_capacity, enqueue_task, heartbeat_task, retry_task, resume_task, transition_task
 from agent_worker_evidence import create_worker_reservation, worker_reservation_matches
+from agent_worktree_identity import (
+    new_worktree_path,
+    resolve_base_ref,
+    validate_worker_worktree_identity,
+)
+from agent_worktree_session import create_worker_worktree
 from workflow_dispatch_handoff import execution_policy
 
 
@@ -24,13 +30,23 @@ def execute_dispatch_manifest(
     runner: Callable[[list[str]], int] | None,
     execution_capsule_state: Callable[..., dict[str, object]],
     isolated_worker_evidence: Callable[..., Path],
-    codex_argv: Callable[[Path, Mapping[str, object], str, str], list[str]],
+    codex_argv: Callable[..., list[str]],
     build_handoff_prompt: Callable[..., str],
 ) -> int:
     if manifest.get("execution_mode") == "inline":
         raise ValueError(
             "Inline dispatch is a decision only and cannot execute work in the parent process; "
             "omit --execute or require isolation."
+        )
+    if runner is not None and _is_worktree_isolated(manifest):
+        # The injected runner returns before ``_bind_worker_working_dir`` and so
+        # never creates the worktree; letting it proceed would silently run an
+        # isolated worker with ``--cd`` pointed at the shared checkout. Fail closed
+        # before claiming any scheduler task -- isolated manifests must launch the
+        # real worker process (runner=None) that binds a real git worktree.
+        raise ValueError(
+            "injected-runner execution cannot honor worktree isolation; "
+            "isolated manifests must launch the real worker process"
         )
     handoff = manifest.get("handoff_state")
     profile = manifest.get("work_profile")
@@ -59,9 +75,34 @@ def execute_dispatch_manifest(
     if runner:
         return _run_scheduled_worker(argv, runner, project, scheduler_task, heartbeat_interval_seconds=heartbeat_interval)
     try:
+        working_dir, worktree_path = _bind_worker_working_dir(manifest, project)
+    except BaseException:
+        # The scheduler task is already marked running; a worktree-creation
+        # failure here must transition it to a terminal failed state rather than
+        # leaving it stuck as running before the worker loop's own guard begins.
+        transition_task(project, str(scheduler_task["task_id"]), "failed")
+        raise
+    if worktree_path:
+        # Rebind ``--cd`` to the freshly created worktree so the real worker
+        # process writes inside its isolated tree, never the shared checkout.
+        # The ephemeral project-trust override is allowed only after that exact
+        # path has passed the same-repository linked-worktree identity check.
+        argv = codex_argv(
+            project,
+            profile,
+            str(manifest["sandbox_mode"]),
+            prompt,
+            working_dir,
+            trusted_worktree=working_dir,
+        )
+    try:
         return _run_scheduled_worker(
             argv,
-            lambda command: subprocess.run(command, check=False, env=worker_environment(prepared, task_context["task"])).returncode,
+            lambda command: subprocess.run(
+                command,
+                check=False,
+                env=worker_environment(prepared, task_context["task"], worktree_path=worktree_path),
+            ).returncode,
             project,
             scheduler_task,
             heartbeat_interval_seconds=heartbeat_interval,
@@ -69,6 +110,34 @@ def execute_dispatch_manifest(
         )
     except OSError as error:
         raise RuntimeError("Unable to start the delegated Codex worker") from error
+
+
+def _is_worktree_isolated(manifest: Mapping[str, object]) -> bool:
+    capability = manifest.get("capability_profile")
+    if isinstance(capability, Mapping) and capability.get("working_dir_kind") == "worktree":
+        return True
+    return bool(manifest.get("isolation_required"))
+
+
+def _bind_worker_working_dir(
+    manifest: Mapping[str, object], project: Path
+) -> tuple[Path, str]:
+    """Create the isolated worktree fail-closed and return its bound working dir.
+
+    Shared (non-isolated) workers keep the project checkout and an empty worktree
+    marker. Isolated workers get a real ``git worktree add`` at the manifest's
+    planned path; setup failure raises rather than falling back to the checkout.
+    """
+
+    if not _is_worktree_isolated(manifest):
+        return project, ""
+    worktree_path = str(manifest.get("worktree_path") or "") or str(
+        new_worktree_path(project)
+    )
+    base_ref = resolve_base_ref(project)
+    create_worker_worktree(project, base_ref, Path(worktree_path))
+    verified = validate_worker_worktree_identity(project, Path(worktree_path))
+    return verified, str(verified)
 
 
 def _claim_scheduler_task(
@@ -234,8 +303,15 @@ def prepare_launch_handoff(
     return prepared
 
 
-def worker_environment(handoff: Mapping[str, object], task: Mapping[str, object] | None = None) -> dict[str, str]:
+def worker_environment(
+    handoff: Mapping[str, object],
+    task: Mapping[str, object] | None = None,
+    *,
+    worktree_path: str = "",
+) -> dict[str, str]:
     environment = dict(os.environ)
+    if worktree_path:
+        environment["TAO_WORKER_WORKTREE"] = worktree_path
     capsule = handoff.get("execution_capsule")
     if isinstance(capsule, Mapping) and capsule.get("reusable"):
         environment["TAO_PARENT_EVIDENCE_READONLY"] = "1"

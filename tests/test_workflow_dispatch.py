@@ -114,7 +114,7 @@ from workflow_route import resolve_docs, route_hooks
 from workflow_search import SearchOutcome, search_docs, search_docs_outcome
 from workflow_skill_paths import canonical_doc_path
 from workflow_spill import spill_tool_label, validate_spill_label_contracts
-from workflow import build_parser, print_dispatch
+from workflow import build_parser, print_dispatch, print_dispatch_finalize
 from workflow_validate import (
     STRICT_CARD_REQUIRED_HEADINGS,
     markdown_files_to_validate,
@@ -142,6 +142,28 @@ _AGENT_HOOK_SPEC = importlib.util.spec_from_file_location(
 assert _AGENT_HOOK_SPEC and _AGENT_HOOK_SPEC.loader
 agent_hook = importlib.util.module_from_spec(_AGENT_HOOK_SPEC)
 _AGENT_HOOK_SPEC.loader.exec_module(agent_hook)
+
+
+def _init_git_repo(project: Path) -> None:
+    """Create a real committed git repo so isolated dispatch can add a worktree."""
+
+    project.mkdir(parents=True, exist_ok=True)
+    (project / ".gitignore").write_text(".tao/\n", encoding="utf-8")
+    (project / "tracked.txt").write_text("tracked\n", encoding="utf-8")
+    for args in (
+        ("init", "-q"),
+        ("config", "user.email", "tests@example.invalid"),
+        ("config", "user.name", "Tao Agent OS Tests"),
+        ("add", "-A"),
+        ("commit", "-qm", "initial"),
+    ):
+        subprocess.run(
+            ["git", *args],
+            cwd=project,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
 
 
 def route_doc(path: str) -> str:
@@ -322,24 +344,28 @@ class WorkflowDispatchTests(unittest.TestCase):
             )
 
     def test_dispatch_cli_without_explicit_isolation_stays_inline(self) -> None:
-        completed = subprocess.run(
-            [
-                sys.executable,
-                str(ROOT / "scripts" / "workflow.py"),
-                "dispatch",
-                "task",
-                "--request",
-                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
-                "--project",
-                str(ROOT),
-                "--format",
-                "json",
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            cwd=ROOT,
-        )
+        # Dispatch against a plan-free project: an active delegation plan now
+        # fails closed without --worker-id, and this test only exercises the
+        # unrelated inline-execution default.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "workflow.py"),
+                    "dispatch",
+                    "task",
+                    "--request",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    "--project",
+                    temp_dir,
+                    "--format",
+                    "json",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
 
         self.assertEqual(0, completed.returncode, completed.stderr)
         manifest = json.loads(completed.stdout)
@@ -349,7 +375,11 @@ class WorkflowDispatchTests(unittest.TestCase):
         self.assertEqual("inline", manifest["execution_mode"])
         self.assertEqual([], manifest["codex_exec_argv"])
 
-    def test_dispatch_executor_runs_selected_argv(self) -> None:
+    def test_injected_runner_is_rejected_for_isolated_manifest(self) -> None:
+        """An injected runner cannot honor worktree isolation, so it must fail
+        closed rather than silently run in the shared checkout (Fix B). The guard
+        also fires before any scheduler task is claimed."""
+
         with tempfile.TemporaryDirectory() as temp_dir:
             manifest = build_dispatch_manifest(
                 "feature",
@@ -363,12 +393,46 @@ class WorkflowDispatchTests(unittest.TestCase):
                 received.append(argv)
                 return 17
 
-            self.assertEqual(17, execute_dispatch_manifest(manifest, runner=runner))
-            self.assertEqual(1, len(received))
-            self.assertEqual("codex", received[0][0])
-            self.assertIn("worker-reservation-token", received[0][-1])
-            scheduler = json.loads((Path(temp_dir) / ".tao" / "scheduler.json").read_text())
-            self.assertEqual("failed", scheduler["tasks"][-1]["state"])
+            with self.assertRaisesRegex(ValueError, "cannot honor worktree isolation"):
+                execute_dispatch_manifest(manifest, runner=runner)
+            self.assertEqual([], received)
+            self.assertFalse((Path(temp_dir) / ".tao" / "scheduler.json").exists())
+
+    def test_injected_runner_on_inline_manifest_keeps_inline_guard(self) -> None:
+        """A non-isolated manifest is inline, so the injected runner still hits the
+        pre-existing inline decision guard -- unchanged behavior (Fix B)."""
+
+        manifest = build_dispatch_manifest(
+            "feature",
+            "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ROOT,
+            parent_model="gpt-5.6-terra",
+            parent_reasoning_effort="medium",
+            parent_sandbox_mode="workspace-write",
+        )
+        received: list[list[str]] = []
+        self.assertEqual("inline", manifest["execution_mode"])
+        with self.assertRaisesRegex(ValueError, "cannot execute work in the parent process"):
+            execute_dispatch_manifest(manifest, runner=received.append)
+        self.assertEqual([], received)
+
+    @staticmethod
+    def _git_only_fake_run():
+        """Keep real ``git`` (worktree creation) but stub the codex worker launch.
+
+        Isolated manifests can no longer be executed through an injected runner
+        (Fix B), so these launch-time behaviors are exercised on the real
+        subprocess path with only the codex process mocked.
+        """
+
+        real_run = subprocess.run
+
+        def fake_run(command, *args, **kwargs):
+            if command and command[0] == "git":
+                return real_run(command, *args, **kwargs)
+            return SimpleNamespace(returncode=0)
+
+        return fake_run
 
     def test_dispatch_revalidates_capsule_and_mints_worker_token_at_launch(self) -> None:
         reusable = {
@@ -384,7 +448,8 @@ class WorkflowDispatchTests(unittest.TestCase):
             "phase": "ready",
         }
         with tempfile.TemporaryDirectory() as temp_dir:
-            project = Path(temp_dir)
+            project = Path(temp_dir) / "project"
+            _init_git_repo(project)
             with patch("workflow_dispatch._execution_capsule_state", side_effect=[reusable, stale]):
                 manifest = build_dispatch_manifest(
                     "feature",
@@ -393,11 +458,13 @@ class WorkflowDispatchTests(unittest.TestCase):
                     route={"required_docs": [], "gates": []},
                     isolation_required=True,
                 )
-                received: list[list[str]] = []
-                self.assertEqual(0, execute_dispatch_manifest(manifest, runner=lambda argv: received.append(argv) or 0))
+                with patch(
+                    "workflow_dispatch_launch.subprocess.run",
+                    side_effect=self._git_only_fake_run(),
+                ) as launch:
+                    self.assertEqual(0, execute_dispatch_manifest(manifest))
 
-        self.assertEqual(1, len(received))
-        prompt = received[0][-1]
+        prompt = launch.call_args.args[0][-1]
         self.assertIn("No reusable execution capsule is available", prompt)
         self.assertRegex(prompt, r"worker-reservation-token [0-9a-f]{32}")
 
@@ -409,21 +476,25 @@ class WorkflowDispatchTests(unittest.TestCase):
             "phase": "ready",
         }
         with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir) / "project"
+            _init_git_repo(project)
             with patch("workflow_dispatch._execution_capsule_state", return_value=stale) as state:
                 manifest = build_dispatch_manifest(
                     "feature",
                     "기획변경 때 문서 정리가 누락되는 걸 막아줘",
-                    Path(temp_dir),
+                    project,
                     route={"required_docs": [], "gates": []},
                     reserve_worker_evidence=True,
                     defer_capsule_validation=True,
                     isolation_required=True,
                 )
-                self.assertEqual(
-                    0,
-                    execute_dispatch_manifest(manifest, runner=lambda _argv: 0),
-                )
+                with patch(
+                    "workflow_dispatch_launch.subprocess.run",
+                    side_effect=self._git_only_fake_run(),
+                ):
+                    self.assertEqual(0, execute_dispatch_manifest(manifest))
 
+        # Deferred at build, hashed exactly once at launch.
         self.assertEqual(1, state.call_count)
 
     def test_dispatch_launch_preserves_request_mismatch_for_capsule_reuse(self) -> None:
@@ -439,27 +510,26 @@ class WorkflowDispatchTests(unittest.TestCase):
             }
 
         with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir) / "project"
+            _init_git_repo(project)
             with patch("workflow_dispatch._execution_capsule_state", side_effect=capsule_state):
                 manifest = build_dispatch_manifest(
                     "feature",
                     "기획변경 때 문서 정리가 누락되는 걸 막아줘",
-                    Path(temp_dir),
+                    project,
                     route={"required_docs": [], "gates": []},
                     parent_context_reusable=False,
                     isolation_required=True,
                 )
-                received: list[list[str]] = []
-                self.assertEqual(
-                    0,
-                    execute_dispatch_manifest(
-                        manifest,
-                        runner=lambda argv: received.append(argv) or 0,
-                    ),
-                )
+                with patch(
+                    "workflow_dispatch_launch.subprocess.run",
+                    side_effect=self._git_only_fake_run(),
+                ) as launch:
+                    self.assertEqual(0, execute_dispatch_manifest(manifest))
 
         self.assertEqual([False, False], calls)
         self.assertFalse(manifest["handoff_state"]["parent_context_reusable"])
-        self.assertIn("No reusable execution capsule is available", received[0][-1])
+        self.assertIn("No reusable execution capsule is available", launch.call_args.args[0][-1])
 
     def test_dispatch_launch_exports_only_worker_evidence_boundary(self) -> None:
         stale = {
@@ -469,7 +539,8 @@ class WorkflowDispatchTests(unittest.TestCase):
             "phase": "ready",
         }
         with tempfile.TemporaryDirectory() as temp_dir:
-            project = Path(temp_dir)
+            project = Path(temp_dir) / "project"
+            _init_git_repo(project)
             with patch("workflow_dispatch._execution_capsule_state", side_effect=[stale, stale]):
                 manifest = build_dispatch_manifest(
                     "feature",
@@ -478,9 +549,19 @@ class WorkflowDispatchTests(unittest.TestCase):
                     route={"required_docs": [], "gates": []},
                     isolation_required=True,
                 )
+                real_run = subprocess.run
+
+                def fake_run(command, *args, **kwargs):
+                    # ``subprocess`` is a shared module, so patching it here also
+                    # intercepts the real worktree git calls. Keep git real and
+                    # mock only the codex worker launch.
+                    if command and command[0] == "git":
+                        return real_run(command, *args, **kwargs)
+                    return SimpleNamespace(returncode=0)
+
                 with patch(
                     "workflow_dispatch_launch.subprocess.run",
-                    return_value=SimpleNamespace(returncode=0),
+                    side_effect=fake_run,
                 ) as launch:
                     self.assertEqual(0, execute_dispatch_manifest(manifest))
 
@@ -489,6 +570,17 @@ class WorkflowDispatchTests(unittest.TestCase):
         self.assertRegex(environment["TAO_WORKER_RESERVATION_TOKEN"], r"^[0-9a-f]{32}$")
         self.assertEqual("worker-evidence-and-state", environment["TAO_CAPABILITY_ENFORCEMENT"])
         self.assertNotIn("TAO_PARENT_EVIDENCE_READONLY", environment)
+        # Isolation binds the worker to a real git worktree, not the shared checkout.
+        self.assertTrue(environment["TAO_WORKER_WORKTREE"].endswith(manifest["worktree_path"].rsplit("/", 1)[-1]))
+        launched_argv = launch.call_args.args[0]
+        self.assertEqual(manifest["worktree_path"], launched_argv[launched_argv.index("--cd") + 1])
+        self.assertNotIn("--skip-git-repo-check", launched_argv)
+        self.assertIn(
+            "projects={ "
+            f'{json.dumps(manifest["worktree_path"])} = '
+            '{ trust_level = "trusted" } }',
+            launched_argv,
+        )
 
     def test_worker_environment_exports_partial_result_resume_token(self) -> None:
         from workflow_dispatch_launch import worker_environment
@@ -599,27 +691,30 @@ class WorkflowDispatchTests(unittest.TestCase):
                 )
 
     def test_dispatch_execute_cli_rejects_inline_false_success(self) -> None:
-        args = build_parser().parse_args(
-            [
-                "dispatch",
-                "feature",
-                "--request",
-                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
-                "--project",
-                str(ROOT),
-                "--parent-model",
-                "gpt-5.6-terra",
-                "--parent-reasoning-effort",
-                "medium",
-                "--parent-sandbox-mode",
-                "workspace-write",
-                "--execute",
-            ]
-        )
-        error = io.StringIO()
+        # A plan-free project so the inline-execute guard, not the active-plan
+        # fail-closed rule, is the rejection under test.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            args = build_parser().parse_args(
+                [
+                    "dispatch",
+                    "feature",
+                    "--request",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    "--project",
+                    temp_dir,
+                    "--parent-model",
+                    "gpt-5.6-terra",
+                    "--parent-reasoning-effort",
+                    "medium",
+                    "--parent-sandbox-mode",
+                    "workspace-write",
+                    "--execute",
+                ]
+            )
+            error = io.StringIO()
 
-        with redirect_stderr(error):
-            result = print_dispatch(args)
+            with redirect_stderr(error):
+                result = print_dispatch(args)
 
         self.assertEqual(2, result)
         self.assertIn("Inline dispatch is a decision only", error.getvalue())
@@ -654,6 +749,37 @@ class WorkflowDispatchTests(unittest.TestCase):
 
         self.assertEqual("child", manifest["execution_mode"])
         self.assertTrue(manifest["profile_matches_parent"])
+
+    def test_isolated_manifest_binds_cd_to_a_worktree_path(self) -> None:
+        manifest = build_dispatch_manifest(
+            "feature",
+            "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ROOT,
+            isolation_required=True,
+        )
+
+        worktree_path = manifest["worktree_path"]
+        self.assertTrue(worktree_path)
+        self.assertEqual("worktree", manifest["capability_profile"]["working_dir_kind"])
+        self.assertTrue(worktree_path.startswith(str(ROOT.resolve())))
+        argv = manifest["codex_exec_argv"]
+        bound_cd = argv[argv.index("--cd") + 1]
+        self.assertEqual(worktree_path, bound_cd)
+        self.assertNotEqual(str(ROOT.resolve()), bound_cd)
+        self.assertFalse(any("trust_level" in item for item in argv))
+        self.assertNotIn("--skip-git-repo-check", argv)
+
+    def test_shared_manifest_stays_on_the_project_checkout(self) -> None:
+        manifest = build_dispatch_manifest(
+            "feature",
+            "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+            ROOT,
+        )
+
+        self.assertIsNone(manifest["worktree_path"])
+        self.assertEqual("workspace", manifest["capability_profile"]["working_dir_kind"])
+        argv = manifest["codex_exec_argv"]
+        self.assertEqual(str(ROOT.resolve()), argv[argv.index("--cd") + 1])
 
     def test_dispatch_reuses_validated_parent_capsule_in_handoff_prompt(self) -> None:
         capsule_state = {
@@ -698,23 +824,63 @@ class WorkflowDispatchTests(unittest.TestCase):
         self.assertIn("Open and read every required doc from the parent route manifest", prompt)
 
     def test_dispatch_execute_cli_uses_executor(self) -> None:
-        args = build_parser().parse_args(
-            [
-                "dispatch",
-                "feature",
-                "--request",
-                "기획변경 때 문서 정리가 누락되는 걸 막아줘",
-                "--project",
-                str(ROOT),
-                "--require-isolation",
-                "--execute",
-            ]
-        )
+        # A plan-free project so --require-isolation drives execution rather than
+        # the active-plan fail-closed rule short-circuiting before the executor.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            args = build_parser().parse_args(
+                [
+                    "dispatch",
+                    "feature",
+                    "--request",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    "--project",
+                    temp_dir,
+                    "--require-isolation",
+                    "--execute",
+                ]
+            )
 
-        with patch("workflow.execute_dispatch_manifest", return_value=23) as execute:
-            self.assertEqual(23, print_dispatch(args))
+            with patch("workflow.execute_dispatch_manifest", return_value=23) as execute:
+                self.assertEqual(23, print_dispatch(args))
 
         execute.assert_called_once()
+
+    def test_dispatch_finalize_wires_explicit_ignored_discard_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir).resolve()
+            worktree = project / ".tao" / "worktrees" / ("a" * 16)
+            args = build_parser().parse_args(
+                [
+                    "dispatch-finalize",
+                    "--project",
+                    str(project),
+                    "--worktree",
+                    str(worktree),
+                    "--discard-ignored",
+                    "--format",
+                    "json",
+                ]
+            )
+            finalization = SimpleNamespace(
+                integrated_path_count=3,
+                discarded_ignored_path_count=2,
+            )
+            stdout = io.StringIO()
+            with (
+                patch(
+                    "workflow.finalize_worker_worktree",
+                    return_value=finalization,
+                ) as finalize,
+                redirect_stdout(stdout),
+            ):
+                self.assertEqual(0, print_dispatch_finalize(args))
+
+        finalize.assert_called_once_with(
+            project,
+            worktree,
+            discard_ignored=True,
+        )
+        self.assertEqual("finalized", json.loads(stdout.getvalue())["status"])
 
     def test_dispatch_self_asserted_classification_cannot_open_a_question_request(self) -> None:
         # --request-classified used to replace the classifier's verdict with a
@@ -1174,6 +1340,10 @@ class WorkflowDispatchTests(unittest.TestCase):
 
     def test_dispatch_spill_label_contract_is_preserved(self) -> None:
         self.assertEqual(("workflow_setup", "plan"), SPILL_ACTION_LABELS["dispatch"])
+        self.assertEqual(
+            ("workflow_setup", "implement"),
+            SPILL_ACTION_LABELS["dispatch-finalize"],
+        )
         self.assertEqual([], validate_spill_label_contracts(set(COMMANDS)))
 
     def test_runtime_dispatch_paths_promote_runtime_guidance(self) -> None:
@@ -1200,6 +1370,113 @@ class WorkflowDispatchTests(unittest.TestCase):
         self.assertIn(CODEX_DISPATCH_BRIDGE_PHRASE, codex_required)
         self.assertIn(CODEX_DISPATCH_BRIDGE_PHRASE, codex_block)
         self.assertNotIn(CODEX_DISPATCH_BRIDGE_PHRASE, claude_block)
+
+
+class _SchedulerFailureOnWorktreeBindTestCase(unittest.TestCase):
+    """A worktree-creation failure must fail the claimed scheduler task (Fix 3)."""
+
+    _STALE_CAPSULE = {
+        "path": "/tmp/execution-capsule.json",
+        "reusable": False,
+        "invalidation_reasons": ["stale"],
+        "phase": "ready",
+    }
+
+    def test_bind_failure_transitions_task_to_failed_and_propagates(self) -> None:
+        from agent_worktree_session import WorktreeSessionError
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir) / "project"
+            _init_git_repo(project)
+            with patch(
+                "workflow_dispatch._execution_capsule_state",
+                side_effect=[self._STALE_CAPSULE, self._STALE_CAPSULE],
+            ):
+                manifest = build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    project,
+                    route={"required_docs": [], "gates": []},
+                    isolation_required=True,
+                )
+                with patch(
+                    "workflow_dispatch_launch._bind_worker_working_dir",
+                    side_effect=WorktreeSessionError("cannot create isolated worker worktree"),
+                ):
+                    with self.assertRaises(WorktreeSessionError):
+                        execute_dispatch_manifest(manifest)
+
+            scheduler = json.loads((project / ".tao" / "scheduler.json").read_text())
+
+        self.assertEqual("failed", scheduler["tasks"][-1]["state"])
+
+    def test_create_worktree_failure_also_fails_the_task(self) -> None:
+        from agent_worktree_session import WorktreeSessionError
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir) / "project"
+            _init_git_repo(project)
+            with patch(
+                "workflow_dispatch._execution_capsule_state",
+                side_effect=[self._STALE_CAPSULE, self._STALE_CAPSULE],
+            ):
+                manifest = build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    project,
+                    route={"required_docs": [], "gates": []},
+                    isolation_required=True,
+                )
+                with patch(
+                    "workflow_dispatch_launch.create_worker_worktree",
+                    side_effect=WorktreeSessionError("git worktree add failed"),
+                ):
+                    with self.assertRaises(WorktreeSessionError):
+                        execute_dispatch_manifest(manifest)
+
+            scheduler = json.loads((project / ".tao" / "scheduler.json").read_text())
+
+        self.assertEqual("failed", scheduler["tasks"][-1]["state"])
+
+    def test_nonzero_worker_exit_transitions_task_to_failed(self) -> None:
+        # Integration coverage for the launch branch where the real worker
+        # process returns non-zero: transition_task(..., "failed") plus the
+        # (default max_retries=0) retry logic. This regained the coverage lost
+        # when test_dispatch_executor_runs_selected_argv was removed, since every
+        # other converted launch test mocks subprocess.run to returncode=0.
+        real_run = subprocess.run
+
+        def fake_run(command, *args, **kwargs):
+            # Keep real git so the isolated worktree is genuinely created, but
+            # make the codex worker process report failure.
+            if command and command[0] == "git":
+                return real_run(command, *args, **kwargs)
+            return SimpleNamespace(returncode=1)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir) / "project"
+            _init_git_repo(project)
+            with patch(
+                "workflow_dispatch._execution_capsule_state",
+                side_effect=[self._STALE_CAPSULE, self._STALE_CAPSULE],
+            ):
+                manifest = build_dispatch_manifest(
+                    "feature",
+                    "기획변경 때 문서 정리가 누락되는 걸 막아줘",
+                    project,
+                    route={"required_docs": [], "gates": []},
+                    isolation_required=True,
+                )
+                with patch(
+                    "workflow_dispatch_launch.subprocess.run",
+                    side_effect=fake_run,
+                ):
+                    self.assertEqual(1, execute_dispatch_manifest(manifest))
+
+            scheduler = json.loads((project / ".tao" / "scheduler.json").read_text())
+            self.assertTrue(Path(str(manifest["worktree_path"])).is_dir())
+
+        self.assertEqual("failed", scheduler["tasks"][-1]["state"])
 
 
 if __name__ == "__main__":

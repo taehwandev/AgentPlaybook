@@ -26,6 +26,7 @@ from workflow_dispatch_profiles import (
     select_work_kind,
 )
 from agent_capability_policy import READ_ONLY_WORK_KINDS, capability_profile, validate_capability_profile
+from agent_worktree_identity import new_worktree_path as _new_worktree_path
 from agent_os_api import api_contract_manifest, runtime_adapter_contract, validate_runtime_adapter_contract
 from workflow_classified_exemption import (
     parent_capsule_exemption,
@@ -132,7 +133,10 @@ def build_dispatch_manifest(
         handoff_state,
         non_authoring=non_authoring,
     )
-    argv = _codex_argv(project, profile, sandbox_mode, handoff_prompt)
+    isolated_worktree = capability.get("working_dir_kind") == "worktree"
+    worktree_path = str(_new_worktree_path(project)) if isolated_worktree else ""
+    working_dir = Path(worktree_path) if worktree_path else project
+    argv = _codex_argv(project, profile, sandbox_mode, handoff_prompt, working_dir)
     return {
         "schema_version": 1,
         "project": str(project),
@@ -151,6 +155,7 @@ def build_dispatch_manifest(
         "execution_mode": execution_mode,
         "profile_matches_parent": same_profile,
         "isolation_required": isolation_required,
+        "worktree_path": worktree_path or None,
         "heartbeat_interval_seconds": max(0.0, float(heartbeat_interval_seconds)),
         "partial_result_id": str(partial_result_id or ""),
         "handoff_state": handoff_state,

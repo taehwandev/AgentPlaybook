@@ -123,6 +123,11 @@ permission to hide first-party code under `third_party`.
   of failing solely on pre-existing size. More than about 200 added lines in one
   development file fails review because it is usually a "dump it all here"
   signal.
+- Apply the added-line gate to a newly introduced but still-untracked runtime
+  file before building more behavior on top of it. If that file crosses the
+  limit during a later task, split a real owner such as identity validation,
+  mutation lifecycle, transport, or cleanup into its own purpose-named module;
+  do not treat its presence before the current edit as an exemption.
 - CSS and style files follow the same ownership rule. Do not group tokens,
   primitives, component variants, page layout overrides, and one-off fixes in
   one file only because they are all styles.

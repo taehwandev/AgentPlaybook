@@ -38,6 +38,12 @@ channel and never changes a successful finish result.
 3. Before finish, inspect the skills actually loaded and applied, then record
    `no_reusable_gap`, `reusable_gap`, or `no_skill_used` on the required
    `retrospective check` gate.
+   Record the exact fields `skills_checked`, `outcome`, and `observation`.
+   `observation` is an enum, not a free-form summary: pair
+   `no_reusable_gap` or `no_skill_used` with `not_needed`, and pair
+   `reusable_gap` with `recorded` or `deferred`. Put task-specific correction
+   details in the gate evidence text rather than inventing another observation
+   value.
 4. When the outcome is `reusable_gap`, emit one reusable, content-free
    observation tied to a skill actually used, or record that observation as
    deferred when the optional side channel is unavailable.

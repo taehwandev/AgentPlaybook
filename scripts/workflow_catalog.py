@@ -270,6 +270,7 @@ COMMANDS["git_commit"] = COMMANDS["commit"]
 SPILL_ACTION_LABELS: Dict[str, Tuple[str, str]] = {
     "classify": ("analysis", "classify"),
     "dispatch": ("workflow_setup", "plan"),
+    "dispatch-finalize": ("workflow_setup", "implement"),
     "list": ("analysis", "classify"),
     "query": ("analysis", "classify"),
     "validate": ("build_verification", "verify"),

@@ -24,7 +24,14 @@ SPILL_ALLOWED_TOOLS = {"codex", "claude", "antigravity", "openai"}
 SPILL_TOOL_ALIASES = {"agy": "antigravity"}
 CODEX_RUNTIME_ENV_KEYS = ("CODEX_SANDBOX", "CODEX_THREAD_ID", "CODEX_CI")
 SAFE_WORKFLOW_SLUG_RE = re.compile(r"^[a-z][a-z0-9_]{1,40}$")
-REQUIRED_SPILL_ACTION_LABELS = {"classify", "dispatch", "list", "query", "validate"}
+REQUIRED_SPILL_ACTION_LABELS = {
+    "classify",
+    "dispatch",
+    "dispatch-finalize",
+    "list",
+    "query",
+    "validate",
+}
 
 
 def spill_tool_label(env: dict[str, str] | None = None) -> str:
