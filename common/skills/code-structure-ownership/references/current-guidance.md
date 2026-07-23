@@ -237,6 +237,12 @@ typed authored config -> pure derived metadata -> stage/read/overview/timer
   presentation are independently named public contracts, give each contract a
   separate owner file even when one factory composes all four. Relatedness is
   not a reason to create a multi-owner type bucket.
+- When one authored presentation has distinct stage and presenter windows,
+  treat the message contract, transport adapter, stage state bridge, and
+  presenter remote bridge as separate owners when callers import them
+  independently. Do not hide two exported synchronization hooks and several
+  exported transport types in one broad `sync` file; enumerate these exports in
+  the structure packet before coding.
 - Rendering, navigation, timer, overview, print, and read-mode consumers import
   the config or its derived metadata. They must not retype the same facts as
   local constants or display strings.
