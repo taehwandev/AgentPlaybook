@@ -12,7 +12,8 @@ import json
 import sys
 from pathlib import Path
 
-from agent_execution_capsule_bindings import preflight_identity_failures
+from agent_worktree_identity import WorktreeSessionError
+from agent_worktree_integration import finalize_worker_worktree
 from workflow_catalog import COMMANDS, CONCERNS, PLATFORM_CONCERNS, PLATFORMS
 from workflow_common import ROOT, unique
 from workflow_dispatch import (
@@ -20,6 +21,11 @@ from workflow_dispatch import (
     build_dispatch_manifest,
     execute_dispatch_manifest,
     print_dispatch_manifest,
+)
+from workflow_dispatch_cli import (
+    dispatch_isolation_required,
+    parent_dispatch_route,
+    preflight_identity_matches,
 )
 from workflow_classified_exemption import (
     classified_intake_decision,
@@ -97,6 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
     route.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
     _add_dispatch_parser(subparsers)
+    _add_dispatch_finalize_parser(subparsers)
 
     classify = subparsers.add_parser("classify", help="Classify request clarity and effort.")
     classify.add_argument("request", help="User request text to classify.")
@@ -157,8 +164,39 @@ def _add_dispatch_parser(subparsers: argparse._SubParsersAction) -> None:
     dispatch.add_argument("--parent-reasoning-effort", default="")
     dispatch.add_argument("--parent-sandbox-mode", default="")
     dispatch.add_argument("--require-isolation", action="store_true")
+    dispatch.add_argument(
+        "--worker-id",
+        default="",
+        help=(
+            "Delegation-plan worker id. A worker the plan declares worktree-isolated "
+            "dispatches isolated even without --require-isolation."
+        ),
+    )
+    dispatch.add_argument(
+        "--delegation-plan",
+        type=Path,
+        default=None,
+        help="Delegation plan path (default: <project>/.tao/agent-delegation-plan.json).",
+    )
     dispatch.add_argument("--heartbeat-interval-seconds", type=float, default=0)
     dispatch.add_argument("--execute", action="store_true")
+
+
+def _add_dispatch_finalize_parser(
+    subparsers: argparse._SubParsersAction,
+) -> None:
+    finalize = subparsers.add_parser(
+        "dispatch-finalize",
+        help="Verify lead integration and remove a completed worker worktree.",
+    )
+    finalize.add_argument("--project", default=".", help="Lead checkout root.")
+    finalize.add_argument("--worktree", required=True, type=Path)
+    finalize.add_argument(
+        "--discard-ignored",
+        action="store_true",
+        help="Explicitly permit removal of ignored files inside the worker tree.",
+    )
+    finalize.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
 
 def print_supported_values() -> None:
@@ -323,12 +361,12 @@ def print_dispatch(args: argparse.Namespace) -> int:
         print(block_reason, file=sys.stderr)
         return 2
 
-    parent_identity_matches = _preflight_identity_matches(
+    parent_identity_matches = preflight_identity_matches(
         evidence_path,
         project=project,
         rules=rules,
     )
-    parent_route = _parent_dispatch_route(
+    parent_route = parent_dispatch_route(
         evidence_path,
         command=args.command,
         request=args.request,
@@ -360,6 +398,11 @@ def print_dispatch(args: argparse.Namespace) -> int:
             print(f"- {item}", file=sys.stderr)
         return 1
     try:
+        isolation_required = dispatch_isolation_required(args, project)
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 2
+    try:
         manifest = build_dispatch_manifest(
             args.command,
             args.request,
@@ -373,7 +416,7 @@ def print_dispatch(args: argparse.Namespace) -> int:
             parent_model=args.parent_model,
             parent_reasoning_effort=args.parent_reasoning_effort,
             parent_sandbox_mode=args.parent_sandbox_mode,
-            isolation_required=args.require_isolation,
+            isolation_required=isolation_required,
             heartbeat_interval_seconds=args.heartbeat_interval_seconds,
             rules=rules,
             evidence_path=evidence_path,
@@ -399,62 +442,31 @@ def print_dispatch(args: argparse.Namespace) -> int:
     return 0
 
 
-def _parent_dispatch_route(
-    evidence_path: Path,
-    *,
-    command: str,
-    request: str,
-    request_classified: bool,
-    classification_evidence: str,
-    platform: str | None,
-    concerns: list[str],
-    project: Path,
-    rules: Path,
-) -> dict[str, object] | None:
-    """Reuse the parent start route without mutating its handoff capsule."""
-
-    if not _preflight_identity_matches(evidence_path, project=project, rules=rules):
-        return None
+def print_dispatch_finalize(args: argparse.Namespace) -> int:
+    project = Path(args.project).expanduser().resolve()
     try:
-        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-    route = payload.get("route") if isinstance(payload, dict) else None
-    if not isinstance(route, dict) or route.get("command") != command:
-        return None
-    if platform and route.get("platform") != platform:
-        return None
-    routed_concerns = {
-        str(item) for item in (route.get("concerns") or []) if str(item).strip()
+        result = finalize_worker_worktree(
+            project,
+            args.worktree,
+            discard_ignored=args.discard_ignored,
+        )
+    except WorktreeSessionError as error:
+        print(error, file=sys.stderr)
+        return 2
+    payload = {
+        "discarded_ignored_path_count": result.discarded_ignored_path_count,
+        "integrated_path_count": result.integrated_path_count,
+        "status": "finalized",
     }
-    if any(concern not in routed_concerns for concern in concerns):
-        return None
-    intake = payload.get("request_intake")
-    if not isinstance(intake, dict):
-        return None
-    if request_classified:
-        if not intake.get("request_classified"):
-            return None
-        if intake.get("classification_evidence") != classification_evidence:
-            return None
-        # A classification description is reusable policy evidence, not a
-        # request identity.  Reuse a classified parent route only when start
-        # also captured the exact current request; otherwise resolve a fresh
-        # route and keep the old capsule invalid for this dispatch.
-        if not intake.get("request") or intake.get("request") != request:
-            return None
-    elif intake.get("request") != request:
-        return None
-    return dict(route)
-
-
-def _preflight_identity_matches(
-    evidence_path: Path,
-    *,
-    project: Path,
-    rules: Path,
-) -> bool:
-    return not preflight_identity_failures(evidence_path, project, rules)
+    if args.format == "json":
+        print(json.dumps(payload, sort_keys=True))
+    else:
+        print(
+            "Finalized worker worktree "
+            f"({result.integrated_path_count} integrated paths, "
+            f"{result.discarded_ignored_path_count} explicitly discarded ignored paths)."
+        )
+    return 0
 
 
 def main(argv: list[str]) -> int:
@@ -474,6 +486,8 @@ def main(argv: list[str]) -> int:
         return print_request_classification(args)
     if args.action == "dispatch":
         return print_dispatch(args)
+    if args.action == "dispatch-finalize":
+        return print_dispatch_finalize(args)
     return print_route(args)
 
 

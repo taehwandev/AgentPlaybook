@@ -60,6 +60,49 @@ Use when a workflow gate was missed and the agent must retry that gate.
 - If safe rollback cannot be separated from user-owned changes, stop and report
   the blocker instead of guessing.
 
+## Isolated Worker Worktrees
+
+Use when a dispatched worker runs in its own git worktree because it shares an
+overlapping `owned_scope` with another concurrent writer.
+
+- Create the worktree with `git worktree add` from the base ref before the
+  worker starts. Setup is fail-closed: if the worktree cannot be created, raise
+  and stop. Never silently fall back to the main checkout.
+- Treat Git-repository membership and agent-runtime project trust as separate
+  checks. Before a runtime receives trust for a generated worktree, verify that
+  the path is the canonical direct child reserved by the dispatcher, is the Git
+  top level, uses a linked-worktree `.git` file, and shares the parent
+  repository's Git common directory. A nested or standalone repository at the
+  expected-looking path must fail closed.
+- When Codex needs explicit trust for the generated worktree, pass an ephemeral
+  per-process `projects` trust override for the exact verified `--cd` path.
+  Never mutate global Codex trust state as a dispatch side effect, and never use
+  `--skip-git-repo-check` as a trust substitute; that flag addresses repository
+  eligibility, not project-local `.codex` policy loading.
+- An isolated worker writes only inside its own worktree directory. Never write
+  the main checkout directly from an isolated worker.
+- Base-ref constraint: worktrees branch from `HEAD`, so uncommitted parent
+  changes are not visible in the worker worktree. If the overlapping scope has
+  uncommitted parent changes, the lead checkpoint-commits first or serializes
+  that slice instead of isolating it.
+- Cleanup is the lead's responsibility, not the worker's. After the lead reviews
+  and integrates a worker's result into the lead checkout, run
+  `<TAO_ROOT>/scripts/workflow.py dispatch-finalize --project <PROJECT>
+  --worktree <WORKTREE>`. The finalizer must independently compare every
+  tracked and untracked worker change with the lead checkout before it may
+  force-remove the intentionally dirty tree, prune Git admin state, and remove
+  an empty `.tao/worktrees` root. A mismatch fails closed and preserves the
+  worker result. Ignored files are preserved unless the lead explicitly passes
+  `--discard-ignored`; do not infer that policy from a successful worker exit.
+  Do not auto-remove a worktree on worker exit.
+- Verification must exercise both boundaries: inspect the model-visible prompt
+  or equivalent deterministic runtime input to prove project-local policy was
+  loaded, then run a real worker without the repository-check bypass and confirm
+  its writes stay in the worktree while the shared checkout remains unchanged.
+  After lead integration and finalization, also prove `git worktree list
+  --porcelain` and the `.tao/worktrees` filesystem state return to their
+  pre-dispatch baseline while the integrated result remains in the lead checkout.
+
 ## Before Reporting
 
 - Re-check the final diff or touched files.

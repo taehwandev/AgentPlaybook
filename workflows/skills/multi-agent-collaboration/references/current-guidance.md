@@ -50,7 +50,11 @@ readiness gates.
 
 ## Parallel Work
 
-Subagents or agents may edit in parallel only when write scopes are disjoint.
+Subagents or agents may edit in parallel only when write scopes are disjoint,
+with one carve-out: overlapping `owned_scope` is allowed only when both
+overlapping workers declare `isolation: "worktree"` and each runs inside its
+own real `git worktree` (see the worktree-isolation exception under
+"Delegation Decision Record").
 When a scripted route is used, consult `parallel_execution.phases` before
 spawning workers. A `conditional_parallel` worker phase is permission to look
 for a split, not permission to skip roles, write scopes, briefs, or integration
@@ -70,7 +74,9 @@ Rules:
   conditional until the lead records the eligibility decision.
 - Assign each writer explicit owned files or modules.
 - Assign explicit forbidden files or modules when overlap is likely.
-- Do not assign two writers to the same file.
+- Do not assign two writers to the same file, unless both writers declare
+  `isolation: "worktree"` and each runs in its own real `git worktree` (the
+  worktree-isolation carve-out described under "Delegation Decision Record").
 - Serialize architecture, shared model, migration, dependency, generated-file,
   and release-config changes.
 - If one task depends on an undefined model or contract from another task,
@@ -87,7 +93,10 @@ Good splits:
 
 Bad splits:
 
-- two agents editing the same view, route, reducer, schema, or config file
+- two agents editing the same view, route, reducer, schema, or config file in a
+  shared checkout (allowed only under the worktree-isolation carve-out, where
+  both workers declare `isolation: "worktree"` and each runs in its own real
+  `git worktree`)
 - one agent changing shared models while another consumes the unstable shape
 - broad refactors mixed with feature work across the same modules
 - multiple agents adding exports to the same package barrel, public API, design
@@ -151,8 +160,29 @@ decision.
 The two-slice eligibility threshold counts a meaningful slice retained by the
 lead as well as worker slices. Therefore one worker plus a distinct lead-owned
 integration or implementation slice can be a valid parallel plan. Multiple
-workers must use unique ids and non-overlapping `owned_scope` entries; exact or
-unambiguous parent/child path overlap is rejected before work starts.
+workers must use unique ids. Disjoint `owned_scope` entries are the default and
+keep the shared checkout.
+
+Every `owned_scope` entry must be a normalized repo-relative POSIX path or glob:
+no leading slash, backslash separator, duplicate `/`, or `.` / `..` path
+segment. Validation rejects non-canonical aliases before comparing overlap so
+two spellings of the same path cannot bypass worktree isolation.
+
+Overlapping `owned_scope` is allowed only when both overlapping workers declare
+`isolation: "worktree"`. Each such worker then runs inside its own real
+`git worktree` created from the base ref, the lead reviews the worker results
+and integrates them sequentially. The lead then invokes the verified
+`workflow.py dispatch-finalize` path for each worker; cleanup proceeds only
+when every tracked and untracked worker change matches the lead checkout.
+Unintegrated or mismatched results remain in their worker worktrees, and ignored
+files require the lead's explicit discard policy.
+If one overlapping worker omits the isolation declaration, the exact or
+unambiguous parent/child path overlap is still rejected before work starts.
+
+Base-ref constraint: worktrees branch from `HEAD`, so uncommitted parent changes
+are not visible inside a worker worktree. When an overlapping scope has
+uncommitted parent changes the lead must make a checkpoint commit first, or
+serialize that slice instead of isolating it.
 
 Choose the `multi-agent` route only when the parallel decision is already
 positive. When automatic eligibility fails, stay on the original work route,
@@ -179,6 +209,7 @@ Use this schema:
       "role": "docs reviewer",
       "owned_scope": ["workflows/*.md"],
       "forbidden_scope": ["scripts/*.py"],
+      "isolation": "worktree",
       "contract": "report documentation gaps only",
       "acceptance": ["findings include file and rule"],
       "verification": ["python3 scripts/workflow.py validate"]
@@ -195,6 +226,9 @@ Use this schema:
 Copy the schema keys exactly when creating the plan manually. In particular,
 `mode` must be the literal `"parallel"`; `workers` must use `id`, `role`,
 `owned_scope`, `forbidden_scope`, `contract`, `acceptance`, and `verification`;
+`isolation` is optional and, when present, must be the literal `"worktree"` (set
+it only on workers that run in their own real `git worktree` to share an
+overlapping `owned_scope`);
 and the lead record must be named `integration_review`. Alternate descriptive
 keys such as `current_state`, `scope`, or `serial_integration` do not satisfy
 the executable finish contract even when their prose sounds equivalent.
@@ -248,7 +282,9 @@ Closeout should state:
 ## Stop If
 
 - Two agents would edit the same file, schema, migration, generated artifact, or
-  release config at the same time.
+  release config at the same time, unless both writers declare `isolation:
+  "worktree"` and each runs in its own real git worktree per the Delegation
+  Decision Record carve-out.
 - The shared contract between parallel tasks is not defined.
 - A worker brief lacks owned files, forbidden files, acceptance checks, or
   verification expectations.

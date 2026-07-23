@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Callable, Mapping
 
@@ -15,18 +16,41 @@ def codex_argv(
     profile: Mapping[str, object],
     sandbox_mode: str,
     handoff_prompt: str,
+    working_dir: Path | None = None,
+    *,
+    trusted_worktree: Path | None = None,
 ) -> list[str]:
+    # ``--cd`` binds the worker's working directory. For an isolated worker that
+    # is its dedicated git worktree; otherwise it is the shared project checkout.
+    cd = working_dir if working_dir is not None else project
+    config_args = [
+        "--config",
+        f'model_reasoning_effort="{profile["reasoning_effort"]}"',
+    ]
+    if trusted_worktree is not None:
+        trusted = Path(trusted_worktree).expanduser().resolve()
+        bound = Path(cd).expanduser().resolve()
+        if working_dir is None or trusted != bound:
+            raise ValueError(
+                "Codex worktree trust must target the exact verified --cd path"
+            )
+        quoted_path = json.dumps(str(trusted), ensure_ascii=False)
+        config_args.extend(
+            [
+                "--config",
+                f'projects={{ {quoted_path} = {{ trust_level = "trusted" }} }}',
+            ]
+        )
     return [
         "codex",
         "exec",
         "--model",
         str(profile["codex_model"]),
-        "--config",
-        f'model_reasoning_effort="{profile["reasoning_effort"]}"',
+        *config_args,
         "--sandbox",
         sandbox_mode,
         "--cd",
-        str(project),
+        str(cd),
         handoff_prompt,
     ]
 

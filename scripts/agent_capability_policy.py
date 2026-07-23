@@ -29,6 +29,10 @@ def capability_profile(work_kind: str, *, isolation_required: bool = False) -> d
         # isolation is enforced by explicit filesystem and worker boundaries.
         "sandbox_mode": "workspace-write",
         "isolation_mode": "isolated-write" if isolation_required else "workspace",
+        # The worker's real working directory: a dedicated git worktree when
+        # isolated, otherwise the shared project checkout. workspace-write inside
+        # the worktree directory is correct, so sandbox_mode is unchanged.
+        "working_dir_kind": "worktree" if isolation_required else "workspace",
         "enforcement": "filesystem-boundary" if isolation_required else "runtime-workspace-write",
         "enforcement_scope": "worker-evidence-and-state" if isolation_required else "project-workspace",
         "filesystem": "isolated-write" if isolation_required else "workspace-write",
@@ -62,4 +66,9 @@ def validate_capability_profile(profile: dict[str, Any]) -> list[str]:
         failures.append("enforcement_scope is unsupported")
     if isolation_mode == "isolated-write" and scope != "worker-evidence-and-state":
         failures.append("isolated-write isolation requires worker-evidence-and-state scope")
+    working_dir_kind = profile.get("working_dir_kind")
+    if working_dir_kind is not None and working_dir_kind not in {"workspace", "worktree"}:
+        failures.append("working_dir_kind must be workspace or worktree")
+    if working_dir_kind == "worktree" and isolation_mode != "isolated-write":
+        failures.append("worktree working_dir requires isolated-write isolation")
     return failures
