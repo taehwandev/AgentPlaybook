@@ -23,6 +23,7 @@ from agent_gate_evidence import (
     synthesize_gate_evidence,
 )
 from agent_finish_gate_policy import MULTI_AGENT_GATE, validate_gate_evidence
+from agent_finish_check_steps import validate_recorded_grill_me_evidence
 from agent_finish_documentation import required_doc_target_failures
 from agent_hook_runtime import finish_with_result, print_status
 
@@ -267,6 +268,7 @@ def _validate_records_before_write(
             route=route,
         )
     )
+    failures.extend(validate_recorded_grill_me_evidence(route, gate_evidence))
 
     if validates_delegation_plan:
         failures.extend(
