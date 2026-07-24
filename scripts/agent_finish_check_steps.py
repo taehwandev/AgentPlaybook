@@ -430,6 +430,28 @@ def validate_grill_me_skill_evidence(evidence: str) -> list[str]:
     ]
 
 
+def validate_recorded_grill_me_evidence(
+    route: dict[str, Any],
+    gate_evidence: dict[str, str],
+) -> list[str]:
+    """Reject malformed Grill-Me evidence before it enters the gate ledger.
+
+    Missing evidence remains a finish-check concern because agents record gates
+    incrementally. Once a Grill-Me gate is submitted for a route whose request
+    classification requires the protocol, however, it must already satisfy the
+    same evidence contract enforced at finish.
+    """
+
+    request_classification = route.get("request_classification") or {}
+    if not _classification_requires_grill_me(request_classification):
+        return []
+    for gate in GRILL_ME_EVIDENCE_GATES:
+        evidence = gate_evidence.get(gate, "")
+        if evidence:
+            return validate_grill_me_skill_evidence(evidence)
+    return []
+
+
 question_drill_requested = grill_me_requested
 validate_grill_me_service_evidence = validate_grill_me_skill_evidence
 

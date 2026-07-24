@@ -113,6 +113,52 @@ class GenericGateEvidenceTests(unittest.TestCase):
 
             _validate_records_before_write(args, preflight, records)
 
+    def test_gate_write_rejects_invalid_required_grill_me_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            args = SimpleNamespace(project=Path(temp_dir))
+            preflight = {
+                "route": {
+                    "gates": ["ask blockers"],
+                    "required_docs": [],
+                    "request_classification": {"grill_me": True},
+                }
+            }
+            records = [
+                {
+                    "gate": "ask blockers",
+                    "status": "SUCCESS",
+                    "evidence": "The user answered the blocker question.",
+                    "fields": {},
+                }
+            ]
+
+            with self.assertRaisesRegex(ValueError, "Grill-Me evidence"):
+                _validate_records_before_write(args, preflight, records)
+
+    def test_gate_write_accepts_valid_required_grill_me_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            args = SimpleNamespace(project=Path(temp_dir))
+            preflight = {
+                "route": {
+                    "gates": ["ask blockers"],
+                    "required_docs": [],
+                    "request_classification": {"grill_me": True},
+                }
+            }
+            records = [
+                {
+                    "gate": "ask blockers",
+                    "status": "SUCCESS",
+                    "evidence": (
+                        "Grill-Me protocol /grilling session output completed: "
+                        "the user answered one blocker question and resolved the scope."
+                    ),
+                    "fields": {},
+                }
+            ]
+
+            _validate_records_before_write(args, preflight, records)
+
     def test_gate_write_accepts_structured_ambiguity_and_alignment_fields(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             args = SimpleNamespace(project=Path(temp_dir))

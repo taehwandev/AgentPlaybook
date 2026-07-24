@@ -169,6 +169,10 @@ conflicts between unrelated changes.
 - Do not add fixtures copied from private production data.
 - Do not mark behavior verified when only mocked, placeholder, or happy-path
   behavior ran.
+- Do not trust a passing test you have not shown can fail. For a guarantee that
+  matters, add a negative control: inject the violation the test is supposed to
+  catch and confirm the check actually fails. A test that stays green when the
+  property is broken proves nothing.
 
 ## Common Rationalizations
 
@@ -187,6 +191,8 @@ conflicts between unrelated changes.
   assertion.
 - Tests cover the happy path but omit error, empty, permission, stale, or
   unavailable states that the changed boundary can produce.
+- A guarantee is asserted only by tests that pass, with no negative control
+  proving they fail when the property is violated.
 
 ## Report
 

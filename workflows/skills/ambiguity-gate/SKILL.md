@@ -31,6 +31,11 @@ fields for new gate records so the ledger can reject incomplete decisions:
   `assumptions`, and `checkpoint`. `checkpoint` must be
   `user_visible_before_edits`; a private or post-edit summary is not an
   alignment checkpoint.
+- When request classification sets `grill_me` or `question_drill`, successful
+  evidence for `ask blockers` or another Grill-Me gate must name the
+  `Grill-Me protocol /grilling session`, its output, and the resolved outcome.
+  Gate recording must reject malformed Grill-Me evidence immediately instead
+  of deferring that failure to finish.
 
 These fields record the decision that made work safe to start. They do not
 replace the direct-answer-first rule or a required Grill-Me session.

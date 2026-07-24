@@ -148,3 +148,8 @@ Do not say a feature is complete when:
 - a visual snapshot was updated without stating the product reason
 - tests were skipped only because they were slow, broad, or inconvenient
 - generated files changed and their inclusion in the task was not confirmed
+- only the author's own check ran. A self-declared "done" or "verified" is not
+  credible on its own; the reliable signal is an independent check — a separate
+  reviewer, or a negative control that injects the violation and confirms the
+  check fails. When the integrator is also the only verifier, treat the result
+  as unverified until one of those confirms it.
